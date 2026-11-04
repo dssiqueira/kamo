@@ -4,11 +4,13 @@ import {
   useT,
   type DisplayOption,
   type HomeProps,
+  type PlaylistsProps,
   type ProjectListProps,
 } from '@kamo/ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ipcErrorCode,
+  type PlaylistInfo,
   type ProjectListing,
   type RecordingStatus,
   type ScreenAccess,
@@ -19,6 +21,7 @@ import { DesktopInterruptedRecordings } from './DesktopInterruptedRecordings.tsx
 import { DesktopUpdateBanner } from './preferences/DesktopUpdateBanner.tsx'
 import { useHomeAudio } from './useHomeAudio.ts'
 import { useHomeCamera } from './useHomeCamera.ts'
+import { useHomeTranscription } from './transcription/useHomeTranscription.tsx'
 
 // Error codes from main (recording controller and capture helper) → i18n keys.
 const ERROR_KEYS: Record<string, string> = {
@@ -37,10 +40,10 @@ const AUDIO_WARNING_KEYS: Record<AudioWarning, string> = {
   mic_unavailable: 'recording.audio.micUnavailable',
   mic_lost: 'recording.audio.micLost',
   system_unavailable: 'recording.audio.systemUnavailable',
+  audio_lost: 'recording.audio.lost',
   audio_failed: 'recording.audio.failed',
 }
 // A-03: camera problems of a saved recording.
-  audio_lost: 'recording.audio.lost',
 const CAMERA_WARNING_KEYS: Record<CameraWarning, string> = {
   camera_unavailable: 'recording.camera.unavailable',
   camera_lost: 'recording.camera.lost',
@@ -51,6 +54,16 @@ const CAMERA_WARNING_KEYS: Record<CameraWarning, string> = {
 const PROJECT_ERROR_KEYS: Record<string, string> = {
   invalid_name: 'projects.errors.invalidName',
   project_not_found: 'projects.errors.notFound',
+}
+
+// Local playlists: IPC error codes → i18n keys.
+const PLAYLIST_ERROR_KEYS: Record<string, string> = {
+  invalid_name: 'playlists.errors.invalidName',
+  playlist_not_found: 'playlists.errors.notFound',
+  project_not_found: 'projects.errors.notFound',
+  too_many_playlists: 'playlists.errors.tooMany',
+  playlist_full: 'playlists.errors.full',
+  newer_version: 'playlists.errors.newerVersion',
 }
 
 // F-01: thumbnails refresh at least once per second.
@@ -73,6 +86,8 @@ export function DesktopHome() {
   const audio = useHomeAudio()
   // A-03: webcam toggle, camera picker and live preview.
   const camera = useHomeCamera()
+  // A-05: "Transcribe" on the cards and the pack download offer.
+  const transcription = useHomeTranscription()
 
   useEffect(() => window.kamo.onRecordingStatus(setStatus), [])
 
@@ -89,6 +104,27 @@ export function DesktopHome() {
     void refreshProjects()
     return window.kamo.onProjectsChanged(() => void refreshProjects())
   }, [refreshProjects])
+
+  // Local playlists: on mount and whenever main says one changed.
+  const [playlists, setPlaylists] = useState<PlaylistInfo[]>([])
+  const refreshPlaylists = useCallback(async () => {
+    try {
+      setPlaylists(await window.kamo.listPlaylists())
+    } catch {
+      // Keeps what it had; the next change tries again.
+    }
+  }, [])
+
+  useEffect(() => {
+    void refreshPlaylists()
+    const offPlaylists = window.kamo.onPlaylistsChanged(() => void refreshPlaylists())
+    // A recording deleted or a folder gone from outside hides its place in the playlists.
+    const offProjects = window.kamo.onProjectsChanged(() => void refreshPlaylists())
+    return () => {
+      offPlaylists()
+      offProjects()
+    }
+  }, [refreshPlaylists])
 
   useEffect(() => {
     let cancelled = false
@@ -148,8 +184,80 @@ export function DesktopHome() {
     })
   }
 
+  /** A playlist change: optimistic first, then main's answer (or the error) settles it. */
+  const changePlaylists = (
+    optimistic: ((current: PlaylistInfo[]) => PlaylistInfo[]) | null,
+    action: () => Promise<unknown>,
+  ) => {
+    setActionError(null)
+    if (optimistic) setPlaylists(optimistic)
+    void action().catch((error: unknown) => {
+      const code = ipcErrorCode(error)
+      setActionError({
+        tone: 'error',
+        text: t((code && PLAYLIST_ERROR_KEYS[code]) || 'playlists.errors.failed'),
+      })
+      void refreshPlaylists()
+    })
+  }
+  const editPlaylist =
+    (playlistId: string, edit: (projectIds: string[]) => string[]) => (current: PlaylistInfo[]) =>
+      current.map((p) => (p.id === playlistId ? { ...p, projectIds: edit(p.projectIds) } : p))
+
+  const playlistProps: PlaylistsProps = {
+    playlists,
+    onCreate: async (name, projectIds) => {
+      setActionError(null)
+      try {
+        const created = await window.kamo.createPlaylist(name, projectIds)
+        setPlaylists((current) =>
+          current.some((p) => p.id === created.id) ? current : [...current, created],
+        )
+        return created.id
+      } catch (error) {
+        const code = ipcErrorCode(error)
+        setActionError({
+          tone: 'error',
+          text: t((code && PLAYLIST_ERROR_KEYS[code]) || 'playlists.errors.failed'),
+        })
+        return null
+      }
+    },
+    onRename: (id, name) =>
+      changePlaylists(
+        (current) => current.map((p) => (p.id === id ? { ...p, name } : p)),
+        () => window.kamo.renamePlaylist(id, name),
+      ),
+    onDelete: (id) =>
+      changePlaylists(
+        (current) => current.filter((p) => p.id !== id),
+        () => window.kamo.deletePlaylist(id),
+      ),
+    onAdd: (id, projectId) =>
+      changePlaylists(
+        editPlaylist(id, (ids) => (ids.includes(projectId) ? ids : [...ids, projectId])),
+        () => window.kamo.addToPlaylist(id, [projectId]),
+      ),
+    onRemove: (id, projectId) =>
+      changePlaylists(
+        editPlaylist(id, (ids) => ids.filter((other) => other !== projectId)),
+        () => window.kamo.removeFromPlaylist(id, [projectId]),
+      ),
+    onReorder: (id, projectIds) =>
+      changePlaylists(
+        editPlaylist(id, () => projectIds),
+        () => window.kamo.reorderPlaylist(id, projectIds),
+      ),
+  }
+
   const projects: ProjectListProps = {
-    projects: listing?.projects ?? null,
+    playlists: playlistProps,
+    projects:
+      listing?.projects.map((p) => ({ ...p, transcript: transcription.stateOf(p) })) ?? null,
+    transcription: {
+      onTranscribe: transcription.onTranscribe,
+      onCancel: transcription.onCancelTranscription,
+    },
     broken: listing?.broken ?? [],
     onOpen: (id) => run(() => window.kamo.openEditor(id)),
     onRename: (id, name) => {
@@ -176,7 +284,13 @@ export function DesktopHome() {
       banner={
         <>
           <DesktopUpdateBanner />
-          <DesktopInterruptedRecordings />
+          {transcription.offer}
+          {/* Audio or camera that could not be recovered: the same notice as after a recording. */}
+          <DesktopInterruptedRecordings
+            onRecoveredWithWarnings={(projectId, audioWarnings, cameraWarnings) =>
+              setStatus({ kind: 'saved', projectId, audioWarnings, cameraWarnings })
+            }
+          />
         </>
       }
       displays={displays}

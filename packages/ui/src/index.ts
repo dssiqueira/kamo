@@ -73,3 +73,5 @@ export type {
   PermissionDevice,
   PermissionStatus,
 } from './extension/DevicePermission.tsx'
+// Optional packs (A-07) and local transcription (A-05).
+export * from './packs/index.ts'

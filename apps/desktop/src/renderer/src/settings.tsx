@@ -1,11 +1,13 @@
 import { Settings, type LanguageChoice, type ThemeChoice } from '@kamo/ui'
 import { useCallback, useEffect, useState } from 'react'
 import type { AppInfo, AppSettings, Folders } from '../../shared/api.ts'
+import type { PackId, TranscriptionLanguage } from '../../shared/packs.ts'
 import { boot } from './boot.tsx'
 import { attempt } from './preferences/actions.ts'
 import { probeHardwareH264 } from './preferences/encoder-probe.ts'
 import { usePermissions } from './preferences/usePermissions.ts'
 import { useUpdateStatus } from './preferences/useUpdateStatus.ts'
+import { usePacks } from './transcription/usePacks.ts'
 
 /** Settings window (F-15): wires the platform-agnostic Settings to main. */
 function DesktopSettings() {
@@ -14,6 +16,8 @@ function DesktopSettings() {
   const [folders, setFolders] = useState<Folders | null>(null)
   const [permissions] = usePermissions()
   const update = useUpdateStatus()
+  // A-07: the list of packs loads when the Packs section comes into view.
+  const packs = usePacks()
 
   useEffect(() => {
     void window.kamo.getAppInfo().then(setInfo)
@@ -34,6 +38,9 @@ function DesktopSettings() {
     theme?: ThemeChoice
     language?: LanguageChoice
     closeToTray?: boolean
+    autoTranscribe?: boolean
+    transcriptionLanguage?: TranscriptionLanguage
+    transcriptionPack?: PackId
   }) => {
     setSettings((current) => current && { ...current, ...update })
     void window.kamo.updateSettings(update).catch(() => {
@@ -73,6 +80,22 @@ function DesktopSettings() {
       onCopy={(text) => attempt(() => window.kamo.copyText(text))}
       onOpenIssue={(text) => attempt(() => window.kamo.openIssue(text))}
       onLoadNotices={() => window.kamo.getThirdPartyNotices()}
+      {...(packs.status
+        ? {
+            packs: {
+              ...packs.actions,
+              packs: packs.status,
+              onOpen: packs.refresh,
+              autoTranscribe: settings.autoTranscribe,
+              onAutoTranscribeChange: (autoTranscribe: boolean) => save({ autoTranscribe }),
+              language: settings.transcriptionLanguage ?? 'auto',
+              onLanguageChange: (transcriptionLanguage: TranscriptionLanguage) =>
+                save({ transcriptionLanguage }),
+              activePack: settings.transcriptionPack ?? null,
+              onActivePackChange: (id: string) => save({ transcriptionPack: id as PackId }),
+            },
+          }
+        : {})}
     />
   )
 }

@@ -227,7 +227,8 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 ---
 
 ## Transcription, local MCP and advanced v0.4
-### Step 23 — Optional packs + transcription (A-07, A-05) (not started)
+### Step 23 — Optional packs + transcription (A-07, A-05) ⏳ (2026-11-04, built ahead of order; real packs not published yet)
+> Done: pack manager in main (`apps/desktop/src/main/packs`: manifest, resumable downloads with Electron `net`, SHA-256, atomic install, remove, update with confirmation), background transcription (`apps/desktop/src/main/transcription`: queue that survives a restart, hidden decoder window → 16kHz WAV, whisper.cpp child process at low priority, `transcript.json` via `packages/core/src/transcript`), Settings → Packs and Transcription, the Transcribe button and status on Home's cards with the download offer and the one-time question. Tested end to end against a local fake release (`scripts/fake-pack-server.ts`, a Node script standing in for whisper-cli), including the real Electron build decoding a recorded `audio.m4a`. Pending: run `.github/workflows/packs.yml` (creates the `packs` release), a manual check with the real whisper.cpp and models on Windows and Mac (speed target of A-05, Gatekeeper on the downloaded binary), the editor's Transcribe button (with step 24).
 - Pack manager: `packs-manifest.json` in the releases, download with progress/pause, SHA-256, `app-data/packs/`, Install/Remove/update with confirmation
 - Light and Accurate transcription packs (whisper.cpp + model) assembled in CI as release assets
 - Background transcription (utility process), `transcript.json`, resume after closing, one-time question about automatic mode

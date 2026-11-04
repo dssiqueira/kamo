@@ -19,7 +19,7 @@
         └── captions.json     # optional: caption style and adjustments
     playlists.json            # local playlists (see "Playlists" below); playlists.broken-<time>.json is an unreadable one set aside
 ```
-Global settings: `app-data/settings.json`. Optional packs: `app-data/packs/<pack>/<version>/` + `app-data/packs.json` (what is installed, version and SHA-256). Kamo Cloud session (if logged in): OS keychain, never in a plain file.
+Global settings: `app-data/settings.json` (transcription: `autoTranscribe`, absent until the one-time question is answered; `transcriptionLanguage` `auto|en|pt|es|zh|ja`; `transcriptionPack`). Optional packs: `app-data/packs/<pack>/<version>/` + `app-data/packs.json` (`{ version: 1, packs: { <id>: { version, installedAt, entry, model: { name, path }, files: { path, size, sha256 }[] } } }`); a download in progress or paused stays in `app-data/packs/.downloads/<pack>-<version>/` until every file passed its SHA-256, then the folder is moved into place. Transcription: `app-data/transcription-queue.json` (`{ version: 1, projectIds }`, the jobs still to do, so they start again after a restart) and `app-data/transcription/<project-id>/` (the job's 16kHz WAV and whisper's output, deleted when it ends). Kamo Cloud session (if logged in): OS keychain, never in a plain file.
 
 ### In the extension
 The project format is **the same** (same `project.json`, same files); only where it lives changes:
@@ -48,8 +48,8 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | aspect | `16:9` | `1:1` | `9:16` (optional) | format the editor previews in and the export pre-checks (A-02); absent = `16:9`, so older files stay valid |
 | autoZoom | boolean (optional) | the editor's "Auto-zoom" toggle (F-05): `false` hides the `auto` zooms in the preview and the export without deleting them; absent = on, so older files stay valid. An edit like any other (undoable) |
 | endTrimSuggestion | `applied` \| `dismissed` (optional) | the answer to the "Trim the last 2s?" suggestion (F-16); once set it is never shown again for this project. Kept outside the undo history: undoing an applied trim restores the old end, not the question. Absent = not answered |
-| captions | CaptionSettings \| null | captions (v0.4) |
 | webcam | WebcamSettings \| null | webcam bubble (A-03): visible, position (corner), optional anchor (free center dragged in the preview, 0..1 of the output frame; absent = in the corner), size (small/medium/large), optional shape (circle, square, landscape 16:9 or portrait 9:16; absent = circle), shrinkOnZoom, optional layout (`bubble` | `split`; absent = bubble; split stacks the screen and the camera as two cards, only in 9:16, the other formats keep the bubble), optional split `{ ratio, cameraFirst? }` (ratio = the screen's share of the height, clamped to 0.3–0.7 when drawn, default 0.5; cameraFirst puts the camera on top), hidden stretches `{ startMs, endMs }[]` (in split, the camera card collapses and the screen takes the whole height) and optional offsetMs; the camera itself is in `webcam.mp4`; null when recorded without the camera |
+| captions | CaptionSettings \| null | captions (v0.4) |
 | transcript | `{ status: none \| pending \| done \| failed, language?, model? }` | transcription state; the content lives in `transcript.json` |
 | cloud | CloudLink[] | videos from this project uploaded to the cloud; empty if never uploaded |
 | trim | `{ startMs, endMs }` | trim of the start and end (F-16); does not alter the raw video |
@@ -133,11 +133,15 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 ### Transcript (transcript.json)
 | Field | Type | Rule |
 |---|---|---|
-| language | `pt` \| `en` \| … | detected by Whisper |
-| model | string | e.g. `whisper-base` |
+| version | `1` | format version |
+| language | `pt` \| `en` \| … | detected by Whisper (ISO 639-1), or the language pinned in Settings |
+| model | string | `whisper-base` (Light) or `whisper-small` (Accurate) |
 | createdAt | ISO date | |
-| segments | `{ startMs, endMs, text }[]` | aligned to the continuous video time (no pauses); no empty segments |
+| segments | `{ startMs, endMs, text, words? }[]` | sorted, in continuous video time (no pauses): the audio is aligned with its `offsetMs` before Whisper hears it, so no offset is applied afterwards; clamped to the video; no empty segments and no non-speech markers (`[BLANK_AUDIO]`, `(music)`, ♪) |
+| segments[].words | `{ startMs, endMs, text }[]` (optional) | per-word timing from Whisper's tokens, inside the segment; one per token in languages without spaces (zh, ja); left out for a segment whose tokens split a character |
 | edited | boolean | true if the user corrected it through the captions |
+
+Which audio is transcribed: the microphone (`audio.m4a`) when it was recorded, else the computer sound (`system.m4a`), never both mixed (the voice is the microphone; music or a call in the computer sound would only add noise). Main owns `project.transcript`: an autosave from the editor keeps the state that is on disk, so an editor opened before a transcription finished cannot reset it.
 
 The local MCP reads this file, `project.json`, `events.jsonl` and the thumbnails in `frames/`. It does not decode video, so it needs neither FFmpeg nor a native binary.
 

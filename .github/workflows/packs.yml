@@ -1,0 +1,129 @@
+name: Packs
+
+# Optional packs (A-07, D-019): builds whisper.cpp's CLI per platform, fetches the ggml models,
+# and publishes them with packs-manifest.json as assets of the rolling `packs` release (a
+# prerelease, so electron-updater never mistakes it for an app version). The app downloads
+# from there only when the user asks. Manual only: packs change rarely and independently of
+# the app.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Pack version (e.g. 1.0.0); the asset names carry it, so old versions stay
+        required: true
+      whisper:
+        description: whisper.cpp tag to build
+        required: true
+        default: v1.7.6
+
+permissions:
+  contents: read
+
+env:
+  WHISPER_REPO: https://github.com/ggml-org/whisper.cpp
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Build whisper-cli (x64, CPU, every CPU variant loaded at run time)
+        shell: bash
+        run: |
+          git clone --depth 1 --branch "${{ inputs.whisper }}" "$WHISPER_REPO" whisper.cpp
+          cd whisper.cpp
+          # GGML_NATIVE=OFF: the CI machine's CPU flags must not leak into the build. The CPU
+          # backend is built once per instruction set (SSE4.2 … AVX-512) and the best one is
+          # picked when it runs, so old and new PCs both work.
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF \
+            -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DBUILD_SHARED_LIBS=ON \
+            -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF -DWHISPER_SDL2=OFF
+          cmake --build build --config Release -j --target whisper-cli
+          mkdir -p ../pack/win32-x64
+          cp build/bin/Release/whisper-cli.exe build/bin/Release/*.dll ../pack/win32-x64/
+          ls -la ../pack/win32-x64
+      - name: Check it runs
+        shell: bash
+        run: pack/win32-x64/whisper-cli.exe --help > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win32-x64
+          path: pack/win32-x64
+
+  mac:
+    runs-on: macos-14
+    steps:
+      - name: Build whisper-cli (arm64, Metal, static)
+        run: |
+          git clone --depth 1 --branch "${{ inputs.whisper }}" "$WHISPER_REPO" whisper.cpp
+          cd whisper.cpp
+          # One self-contained binary: Metal shaders embedded, ggml linked in.
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DBUILD_SHARED_LIBS=OFF \
+            -DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DWHISPER_BUILD_TESTS=OFF -DWHISPER_BUILD_SERVER=OFF -DWHISPER_SDL2=OFF
+          cmake --build build --config Release -j --target whisper-cli
+          mkdir -p ../pack/darwin-arm64
+          cp build/bin/whisper-cli ../pack/darwin-arm64/
+          # Apple Silicon only runs signed code: ad-hoc here; the release signing (step 10)
+          # can sign it with the app's identity instead.
+          codesign --force --sign - ../pack/darwin-arm64/whisper-cli
+          otool -L ../pack/darwin-arm64/whisper-cli
+      - name: Check it runs
+        run: pack/darwin-arm64/whisper-cli --help > /dev/null
+      - uses: actions/upload-artifact@v4
+        with:
+          name: darwin-arm64
+          path: pack/darwin-arm64
+
+  models:
+    runs-on: ubuntu-latest
+    steps:
+      # Multilingual models (not `.en`): Kamo transcribes any language Whisper knows.
+      # Light = base (148MB): ~10 min of audio well under 5 min on an i5/M1 (A-05).
+      # Accurate = small (488MB): clearly better in Portuguese, Chinese and Japanese.
+      # SHA-1s from whisper.cpp's models/README.md; a changed file fails the job.
+      - name: Download and check the models
+        run: |
+          mkdir -p models && cd models
+          base=https://huggingface.co/ggerganov/whisper.cpp/resolve/main
+          curl -fL --retry 3 -o ggml-base.bin "$base/ggml-base.bin"
+          curl -fL --retry 3 -o ggml-small.bin "$base/ggml-small.bin"
+          echo "465707469ff3a37a2b9b8d8f89f2f99de7299dac  ggml-base.bin" | sha1sum -c -
+          echo "55356645c2b361a969dfd0ef2c5a50d530afd8d5  ggml-small.bin" | sha1sum -c -
+          ls -la
+      - uses: actions/upload-artifact@v4
+        with:
+          name: models
+          path: models
+
+  publish:
+    needs: [windows, mac, models]
+    runs-on: ubuntu-latest
+    if: github.repository == 'dssiqueira/kamo'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          path: pack
+      - name: Assets and packs-manifest.json (sizes and SHA-256 computed here)
+        working-directory: apps/desktop
+        run: >
+          node scripts/make-packs-manifest.ts ../../pack ../../upload "${{ inputs.version }}"
+          "https://github.com/${{ github.repository }}/releases/download/packs"
+      - name: Upload to the `packs` release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view packs >/dev/null 2>&1 || gh release create packs --prerelease \
+            --title "Optional packs" \
+            --notes "Optional packs for the Kamo desktop app (transcription). Downloaded by the app only when you ask for them; see docs/integrations.md."
+          # Versioned files first, the manifest last: an app never sees a list whose files are
+          # not there yet.
+          find upload -type f ! -name packs-manifest.json -print0 | xargs -0 gh release upload packs --clobber
+          gh release upload packs upload/packs-manifest.json --clobber

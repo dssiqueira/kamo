@@ -540,5 +540,86 @@
     "minimize": "Minimizar",
     "zoom": "Zoom",
     "front": "Trazer Tudo para a Frente"
+  },
+  "packs": {
+    "title": "Pacotes opcionais",
+    "description": "Extras que você baixa só se quiser. O Kamo grava, edita e exporta sem eles.",
+    "local": "Os pacotes rodam no seu computador. Nada do que você grava é enviado para lugar nenhum.",
+    "light": {
+      "name": "Transcrição — Leve",
+      "hint": "Mais rápida. Transcrições para legendas, busca e agentes (MCP)."
+    },
+    "accurate": {
+      "name": "Transcrição — Precisa",
+      "hint": "Mais lenta e mais precisa. Melhor para português, chinês e japonês."
+    },
+    "sizeApprox": "Cerca de {size}",
+    "progressLabel": "Baixando {name}",
+    "install": "Baixar",
+    "resume": "Continuar",
+    "pause": "Pausar",
+    "update": "Atualizar",
+    "remove": "Remover",
+    "removeConfirm": "Remover {name}? As transcrições que você já fez continuam.",
+    "updateConfirm": "Baixar a versão {version} ({size})? A atual continua funcionando até terminar.",
+    "status": {
+      "notInstalled": "Não instalado",
+      "downloading": "Baixando… {progress, number, percent}",
+      "paused": "Pausado em {progress, number, percent}",
+      "verifying": "Conferindo o download…",
+      "installed": "Instalado (versão {version})",
+      "update": "Atualização disponível: versão {version}",
+      "failed": "Não terminou"
+    },
+    "catalog": {
+      "loading": "Carregando a lista de pacotes…"
+    },
+    "errors": {
+      "offline": "Sem conexão. Tente de novo quando estiver online; o que já chegou fica guardado.",
+      "downloadFailed": "O download falhou. Tente de novo.",
+      "checksumMismatch": "O download chegou corrompido e foi apagado. Tente de novo.",
+      "diskSpace": "Falta espaço livre: são necessários {size}.",
+      "unsupportedPlatform": "Ainda não disponível para este computador.",
+      "manifestInvalid": "Não deu para ler a lista de pacotes. Atualize o Kamo e tente de novo.",
+      "packBusy": "Ele está transcrevendo agora. Tente de novo quando terminar.",
+      "installFailed": "Não deu para instalar. Tente de novo.",
+      "unknownPack": "Este pacote não está mais disponível."
+    }
+  },
+  "transcription": {
+    "title": "Transcrição",
+    "auto": "Transcrever as novas gravações automaticamente",
+    "autoHint": "Em segundo plano, no seu computador, depois de cada gravação.",
+    "language": "Idioma falado",
+    "languageAuto": "Detectar automaticamente",
+    "pack": "Pacote a usar",
+    "action": "Transcrever",
+    "again": "Transcrever de novo",
+    "cancel": "Parar a transcrição",
+    "ask": {
+      "title": "Transcrever automaticamente as próximas gravações?",
+      "body": "O Kamo pode transcrever cada nova gravação em segundo plano. Você pode mudar isso nas Configurações.",
+      "yes": "Sim, automaticamente",
+      "no": "Só quando eu clicar em Transcrever"
+    },
+    "offer": {
+      "title": "Transcrever no seu computador",
+      "body": "A transcrição é um pacote opcional que roda no seu computador. Escolha um para baixar:",
+      "choose": "Qualidade da transcrição",
+      "recommendAccurate": "Para chinês ou japonês, a Precisa funciona muito melhor.",
+      "download": "Baixar e transcrever",
+      "notNow": "Agora não"
+    },
+    "status": {
+      "queued": "Aguardando para transcrever",
+      "running": "Transcrevendo… {progress, number, percent}",
+      "done": "Transcrito",
+      "failed": "A transcrição parou com um erro. Tente de novo.",
+      "noAudio": "Sem áudio para transcrever"
+    },
+    "errors": {
+      "packMissing": "Baixe um pacote de transcrição primeiro.",
+      "audioUnreadable": "O Kamo não conseguiu ler o áudio desta gravação."
+    }
   }
 }

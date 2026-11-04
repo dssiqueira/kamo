@@ -13,6 +13,7 @@ export type Page =
   | 'camera-recorder'
   | 'settings'
   | 'onboarding'
+  | 'transcribe-audio'
 const PAGES: readonly Page[] = [
   'index',
   'countdown',
@@ -22,6 +23,7 @@ const PAGES: readonly Page[] = [
   'camera-recorder',
   'settings',
   'onboarding',
+  'transcribe-audio',
 ]
 
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']

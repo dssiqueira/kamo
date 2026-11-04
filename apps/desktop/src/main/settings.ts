@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises'
 import { isAbsolute, join } from 'node:path'
 import { z } from 'zod'
 import type { AppSettings, SettingsUpdate, StoredSettingsUpdate } from '../shared/api.ts'
+import { PACK_IDS, TRANSCRIPTION_LANGUAGES } from '../shared/packs.ts'
 import { isValidAccelerator } from './accelerator.ts'
 import { writeFileAtomic } from './storage/atomic.ts'
 
@@ -27,6 +28,8 @@ const FolderPath = z
 const Accelerator = z.string().refine(isValidAccelerator)
 // MediaDeviceInfo.deviceId (an opaque hash); '' means the system default device.
 const DeviceId = z.string().max(512)
+const TranscriptionLanguageSchema = z.enum(TRANSCRIPTION_LANGUAGES)
+const PackIdSchema = z.enum(PACK_IDS)
 
 // `.catch(undefined)`: one broken field never resets the others.
 const StoredSettings = z.looseObject({
@@ -49,6 +52,10 @@ const StoredSettings = z.looseObject({
   // F-15 close to tray, and whether its one-time notice was shown (main only).
   closeToTray: z.boolean().optional().catch(undefined),
   trayNoticeShown: z.boolean().optional().catch(undefined),
+  // A-05 local transcription: automatic mode, language and which installed pack.
+  autoTranscribe: z.boolean().optional().catch(undefined),
+  transcriptionLanguage: TranscriptionLanguageSchema.optional().catch(undefined),
+  transcriptionPack: PackIdSchema.optional().catch(undefined),
 })
 
 /**
@@ -68,6 +75,9 @@ export const SettingsUpdateSchema = z.strictObject({
   cameraEnabled: z.boolean().optional(),
   cameraDeviceId: DeviceId.optional(),
   closeToTray: z.boolean().optional(),
+  autoTranscribe: z.boolean().optional(),
+  transcriptionLanguage: TranscriptionLanguageSchema.optional(),
+  transcriptionPack: PackIdSchema.optional(),
 })
 
 /** Every field main may write: the renderer's plus folders, the shortcut and the tray notice. */
@@ -153,6 +163,9 @@ const PUBLIC_KEYS = [
   'cameraDeviceId',
   'closeToTray',
   'trayNoticeShown',
+  'autoTranscribe',
+  'transcriptionLanguage',
+  'transcriptionPack',
 ] as const satisfies readonly (keyof AppSettings)[]
 
 /** Only the known fields go to the renderer. */

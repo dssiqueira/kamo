@@ -8,7 +8,9 @@ import {
   loadProject,
   saveProject,
   type ProjectStore,
+  type TranscriptState,
 } from '@kamo/core'
+import { isDeepStrictEqual } from 'node:util'
 import type { BrokenProject, ProjectListing, ProjectSummary } from '../shared/api.ts'
 import { SCREEN_FILE } from './capture/recording.ts'
 import { mediaUrl } from './media.ts'
@@ -60,6 +62,7 @@ export async function summarize(store: ProjectStore, project: Project): Promise<
       : null,
     width: project.source.width,
     height: project.source.height,
+    transcript: project.transcript.status,
   }
 }
 
@@ -106,17 +109,53 @@ export async function saveProjectData(store: ProjectStore, data: unknown): Promi
     const issues = parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`)
     throw new ProjectError('invalid_project', 'project failed validation', issues)
   }
-  const project = parsed.data
-  const json = await store.readText(project.id, PROJECT_FILES.project)
-  if (json === null) throw new ProjectActionError('project_not_found')
-  let previous: Project | null = null
-  try {
-    previous = await loadProject(store, project.id)
-  } catch {
-    // A corrupted project.json is replaced by the valid one.
-  }
-  await saveProject(store, project)
-  return { project, previous }
+  const projectId = parsed.data.id
+  return withProjectLock(projectId, async () => {
+    const json = await store.readText(projectId, PROJECT_FILES.project)
+    if (json === null) throw new ProjectActionError('project_not_found')
+    let previous: Project | null = null
+    try {
+      previous = await loadProject(store, projectId)
+    } catch {
+      // A corrupted project.json is replaced by the valid one.
+    }
+    // A-05: main owns the transcription state. An editor that loaded the project before a
+    // transcription finished must not put the old state back.
+    const project = previous ? { ...parsed.data, transcript: previous.transcript } : parsed.data
+    await saveProject(store, project)
+    return { project, previous }
+  })
+}
+
+const projectLocks = new Map<string, Promise<unknown>>()
+
+/**
+ * Runs read-modify-write steps on one project.json one at a time (autosave, rename and the
+ * transcription state, A-05), so none of them writes a stale copy over another.
+ */
+export function withProjectLock<T>(projectId: string, task: () => Promise<T>): Promise<T> {
+  const before = projectLocks.get(projectId) ?? Promise.resolve()
+  const run = before.then(task, task)
+  const settled = run.catch(() => {})
+  projectLocks.set(projectId, settled)
+  void settled.then(() => {
+    if (projectLocks.get(projectId) === settled) projectLocks.delete(projectId)
+  })
+  return run
+}
+
+/** A-05: the transcription state in project.json; a project deleted meanwhile is left alone. */
+export async function setTranscriptState(
+  store: ProjectStore,
+  projectId: string,
+  state: TranscriptState,
+): Promise<void> {
+  await withProjectLock(projectId, async () => {
+    if ((await store.readText(projectId, PROJECT_FILES.project)) === null) return
+    const project = await loadProject(store, projectId)
+    if (isDeepStrictEqual(project.transcript, state)) return
+    await saveProject(store, { ...project, transcript: state })
+  })
 }
 
 export async function renameProject(
@@ -125,8 +164,12 @@ export async function renameProject(
   name: unknown,
 ): Promise<ProjectSummary> {
   const trimmed = validateProjectName(name)
-  const project = await loadProjectById(store, projectId)
-  const renamed = { ...project, name: trimmed }
-  if (project.name !== trimmed) await saveProject(store, renamed)
+  if (typeof projectId !== 'string') throw new ProjectActionError('project_not_found')
+  const renamed = await withProjectLock(projectId, async () => {
+    const project = await loadProjectById(store, projectId)
+    const next = { ...project, name: trimmed }
+    if (project.name !== trimmed) await saveProject(store, next)
+    return next
+  })
   return summarize(store, renamed)
 }

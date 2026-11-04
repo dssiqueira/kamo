@@ -540,5 +540,86 @@
     "minimize": "最小化",
     "zoom": "缩放",
     "front": "前置全部窗口"
+  },
+  "packs": {
+    "title": "可选扩展包",
+    "description": "只在需要时才下载的额外功能。没有它们，Kamo 也能录制、编辑和导出。",
+    "local": "扩展包在你的电脑上运行。你录制的任何内容都不会被发送出去。",
+    "light": {
+      "name": "转录 — 轻量",
+      "hint": "速度更快。为字幕、搜索和智能体（MCP）生成转录文本。"
+    },
+    "accurate": {
+      "name": "转录 — 精准",
+      "hint": "速度较慢，但更准确。最适合葡萄牙语、中文和日语。"
+    },
+    "sizeApprox": "约 {size}",
+    "progressLabel": "正在下载{name}",
+    "install": "下载",
+    "resume": "继续",
+    "pause": "暂停",
+    "update": "更新",
+    "remove": "移除",
+    "removeConfirm": "要移除{name}吗？已经完成的转录会保留。",
+    "updateConfirm": "要下载 {version} 版（{size}）吗？在下载完成前，当前版本仍可使用。",
+    "status": {
+      "notInstalled": "未安装",
+      "downloading": "正在下载… {progress, number, percent}",
+      "paused": "已暂停，完成 {progress, number, percent}",
+      "verifying": "正在校验下载内容…",
+      "installed": "已安装（{version} 版）",
+      "update": "有可用更新：{version} 版",
+      "failed": "未完成"
+    },
+    "catalog": {
+      "loading": "正在加载扩展包列表…"
+    },
+    "errors": {
+      "offline": "没有网络连接。联网后请重试，已下载的部分会保留。",
+      "downloadFailed": "下载失败，请重试。",
+      "checksumMismatch": "下载的文件已损坏并已删除，请重试。",
+      "diskSpace": "可用空间不足：需要 {size}。",
+      "unsupportedPlatform": "暂不支持这台电脑。",
+      "manifestInvalid": "无法读取扩展包列表。请更新 Kamo 后重试。",
+      "packBusy": "正在转录中，请在完成后重试。",
+      "installFailed": "无法安装，请重试。",
+      "unknownPack": "此扩展包已不再提供。"
+    }
+  },
+  "transcription": {
+    "title": "转录",
+    "auto": "自动转录新的录制",
+    "autoHint": "每次录制后在你的电脑上后台进行。",
+    "language": "讲话语言",
+    "languageAuto": "自动检测",
+    "pack": "使用的扩展包",
+    "action": "转录",
+    "again": "重新转录",
+    "cancel": "停止转录",
+    "ask": {
+      "title": "要自动转录接下来的录制吗？",
+      "body": "Kamo 可以在后台转录每个新的录制。你可以在设置中更改。",
+      "yes": "是，自动转录",
+      "no": "仅在我点击“转录”时"
+    },
+    "offer": {
+      "title": "在你的电脑上转录",
+      "body": "转录是一个在你电脑上运行的可选扩展包。请选择一个下载：",
+      "choose": "转录质量",
+      "recommendAccurate": "对于中文或日语，“精准”效果好得多。",
+      "download": "下载并转录",
+      "notNow": "以后再说"
+    },
+    "status": {
+      "queued": "等待转录",
+      "running": "正在转录… {progress, number, percent}",
+      "done": "已转录",
+      "failed": "转录因出错而停止，请重试。",
+      "noAudio": "没有可转录的音频"
+    },
+    "errors": {
+      "packMissing": "请先下载一个转录扩展包。",
+      "audioUnreadable": "Kamo 无法读取此录制的音频。"
+    }
   }
 }

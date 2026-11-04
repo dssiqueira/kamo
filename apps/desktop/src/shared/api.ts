@@ -11,6 +11,14 @@ import type {
   RecorderReport,
 } from './audio.ts'
 import type { CameraAccess, CameraCommand, CameraReport, CameraWarning } from './camera.ts'
+import type {
+  PackId,
+  PacksStatus,
+  TranscribeAudioJob,
+  TranscribeAudioResult,
+  TranscriptionJob,
+  TranscriptionLanguage,
+} from './packs.ts'
 
 /**
  * The only API the renderer gets from the preload (`window.kamo`). Keep it small and typed:
@@ -54,6 +62,11 @@ export interface KamoApi {
   showProjectInFolder(projectId: string): Promise<void>
   /** Opens the editor on this project (the main window navigates to it). */
   openEditor(projectId: string): Promise<void>
+  /**
+   * A project whose project.json is damaged: opens its screen video in the system's player
+   * (`project_not_found` when it has none). Nothing in the folder changes.
+   */
+  openRawVideo(projectId: string): Promise<void>
   /** Raw mouse events (events.jsonl text; '' when the project has none). Parse with core. */
   loadEvents(projectId: string): Promise<string>
   /** Back from the editor to Home. */
@@ -62,24 +75,11 @@ export interface KamoApi {
    * A-04: native picker for PNG, JPEG or WebP; the image is copied into the project and its
    * project-relative name returned (`background-<hash>.<ext>`), or null when cancelled.
    * Rejects with `image_unsupported`, `image_too_big` or `image_unreadable`.
-  /**
-   * A project whose project.json is damaged: opens its screen video in the system's player
-   * (`project_not_found` when it has none). Nothing in the folder changes.
-   */
-  openRawVideo(projectId: string): Promise<void>
    */
   pickBackgroundImage(projectId: string): Promise<string | null>
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
   onProjectsChanged(listener: () => void): () => void
 
-  // Interrupted recordings (F-02): what a crash or a forced quit left, from earlier sessions.
-  /** Newest first; only the ones with a video to recover. */
-  listInterruptedRecordings(): Promise<InterruptedRecording[]>
-  /**
-   * Makes it a normal project, with the audio and camera that could be recovered, and returns
-   * it (`not_interrupted`, `unrecoverable`).
-   */
-  recoverRecording(projectId: string): Promise<RecoveredRecording>
   // Local playlists (docs/data-model.md → Playlists): `<projects>/playlists.json`. Errors
   // reject with a code: `invalid_name`, `playlist_not_found`, `project_not_found`,
   // `too_many_playlists`, `playlist_full`, `invalid_order`, `newer_version`.
@@ -98,6 +98,14 @@ export interface KamoApi {
   /** Any playlist changed (here, in another window, or a project left them). Returns unsubscribe. */
   onPlaylistsChanged(listener: () => void): () => void
 
+  // Interrupted recordings (F-02): what a crash or a forced quit left, from earlier sessions.
+  /** Newest first; only the ones with a video to recover. */
+  listInterruptedRecordings(): Promise<InterruptedRecording[]>
+  /**
+   * Makes it a normal project, with the audio and camera that could be recovered, and returns
+   * it (`not_interrupted`, `unrecoverable`).
+   */
+  recoverRecording(projectId: string): Promise<RecoveredRecording>
   /** Moves it to the system trash (`not_interrupted`). */
   discardRecording(projectId: string): Promise<void>
 
@@ -190,6 +198,33 @@ export interface KamoApi {
   onCameraCommand(listener: (command: CameraCommand) => void): () => void
   reportCamera(report: CameraReport): Promise<void>
   writeCameraChunk(bytes: Uint8Array): Promise<void>
+
+  // Optional packs (A-07, D-019). Only `refreshPacks` and `installPack` use the network, and
+  // only because the user opened Settings → Packs or asked to transcribe.
+  /** What is installed and, once the list loaded, what can be downloaded. */
+  getPacks(): Promise<PacksStatus>
+  /** Fetches the list of packs (packs-manifest.json on GitHub Releases). */
+  refreshPacks(): Promise<PacksStatus>
+  /** Starts (or resumes) the download; follow it with onPacksChanged. Also installs updates. */
+  installPack(id: PackId): Promise<void>
+  /** Keeps what arrived; installPack resumes. */
+  pausePack(id: PackId): Promise<void>
+  cancelPack(id: PackId): Promise<void>
+  /** Deletes the pack's files; transcripts stay (`pack_busy` while transcribing). */
+  removePack(id: PackId): Promise<void>
+  onPacksChanged(listener: (status: PacksStatus) => void): () => void
+
+  // Local transcription (A-05): in the background, one recording at a time.
+  transcribeProject(projectId: string): Promise<void>
+  cancelTranscription(projectId: string): Promise<void>
+  /** This session's jobs. */
+  getTranscriptionJobs(): Promise<TranscriptionJob[]>
+  onTranscriptionChanged(listener: (jobs: TranscriptionJob[]) => void): () => void
+  // Hidden audio decoder page only (main refuses any other sender).
+  takeTranscribeAudioJob(): Promise<TranscribeAudioJob>
+  /** 16-bit mono PCM at 16kHz, in order; `progress` is 0..1. */
+  writeTranscribeAudio(bytes: Uint8Array, progress: number): Promise<void>
+  finishTranscribeAudio(result: TranscribeAudioResult): Promise<void>
 }
 
 export interface ProjectSummary {
@@ -204,6 +239,8 @@ export interface ProjectSummary {
   /** Recorded size in physical pixels. */
   width: number
   height: number
+  /** project.json `transcript.status` (A-05). */
+  transcript: 'none' | 'pending' | 'done' | 'failed'
 }
 
 export interface BrokenProject {
@@ -219,6 +256,17 @@ export interface ProjectListing {
   broken: BrokenProject[]
 }
 
+/** A local playlist as Home sees it (core `Playlist`, with missing projects hidden). */
+export interface PlaylistInfo {
+  id: string
+  name: string
+  /** In playlist order. */
+  projectIds: string[]
+  /** ISO 8601. */
+  createdAt: string
+  updatedAt: string
+}
+
 /** A recording a crash left without project.json (F-02). */
 export interface InterruptedRecording {
   projectId: string
@@ -226,6 +274,13 @@ export interface InterruptedRecording {
   startedAt: string
   /** Size of the recorded video. */
   sizeBytes: number
+}
+
+/** A recovered recording, and what of its audio and camera could not come back (F-02). */
+export interface RecoveredRecording {
+  project: Project
+  audioWarnings: AudioWarning[]
+  cameraWarnings: CameraWarning[]
 }
 
 /** `app-data/settings.json` (docs/data-model.md). */
@@ -256,17 +311,6 @@ export interface AppSettings {
   stopShortcut?: string
   /** F-13. Set when the permissions onboarding was finished. */
   onboardingDone?: boolean
-/** A local playlist as Home sees it (core `Playlist`, with missing projects hidden). */
-export interface PlaylistInfo {
-  id: string
-  name: string
-  /** In playlist order. */
-  projectIds: string[]
-  /** ISO 8601. */
-  createdAt: string
-  updatedAt: string
-}
-
   /**
    * F-15. Closing the main window hides it to the tray (menu bar on Mac) instead of quitting.
    * Absent: AppInfo.closeToTrayDefault (on everywhere but Mac).
@@ -274,6 +318,15 @@ export interface PlaylistInfo {
   closeToTray?: boolean
   /** Set by main once the "Kamo is still running in the tray" notice was shown. */
   trayNoticeShown?: boolean
+  /**
+   * A-05: transcribe new recordings in the background. Absent: never asked yet (the question
+   * comes once, after a transcription pack is installed).
+   */
+  autoTranscribe?: boolean
+  /** A-05. Absent: automatic detection. */
+  transcriptionLanguage?: TranscriptionLanguage
+  /** A-05: which installed pack transcribes. Absent: Accurate when installed, else Light. */
+  transcriptionPack?: PackId
 }
 
 export type Theme = 'light' | 'dark' | 'system'
@@ -303,13 +356,6 @@ export interface AppInfo {
   defaultStopShortcut: string
   /** F-15: closeToTray when the user never changed it. */
   closeToTrayDefault: boolean
-}
-
-/** A recovered recording, and what of its audio and camera could not come back (F-02). */
-export interface RecoveredRecording {
-  project: Project
-  audioWarnings: AudioWarning[]
-  cameraWarnings: CameraWarning[]
 }
 
 export type PermissionKind = 'screen' | 'microphone' | 'camera' | 'inputMonitoring'
@@ -408,10 +454,19 @@ export const IpcChannel = {
   deleteProject: 'kamo:project-delete',
   showProjectInFolder: 'kamo:project-show-in-folder',
   openEditor: 'kamo:editor-open',
+  openRawVideo: 'kamo:project-open-raw-video',
   loadEvents: 'kamo:project-events',
   openHome: 'kamo:home-open',
   pickBackgroundImage: 'kamo:background-image-pick',
   projectsChanged: 'kamo:projects-changed',
+  listPlaylists: 'kamo:playlists-list',
+  createPlaylist: 'kamo:playlist-create',
+  renamePlaylist: 'kamo:playlist-rename',
+  deletePlaylist: 'kamo:playlist-delete',
+  addToPlaylist: 'kamo:playlist-add',
+  removeFromPlaylist: 'kamo:playlist-remove',
+  reorderPlaylist: 'kamo:playlist-reorder',
+  playlistsChanged: 'kamo:playlists-changed',
   listInterruptedRecordings: 'kamo:interrupted-list',
   recoverRecording: 'kamo:interrupted-recover',
   discardRecording: 'kamo:interrupted-discard',
@@ -457,13 +512,18 @@ export const IpcChannel = {
   cameraCommand: 'kamo:camera-command',
   cameraReport: 'kamo:camera-report',
   cameraChunk: 'kamo:camera-chunk',
+  getPacks: 'kamo:packs-get',
+  refreshPacks: 'kamo:packs-refresh',
+  installPack: 'kamo:packs-install',
+  pausePack: 'kamo:packs-pause',
+  cancelPack: 'kamo:packs-cancel',
+  removePack: 'kamo:packs-remove',
+  packsChanged: 'kamo:packs-changed',
+  transcribeProject: 'kamo:transcription-start',
+  cancelTranscription: 'kamo:transcription-cancel',
+  getTranscriptionJobs: 'kamo:transcription-jobs',
+  transcriptionChanged: 'kamo:transcription-changed',
+  takeTranscribeAudioJob: 'kamo:transcribe-audio-job',
+  writeTranscribeAudio: 'kamo:transcribe-audio-write',
+  finishTranscribeAudio: 'kamo:transcribe-audio-finish',
 } as const
-  openRawVideo: 'kamo:project-open-raw-video',
-  listPlaylists: 'kamo:playlists-list',
-  createPlaylist: 'kamo:playlist-create',
-  renamePlaylist: 'kamo:playlist-rename',
-  deletePlaylist: 'kamo:playlist-delete',
-  addToPlaylist: 'kamo:playlist-add',
-  removeFromPlaylist: 'kamo:playlist-remove',
-  reorderPlaylist: 'kamo:playlist-reorder',
-  playlistsChanged: 'kamo:playlists-changed',

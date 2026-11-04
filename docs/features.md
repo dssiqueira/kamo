@@ -501,16 +501,16 @@
 **Behavior:** transcription is **not in the installer**. It is an optional package (whisper.cpp binary + model) that the user downloads only if they want it. Once installed, the app transcribes recordings with audio in the background and saves to `transcript.json`. It is the basis of captions (A-06) and of the text part of the MCP (M-01, M-02).
 
 **Acceptance criteria**
-- [ ] The app never downloads the package on its own nor opens a popup asking to download it after recording
-- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Packages, and the "Connect to an agent" panel
-- [ ] Before downloading, shows the size and the quality choice: **Light** (~150MB, faster) or **Accurate** (~500MB, better in Portuguese)
-- [ ] Download with progress, pause/cancel and integrity check (SHA-256)
-- [ ] Once installed, asks once: "Automatically transcribe the next recordings?" (yes → in the background; no → only when Transcribe is clicked)
-- [ ] Runs in the background, without freezing the editor or the export
+- [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the list of packs is fetched only when Settings → Packs comes into view or Transcribe is clicked (checked in the Electron build: no request before a click)
+- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Packages, and the "Connect to an agent" panel — Settings → Packs and a Transcribe button on Home's project cards done; the editor button comes with captions (step 24), the agent panel with step 26
+- [x] Before downloading, shows the size and the quality choice: **Light** (~150MB, faster) or **Accurate** (~500MB, better in Portuguese) — exact sizes once the list loaded, "About …" before
+- [x] Download with progress, pause/cancel and integrity check (SHA-256) — resumes with HTTP Range, also after a restart
+- [x] Once installed, asks once: "Automatically transcribe the next recordings?" (yes → in the background; no → only when Transcribe is clicked)
+- [ ] Runs in the background, without freezing the editor or the export — whisper is a below-normal-priority child process with half the cores, the audio is decoded in a hidden window; not yet measured with the real whisper.cpp during an export
 - [ ] 10 minutes of audio transcribed in under 5 minutes on an average machine with the Light model (M1 / i5 with 8GB)
 - [ ] Transcribes any language Whisper supports, with automatic detection; quality validated in the launch languages (the Light model is weaker in Chinese and Japanese, so the download screen recommends Accurate for those languages)
-- [ ] Segments with start, end and text, aligned to the video time
-- [ ] Uninstalling the package frees the space and keeps the transcripts already made
+- [x] Segments with start, end and text, aligned to the video time — the audio offset is applied before whisper; words with their own timing when whisper gives them
+- [x] Uninstalling the package frees the space and keeps the transcripts already made (Remove waits while a transcription uses it)
 - [ ] Desktop first; in the extension, only after validating Whisper's performance in the browser (also as an optional download)
 
 **Edge cases**
@@ -530,11 +530,11 @@
 | Video compatibility (FFmpeg) | ~70MB | fallback export on machines where WebCodecs fails |
 
 **Acceptance criteria**
-- [ ] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons
-- [ ] Packages live in `app-data/packs/`, outside the app folder; updating the app does not delete the packages
-- [ ] Packages update separately from the app, only with user confirmation
+- [x] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons — the transcription packs; FFmpeg is not listed until it exists
+- [x] Packages live in `app-data/packs/`, outside the app folder; updating the app does not delete the packages
+- [x] Packages update separately from the app, only with user confirmation
 - [ ] FFmpeg is only offered when the export fails for lack of an encoder ("Download the compatibility package and try again?")
-- [ ] Downloads come from versioned GitHub Releases assets, with SHA-256 verified
+- [ ] Downloads come from versioned GitHub Releases assets, with SHA-256 verified — verified against a local fake release; `.github/workflows/packs.yml` builds the real assets but has not run yet
 
 ## A-06 — Automatic captions
 - [ ] Generated from `transcript.json` (A-05), without transcribing again

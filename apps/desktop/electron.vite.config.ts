@@ -90,6 +90,8 @@ export default defineConfig({
           // Settings window (F-15) and first-run permissions onboarding (F-13).
           settings: resolve(import.meta.dirname, 'src/renderer/settings.html'),
           onboarding: resolve(import.meta.dirname, 'src/renderer/onboarding.html'),
+          // Hidden window that decodes a voice track for local transcription (A-05).
+          'transcribe-audio': resolve(import.meta.dirname, 'src/renderer/transcribe-audio.html'),
         },
       },
     },

@@ -540,5 +540,86 @@
     "minimize": "Minimize",
     "zoom": "Zoom",
     "front": "Bring All to Front"
+  },
+  "packs": {
+    "title": "Optional packs",
+    "description": "Extras you download only if you want them. Kamo records, edits and exports without them.",
+    "local": "Packs run on your computer. Nothing you record is sent anywhere.",
+    "light": {
+      "name": "Transcription — Light",
+      "hint": "Faster. Transcripts for captions, search and agents (MCP)."
+    },
+    "accurate": {
+      "name": "Transcription — Accurate",
+      "hint": "Slower and more accurate. Best for Portuguese, Chinese and Japanese."
+    },
+    "sizeApprox": "About {size}",
+    "progressLabel": "Downloading {name}",
+    "install": "Download",
+    "resume": "Resume",
+    "pause": "Pause",
+    "update": "Update",
+    "remove": "Remove",
+    "removeConfirm": "Remove {name}? The transcripts you already made stay.",
+    "updateConfirm": "Download version {version} ({size})? The current one keeps working until it finishes.",
+    "status": {
+      "notInstalled": "Not installed",
+      "downloading": "Downloading… {progress, number, percent}",
+      "paused": "Paused at {progress, number, percent}",
+      "verifying": "Checking the download…",
+      "installed": "Installed (version {version})",
+      "update": "Update available: version {version}",
+      "failed": "Didn't finish"
+    },
+    "catalog": {
+      "loading": "Loading the list of packs…"
+    },
+    "errors": {
+      "offline": "No connection. Try again when you're online; what already arrived is kept.",
+      "downloadFailed": "The download failed. Try again.",
+      "checksumMismatch": "The download arrived damaged and was deleted. Try again.",
+      "diskSpace": "Not enough free space: {size} needed.",
+      "unsupportedPlatform": "Not available for this computer yet.",
+      "manifestInvalid": "The list of packs couldn't be read. Update Kamo and try again.",
+      "packBusy": "It's transcribing right now. Try again when it finishes.",
+      "installFailed": "Couldn't install it. Try again.",
+      "unknownPack": "This pack isn't available anymore."
+    }
+  },
+  "transcription": {
+    "title": "Transcription",
+    "auto": "Transcribe new recordings automatically",
+    "autoHint": "In the background, on your computer, after each recording.",
+    "language": "Spoken language",
+    "languageAuto": "Detect automatically",
+    "pack": "Pack to use",
+    "action": "Transcribe",
+    "again": "Transcribe again",
+    "cancel": "Stop transcribing",
+    "ask": {
+      "title": "Transcribe your next recordings automatically?",
+      "body": "Kamo can transcribe each new recording in the background. You can change this in Settings.",
+      "yes": "Yes, automatically",
+      "no": "Only when I click Transcribe"
+    },
+    "offer": {
+      "title": "Transcribe on your computer",
+      "body": "Transcription is an optional pack that runs on your computer. Pick one to download:",
+      "choose": "Transcription quality",
+      "recommendAccurate": "For Chinese or Japanese, Accurate works much better.",
+      "download": "Download and transcribe",
+      "notNow": "Not now"
+    },
+    "status": {
+      "queued": "Waiting to transcribe",
+      "running": "Transcribing… {progress, number, percent}",
+      "done": "Transcribed",
+      "failed": "Transcription stopped with an error. Try again.",
+      "noAudio": "No audio to transcribe"
+    },
+    "errors": {
+      "packMissing": "Download a transcription pack first.",
+      "audioUnreadable": "Kamo couldn't read this recording's audio."
+    }
   }
 }

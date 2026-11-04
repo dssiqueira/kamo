@@ -59,20 +59,22 @@ import {
   shouldShowTrayNotice,
 } from './close-to-tray.ts'
 import { clearQuitting, isQuitting, markQuitting } from './quitting.ts'
+import { sendTo } from './safe-send.ts'
 import { getServices, startServices } from './services.ts'
 import {
-import { sendTo } from './safe-send.ts'
   RecoveryError,
   discardRecording,
   listInterruptedRecordings,
   recoverRecording,
 } from './interrupted.ts'
-import { SettingsError, parseSettingsUpdate } from './settings.ts'
-import { UnsafePathError, assertProjectId } from './storage/index.ts'
 import { AUDIO_TEMP_FOLDER, CAMERA_TEMP_FOLDER } from './media-takes.ts'
 import { rawVideoPath } from './raw-video.ts'
+import { SettingsError, parseSettingsUpdate } from './settings.ts'
+import { UnsafePathError, assertProjectId } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
+import { PackError } from './packs/manager.ts'
+import { registerTranscription } from './transcription/index.ts'
 import { runExportSmoke } from './export-smoke.ts'
 import {
   BACKGROUND_IMAGE_FILTER_EXTENSIONS,
@@ -172,7 +174,11 @@ const recording = new RecordingController(
     info: (event, data) => getServices().log.info(event, data as Record<string, unknown>),
     error: (event, data) => getServices().log.error(event, data as Record<string, unknown>),
   },
-  () => notifyProjectsChanged(),
+  (projectId) => {
+    notifyProjectsChanged()
+    // A-05: automatic transcription, when the user chose it.
+    transcription.onRecordingSaved(projectId)
+  },
   // F-15: the stop shortcut chosen in Settings.
   currentStopShortcut,
   // F-04: microphone and computer sound, recorded in Electron (src/main/audio, D-024).
@@ -261,7 +267,8 @@ function ipcErrorCodeOf(error: unknown): string | null {
     error instanceof PreferenceError ||
     error instanceof BackgroundImageError ||
     error instanceof RecoveryError ||
-    error instanceof PlaylistError
+    error instanceof PlaylistError ||
+    error instanceof PackError
   ) {
     return error.code
   }
@@ -453,14 +460,14 @@ handle(IpcChannel.startRecording, (displayId) => {
 })
 
 // Projects (F-12). Ids and data come from the renderer: the store and the schema check them.
+// Local playlists live next to them (`<projects>/playlists.json`).
+const playlists = registerPlaylists(handle)
 handle(IpcChannel.listProjects, () => listProjectSummaries(getServices().store))
 handle(IpcChannel.loadProject, (projectId) => loadProjectById(getServices().store, projectId))
 /**
  * The style new recordings start with (F-08). A background image (A-04) lives in its own
  * project's folder, so it never carries over: new projects get the default wallpaper.
  */
-// Local playlists live next to them (`<projects>/playlists.json`).
-const playlists = registerPlaylists(handle)
 function styleForNewProjects(style: Style): Style {
   return backgroundImageFile(style.background) === null
     ? style
@@ -493,12 +500,6 @@ handle(IpcChannel.deleteProject, async (projectId) => {
   await getServices().store.deleteProject(projectId as string)
   getServices().log.info('project.deleted')
   notifyProjectsChanged()
-})
-handle(IpcChannel.showProjectInFolder, async (projectId) => {
-  const dir = getServices().store.projectDir(projectId as string)
-  const error = await shell.openPath(dir)
-  if (error) {
-    getServices().log.warn('project.show.failed', { error })
   // A deleted recording leaves every playlist it was in.
   if (await playlists.forgetProject(projectId as string)) notifyPlaylistsChanged()
 })
@@ -510,6 +511,12 @@ handle(IpcChannel.openRawVideo, async (projectId) => {
     getServices().log.warn('project.raw_video.failed', { error })
     throw new ProjectActionError('project_not_found')
   }
+})
+handle(IpcChannel.showProjectInFolder, async (projectId) => {
+  const dir = getServices().store.projectDir(projectId as string)
+  const error = await shell.openPath(dir)
+  if (error) {
+    getServices().log.warn('project.show.failed', { error })
     throw new ProjectActionError('project_not_found')
   }
 })
@@ -579,6 +586,12 @@ handle(IpcChannel.loadEvents, async (projectId) => {
 // Interrupted recordings (F-02). Recordings started after this process did belong to it (one
 // may be running), so only earlier ones are offered.
 const appStartedAt = new Date()
+/** Where the audio and camera takes wait to be attached (recovery follows the marker there). */
+function mediaTempDirs() {
+  const userData = app.getPath('userData')
+  return { audio: join(userData, AUDIO_TEMP_FOLDER), camera: join(userData, CAMERA_TEMP_FOLDER) }
+}
+
 handle(IpcChannel.listInterruptedRecordings, () =>
   listInterruptedRecordings(getServices().store, { sessionStartedAt: appStartedAt }),
 )
@@ -588,6 +601,8 @@ handle(IpcChannel.recoverRecording, async (projectId) => {
   const i18n = await createI18n(locale)
   const recovered = await recoverRecording(store, projectId, {
     sessionStartedAt: appStartedAt,
+    mediaTemp: mediaTempDirs(),
+    log,
     projectName: (date) => i18n.t('project.defaultName', { date: formatProjectDate(locale, date) }),
     defaults: async () => {
       const { lastStyle, lastCursor } = await settings.get()
@@ -606,12 +621,6 @@ handle(IpcChannel.recoverRecording, async (projectId) => {
   return recovered
 })
 handle(IpcChannel.discardRecording, async (projectId) => {
-/** Where the audio and camera takes wait to be attached (recovery follows the marker there). */
-function mediaTempDirs() {
-  const userData = app.getPath('userData')
-  return { audio: join(userData, AUDIO_TEMP_FOLDER), camera: join(userData, CAMERA_TEMP_FOLDER) }
-}
-
   await discardRecording(getServices().store, projectId, {
     sessionStartedAt: appStartedAt,
     mediaTemp: mediaTempDirs(),
@@ -624,8 +633,6 @@ handle(IpcChannel.openHome, async () => {
 })
 
 // Settings (F-01, F-08).
-    mediaTemp: mediaTempDirs(),
-    log,
 handle(IpcChannel.getSettings, () => getServices().settings.get())
 handle(IpcChannel.updateSettings, (update) =>
   getServices().settings.update(parseSettingsUpdate(update)),
@@ -644,6 +651,8 @@ const preferences = registerPreferences({
 })
 // Export (F-11): media reads, the output files and the close-during-export question.
 const exporter = registerExport()
+// Optional packs and local transcription (A-07, A-05): downloads only on a user click.
+const transcription = registerTranscription({ handle, notifyProjectsChanged })
 handle(IpcChannel.cancelCountdown, () => recording.cancelCountdown())
 handle(IpcChannel.countdownDone, () => recording.countdownDone())
 handle(IpcChannel.pauseRecording, () => recording.pause())
@@ -749,6 +758,8 @@ void app.whenReady().then(async () => {
       : await preferences.firstPage(),
   )
   preferences.startUpdates()
+  // A-05: transcriptions the app was closed in the middle of start again (no network).
+  transcription.start()
   void startServices().catch((error: unknown) =>
     getServices().log.error('app.start.failed', { error }),
   )

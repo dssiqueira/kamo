@@ -1,6 +1,6 @@
 // Settings (flows.md §7, F-15): appearance, language, folders, shortcuts, permissions, updates,
-// help (F-17) and about. Kamo Cloud, packs, transcription and MCP sections arrive with their
-// own steps.
+// help (F-17), optional packs and transcription (A-07, A-05) and about. Kamo Cloud and MCP
+// sections arrive with their own steps.
 import { LOCALES, type Locale } from '@kamo/i18n'
 import { useEffect, useState } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
@@ -9,6 +9,7 @@ import { ExternalIcon, FolderIcon } from '../primitives/icons.tsx'
 import { TextDialog } from './TextDialog.tsx'
 import { InlineNotice, Row, Section, SecondaryButton, Segmented, StatusPill } from './parts.tsx'
 import { ShortcutRecorder } from './ShortcutRecorder.tsx'
+import { PacksSection, type PacksSectionProps } from '../packs/PacksSection.tsx'
 import type { ShortcutPlatform } from './shortcut.ts'
 import type {
   ActionResult,
@@ -55,6 +56,9 @@ export interface SettingsProps {
   onCopy(text: string): ActionResult
   onOpenIssue(text: string): ActionResult
   onLoadNotices(): Promise<string>
+
+  /** Optional packs and transcription (A-07, A-05). Omitted where packs do not exist yet. */
+  packs?: PacksSectionProps
 }
 
 const FOLDER_ERRORS: Record<string, string> = {
@@ -124,6 +128,8 @@ export function Settings(props: SettingsProps) {
         <Section id="settings-permissions" title={t('settings.permissions.title')}>
           <PermissionRows permissions={props.permissions} onOpen={props.onOpenPermissionSettings} />
         </Section>
+
+        {props.packs && <PacksSection {...props.packs} />}
 
         <Section id="settings-updates" title={t('settings.updates.title')}>
           <UpdatesRow {...props} />

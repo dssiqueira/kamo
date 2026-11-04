@@ -10,8 +10,8 @@ import {
   type ProjectListing,
   type ProjectSummary,
   type RecordingClock,
-  type RecordingStatus,
   type RecoveredRecording,
+  type RecordingStatus,
   type ScreenAccess,
 } from '../shared/api.ts'
 import type {
@@ -56,8 +56,8 @@ const api: KamoApi = {
   showProjectInFolder: (projectId) =>
     invoke(IpcChannel.showProjectInFolder, projectId) as Promise<void>,
   openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
-  loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
   openRawVideo: (projectId) => invoke(IpcChannel.openRawVideo, projectId) as Promise<void>,
+  loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   pickBackgroundImage: (projectId) =>
     invoke(IpcChannel.pickBackgroundImage, projectId) as Promise<string | null>,
@@ -133,6 +133,23 @@ const api: KamoApi = {
   onCameraCommand: (listener) => subscribe<CameraCommand>(IpcChannel.cameraCommand, listener),
   reportCamera: (report) => invoke(IpcChannel.cameraReport, report) as Promise<void>,
   writeCameraChunk: (bytes) => invoke(IpcChannel.cameraChunk, bytes) as Promise<void>,
+  // Optional packs (A-07) and local transcription (A-05). `invoke` returns Promise<any>;
+  // KamoApi types each one.
+  getPacks: () => invoke(IpcChannel.getPacks),
+  refreshPacks: () => invoke(IpcChannel.refreshPacks),
+  installPack: (id) => invoke(IpcChannel.installPack, id),
+  pausePack: (id) => invoke(IpcChannel.pausePack, id),
+  cancelPack: (id) => invoke(IpcChannel.cancelPack, id),
+  removePack: (id) => invoke(IpcChannel.removePack, id),
+  onPacksChanged: (listener) => subscribe(IpcChannel.packsChanged, listener),
+  transcribeProject: (projectId) => invoke(IpcChannel.transcribeProject, projectId),
+  cancelTranscription: (projectId) => invoke(IpcChannel.cancelTranscription, projectId),
+  getTranscriptionJobs: () => invoke(IpcChannel.getTranscriptionJobs),
+  onTranscriptionChanged: (listener) => subscribe(IpcChannel.transcriptionChanged, listener),
+  takeTranscribeAudioJob: () => invoke(IpcChannel.takeTranscribeAudioJob),
+  writeTranscribeAudio: (bytes, progress) =>
+    invoke(IpcChannel.writeTranscribeAudio, bytes, progress),
+  finishTranscribeAudio: (result) => invoke(IpcChannel.finishTranscribeAudio, result),
 }
 
 contextBridge.exposeInMainWorld('kamo', api)

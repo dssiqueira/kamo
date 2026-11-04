@@ -1,10 +1,27 @@
 import { formatDate, formatDuration, resolveLocale } from '@kamo/i18n'
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
 import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { IconButton } from '../primitives/controls.tsx'
-import { FolderIcon, PencilIcon, TrashIcon } from '../primitives/icons.tsx'
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  FolderIcon,
+  MinusCircleIcon,
+  PencilIcon,
+  PlaylistAddIcon,
+  TrashIcon,
+} from '../primitives/icons.tsx'
+import {
+  AddToPlaylistMenu,
+  PlaylistBar,
+  PlaylistHeader,
+  type PlaylistData,
+  type PlaylistsProps,
+} from './Playlists.tsx'
+import { TranscribeButton, TranscriptStatus } from '../packs/CardTranscription.tsx'
+import type { CardTranscriptState } from '../packs/types.ts'
 
 /** Max project name length, the same limit main enforces (F-12). */
 export const MAX_PROJECT_NAME_LENGTH = 120
@@ -17,6 +34,8 @@ export interface ProjectCardData {
   durationMs: number
   /** Image URL of the first reference frame, or null for the neutral placeholder. */
   thumbnailUrl: string | null
+  /** Local transcription (A-05); shown only with `transcription` on the list. */
+  transcript?: CardTranscriptState
 }
 
 export interface BrokenProjectData {
@@ -39,6 +58,13 @@ export interface ProjectListProps {
   onShowInFolder(projectId: string): void
   /** Corrupted project.json: open only the raw video and recreate the edit (F-12). */
   onOpenRawVideo(projectId: string): void
+  /** Local playlists: chips above the list and "Add to playlist" on cards. Omitted: none. */
+  playlists?: PlaylistsProps
+  /** Local transcription (A-05): "Transcribe" on each card. Omitted: no button. */
+  transcription?: {
+    onTranscribe(projectId: string): void
+    onCancel(projectId: string): void
+  }
 }
 
 const FOCUS_RING =
@@ -54,9 +80,39 @@ export function ProjectList({
   onDelete,
   onShowInFolder,
   onOpenRawVideo,
+  playlists,
+  transcription,
 }: ProjectListProps) {
   const t = useT()
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+  // Read by the drag events before React re-renders, so a ref and not only the state.
+  const dragged = useRef<string | null>(null)
   if (projects === null) return null
+
+  // A playlist deleted (here or elsewhere) falls back to All.
+  const selected = playlists?.playlists.find((p) => p.id === selectedId) ?? null
+  const byId = new Map(projects.map((project) => [project.id, project]))
+  const shown = selected
+    ? selected.projectIds.flatMap((id) => {
+        const project = byId.get(id)
+        return project ? [project] : []
+      })
+    : projects
+  const order = shown.map((project) => project.id)
+
+  /** New order with `id` moved to where `target` is (drag and drop, or the arrows). */
+  const moveTo = (id: string, targetIndex: number) => {
+    if (!selected || !playlists) return
+    const from = order.indexOf(id)
+    const to = Math.max(0, Math.min(order.length - 1, targetIndex))
+    if (from < 0 || from === to) return
+    const next = order.slice()
+    next.splice(from, 1)
+    next.splice(to, 0, id)
+    playlists.onReorder(selected.id, next)
+  }
 
   if (projects.length === 0 && broken.length === 0) {
     // DESIGN.md: Kamo shows up in empty states.
@@ -76,30 +132,123 @@ export function ProjectList({
 
   return (
     <section className="flex flex-col gap-md" aria-labelledby="projects-title">
-      <h2 id="projects-title" className="text-title">
-        {t('projects.title')}
-      </h2>
+      {playlists && (
+        <PlaylistBar
+          playlists={playlists.playlists}
+          selectedId={selected?.id ?? null}
+          onSelect={setSelectedId}
+          onCreate={(name) =>
+            void playlists.onCreate(name, []).then((id) => id && setSelectedId(id))
+          }
+          total={projects.length}
+        />
+      )}
+      {selected && playlists ? (
+        <PlaylistHeader
+          playlist={selected}
+          onRename={(name) => playlists.onRename(selected.id, name)}
+          onDelete={() => {
+            setSelectedId(null)
+            playlists.onDelete(selected.id)
+          }}
+        />
+      ) : (
+        <h2 id="projects-title" className="text-title">
+          {t('projects.title')}
+        </h2>
+      )}
+      {selected && shown.length === 0 && (
+        <p className="max-w-[480px] text-body text-on-surface-muted">{t('playlists.empty')}</p>
+      )}
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-md">
-        {projects.map((project) => (
-          <li key={project.id}>
+        {shown.map((project, index) => (
+          <li
+            key={project.id}
+            // Inside a playlist the cards can be dragged to a new place (the arrows do the same).
+            {...(selected
+              ? {
+                  draggable: true,
+                  onDragStart: (event) => {
+                    event.dataTransfer.effectAllowed = 'move'
+                    event.dataTransfer.setData('text/plain', project.id)
+                    dragged.current = project.id
+                    setDragging(project.id)
+                  },
+                  onDragOver: (event) => {
+                    if (!dragged.current) return
+                    event.preventDefault()
+                    event.dataTransfer.dropEffect = 'move'
+                    setDropTarget(project.id)
+                  },
+                  onDrop: (event) => {
+                    event.preventDefault()
+                    if (dragged.current) moveTo(dragged.current, index)
+                    dragged.current = null
+                    setDragging(null)
+                    setDropTarget(null)
+                  },
+                  onDragEnd: () => {
+                    dragged.current = null
+                    setDragging(null)
+                    setDropTarget(null)
+                  },
+                }
+              : {})}
+            className={`rounded-lg ${dragging === project.id ? 'opacity-50' : ''} ${
+              dropTarget === project.id && dragging !== project.id
+                ? 'outline-2 outline-offset-2 outline-tertiary'
+                : ''
+            }`}
+          >
             <ProjectCard
               project={project}
               onOpen={() => onOpen(project.id)}
               onRename={(name) => onRename(project.id, name)}
               onDelete={() => onDelete(project.id)}
               onShowInFolder={() => onShowInFolder(project.id)}
+              {...(transcription
+                ? {
+                    transcription: {
+                      onTranscribe: () => transcription.onTranscribe(project.id),
+                      onCancel: () => transcription.onCancel(project.id),
+                    },
+                  }
+                : {})}
+              {...(playlists
+                ? {
+                    playlists: {
+                      playlists: playlists.playlists,
+                      onAdd: (playlistId) => playlists.onAdd(playlistId, project.id),
+                      onRemove: (playlistId) => playlists.onRemove(playlistId, project.id),
+                      onCreate: (name) => void playlists.onCreate(name, [project.id]),
+                    },
+                  }
+                : {})}
+              {...(selected && playlists
+                ? {
+                    inPlaylist: {
+                      name: selected.name,
+                      ...(index > 0 ? { onMoveUp: () => moveTo(project.id, index - 1) } : {}),
+                      ...(index < shown.length - 1
+                        ? { onMoveDown: () => moveTo(project.id, index + 1) }
+                        : {}),
+                      onRemove: () => playlists.onRemove(selected.id, project.id),
+                    },
+                  }
+                : {})}
             />
           </li>
         ))}
-        {broken.map((project) => (
-          <li key={project.projectId}>
-            <BrokenProjectCard
-              project={project}
-              onShowInFolder={() => onShowInFolder(project.projectId)}
-              onOpenRawVideo={() => onOpenRawVideo(project.projectId)}
-            />
-          </li>
-        ))}
+        {!selected &&
+          broken.map((project) => (
+            <li key={project.projectId}>
+              <BrokenProjectCard
+                project={project}
+                onShowInFolder={() => onShowInFolder(project.projectId)}
+                onOpenRawVideo={() => onOpenRawVideo(project.projectId)}
+              />
+            </li>
+          ))}
       </ul>
     </section>
   )
@@ -126,15 +275,45 @@ interface ProjectCardProps {
   onRename(name: string): void
   onDelete(): void
   onShowInFolder(): void
+  transcription?: { onTranscribe(): void; onCancel(): void }
+  /** "Add to playlist" checklist. Omitted: no button. */
+  playlists?: {
+    playlists: readonly PlaylistData[]
+    onAdd(playlistId: string): void
+    onRemove(playlistId: string): void
+    onCreate(name: string): void
+  }
+  /** Shown inside a playlist: reorder with the arrows and remove from it. */
+  inPlaylist?: {
+    name: string
+    onMoveUp?(): void
+    onMoveDown?(): void
+    onRemove(): void
+  }
 }
 
-function ProjectCard({ project, onOpen, onRename, onDelete, onShowInFolder }: ProjectCardProps) {
+function ProjectCard({
+  project,
+  onOpen,
+  onRename,
+  onDelete,
+  onShowInFolder,
+  transcription,
+  playlists,
+  inPlaylist,
+}: ProjectCardProps) {
   const t = useT()
   const locale = resolveLocale([useLocale()])
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [choosingPlaylists, setChoosingPlaylists] = useState(false)
   const deleteButton = useRef<HTMLButtonElement>(null)
   const renameButton = useRef<HTMLButtonElement>(null)
+  const playlistButton = useRef<HTMLButtonElement>(null)
+  const closePlaylists = useCallback((byKeyboard: boolean) => {
+    setChoosingPlaylists(false)
+    if (byKeyboard) playlistButton.current?.focus()
+  }, [])
 
   const finishEditing = (name: string | null, byKeyboard: boolean) => {
     setEditing(false)
@@ -179,6 +358,9 @@ function ProjectCard({ project, onOpen, onRename, onDelete, onShowInFolder }: Pr
               })}
             </time>
           </p>
+          {transcription && project.transcript && (
+            <TranscriptStatus transcript={project.transcript} />
+          )}
         </div>
         <div className="flex shrink-0">
           <IconButton
@@ -188,6 +370,23 @@ function ProjectCard({ project, onOpen, onRename, onDelete, onShowInFolder }: Pr
           >
             <PencilIcon />
           </IconButton>
+          {playlists && (
+            <IconButton
+              label={t('playlists.addTo')}
+              buttonRef={playlistButton}
+              expanded={choosingPlaylists}
+              onClick={() => setChoosingPlaylists((open) => !open)}
+            >
+              <PlaylistAddIcon />
+            </IconButton>
+          )}
+          {transcription && (
+            <TranscribeButton
+              transcript={project.transcript ?? { state: 'none' }}
+              onTranscribe={transcription.onTranscribe}
+              onCancel={transcription.onCancel}
+            />
+          )}
           <IconButton label={t('common.showInFolder')} onClick={onShowInFolder}>
             <FolderIcon />
           </IconButton>
@@ -214,6 +413,42 @@ function ProjectCard({ project, onOpen, onRename, onDelete, onShowInFolder }: Pr
             setConfirming(false)
             onDelete()
           }}
+        />
+      )}
+
+      {inPlaylist && (
+        <div className="flex items-center gap-xs border-t border-border pt-xs">
+          {inPlaylist.onMoveUp && (
+            <IconButton label={t('playlists.moveUp')} onClick={inPlaylist.onMoveUp}>
+              <ArrowUpIcon />
+            </IconButton>
+          )}
+          {inPlaylist.onMoveDown && (
+            <IconButton label={t('playlists.moveDown')} onClick={inPlaylist.onMoveDown}>
+              <ArrowDownIcon />
+            </IconButton>
+          )}
+          <button
+            type="button"
+            onClick={inPlaylist.onRemove}
+            className={`ms-auto flex items-center gap-xs ${ACTION_BUTTON}`}
+          >
+            <MinusCircleIcon />
+            {t('playlists.remove')}
+          </button>
+        </div>
+      )}
+
+      {choosingPlaylists && playlists && (
+        <AddToPlaylistMenu
+          projectName={project.name}
+          projectId={project.id}
+          playlists={playlists.playlists}
+          onAdd={playlists.onAdd}
+          onRemove={playlists.onRemove}
+          onCreate={playlists.onCreate}
+          onClose={closePlaylists}
+          anchor={playlistButton}
         />
       )}
     </article>

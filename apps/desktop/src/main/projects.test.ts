@@ -77,6 +77,7 @@ describe('project actions', () => {
       thumbnailUrl: `kamo-media://project/${recent.id}/frames/0000.jpg`,
       width: 1920,
       height: 1080,
+      transcript: 'none',
     })
     expect(projects[1]?.thumbnailUrl).toBeNull()
     expect(broken).toEqual([{ projectId: 'broken', code: 'invalid_json', hasVideo: true }])
