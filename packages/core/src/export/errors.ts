@@ -1,0 +1,40 @@
+// Why an export stopped. The UI maps each code to a message (export.errors.*).
+
+export type ExportErrorCode =
+  /** the user canceled; the incomplete file was deleted */
+  | 'aborted'
+  /** the disk filled up while writing; the incomplete file was deleted */
+  | 'disk_full'
+  /** any other failure writing the file */
+  | 'write_failed'
+  /** the recorded video could not be read or decoded */
+  | 'source_unreadable'
+  /** this machine has no H.264 encoder WebCodecs can use (D-011 plan B: FFmpeg pack) */
+  | 'encoder_unavailable'
+  | 'failed'
+
+export class ExportError extends Error {
+  readonly code: ExportErrorCode
+  constructor(code: ExportErrorCode, options?: { cause?: unknown }) {
+    super(`export failed: ${code}`, options)
+    this.name = 'ExportError'
+    this.code = code
+  }
+}
+
+/** Things worth telling the user about a finished export. */
+export type ExportWarning =
+  /** no hardware H.264 encoder: exported with the software one (slower) */
+  | 'software_encoder'
+  /** a microphone or computer sound file could not be read; exported without it */
+  | 'audio_unreadable'
+  /** no AAC encoder on this machine; exported without sound */
+  | 'audio_encoder_unavailable'
+
+export function exportErrorCode(error: unknown): ExportErrorCode {
+  if (error instanceof ExportError) return error.code
+  if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') {
+    return 'aborted'
+  }
+  return 'failed'
+}

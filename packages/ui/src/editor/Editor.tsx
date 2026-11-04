@@ -18,6 +18,8 @@ import { FOCUS_RING } from '../primitives/controls.tsx'
 import { ArrowBackIcon, PauseIcon, PlayIcon } from '../primitives/icons.tsx'
 import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
 import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
+import { ExportSheet } from '../export/ExportSheet.tsx'
+import type { ExportPlatform } from '../export/useExportRun.ts'
 import { Preview } from './Preview.tsx'
 import { StylePanel } from './StylePanel.tsx'
 import { usePlayback } from './usePlayback.ts'
@@ -30,15 +32,25 @@ export interface EditorProps {
   /** Every edit, undo and redo; the app autosaves it (F-12: no Save button). */
   onChange(project: Project): void
   onBack(): void
+  /** Files, media and folders for the export (F-11); without it, Export stays disabled. */
+  exportPlatform?: ExportPlatform
 }
 
 /** Editor (flows.md §5): preview in the middle, side panel on the right, timeline below. */
-export function Editor({ project: initial, events, videoUrl, onChange, onBack }: EditorProps) {
+export function Editor({
+  project: initial,
+  events,
+  videoUrl,
+  onChange,
+  onBack,
+  exportPlatform,
+}: EditorProps) {
   const t = useT()
   const video = useRef<HTMLVideoElement | null>(null)
   const draw = useRef<((timeMs: number) => void) | null>(null)
   const [autoZoom, setAutoZoom] = useState(true)
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   // Every edit (timeline and side panel) goes through one history: Ctrl/⌘+Z undoes any of
   // them, ≥ 50 steps, a whole drag is one step (F-09).
@@ -73,6 +85,7 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
   // window only; nothing system-wide (rule 2). Focused controls keep their own keys.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (exportOpen) return
       const target = event.target as HTMLElement | null
       if (
         target?.closest(
@@ -91,7 +104,7 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [playback, fps])
+  }, [playback, fps, exportOpen])
 
   const regenerate = () =>
     edit((p) => ({
@@ -137,9 +150,13 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
         <h1 className="min-w-0 flex-1 truncate text-title">{project.name}</h1>
         <button
           type="button"
-          disabled
-          title={t('editor.exportSoon')}
-          className="rounded-md bg-primary px-[20px] py-[12px] text-title text-on-primary disabled:opacity-50"
+          data-testid="export-open"
+          disabled={!exportPlatform}
+          onClick={() => {
+            if (playback.playing) playback.toggle()
+            setExportOpen(true)
+          }}
+          className={`rounded-md bg-primary px-[20px] py-[12px] text-title text-on-primary transition-colors duration-[120ms] hover:bg-[#97CB90] disabled:opacity-50 ${FOCUS_RING}`}
         >
           {t('editor.export')}
         </button>
@@ -209,6 +226,18 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
           onRegenerate={regenerate}
         />
       </div>
+      {exportOpen && exportPlatform && (
+        <ExportSheet
+          project={project}
+          events={events}
+          zooms={zooms}
+          autoZoom={autoZoom}
+          video={video.current}
+          timeMs={playback.timeMs}
+          platform={exportPlatform}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
     </div>
   )
 }

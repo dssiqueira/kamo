@@ -2,12 +2,12 @@ import {
   buildCameraTrack,
   buildCursorTrack,
   createRenderer,
-  cursorAt,
   outputSize,
-  viewportAt,
+  sceneFrame,
   type MouseEventRecord,
   type Project,
   type Renderer,
+  type Scene,
   type Zoom,
 } from '@kamo/core'
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
@@ -61,16 +61,10 @@ export function Preview({ project, events, zooms, videoUrl, video, drawRef }: Pr
       const ctx = canvas.current?.getContext('2d')
       if (!element || !ctx || element.readyState < 2) return
       renderer.current ??= createRenderer(ctx)
-      renderer.current.render({
-        source: element,
-        sourceSize: { width, height },
-        style: project.style,
-        aspect: ASPECT,
-        output,
-        viewport: viewportAt(camera, timeMs),
-        cursor: cursorAt(cursor, timeMs),
-        cursorSize: cursor.size,
-      })
+      // The export builds the same scene in one go (buildScene); here the tracks are
+      // memoized apart so a style edit does not rebuild the camera.
+      const scene: Scene = { sourceSize: { width, height }, style: project.style, camera, cursor }
+      renderer.current.render(sceneFrame(scene, element, ASPECT, output, timeMs))
     },
     [video, width, height, project.style, output, camera, cursor],
   )

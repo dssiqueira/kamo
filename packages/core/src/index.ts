@@ -13,3 +13,8 @@ export * from './camera/camera.ts'
 export * from './cursor/cursor.ts'
 export * from './render/index.ts'
 export * from './edit/index.ts'
+// Pure parts of the export; the pipeline itself is `@kamo/core/export`.
+export * from './export/errors.ts'
+export * from './export/filename.ts'
+export * from './export/timing.ts'
+export * from './export/audio-mix.ts'

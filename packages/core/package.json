@@ -5,13 +5,23 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./export": "./src/export/index.ts",
+    "./testing": "./src/testing/media.ts"
   },
   "publishConfig": {
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./export": {
+        "types": "./dist/export/index.d.ts",
+        "default": "./dist/export/index.js"
+      },
+      "./testing": {
+        "types": "./dist/testing/media.d.ts",
+        "default": "./dist/testing/media.js"
       }
     }
   },
