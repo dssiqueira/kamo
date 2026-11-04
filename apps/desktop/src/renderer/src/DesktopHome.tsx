@@ -40,6 +40,7 @@ const AUDIO_WARNING_KEYS: Record<AudioWarning, string> = {
   audio_failed: 'recording.audio.failed',
 }
 // A-03: camera problems of a saved recording.
+  audio_lost: 'recording.audio.lost',
 const CAMERA_WARNING_KEYS: Record<CameraWarning, string> = {
   camera_unavailable: 'recording.camera.unavailable',
   camera_lost: 'recording.camera.lost',
@@ -164,9 +165,8 @@ export function DesktopHome() {
     },
     onDelete: (id) => run(() => window.kamo.deleteProject(id)),
     onShowInFolder: (id) => run(() => window.kamo.showProjectInFolder(id)),
-    // The editor sees the damaged project.json and offers the raw video (F-12). Until the
-    // editor page exists, main leaves Home as it is.
-    onOpenRawVideo: (id) => run(() => window.kamo.openEditor(id)),
+    // F-12: project.json is damaged, the recording is not: it opens in the system's player.
+    onOpenRawVideo: (id) => run(() => window.kamo.openRawVideo(id)),
   }
 
   return (

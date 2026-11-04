@@ -15,6 +15,7 @@ import { copyFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { CameraWarning } from '../../shared/camera.ts'
 import { trackOffsetMs } from '../audio/model.ts'
+import { checkRecordedMedia } from '../recorded-media.ts'
 import { errorCode, renameWithRetry } from '../storage/atomic.ts'
 import { WEBCAM_FILE, isWebm } from './model.ts'
 import type { CameraLogger, CameraTake } from './service.ts'
@@ -40,6 +41,16 @@ export async function attachWebcam(
     await take.discard()
     return [...warnings]
   }
+  // Never a camera that does not play (a recorder page that died before its first complete
+  // fragment leaves only the header): the project keeps no bubble and Home warns.
+  const playable = await checkRecordedMedia(video.path, video.mimeType, 'video').catch(() => null)
+  if (!playable) {
+    target.log.warn('camera.unplayable', { bytes: video.bytes })
+    warnings.delete('camera_lost')
+    warnings.add('camera_failed')
+    await take.discard()
+    return [...warnings]
+  }
   const destination = join(target.projectDir, WEBCAM_FILE)
   try {
     if (isWebm(video.mimeType)) await remuxToMp4(video.path, destination)
@@ -52,7 +63,8 @@ export async function attachWebcam(
     await saveProject(target.store, project)
     target.log.info('camera.attached', {
       offsetMs,
-      bytes: video.bytes,
+      bytes: playable.bytes,
+      durationMs: playable.durationMs,
       width: video.width,
       height: video.height,
       remuxed: isWebm(video.mimeType),

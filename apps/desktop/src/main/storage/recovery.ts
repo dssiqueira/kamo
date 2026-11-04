@@ -14,6 +14,11 @@ export const RECORDING_MARKER = 'recording.lock'
 export interface RecordingMarker {
   startedAt: string
   appVersion?: string
+  /**
+   * The microphone, computer-sound and camera takes of this recording, in their temp folders
+   * (media-takes.ts), so recovery can attach them too. Added once the recording is under way.
+   */
+  media?: { videoStartedAt: number; audio?: string; camera?: string }
 }
 
 /** What recovery needs from the store; FileProjectStore implements all of it. */
@@ -29,6 +34,19 @@ export async function markRecordingStarted(
   marker: RecordingMarker,
 ): Promise<void> {
   await store.writeText(projectId, RECORDING_MARKER, JSON.stringify(marker))
+}
+
+/** Adds the media link to the marker of a recording in progress (keeps the rest of it). */
+export async function linkRecordingMedia(
+  store: RecoverableStore,
+  projectId: string,
+  media: NonNullable<RecordingMarker['media']>,
+): Promise<void> {
+  const text = await store.readText(projectId, RECORDING_MARKER)
+  // no marker: the recording already ended cleanly, nothing to recover
+  if (text === null) return
+  const marker = JSON.parse(text) as RecordingMarker
+  await store.writeText(projectId, RECORDING_MARKER, JSON.stringify({ ...marker, media }))
 }
 
 /** Call after project.json is saved on a clean stop. */

@@ -20,6 +20,7 @@ import {
 } from './interrupted.ts'
 import { FileProjectStore } from './storage/file-store.ts'
 import { RECORDING_MARKER } from './storage/recovery.ts'
+import { fragmentedAudioMp4 } from './testing/media-fixtures.ts'
 
 const STARTED_AT = '2026-11-03T10:00:00.000Z'
 const SESSION_STARTED_AT = new Date('2026-11-04T08:00:00.000Z')
@@ -225,7 +226,7 @@ describe('listInterruptedRecordings', () => {
 describe('recoverRecording', () => {
   it('turns the leftovers into a project that opens', async () => {
     const folder = await crashed(ID_CRASHED)
-    const project = await recoverRecording(store, ID_CRASHED, options)
+    const { project } = await recoverRecording(store, ID_CRASHED, options)
 
     expect(project).toMatchObject({
       id: ID_CRASHED,
@@ -260,7 +261,7 @@ describe('recoverRecording', () => {
     const folder = await crashed(ID_CUT, { video: mp4.subarray(0, lastMdat[1] + 20) })
 
     const project = await recoverRecording(store, ID_CUT, options)
-    expect(project.durationMs).toBe(2500)
+    expect(project.project.durationMs).toBe(2500)
     expect((await stat(join(folder, 'screen.mp4'))).size).toBe(lastMoof[1])
     const { events } = parseEvents((await store.readText(ID_CUT, PROJECT_FILES.events))!)
     expect(events.map((e) => e.t)).toEqual([0, 1200, 1300])
@@ -296,7 +297,7 @@ describe('recoverRecording', () => {
     await rm(join(folder, 'screen.mp4.partial'))
     await writeFile(join(folder, 'screen.mp4'), mp4)
     const project = await recoverRecording(store, ID_HALFWAY, options)
-    expect(project.durationMs).toBe(3000)
+    expect(project.project.durationMs).toBe(3000)
     expect(await exists(join(folder, RECORDING_MARKER))).toBe(false)
   })
 
@@ -332,5 +333,88 @@ describe('discardRecording', () => {
     )
     expect(await codeOf(discardRecording(store, ID_NORMAL, options))).toBe('not_interrupted')
     expect(await exists(store.projectDir(ID_NORMAL))).toBe(true)
+  })
+})
+
+describe('recovering the audio and the camera', () => {
+  const AUDIO_TAKE = '00000000-0000-4000-8000-0000000000a1'
+  const CAMERA_TAKE = '00000000-0000-4000-8000-0000000000c1'
+  const VIDEO_AT = 1_700_000_000_000
+
+  async function withMedia(id: string, { audio = true, camera = true } = {}) {
+    const folder = await crashed(id)
+    await writeFile(
+      join(folder, RECORDING_MARKER),
+      JSON.stringify({
+        startedAt: STARTED_AT,
+        media: {
+          videoStartedAt: VIDEO_AT,
+          ...(audio ? { audio: AUDIO_TAKE } : {}),
+          ...(camera ? { camera: CAMERA_TAKE } : {}),
+        },
+      }),
+    )
+    const temp = { audio: join(dir, 'recording-audio'), camera: join(dir, 'recording-camera') }
+    return { folder, temp }
+  }
+
+  it('attaches the takes that play, with their offsets, and removes the temp folders', async () => {
+    const { folder, temp } = await withMedia(ID_CRASHED)
+    const audioDir = join(temp.audio, AUDIO_TAKE)
+    const cameraDir = join(temp.camera, CAMERA_TAKE)
+    await mkdir(audioDir, { recursive: true })
+    await mkdir(cameraDir, { recursive: true })
+    await writeFile(join(audioDir, 'mic.part'), await fragmentedAudioMp4(2))
+    // started but nothing playable: left out, with a warning
+    await writeFile(join(audioDir, 'system.part'), new Uint8Array(900))
+    await writeFile(
+      join(audioDir, 'take.json'),
+      JSON.stringify({
+        tracks: {
+          mic: { startedAt: VIDEO_AT - 120, mimeType: 'audio/mp4' },
+          system: { startedAt: VIDEO_AT + 40, mimeType: 'audio/mp4' },
+        },
+      }),
+    )
+    await writeFile(join(cameraDir, 'webcam.part'), mp4)
+    await writeFile(
+      join(cameraDir, 'take.json'),
+      JSON.stringify({ startedAt: VIDEO_AT + 300, mimeType: 'video/mp4', width: 640, height: 360 }),
+    )
+
+    const result = await recoverRecording(store, ID_CRASHED, { ...options, mediaTemp: temp })
+    expect(result.audioWarnings).toEqual(['audio_failed'])
+    expect(result.cameraWarnings).toEqual([])
+    expect(result.project.audio.mic).toMatchObject({ enabled: true, offsetMs: -120 })
+    expect(result.project.audio.system.enabled).toBe(false)
+    expect(result.project.webcam?.offsetMs).toBe(300)
+    const saved = parseProject(await readFile(join(folder, 'project.json'), 'utf8'))
+    expect(saved.webcam?.offsetMs).toBe(300)
+    const files = await readdir(folder)
+    expect(files).toEqual(expect.arrayContaining(['audio.m4a', 'webcam.mp4', 'screen.mp4']))
+    expect(files).not.toContain('system.m4a')
+    expect(await exists(audioDir)).toBe(false)
+    expect(await exists(cameraDir)).toBe(false)
+  })
+
+  it('warns when a linked take is gone, and still recovers the video', async () => {
+    const { temp } = await withMedia(ID_CRASHED)
+    const result = await recoverRecording(store, ID_CRASHED, { ...options, mediaTemp: temp })
+    expect(result.project.durationMs).toBeGreaterThan(0)
+    expect(result.audioWarnings).toEqual(['audio_failed'])
+    expect(result.cameraWarnings).toEqual(['camera_failed'])
+    expect(result.project.webcam).toBeNull()
+  })
+
+  it('discarding the recording removes its takes too', async () => {
+    store = new FileProjectStore(join(dir, 'projects'), {
+      trash: (path) => rm(path, { recursive: true, force: true }),
+    })
+    const { temp } = await withMedia(ID_CRASHED, { audio: false })
+    const cameraDir = join(temp.camera, CAMERA_TAKE)
+    await mkdir(cameraDir, { recursive: true })
+    await writeFile(join(cameraDir, 'webcam.part'), mp4)
+    await discardRecording(store, ID_CRASHED, { ...options, mediaTemp: temp })
+    expect(await exists(cameraDir)).toBe(false)
   })
 })

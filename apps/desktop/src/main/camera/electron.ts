@@ -4,6 +4,8 @@ import { app, ipcMain, systemPreferences, type IpcMainInvokeEvent } from 'electr
 import { join } from 'node:path'
 import { IpcChannel } from '../../shared/api.ts'
 import type { CameraAccess } from '../../shared/camera.ts'
+import { CAMERA_TEMP_FOLDER } from '../media-takes.ts'
+import { acceptRecorderSender } from '../recorder-sender.ts'
 import { createAppWindow, isAppUrl, isPageUrl } from '../windows.ts'
 import { parseCameraReport } from './model.ts'
 import { CameraService, type CameraLogger } from './service.ts'
@@ -14,7 +16,7 @@ export interface DesktopCameraOptions {
 
 export function createCameraService(options: DesktopCameraOptions): CameraService {
   return new CameraService({
-    tempDir: join(app.getPath('userData'), 'recording-camera'),
+    tempDir: join(app.getPath('userData'), CAMERA_TEMP_FOLDER),
     log: {
       info: (event, data) => options.log().info(event, data),
       warn: (event, data) => options.log().warn(event, data),
@@ -59,21 +61,22 @@ export function registerCameraIpc(service: CameraService): void {
     const url = event.senderFrame?.url
     if (url === undefined || !isAppUrl(url)) throw new Error('Untrusted IPC sender')
   }
-  const fromRecorder = (event: IpcMainInvokeEvent) => {
-    if (!service.isRecorder(event.sender)) throw new Error('Untrusted IPC sender')
-  }
+  // The recorder page this service opened answers; one it opened before (destroyed or
+  // replaced, its last messages still in flight) is ignored; anything else is rejected.
+  const fromRecorder = (event: IpcMainInvokeEvent): boolean =>
+    acceptRecorderSender(service.senderKind(event.sender))
 
   ipcMain.handle(IpcChannel.requestCameraAccess, (event) => {
     fromApp(event)
     return cameraAccess()
   })
   ipcMain.handle(IpcChannel.cameraReport, (event, value: unknown) => {
-    fromRecorder(event)
+    if (!fromRecorder(event)) return
     const report = parseCameraReport(value)
     if (report) service.handleReport(report)
   })
   ipcMain.handle(IpcChannel.cameraChunk, (event, bytes: unknown) => {
-    fromRecorder(event)
+    if (!fromRecorder(event)) return
     if (!(bytes instanceof Uint8Array)) throw new Error('camera chunk must be bytes')
     return service.writeChunk(bytes)
   })

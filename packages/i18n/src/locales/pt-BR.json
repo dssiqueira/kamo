@@ -93,6 +93,7 @@
     "audio": {
       "micUnavailable": "Salvo sem a sua voz: o Kamo não conseguiu usar o microfone.",
       "micLost": "O microfone foi desconectado durante a gravação. O áudio fica mudo a partir dali.",
+      "lost": "A gravação do áudio parou antes da hora. O Kamo guardou o que foi gravado até ali.",
       "systemUnavailable": "Salvo sem o som do computador: o Kamo não conseguiu captar.",
       "failed": "Salvo, mas parte do áudio não pôde ser mantida."
     },

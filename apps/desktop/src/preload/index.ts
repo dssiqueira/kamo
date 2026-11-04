@@ -10,6 +10,7 @@ import {
   type ProjectSummary,
   type RecordingClock,
   type RecordingStatus,
+  type RecoveredRecording,
   type ScreenAccess,
 } from '../shared/api.ts'
 import type {
@@ -55,6 +56,7 @@ const api: KamoApi = {
     invoke(IpcChannel.showProjectInFolder, projectId) as Promise<void>,
   openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
   loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
+  openRawVideo: (projectId) => invoke(IpcChannel.openRawVideo, projectId) as Promise<void>,
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   pickBackgroundImage: (projectId) =>
     invoke(IpcChannel.pickBackgroundImage, projectId) as Promise<string | null>,
@@ -62,7 +64,7 @@ const api: KamoApi = {
   listInterruptedRecordings: () =>
     invoke(IpcChannel.listInterruptedRecordings) as Promise<InterruptedRecording[]>,
   recoverRecording: (projectId) =>
-    invoke(IpcChannel.recoverRecording, projectId) as Promise<Project>,
+    invoke(IpcChannel.recoverRecording, projectId) as Promise<RecoveredRecording>,
   discardRecording: (projectId) => invoke(IpcChannel.discardRecording, projectId) as Promise<void>,
   // Export (F-11): typed by KamoApi, so `invoke`'s results are cast only here.
   getMediaSize: (projectId, file) =>

@@ -14,6 +14,12 @@ import {
 const CHUNK_MS = 1000
 /** About 19MB a minute at 720p30: sharp in a bubble, light on disk. */
 const VIDEO_BITS_PER_SECOND = 2_500_000
+/**
+ * Chrome's MP4 recorder only closes a fragment at a key frame, and by default it may write
+ * none until stop: a page that reloads or crashes would leave only the header. One key frame
+ * a second makes every 1s chunk a playable fragment.
+ */
+const KEY_FRAME_INTERVAL_MS = 1000
 
 interface OpenCamera {
   stream: MediaStream
@@ -94,16 +100,21 @@ async function start(source: CameraSource): Promise<Recording> {
   const recorder = new MediaRecorder(stream, {
     mimeType: type,
     videoBitsPerSecond: VIDEO_BITS_PER_SECOND,
-  })
+    // Chrome-only option, missing from the DOM types.
+    videoKeyFrameIntervalDuration: KEY_FRAME_INTERVAL_MS,
+  } as MediaRecorderOptions)
   const entry: Recording = {
     recorder,
     writes: Promise.resolve(),
     stopped: new Promise((resolve) => recorder.addEventListener('stop', () => resolve())),
   }
-  recorder.addEventListener('start', (event) => {
-    // Wall-clock time of the event (not of this handler); main compares it with the video
-    // start to place the camera on the timeline.
-    const at = Date.now() - (performance.now() - event.timeStamp)
+  // Set right before start(): Chrome's MP4 recorder fires `start` only once its encoder is up
+  // (~0.5s later), yet the file begins with the first frame after start(). The camera is
+  // already warm (opened at the countdown), so that frame comes within one frame time.
+  let calledAt = 0
+  recorder.addEventListener('start', () => {
+    // Main compares it with the video start to place the camera on the timeline.
+    const at = calledAt
     const settings = stream.getVideoTracks()[0]?.getSettings()
     report({
       type: 'started',
@@ -122,6 +133,7 @@ async function start(source: CameraSource): Promise<Recording> {
     })
   })
   recorder.addEventListener('error', () => report({ type: 'lost' }))
+  calledAt = Date.now()
   recorder.start(CHUNK_MS)
   return entry
 }

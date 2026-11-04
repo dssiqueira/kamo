@@ -17,6 +17,8 @@ import type {
   CameraSource,
   CameraWarning,
 } from '../../shared/camera.ts'
+import { sendTo } from '../safe-send.ts'
+import { pruneTakes, writeTakeInfo } from '../media-takes.ts'
 
 /** How long stop waits for the recorder page to hand over the last chunks. */
 const STOP_TIMEOUT_MS = 5000
@@ -32,7 +34,10 @@ export interface CameraLogger {
 export interface CameraServiceOptions {
   /** Creates the hidden recorder window (`createAppWindow('camera-recorder', ...)`). */
   createWindow(): BrowserWindow
-  /** Folder for in-progress recordings (cleared on start; nothing is kept there). */
+  /**
+   * Folder for in-progress recordings, one sub-folder per take. A crash of main leaves the
+   * take there for recovery (media-takes.ts); old ones are pruned when a recording starts.
+   */
   tempDir: string
   log: CameraLogger
   newId?: () => string
@@ -58,6 +63,8 @@ export interface CameraTake {
 }
 
 export interface CameraSession {
+  /** The take's temp folder name (linked from the recording marker for recovery). */
+  readonly id: string
   pause(): Promise<void>
   resume(): Promise<void>
   /** Stops the recorder and closes the file. Never rejects. */
@@ -70,6 +77,8 @@ export class CameraService {
   private markReady: (() => void) | undefined
   private recording: ActiveRecording | undefined
   private cleaned: Promise<void> | undefined
+  /** Every recorder page this service opened, current or gone (see senderKind). */
+  private readonly opened = new WeakSet<WebContents>()
 
   constructor(private readonly options: CameraServiceOptions) {}
 
@@ -80,6 +89,16 @@ export class CameraService {
       !this.window.isDestroyed() &&
       this.window.webContents === contents
     )
+  }
+
+  /**
+   * Who sent a recorder IPC message: the current recorder page, one this service opened that
+   * is already gone or replaced (its last messages can still arrive after it was destroyed:
+   * ignored), or anything else (rejected as untrusted).
+   */
+  senderKind(contents: WebContents): 'current' | 'stale' | 'foreign' {
+    if (this.isRecorder(contents)) return 'current'
+    return this.opened.has(contents) ? 'stale' : 'foreign'
   }
 
   /** Countdown: opens the camera now, so the 3 seconds cover its start-up. */
@@ -100,23 +119,25 @@ export class CameraService {
    */
   async begin(source: CameraSource): Promise<CameraSession | null> {
     if (!source.enabled || this.recording) return null
-    this.cleaned ??= rm(this.options.tempDir, { recursive: true, force: true }).catch(() => {})
+    this.cleaned ??= pruneTakes(this.options.tempDir)
     await this.cleaned
-    const dir = join(this.options.tempDir, (this.options.newId ?? (() => crypto.randomUUID()))())
+    const id = (this.options.newId ?? (() => crypto.randomUUID()))()
+    const dir = join(this.options.tempDir, id)
     await mkdir(dir, { recursive: true })
     const path = join(dir, 'webcam.part')
     const recording = new ActiveRecording(dir, path, await open(path, 'w'), this.options.log)
     this.recording = recording
     try {
       await this.send({ type: 'start', source })
+      recording.startSent = true
     } catch (error) {
       this.options.log.error('camera.start.failed', { error })
-      recording.crashed = true
-      recording.settle()
+      recording.interrupt('not_started')
     }
     this.options.log.info('camera.recording.requested', { device: source.deviceId !== null })
 
     return {
+      id,
       pause: async () => {
         if (this.recording === recording) await this.send({ type: 'pause' }).catch(() => {})
       },
@@ -138,8 +159,12 @@ export class CameraService {
 
   /** A report from the recorder page (already validated). */
   handleReport(report: CameraReport): void {
-    if (report.type === 'ready') this.markReady?.()
-    else this.recording?.handleReport(report)
+    if (report.type === 'ready') {
+      // A recorder page that says `ready` again mid-recording was reloaded: what it was
+      // recording is gone with the old page; what reached the disk is kept if it plays.
+      if (this.recording?.startSent) this.recording.interrupt('reloaded')
+      this.markReady?.()
+    } else this.recording?.handleReport(report)
   }
 
   /** One MediaRecorder chunk, in order, from the recorder page. */
@@ -163,30 +188,41 @@ export class CameraService {
     } finally {
       clearTimeout(timer)
     }
-    if (window.isDestroyed()) throw new Error('camera recorder window is gone')
-    window.webContents.send(IpcChannel.cameraCommand, command)
+    if (!sendTo(window, IpcChannel.cameraCommand, command)) {
+      throw new Error('camera recorder window is gone')
+    }
   }
 
   private ensureWindow(): BrowserWindow {
     if (this.window && !this.window.isDestroyed()) return this.window
     const window = this.options.createWindow()
+    const contents = window.webContents
+    this.opened.add(contents)
     // Hidden window: its recorder must not be throttled.
-    window.webContents.setBackgroundThrottling(false)
+    contents.setBackgroundThrottling(false)
+    // Never reload mid-recording (the dev server's full reloads, a stray location.reload):
+    // the recorder lives in the page, so a reload would end the camera there.
+    contents.on('will-navigate', (event) => {
+      if (!this.recording || this.window !== window) return
+      event.preventDefault()
+      this.options.log.warn('camera.recorder.reload_blocked')
+    })
+    contents.on('unresponsive', () => this.options.log.warn('camera.recorder.unresponsive'))
+    contents.on('responsive', () => this.options.log.info('camera.recorder.responsive'))
     this.ready = new Promise<void>((resolve) => {
       this.markReady = resolve
     })
-    window.webContents.on('render-process-gone', (_event, details) => {
+    contents.on('render-process-gone', (_event, details) => {
       this.options.log.error('camera.recorder.gone', { reason: details.reason })
-      if (this.recording) {
-        this.recording.crashed = true
-        this.recording.settle()
-      }
+      if (this.window === window) this.recording?.interrupt(details.reason)
       this.markReady?.()
       if (!window.isDestroyed()) window.destroy()
     })
     window.on('closed', () => {
       if (this.window !== window) return
       this.window = undefined
+      // Closed under a running recording (crash clean-up, or anything but our own stop).
+      this.recording?.interrupt('closed')
       this.markReady?.()
     })
     this.window = window
@@ -202,8 +238,12 @@ export class CameraService {
 
 /** The chunks and timestamps of one recording, until it is moved into a project. */
 class ActiveRecording {
+  /** The recorder page went away (crash, reload, never started): the file ends early. */
   crashed = false
+  /** The `start` command reached the recorder page. */
+  startSent = false
   private settled = false
+  private infoWrite: Promise<void> = Promise.resolve()
   private wake: (() => void) | undefined
   private bytes = 0
   private writes: Promise<void> = Promise.resolve()
@@ -219,6 +259,14 @@ class ActiveRecording {
     private readonly log: CameraLogger,
   ) {}
 
+  /** The recorder page is gone: stop waiting for it. */
+  interrupt(reason: string): void {
+    if (this.crashed) return
+    this.crashed = true
+    this.log.warn('camera.recording.interrupted', { reason })
+    this.settle()
+  }
+
   handleReport(report: Exclude<CameraReport, { type: 'ready' }>): void {
     switch (report.type) {
       case 'started':
@@ -228,6 +276,13 @@ class ActiveRecording {
           width: report.width,
           height: report.height,
         })
+        // take.json for recovery (media-takes.ts)
+        this.infoWrite = writeTakeInfo(this.dir, {
+          startedAt: report.at,
+          mimeType: report.mimeType,
+          width: report.width,
+          height: report.height,
+        }).catch((error: unknown) => this.log.warn('camera.take_info.failed', { error }))
         break
       case 'failed':
         this.log.warn('camera.failed', { reason: report.reason })
@@ -277,17 +332,25 @@ class ActiveRecording {
         }
       })
     }
-    if (!this.settled) this.log.warn('camera.stop.timeout', { timeoutMs })
+    if (!this.settled) {
+      // The page never handed over its last chunks: treat it like a page that went away.
+      this.log.warn('camera.stop.timeout', { timeoutMs })
+      this.crashed = true
+    }
     await this.writes
+    await this.infoWrite
     await this.handle.close().catch(() => {})
     const started = this.started
     const usable = started !== undefined && this.bytes > 0
     const warnings: CameraWarning[] = []
-    // What was written before a failure is still complete fragments: keep it, and warn.
-    if (!usable)
-      warnings.push(this.writeFailed || this.crashed ? 'camera_failed' : 'camera_unavailable')
-    else if (this.writeFailed || this.crashed) warnings.push('camera_failed')
-    else if (this.lost) warnings.push('camera_lost')
+    // What reached the disk before the page went away is kept when it plays (attach checks),
+    // and Home says the camera stops there.
+    if (!usable) {
+      warnings.push(
+        this.writeFailed || (this.crashed && started) ? 'camera_failed' : 'camera_unavailable',
+      )
+    } else if (this.writeFailed) warnings.push('camera_failed')
+    else if (this.crashed || this.lost) warnings.push('camera_lost')
     this.log.info('camera.recording.finished', { bytes: this.bytes, warnings })
     return {
       video:

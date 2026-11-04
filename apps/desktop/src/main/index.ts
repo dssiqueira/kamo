@@ -59,6 +59,7 @@ import {
 import { clearQuitting, isQuitting, markQuitting } from './quitting.ts'
 import { getServices, startServices } from './services.ts'
 import {
+import { sendTo } from './safe-send.ts'
   RecoveryError,
   discardRecording,
   listInterruptedRecordings,
@@ -66,6 +67,8 @@ import {
 } from './interrupted.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
+import { AUDIO_TEMP_FOLDER, CAMERA_TEMP_FOLDER } from './media-takes.ts'
+import { rawVideoPath } from './raw-video.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
 import { runExportSmoke } from './export-smoke.ts'
@@ -138,7 +141,7 @@ const delegatingBackend: RecordingBackend = {
 /** Home refreshes its project list (F-12). */
 function notifyProjectsChanged(): void {
   for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send(IpcChannel.projectsChanged)
+    sendTo(window, IpcChannel.projectsChanged)
   }
 }
 
@@ -567,7 +570,7 @@ handle(IpcChannel.recoverRecording, async (projectId) => {
   const { store, settings, log } = getServices()
   const locale = await uiLocale()
   const i18n = await createI18n(locale)
-  const project = await recoverRecording(store, projectId, {
+  const recovered = await recoverRecording(store, projectId, {
     sessionStartedAt: appStartedAt,
     projectName: (date) => i18n.t('project.defaultName', { date: formatProjectDate(locale, date) }),
     defaults: async () => {
@@ -578,12 +581,25 @@ handle(IpcChannel.recoverRecording, async (projectId) => {
       }
     },
   })
-  log.info('recording.recovered', { durationMs: project.durationMs })
+  log.info('recording.recovered', {
+    durationMs: recovered.project.durationMs,
+    audioWarnings: recovered.audioWarnings,
+    cameraWarnings: recovered.cameraWarnings,
+  })
   notifyProjectsChanged()
-  return project
+  return recovered
 })
 handle(IpcChannel.discardRecording, async (projectId) => {
-  await discardRecording(getServices().store, projectId, { sessionStartedAt: appStartedAt })
+/** Where the audio and camera takes wait to be attached (recovery follows the marker there). */
+function mediaTempDirs() {
+  const userData = app.getPath('userData')
+  return { audio: join(userData, AUDIO_TEMP_FOLDER), camera: join(userData, CAMERA_TEMP_FOLDER) }
+}
+
+  await discardRecording(getServices().store, projectId, {
+    sessionStartedAt: appStartedAt,
+    mediaTemp: mediaTempDirs(),
+  })
   getServices().log.info('recording.discarded', { reason: 'interrupted' })
   notifyProjectsChanged()
 })
@@ -592,6 +608,8 @@ handle(IpcChannel.openHome, async () => {
 })
 
 // Settings (F-01, F-08).
+    mediaTemp: mediaTempDirs(),
+    log,
 handle(IpcChannel.getSettings, () => getServices().settings.get())
 handle(IpcChannel.updateSettings, (update) =>
   getServices().settings.update(parseSettingsUpdate(update)),
@@ -720,7 +738,7 @@ void app.whenReady().then(async () => {
   )
   watchDisplays(() => {
     for (const window of BrowserWindow.getAllWindows()) {
-      window.webContents.send(IpcChannel.displaysChanged)
+      sendTo(window, IpcChannel.displaysChanged)
     }
   })
   // Mac Dock click: reopen the window, or bring it back from the menu bar.

@@ -1,16 +1,32 @@
 import { InterruptedRecordings, type RecoveryOutcome } from '@kamo/ui'
 import { useCallback, useEffect, useState } from 'react'
 import { ipcErrorCode, type InterruptedRecording } from '../../shared/api.ts'
+import type { AudioWarning } from '../../shared/audio.ts'
+import type { CameraWarning } from '../../shared/camera.ts'
 
 function outcomeOf(error: unknown): RecoveryOutcome {
   return ipcErrorCode(error) === 'unrecoverable' ? 'unrecoverable' : 'failed'
+}
+
+export interface DesktopInterruptedRecordingsProps {
+  /**
+   * The video came back but some audio or the camera did not: Home says so, and the project
+   * stays in the list instead of opening (the editor would hide the notice).
+   */
+  onRecoveredWithWarnings?(
+    projectId: string,
+    audioWarnings: AudioWarning[],
+    cameraWarnings: CameraWarning[],
+  ): void
 }
 
 /**
  * F-02 banner for Home: recordings a crash left behind, from earlier sessions. Re-read on
  * mount and whenever the projects change; a recovered one opens in the editor.
  */
-export function DesktopInterruptedRecordings() {
+export function DesktopInterruptedRecordings({
+  onRecoveredWithWarnings,
+}: DesktopInterruptedRecordingsProps = {}) {
   const [recordings, setRecordings] = useState<InterruptedRecording[]>([])
 
   const refresh = useCallback(async () => {
@@ -30,11 +46,17 @@ export function DesktopInterruptedRecordings() {
     <InterruptedRecordings
       recordings={recordings}
       onRecover={async (projectId) => {
+        let recovered
         try {
-          await window.kamo.recoverRecording(projectId)
+          recovered = await window.kamo.recoverRecording(projectId)
         } catch (error) {
           void refresh()
           return outcomeOf(error)
+        }
+        const { audioWarnings, cameraWarnings } = recovered
+        if (onRecoveredWithWarnings && (audioWarnings.length || cameraWarnings.length)) {
+          onRecoveredWithWarnings(projectId, audioWarnings, cameraWarnings)
+          return 'ok'
         }
         await window.kamo.openEditor(projectId).catch(() => {})
         return 'ok'

@@ -93,6 +93,7 @@
     "audio": {
       "micUnavailable": "Saved without your voice: Kamo couldn't use the microphone.",
       "micLost": "The microphone was disconnected while recording. The audio is silent from that point on.",
+      "lost": "The audio recording stopped early. Kamo kept what it recorded until then.",
       "systemUnavailable": "Saved without computer sound: Kamo couldn't capture it.",
       "failed": "Saved, but some of the audio couldn't be kept."
     },

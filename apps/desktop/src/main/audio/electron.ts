@@ -15,6 +15,9 @@ import { IpcChannel } from '../../shared/api.ts'
 import type { AudioSupport, MicrophoneAccess } from '../../shared/audio.ts'
 import { isCameraPageUrl } from '../camera/electron.ts'
 import { isCameraPermissionAllowed } from '../camera/model.ts'
+import { AUDIO_TEMP_FOLDER } from '../media-takes.ts'
+import { acceptRecorderSender } from '../recorder-sender.ts'
+import { sendTo } from '../safe-send.ts'
 import { createAppWindow, isAppUrl, isPageUrl } from '../windows.ts'
 import {
   isAudioPermissionAllowed,
@@ -36,13 +39,12 @@ export interface DesktopAudioOptions {
 }
 
 export function createAudioService(options: DesktopAudioOptions): AudioService {
-  const toMain = (channel: string, value: unknown) => {
-    const window = options.mainWindow()
-    if (window && !window.isDestroyed()) window.webContents.send(channel, value)
-  }
+  // Home may be closing (its page already gone): never throw from a status forwarder.
+  const toMain = (channel: string, value: unknown) =>
+    void sendTo(options.mainWindow(), channel, value)
   return new AudioService({
     support: AUDIO_SUPPORT,
-    tempDir: join(app.getPath('userData'), 'recording-audio'),
+    tempDir: join(app.getPath('userData'), AUDIO_TEMP_FOLDER),
     log: {
       info: (event, data) => options.log().info(event, data),
       warn: (event, data) => options.log().warn(event, data),
@@ -119,9 +121,10 @@ export function registerAudioIpc(service: AudioService): void {
     const url = event.senderFrame?.url
     if (url === undefined || !isAppUrl(url)) throw new Error('Untrusted IPC sender')
   }
-  const fromRecorder = (event: IpcMainInvokeEvent) => {
-    if (!service.isRecorder(event.sender)) throw new Error('Untrusted IPC sender')
-  }
+  // The recorder page this service opened answers; one it opened before (destroyed or
+  // replaced, its last messages still in flight) is ignored; anything else is rejected.
+  const fromRecorder = (event: IpcMainInvokeEvent): boolean =>
+    acceptRecorderSender(service.senderKind(event.sender))
   // The monitor follows the page that asked: navigating away or closing turns it off.
   let monitorOwner: WebContents | undefined
   const releaseOwner = () => {
@@ -151,12 +154,12 @@ export function registerAudioIpc(service: AudioService): void {
     await service.setMonitor(sources)
   })
   ipcMain.handle(IpcChannel.audioReport, (event, value: unknown) => {
-    fromRecorder(event)
+    if (!fromRecorder(event)) return
     const report = parseRecorderReport(value)
     if (report) service.handleReport(report)
   })
   ipcMain.handle(IpcChannel.audioChunk, (event, track: unknown, bytes: unknown) => {
-    fromRecorder(event)
+    if (!fromRecorder(event)) return
     if (!(bytes instanceof Uint8Array)) throw new Error('audio chunk must be bytes')
     return service.writeChunk(parseTrack(track), bytes)
   })

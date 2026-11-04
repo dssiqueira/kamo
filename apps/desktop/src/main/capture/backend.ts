@@ -4,6 +4,7 @@ import { formatProjectDate, type Locale } from '@kamo/i18n'
 import { monitorPointFor } from '../displays.ts'
 import type { BackendResult, BackendSession, RecordingBackend } from '../recording-controller.ts'
 import type { FileProjectStore } from '../storage/index.ts'
+import { linkRecordingMedia } from '../storage/recovery.ts'
 import type { CaptureLogger } from './helper-process.ts'
 import { RecordingError, startRecording, type RecordingResult } from './recording.ts'
 
@@ -58,6 +59,11 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
         pause: () => session.pause(),
         resume: () => session.resume(),
         stop: async () => toBackendResult(await session.stop()),
+        linkMedia: async (media) => {
+          // only while the marker is there: a stopped recording has no marker to extend
+          if (session.state !== 'recording' && session.state !== 'paused') return
+          await linkRecordingMedia(options.store, session.projectId, media)
+        },
         onEnded: (listener) => {
           session.done.then(
             (result) => listener(toBackendResult(result)),

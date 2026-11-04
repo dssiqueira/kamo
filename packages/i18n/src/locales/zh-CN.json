@@ -93,6 +93,7 @@
     "audio": {
       "micUnavailable": "已保存，但没有你的声音：Kamo 无法使用麦克风。",
       "micLost": "录制时麦克风断开了连接。从那一刻起音频为静音。",
+      "lost": "音频录制提前停止了。Kamo 保留了此前录下的内容。",
       "systemUnavailable": "已保存，但没有电脑声音：Kamo 无法捕获。",
       "failed": "已保存，但部分音频未能保留。"
     },

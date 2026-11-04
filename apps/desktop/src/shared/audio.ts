@@ -51,7 +51,13 @@ export interface AudioSupport {
 export type MicrophoneAccess = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
 
 /** Problems with the audio of a saved recording; Home warns about them (F-04). */
-export type AudioWarning = 'mic_unavailable' | 'mic_lost' | 'system_unavailable' | 'audio_failed'
+export type AudioWarning =
+  | 'mic_unavailable'
+  | 'mic_lost'
+  | 'system_unavailable'
+  /** The recorder page went away mid-recording (crash, reload): the audio ends there. */
+  | 'audio_lost'
+  | 'audio_failed'
 
 /** main to recorder page. */
 export type RecorderCommand =

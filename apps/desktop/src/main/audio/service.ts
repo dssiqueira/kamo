@@ -19,6 +19,8 @@ import type {
   RecorderCommand,
   RecorderReport,
 } from '../../shared/audio.ts'
+import { sendTo } from '../safe-send.ts'
+import { pruneTakes, writeTakeInfo, type AudioTakeInfo } from '../media-takes.ts'
 import { hasAnySource } from './model.ts'
 
 /** How long stop waits for the recorder page to hand over the last chunks. */
@@ -36,7 +38,10 @@ export interface AudioServiceOptions {
   support: AudioSupport
   /** Creates the hidden recorder window (`createAppWindow('audio-recorder', ...)`). */
   createWindow(): BrowserWindow
-  /** Folder for in-progress recordings (cleared on start; nothing is kept there). */
+  /**
+   * Folder for in-progress recordings, one sub-folder per take. A crash of main leaves the
+   * take there for recovery (media-takes.ts); old ones are pruned when a recording starts.
+   */
   tempDir: string
   log: AudioLogger
   onStatus(status: AudioStatus): void
@@ -62,6 +67,8 @@ export interface AudioTake {
 }
 
 export interface AudioSession {
+  /** The take's temp folder name (linked from the recording marker for recovery). */
+  readonly id: string
   pause(): Promise<void>
   resume(): Promise<void>
   /** Stops the recorders and closes the files. Never rejects. */
@@ -95,6 +102,8 @@ export class AudioService {
   private status: AudioStatus
   private recording: ActiveRecording | undefined
   private cleaned: Promise<void> | undefined
+  /** Every recorder page this service opened, current or gone (see senderKind). */
+  private readonly opened = new WeakSet<WebContents>()
 
   constructor(private readonly options: AudioServiceOptions) {
     this.status = offStatus(options.support)
@@ -113,6 +122,16 @@ export class AudioService {
     )
   }
 
+  /**
+   * Who sent a recorder IPC message: the current recorder page, one this service opened that
+   * is already gone or replaced (its last messages can still arrive after it was destroyed:
+   * ignored), or anything else (rejected as untrusted).
+   */
+  senderKind(contents: WebContents): 'current' | 'stale' | 'foreign' {
+    if (this.isRecorder(contents)) return 'current'
+    return this.opened.has(contents) ? 'stale' : 'foreign'
+  }
+
   /** Home meters: opens these sources, or closes everything (null or all off). */
   async setMonitor(sources: AudioSources | null): Promise<void> {
     const sanitized = sources && this.sanitize(sources)
@@ -122,7 +141,18 @@ export class AudioService {
       this.closeWindow()
       return
     }
-    await this.send({ type: 'configure', sources: this.monitor })
+    // Never rejects: the meters are a convenience. A recorder window that went away while
+    // loading (crash, closed by an earlier toggle) is opened again once.
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const wanted = this.monitor
+      if (!wanted || this.recording) return
+      try {
+        await this.send({ type: 'configure', sources: wanted })
+        return
+      } catch (error) {
+        this.options.log.warn('audio.monitor.failed', { error, attempt })
+      }
+    }
   }
 
   /**
@@ -147,9 +177,10 @@ export class AudioService {
   async begin(sources: AudioSources): Promise<AudioSession | null> {
     const wanted = this.sanitize(sources)
     if (!hasAnySource(wanted) || this.recording) return null
-    this.cleaned ??= rm(this.options.tempDir, { recursive: true, force: true }).catch(() => {})
+    this.cleaned ??= pruneTakes(this.options.tempDir)
     await this.cleaned
-    const dir = join(this.options.tempDir, (this.options.newId ?? (() => crypto.randomUUID()))())
+    const id = (this.options.newId ?? (() => crypto.randomUUID()))()
+    const dir = join(this.options.tempDir, id)
     await mkdir(dir, { recursive: true })
     const tracks = new Map<AudioTrackName, TrackState>()
     for (const track of ['mic', 'system'] as const) {
@@ -169,14 +200,15 @@ export class AudioService {
     this.recording = recording
     try {
       await this.send({ type: 'start', sources: wanted })
+      recording.startSent = true
     } catch (error) {
       this.options.log.error('audio.start.failed', { error })
-      recording.crashed = true
-      recording.settle()
+      recording.interrupt('not_started')
     }
     this.options.log.info('audio.recording.requested', { mic: wanted.mic, system: wanted.system })
 
     return {
+      id,
       pause: async () => {
         if (this.recording === recording) await this.send({ type: 'pause' }).catch(() => {})
       },
@@ -200,6 +232,9 @@ export class AudioService {
   handleReport(report: RecorderReport): void {
     switch (report.type) {
       case 'ready':
+        // A recorder page that says `ready` again mid-recording was reloaded: what it was
+        // recording is gone with the old page; what reached the disk is kept if it plays.
+        if (this.recording?.startSent) this.recording.interrupt('reloaded')
         this.markReady?.()
         break
       case 'status':
@@ -244,30 +279,41 @@ export class AudioService {
     } finally {
       clearTimeout(timer)
     }
-    if (window.isDestroyed()) throw new Error('audio recorder window is gone')
-    window.webContents.send(IpcChannel.audioCommand, command)
+    if (!sendTo(window, IpcChannel.audioCommand, command)) {
+      throw new Error('audio recorder window is gone')
+    }
   }
 
   private ensureWindow(): BrowserWindow {
     if (this.window && !this.window.isDestroyed()) return this.window
     const window = this.options.createWindow()
+    const contents = window.webContents
+    this.opened.add(contents)
     // Hidden window: its timers (level meters) must not be throttled.
-    window.webContents.setBackgroundThrottling(false)
+    contents.setBackgroundThrottling(false)
+    // Never reload mid-recording (the dev server's full reloads, a stray location.reload):
+    // the recorder lives in the page, so a reload would end the audio there.
+    contents.on('will-navigate', (event) => {
+      if (!this.recording || this.window !== window) return
+      event.preventDefault()
+      this.options.log.warn('audio.recorder.reload_blocked')
+    })
+    contents.on('unresponsive', () => this.options.log.warn('audio.recorder.unresponsive'))
+    contents.on('responsive', () => this.options.log.info('audio.recorder.responsive'))
     this.ready = new Promise<void>((resolve) => {
       this.markReady = resolve
     })
-    window.webContents.on('render-process-gone', (_event, details) => {
+    contents.on('render-process-gone', (_event, details) => {
       this.options.log.error('audio.recorder.gone', { reason: details.reason })
-      if (this.recording) {
-        this.recording.crashed = true
-        this.recording.settle()
-      }
+      if (this.window === window) this.recording?.interrupt(details.reason)
       this.markReady?.()
       if (!window.isDestroyed()) window.destroy()
     })
     window.on('closed', () => {
       if (this.window !== window) return
       this.window = undefined
+      // Closed under a running recording (crash clean-up, or anything but our own stop).
+      this.recording?.interrupt('closed')
       this.markReady?.()
       this.status = offStatus(this.options.support, this.status.devices)
       this.options.onStatus(this.status)
@@ -286,8 +332,12 @@ export class AudioService {
 
 /** The chunks and timestamps of one recording, until it is moved into a project. */
 class ActiveRecording {
+  /** The recorder page went away (crash, reload, never started): the files end early. */
   crashed = false
+  /** The `start` command reached the recorder page. */
+  startSent = false
   private settled = false
+  private infoWrites: Promise<void> = Promise.resolve()
   private wake: (() => void) | undefined
 
   constructor(
@@ -295,6 +345,14 @@ class ActiveRecording {
     private readonly tracks: Map<AudioTrackName, TrackState>,
     private readonly log: AudioLogger,
   ) {}
+
+  /** The recorder page is gone: stop waiting for it. */
+  interrupt(reason: string): void {
+    if (this.crashed) return
+    this.crashed = true
+    this.log.warn('audio.recording.interrupted', { reason })
+    this.settle()
+  }
 
   handleReport(report: RecorderReport): void {
     if (!('track' in report)) return
@@ -305,6 +363,7 @@ class ActiveRecording {
         state.startedAt = report.at
         state.mimeType = report.mimeType
         this.log.info('audio.track.started', { track: report.track, mimeType: report.mimeType })
+        this.saveInfo()
         break
       case 'failed':
         state.failed = report.reason
@@ -340,6 +399,19 @@ class ActiveRecording {
     return state.writes
   }
 
+  /** take.json for recovery: the tracks that started, with their times (media-takes.ts). */
+  private saveInfo(): void {
+    const info: AudioTakeInfo = { tracks: {} }
+    for (const [track, state] of this.tracks) {
+      if (state.startedAt !== undefined && state.mimeType !== undefined) {
+        info.tracks[track] = { startedAt: state.startedAt, mimeType: state.mimeType }
+      }
+    }
+    this.infoWrites = this.infoWrites
+      .then(() => writeTakeInfo(this.dir, info))
+      .catch((error: unknown) => this.log.warn('audio.take_info.failed', { error }))
+  }
+
   /** Wakes up `finish` (all tracks stopped, or the recorder is gone). */
   settle(): void {
     this.settled = true
@@ -356,7 +428,12 @@ class ActiveRecording {
         }
       })
     }
-    if (!this.settled) this.log.warn('audio.stop.timeout', { timeoutMs })
+    if (!this.settled) {
+      // The page never handed over its last chunks: treat it like a page that went away.
+      this.log.warn('audio.stop.timeout', { timeoutMs })
+      this.crashed = true
+    }
+    await this.infoWrites
     const tracks: RecordedTrack[] = []
     const warnings = new Set<AudioWarning>()
     for (const [track, state] of this.tracks) {
@@ -373,13 +450,17 @@ class ActiveRecording {
           bytes: state.bytes,
         })
       }
-      if (track === 'mic') {
-        if (!usable) warnings.add('mic_unavailable')
-        else if (state.lost) warnings.add('mic_lost')
+      if (state.writeFailed || (this.crashed && !usable && state.startedAt !== undefined)) {
+        // started, but nothing (or not all) of it could be kept
+        warnings.add('audio_failed')
       } else if (!usable) {
-        warnings.add('system_unavailable')
+        warnings.add(track === 'mic' ? 'mic_unavailable' : 'system_unavailable')
+      } else if (this.crashed) {
+        // the recorder page went away: the track ends there (attach checks that it plays)
+        warnings.add('audio_lost')
+      } else if (track === 'mic' && state.lost) {
+        warnings.add('mic_lost')
       }
-      if (state.writeFailed || (this.crashed && usable)) warnings.add('audio_failed')
     }
     this.log.info('audio.recording.finished', {
       tracks: tracks.map((t) => ({ track: t.track, bytes: t.bytes })),

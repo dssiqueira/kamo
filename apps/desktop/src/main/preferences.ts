@@ -1,6 +1,7 @@
 // Main side of Settings (F-15), the permissions onboarding (F-13), "Copy diagnostics" (F-17)
 // and automatic updates (F-14). index.ts registers it with its trusted `handle` wrapper.
 import { resolveLocale, type Locale } from '@kamo/i18n'
+import { sendTo } from './safe-send.ts'
 import { tokens } from '@kamo/design-tokens'
 import {
   app,
@@ -122,7 +123,7 @@ async function assertWritable(dir: string): Promise<void> {
 
 function broadcast(channel: string, value: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
-    if (!window.isDestroyed()) window.webContents.send(channel, value)
+    sendTo(window, channel, value)
   }
 }
 

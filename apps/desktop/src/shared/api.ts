@@ -62,6 +62,11 @@ export interface KamoApi {
    * A-04: native picker for PNG, JPEG or WebP; the image is copied into the project and its
    * project-relative name returned (`background-<hash>.<ext>`), or null when cancelled.
    * Rejects with `image_unsupported`, `image_too_big` or `image_unreadable`.
+  /**
+   * A project whose project.json is damaged: opens its screen video in the system's player
+   * (`project_not_found` when it has none). Nothing in the folder changes.
+   */
+  openRawVideo(projectId: string): Promise<void>
    */
   pickBackgroundImage(projectId: string): Promise<string | null>
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
@@ -70,8 +75,11 @@ export interface KamoApi {
   // Interrupted recordings (F-02): what a crash or a forced quit left, from earlier sessions.
   /** Newest first; only the ones with a video to recover. */
   listInterruptedRecordings(): Promise<InterruptedRecording[]>
-  /** Makes it a normal project and returns it (`not_interrupted`, `unrecoverable`). */
-  recoverRecording(projectId: string): Promise<Project>
+  /**
+   * Makes it a normal project, with the audio and camera that could be recovered, and returns
+   * it (`not_interrupted`, `unrecoverable`).
+   */
+  recoverRecording(projectId: string): Promise<RecoveredRecording>
   /** Moves it to the system trash (`not_interrupted`). */
   discardRecording(projectId: string): Promise<void>
 
@@ -268,6 +276,13 @@ export interface AppInfo {
   closeToTrayDefault: boolean
 }
 
+/** A recovered recording, and what of its audio and camera could not come back (F-02). */
+export interface RecoveredRecording {
+  project: Project
+  audioWarnings: AudioWarning[]
+  cameraWarnings: CameraWarning[]
+}
+
 export type PermissionKind = 'screen' | 'microphone' | 'camera' | 'inputMonitoring'
 export type PermissionStatus = 'granted' | 'denied' | 'pending' | 'unknown'
 
@@ -414,3 +429,4 @@ export const IpcChannel = {
   cameraReport: 'kamo:camera-report',
   cameraChunk: 'kamo:camera-chunk',
 } as const
+  openRawVideo: 'kamo:project-open-raw-video',

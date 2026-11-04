@@ -7,9 +7,10 @@
 // way a clean stop does (capture/recording.ts) and writes project.json. Each step can be run
 // again: a recovery interrupted halfway is picked up where it stopped.
 //
-// Audio and the webcam are not recovered: the microphone, computer-sound and camera takes live
-// in temp folders of their own (userData/recording-audio/ and recording-camera/<random id>/),
-// with nothing tying them to the project, and they are wiped when the next recording starts.
+// Audio and the webcam: the microphone, computer-sound and camera takes live in temp folders of
+// their own (userData/recording-audio/ and recording-camera/<id>/). The marker links them
+// (media-takes.ts), so recovery attaches each one that plays, with the same sync offsets as a
+// clean stop, and warns about the others. Older markers have no link: video only.
 import {
   PROJECT_FILES,
   ProjectError,
@@ -24,8 +25,21 @@ import {
   type Style,
 } from '@kamo/core'
 import { CustomSource, Input, MP4, QTFF } from 'mediabunny'
-import { open, stat, truncate } from 'node:fs/promises'
+import { open, rm, stat, truncate } from 'node:fs/promises'
 import { join } from 'node:path'
+import type { AudioTrackName, AudioWarning } from '../shared/audio.ts'
+import type { CameraWarning } from '../shared/camera.ts'
+import { attachAudio } from './audio/attach.ts'
+import type { RecordedTrack } from './audio/service.ts'
+import { attachWebcam } from './camera/attach.ts'
+import {
+  parseMediaLink,
+  readAudioTakeInfo,
+  readCameraTakeInfo,
+  takeDir,
+  type MediaLink,
+} from './media-takes.ts'
+import { playableMp4Length } from './recorded-media.ts'
 import { MIN_DURATION_MS, SCREEN_FILE } from './capture/recording.ts'
 import { renameWithRetry } from './storage/atomic.ts'
 import { PARTIAL_SUFFIX, type FileProjectStore } from './storage/file-store.ts'
@@ -72,7 +86,30 @@ export interface RecoveryOptions {
   projectName: (startedAt: Date) => string
   /** Last style and cursor used (F-08), like any new recording. */
   defaults?: () => Promise<{ style?: Style; cursor?: CursorSettings }>
+  /** Where the audio and camera takes live (userData/recording-audio, recording-camera). */
+  mediaTemp?: MediaTempDirs
+  log?: RecoveryLogger
 }
+
+export interface MediaTempDirs {
+  audio: string
+  camera: string
+}
+
+export interface RecoveryLogger {
+  info(event: string, data?: Record<string, unknown>): void
+  warn(event: string, data?: Record<string, unknown>): void
+  error(event: string, data?: Record<string, unknown>): void
+}
+
+/** A recovered project, and what of its audio and camera could not come back. */
+export interface RecoveredRecording {
+  project: Project
+  audioWarnings: AudioWarning[]
+  cameraWarnings: CameraWarning[]
+}
+
+const quiet: RecoveryLogger = { info: () => {}, warn: () => {}, error: () => {} }
 
 const SCREEN_PARTIAL = SCREEN_FILE + PARTIAL_SUFFIX
 const EVENTS_PARTIAL = PROJECT_FILES.events + PARTIAL_SUFFIX
@@ -177,48 +214,8 @@ export async function listInterruptedRecordings(
   return found.sort((a, b) => b.startedAt.localeCompare(a.startedAt))
 }
 
-/**
- * Length of the playable prefix of a (fragmented) MP4: up to the end of the last complete
- * top-level box, where a `moof` only counts together with a complete `mdat` after it. A crash
- * cuts the file inside the last fragment; everything before it is intact. 0 when the header
- * (`moov`) itself is incomplete.
- */
-export async function playableMp4Length(path: string): Promise<number> {
-  const handle = await open(path, 'r')
-  try {
-    const size = (await handle.stat()).size
-    const header = Buffer.alloc(16)
-    let offset = 0
-    let playable = 0
-    let hasMoov = false
-    let pendingMoof = false
-    while (offset + 8 <= size) {
-      const { bytesRead } = await handle.read(header, 0, 16, offset)
-      if (bytesRead < 8) break
-      let boxSize = header.readUInt32BE(0)
-      const type = header.toString('latin1', 4, 8)
-      if (boxSize === 1) {
-        if (bytesRead < 16) break
-        boxSize = Number(header.readBigUInt64BE(8))
-      } else if (boxSize === 0) {
-        // "extends to the end of the file": nothing tells where it really ends
-        boxSize = size - offset
-      }
-      if (boxSize < 8 || offset + boxSize > size) break
-      offset += boxSize
-      if (type === 'moov') hasMoov = true
-      if (type === 'moof') {
-        pendingMoof = true
-        continue
-      }
-      if (type === 'mdat') pendingMoof = false
-      if (!pendingMoof) playable = offset
-    }
-    return hasMoov ? playable : 0
-  } finally {
-    await handle.close()
-  }
-}
+// Moved next to the camera and audio checks (recorded-media.ts); re-exported for callers.
+export { playableMp4Length }
 
 export interface VideoInfo {
   width: number
@@ -284,16 +281,86 @@ function checkedId(projectId: unknown): string {
   return projectId
 }
 
+/** The temp take folders the marker links to (absent ones are skipped). */
+function linkedTakeDirs(link: MediaLink | null, temp: MediaTempDirs | undefined) {
+  if (!link || !temp) return {}
+  return {
+    ...(link.audio ? { audio: takeDir(temp.audio, link.audio) } : {}),
+    ...(link.camera ? { camera: takeDir(temp.camera, link.camera) } : {}),
+  }
+}
+
+async function partFile(path: string): Promise<number> {
+  return (await fileInfo(path))?.size ?? 0
+}
+
+/**
+ * Attaches the linked microphone, computer-sound and camera takes that play, like a clean stop
+ * (audio/attach.ts, camera/attach.ts: same checks and offsets). The project is already saved,
+ * so a failure here only costs that track. Never throws.
+ */
+async function recoverMedia(
+  store: FileProjectStore,
+  projectId: string,
+  link: MediaLink,
+  temp: MediaTempDirs,
+  log: RecoveryLogger,
+): Promise<Pick<RecoveredRecording, 'audioWarnings' | 'cameraWarnings'>> {
+  const dirs = linkedTakeDirs(link, temp)
+  const target = {
+    store,
+    projectDir: store.projectDir(projectId),
+    projectId,
+    videoStartedAt: link.videoStartedAt,
+    log,
+  }
+  const discard = (dir: string) => () => rm(dir, { recursive: true, force: true }).catch(() => {})
+  let audioWarnings: AudioWarning[] = []
+  if (dirs.audio) {
+    const info = await readAudioTakeInfo(dirs.audio)
+    const tracks: RecordedTrack[] = []
+    for (const track of ['mic', 'system'] as const satisfies readonly AudioTrackName[]) {
+      const started = info?.tracks[track]
+      const path = join(dirs.audio, `${track}.part`)
+      const bytes = await partFile(path)
+      if (started && bytes > 0) tracks.push({ track, path, bytes, ...started })
+    }
+    audioWarnings = tracks.length
+      ? await attachAudio(target, { tracks, warnings: [], discard: discard(dirs.audio) })
+      : ['audio_failed']
+    if (!tracks.length) await discard(dirs.audio)()
+  }
+  let cameraWarnings: CameraWarning[] = []
+  if (dirs.camera) {
+    const info = await readCameraTakeInfo(dirs.camera)
+    const path = join(dirs.camera, 'webcam.part')
+    const bytes = await partFile(path)
+    if (info && bytes > 0) {
+      cameraWarnings = await attachWebcam(target, {
+        video: { path, bytes, ...info },
+        warnings: [],
+        discard: discard(dirs.camera),
+      })
+    } else {
+      cameraWarnings = ['camera_failed']
+      await discard(dirs.camera)()
+    }
+  }
+  log.info('recording.recovered.media', { audioWarnings, cameraWarnings })
+  return { audioWarnings, cameraWarnings }
+}
+
 /**
  * Turns an interrupted recording into a normal project: complete fragments only, mouse
- * events within the video, project.json written atomically, marker cleared. Rejects with
- * `not_interrupted` or `unrecoverable` (nothing on disk changes then).
+ * events within the video, project.json written atomically, the linked audio and camera takes
+ * that play, marker cleared. Rejects with `not_interrupted` or `unrecoverable` (nothing on
+ * disk changes then).
  */
 export async function recoverRecording(
   store: FileProjectStore,
   projectId: unknown,
   options: RecoveryOptions,
-): Promise<Project> {
+): Promise<RecoveredRecording> {
   const id = checkedId(projectId)
   return serialized(id, async () => {
     const leftovers = await leftoversOf(store, id, options.sessionStartedAt)
@@ -341,8 +408,15 @@ export async function recoverRecording(
       ...(defaults.cursor ? { cursor: defaults.cursor } : {}),
     })
     await saveProject(store, project)
+    const link = parseMediaLink(leftovers.marker)
+    const media =
+      link && options.mediaTemp
+        ? await recoverMedia(store, id, link, options.mediaTemp, options.log ?? quiet)
+        : { audioWarnings: [], cameraWarnings: [] }
     await clearRecordingMarker(store, id)
-    return project
+    // attach rewrote project.json with the tracks: return what is on disk
+    const saved = (await store.readText(id, PROJECT_FILES.project)) ?? ''
+    return { project: parseProject(saved), ...media }
   })
 }
 
@@ -350,13 +424,17 @@ export async function recoverRecording(
 export async function discardRecording(
   store: FileProjectStore,
   projectId: unknown,
-  options: Pick<RecoveryOptions, 'sessionStartedAt'>,
+  options: Pick<RecoveryOptions, 'sessionStartedAt' | 'mediaTemp'>,
 ): Promise<void> {
   const id = checkedId(projectId)
   return serialized(id, async () => {
-    if (!(await leftoversOf(store, id, options.sessionStartedAt))) {
-      throw new RecoveryError('not_interrupted')
-    }
+    const leftovers = await leftoversOf(store, id, options.sessionStartedAt)
+    if (!leftovers) throw new RecoveryError('not_interrupted')
     await store.deleteProject(id)
+    // its audio and camera takes go too (they are temp files, never in the trash)
+    const dirs = linkedTakeDirs(parseMediaLink(leftovers.marker), options.mediaTemp)
+    for (const dir of [dirs.audio, dirs.camera]) {
+      if (dir) await rm(dir, { recursive: true, force: true }).catch(() => {})
+    }
   })
 }

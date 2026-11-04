@@ -8,6 +8,7 @@ import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import type { AudioSession, AudioTake } from './audio/service.ts'
 import type { CameraSession, CameraTake } from './camera/service.ts'
 import { RecordingTray, type TrayLabels } from './recording-tray.ts'
+import { sendTo } from './safe-send.ts'
 import { createAppWindow } from './windows.ts'
 
 /** The default; Settings can change it (F-15), so the controller reads it through a getter. */
@@ -16,6 +17,8 @@ const COUNTDOWN_SECONDS = 3
 const BAR_WIDTH = 440
 const BAR_HEIGHT = 64
 const BAR_BOTTOM_MARGIN = 48
+/** A bar that keeps dying is not brought back forever: the tray and the shortcut still stop. */
+const MAX_BAR_RECREATIONS = 5
 
 /** What actually records. The native helper implements it (D-023). */
 export interface RecordingBackend {
@@ -29,6 +32,11 @@ export interface BackendSession {
   stop(): Promise<BackendResult>
   /** The backend ended the recording by itself (display lost, disk full, crash). */
   onEnded(listener: (result: BackendResult) => void): void
+  /**
+   * Links the audio and camera temp takes to the recording marker, so a crash of main can
+   * still recover them with the video (media-takes.ts). Optional: tests and fakes skip it.
+   */
+  linkMedia?(media: { videoStartedAt: number; audio?: string; camera?: string }): Promise<void>
 }
 
 export type BackendResult =
@@ -78,6 +86,13 @@ type State =
       name: 'recording'
       session: BackendSession
       bar: BrowserWindow
+      /** Where the bar lives (it is recreated there if its page goes away). */
+      controlDisplayId: number
+      barRecreations: number
+      /** The media link write in progress (stop waits for it), once the takes are known. */
+      linkWrite?: Promise<void>
+      /** Stop was asked for (the link is no longer written); every caller waits for it. */
+      stopping?: Promise<void>
       clock: RecordingClock
       /** Resolves once the audio recorder was asked to start (null: no audio). */
       audio: Promise<AudioSession | null>
@@ -203,8 +218,19 @@ export class RecordingController {
       at: Date.now(),
       fps: session.fps,
     }
-    this.state = { name: 'recording', session, bar, clock, audio, camera, videoStartedAt }
+    this.state = {
+      name: 'recording',
+      session,
+      bar,
+      controlDisplayId,
+      barRecreations: 0,
+      clock,
+      audio,
+      camera,
+      videoStartedAt,
+    }
     session.onEnded((result) => void this.finish(result))
+    void this.linkMedia(session, audio, camera, videoStartedAt)
     const stopShortcut = this.stopShortcut()
     if (globalShortcut.register(stopShortcut, () => void this.stop())) {
       this.registeredShortcut = stopShortcut
@@ -250,9 +276,16 @@ export class RecordingController {
     this.tray?.setPaused(false)
   }
 
-  async stop(): Promise<void> {
-    if (this.state.name !== 'recording') return
-    const { session } = this.state
+  /** Bar, tray, shortcut or quit; every caller waits for the same stop and save. */
+  stop(): Promise<void> {
+    if (this.state.name !== 'recording') return Promise.resolve()
+    this.state.stopping ??= this.stopSession(this.state.session)
+    return this.state.stopping
+  }
+
+  private async stopSession(session: BackendSession): Promise<void> {
+    // The marker must not be rewritten after the clean stop removed it.
+    if (this.state.name === 'recording') await this.state.linkWrite
     let result: BackendResult
     try {
       result = await session.stop()
@@ -298,10 +331,11 @@ export class RecordingController {
     if (this.state.name !== 'recording') return
     if (this.registeredShortcut) globalShortcut.unregister(this.registeredShortcut)
     this.registeredShortcut = null
-    const { audio, camera, videoStartedAt } = this.state
-    this.state.bar.destroy()
-    this.tray?.hide()
+    const { audio, camera, videoStartedAt, bar } = this.state
+    // Idle first, so the bar closing below is not taken for a bar that went away.
     this.state = { name: 'idle' }
+    if (!bar.isDestroyed()) bar.destroy()
+    this.tray?.hide()
     this.notifyActive(false)
     this.log.info('recording.finished', { kind: result.kind })
     // Both stop now; they are attached one after the other (each rewrites project.json).
@@ -341,6 +375,9 @@ export class RecordingController {
   ): Promise<AudioWarning[]> {
     const take = await audio.then((a) => a?.stop() ?? null).catch(() => null)
     if (!take) return []
+    // A failed recording stays on disk for recovery (F-02), and its audio with it (the marker
+    // links the take). Anything else not saved has nothing to recover.
+    if (result.kind === 'failed') return []
     if (result.kind !== 'saved' || !this.audio) {
       await take.discard()
       return []
@@ -372,6 +409,8 @@ export class RecordingController {
   ): Promise<CameraWarning[]> {
     const take = await stopping
     if (!take) return []
+    // Kept for recovery with the video, like the audio above.
+    if (result.kind === 'failed') return []
     if (result.kind !== 'saved' || !this.camera) {
       await take.discard()
       return []
@@ -380,6 +419,50 @@ export class RecordingController {
       this.log.error('recording.camera.attach.failed', { error })
       return ['camera_failed' as const]
     })
+  }
+
+  /** Never rejects: the link only helps recovery, the recording goes on without it. */
+  private async linkMedia(
+    session: BackendSession,
+    audio: Promise<AudioSession | null>,
+    camera: Promise<CameraSession | null>,
+    videoStartedAt: number,
+  ): Promise<void> {
+    if (!session.linkMedia) return
+    try {
+      const [a, c] = await Promise.all([audio, camera])
+      if (!a && !c) return
+      const state = this.state
+      if (state.name !== 'recording' || state.session !== session || state.stopping) return
+      state.linkWrite = session.linkMedia({
+        videoStartedAt,
+        ...(a ? { audio: a.id } : {}),
+        ...(c ? { camera: c.id } : {}),
+      })
+      await state.linkWrite
+    } catch (error) {
+      this.log.error('recording.media_link.failed', { error })
+    }
+  }
+
+  /**
+   * The bar's window or page went away mid-recording (crash, closed, a reload that got
+   * through): a new one opens where it was, so Pause and Stop stay on screen.
+   */
+  private replaceBar(old: BrowserWindow, reason: string): void {
+    if (this.state.name !== 'recording' || this.state.bar !== old) return
+    if (this.state.barRecreations >= MAX_BAR_RECREATIONS) {
+      this.log.error('recording.bar.gone', { reason, recreated: false })
+      return
+    }
+    this.state.barRecreations += 1
+    this.log.error('recording.bar.gone', { reason, recreated: true })
+    try {
+      this.state.bar = this.openBar(this.state.controlDisplayId)
+    } catch (error) {
+      this.log.error('recording.bar.failed', { error })
+    }
+    if (!old.isDestroyed()) old.destroy()
   }
 
   private openBar(displayId: number): BrowserWindow {
@@ -404,23 +487,34 @@ export class RecordingController {
     // out Kamo's own windows). F-02: the bar never shows in the video.
     bar.setContentProtection(true)
     bar.webContents.on('did-finish-load', () => this.sendClock())
+    // Never reload mid-recording (the dev server's full reloads, a stray location.reload).
+    bar.webContents.on('will-navigate', (event) => {
+      if (this.state.name !== 'recording' || this.state.bar !== bar) return
+      event.preventDefault()
+      this.log.info('recording.bar.reload_blocked')
+    })
+    bar.webContents.on('render-process-gone', (_event, details) =>
+      this.replaceBar(bar, details.reason),
+    )
+    bar.on('closed', () => this.replaceBar(bar, 'closed'))
     return bar
   }
 
   private sendClock(): void {
     if (this.state.name !== 'recording') return
-    this.state.bar.webContents.send(IpcChannel.recordingClock, this.state.clock)
+    sendTo(this.state.bar, IpcChannel.recordingClock, this.state.clock)
   }
 
   private report(status: RecordingStatus): void {
     this.showMain()
-    this.mainWindow()?.webContents.send(IpcChannel.recordingStatus, status)
+    sendTo(this.mainWindow(), IpcChannel.recordingStatus, status)
   }
 
   private showMain(): void {
     const main = this.mainWindow()
-    main?.show()
-    main?.focus()
+    if (!main || main.isDestroyed()) return
+    main.show()
+    main.focus()
   }
 }
 

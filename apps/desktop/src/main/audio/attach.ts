@@ -4,6 +4,7 @@
 import { loadProject, saveProject, type ProjectStore } from '@kamo/core'
 import { copyFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
+import { checkRecordedMedia } from '../recorded-media.ts'
 import { errorCode, renameWithRetry } from '../storage/atomic.ts'
 import type { AudioWarning } from '../../shared/audio.ts'
 import { audioFileName, trackOffsetMs } from './model.ts'
@@ -28,7 +29,18 @@ export async function attachAudio(target: AttachTarget, take: AudioTake): Promis
   }
   try {
     const project = await loadProject(target.store, target.projectId)
+    let attached = 0
     for (const track of take.tracks) {
+      // Never a track that does not play (a recorder page that died before its first chunk).
+      const playable = await checkRecordedMedia(track.path, track.mimeType, 'audio').catch(
+        () => null,
+      )
+      if (!playable) {
+        target.log.warn('audio.track.unplayable', { track: track.track, bytes: track.bytes })
+        warnings.add('audio_failed')
+        continue
+      }
+      attached++
       const name = audioFileName(track.track, track.mimeType)
       await moveFile(track.path, join(target.projectDir, name))
       const offsetMs = trackOffsetMs(track.startedAt, target.videoStartedAt)
@@ -37,9 +49,20 @@ export async function attachAudio(target: AttachTarget, take: AudioTake): Promis
         enabled: true,
         offsetMs,
       }
-      target.log.info('audio.track.attached', { track: track.track, offsetMs, bytes: track.bytes })
+      target.log.info('audio.track.attached', {
+        track: track.track,
+        offsetMs,
+        bytes: playable.bytes,
+        durationMs: playable.durationMs,
+      })
     }
-    await saveProject(target.store, project)
+    if (attached === 0) {
+      // nothing to say about a cut that left no audio at all: audio_failed covers it
+      warnings.delete('audio_lost')
+      warnings.delete('mic_lost')
+    } else {
+      await saveProject(target.store, project)
+    }
   } catch (error) {
     target.log.error('audio.attach.failed', { error })
     warnings.add('audio_failed')

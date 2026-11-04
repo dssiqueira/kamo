@@ -4,9 +4,11 @@ import { EventEmitter } from 'node:events'
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { CameraCommand, CameraSource } from '../../shared/camera.ts'
+import { readCameraTakeInfo } from '../media-takes.ts'
 import { FileProjectStore } from '../storage/index.ts'
+import { fragmentedVideoMp4, headerOnly } from '../testing/media-fixtures.ts'
 import { attachWebcam } from './attach.ts'
 import { CameraService, type CameraSession } from './service.ts'
 
@@ -21,6 +23,7 @@ class FakeWindow extends EventEmitter {
   readonly webContents = Object.assign(new EventEmitter(), {
     send: (_channel: string, command: CameraCommand) => this.commands.push(command),
     setBackgroundThrottling: () => {},
+    isDestroyed: () => this.destroyed,
   })
   isDestroyed() {
     return this.destroyed
@@ -49,6 +52,12 @@ function makeService() {
 }
 
 const bytes = (...values: number[]) => new Uint8Array(values)
+
+let mp4: Uint8Array
+
+beforeAll(async () => {
+  mp4 = await fragmentedVideoMp4(2)
+})
 
 /** Stops a session the way the recorder page does: `stopped` once the chunks are handed over. */
 async function stopped(service: CameraService, session: CameraSession) {
@@ -139,7 +148,55 @@ describe('CameraService', () => {
     windows[0]?.webContents.emit('render-process-gone', {}, { reason: 'crashed' })
     const take = await session!.stop()
     expect(take.video?.bytes).toBe(3)
-    expect(take.warnings).toEqual(['camera_failed'])
+    // kept when it plays (attach checks); Home says the camera stops there
+    expect(take.warnings).toEqual(['camera_lost'])
+    await take.discard()
+  })
+
+  it('notices a recorder page reloaded mid-recording instead of waiting for it', async () => {
+    const service = makeService()
+    const session = await service.begin(ON)
+    service.handleReport({ ...STARTED, at: 5 })
+    await service.writeChunk(bytes(1, 2))
+    service.handleReport({ type: 'ready' })
+    const started = Date.now()
+    const take = await session!.stop()
+    expect(Date.now() - started).toBeLessThan(1000)
+    expect(windows[0]?.commands.map((c) => c.type)).toEqual(['start'])
+    expect(take.warnings).toEqual(['camera_lost'])
+    await take.discard()
+  })
+
+  it('blocks reloads of the recorder page while recording', async () => {
+    const service = makeService()
+    const session = await service.begin(ON)
+    let prevented = false
+    windows[0]?.webContents.emit('will-navigate', { preventDefault: () => (prevented = true) })
+    expect(prevented).toBe(true)
+    await (await stopped(service, session!)).discard()
+  })
+
+  it('tells its own recorder page from a gone one and from any other sender', async () => {
+    const service = makeService()
+    await service.prepare(ON)
+    const first = windows[0]!.webContents as never
+    expect(service.senderKind(first)).toBe('current')
+    await service.restore()
+    expect(service.senderKind(first)).toBe('stale')
+    expect(service.senderKind(new EventEmitter() as never)).toBe('foreign')
+  })
+
+  it('describes the take for recovery', async () => {
+    const service = makeService()
+    const session = await service.begin(ON)
+    service.handleReport({ ...STARTED, at: 777 })
+    const take = await stopped(service, session!)
+    expect(await readCameraTakeInfo(join(dir, 'tmp', session!.id))).toEqual({
+      startedAt: 777,
+      mimeType: 'video/mp4',
+      width: 1280,
+      height: 720,
+    })
     await take.discard()
   })
 })
@@ -161,7 +218,7 @@ describe('attachWebcam', () => {
     const service = makeService()
     const session = await service.begin(ON)
     service.handleReport({ ...STARTED, at: 10_250 })
-    await service.writeChunk(bytes(4, 5))
+    await service.writeChunk(mp4)
     const take = await stopped(service, session!)
 
     const target = {
@@ -182,7 +239,7 @@ describe('attachWebcam', () => {
       hidden: [],
       offsetMs: -150,
     })
-    expect([...(await readFile(join(target.projectDir, 'webcam.mp4')))]).toEqual([4, 5])
+    expect((await readFile(join(target.projectDir, 'webcam.mp4'))).length).toBe(mp4.length)
     expect(await readdir(join(dir, 'tmp'))).toEqual([])
   })
 
@@ -202,6 +259,28 @@ describe('attachWebcam', () => {
     }
     expect(await attachWebcam(target, take)).toEqual(['camera_unavailable'])
     expect((await loadProject(store, project.id)).webcam).toBeNull()
+  })
+
+  it('never attaches a camera file that does not play (only the header was written)', async () => {
+    const store = new FileProjectStore(join(dir, 'projects'))
+    const project = await savedProject(store)
+    const service = makeService()
+    const session = await service.begin(ON)
+    service.handleReport({ ...STARTED, at: 1 })
+    await service.writeChunk(headerOnly(mp4))
+    // the page went away before its first fragment (the 757-byte webcam.mp4)
+    service.handleReport({ type: 'ready' })
+    const take = await session!.stop()
+    const target = {
+      store,
+      projectDir: store.projectDir(project.id),
+      projectId: project.id,
+      videoStartedAt: 1,
+      log: quiet,
+    }
+    expect(await attachWebcam(target, take)).toEqual(['camera_failed'])
+    expect((await loadProject(store, project.id)).webcam).toBeNull()
+    expect(await readdir(target.projectDir)).not.toContain('webcam.mp4')
   })
 
   it('reports a WebM it cannot remux without throwing, and keeps no stray file', async () => {
