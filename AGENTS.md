@@ -143,7 +143,7 @@ One feature per session. Don't skip steps. Numbering is global, the same across 
 
 ## Status
 - **Current step:** 2 (record the screen) — pending the Windows Rust helper and a real Mac test; engine math of steps 5–7 already done (see `docs/plan.md`)
-- **Last thing that worked:** 2026-11-04: recording flow up to the helper protocol (Home, countdown, bar, store, recovery marker, fake helper end-to-end), Swift Mac helper building in CI, and zoom generation, spring camera and smoothed cursor in `core`. `pnpm check` green (261 tests)
+- **Last thing that worked:** 2026-11-04: the editor opens a project with a live preview (renderer + camera + cursor), side panel, timeline with undo/redo and autosave; Home lists projects. Recording flow up to the helper protocol, Swift Mac helper building in CI. `pnpm check` green
 - **Blockers:** Rust + Visual Studio Build Tools on the Windows dev machine (Windows helper); a real Mac to test capture; the `@kamo` npm org and `NPM_TOKEN` secret for prereleases
 
 ## First prompt

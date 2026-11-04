@@ -112,7 +112,9 @@
 - Microphone (`audio.m4a`) with device selection and level meter; system sound (`system.m4a`) via ScreenCaptureKit / WASAPI loopback
 - Sync ≤ 33ms (events) and ≤ 40ms (audio), measured with a test recording with an audible click
 
-### Step 4 — Editor, style and projects (F-08, F-10 partial, F-12)
+### Step 4 — Editor, style and projects (F-08, F-10 partial, F-12) ⏳ (2026-11-04)
+> Done: Canvas 2D renderer in `core` (8 procedural wallpapers, padding, corners, cached shadow, camera crop, vector cursor and spring ripple; same code for export), editor page with live preview, side panel and autosave, Home project list (rename, trash, show in folder, damaged projects), `kamo-media://` with Range for the video, settings (remembered display, last style as default), and a sample project generator for development. Canvas 2D instead of WebGL for now: identical in preview and export and fast enough with the cached backdrop; WebGL only if profiling asks. Pending: visual regression in CI, the mascot in empty states, opening the raw video of a damaged project, auto-zoom toggle persistence.
+
 - `packages/ui`: shadcn/ui + Tailwind with the tokens preset; base components from `DESIGN.md` (button-primary, panel, chip, timecode, toasts, cloud-badge)
 - Editor: preview in the center using the `core` renderer, side panel (background, padding, corners, shadow), play/pause, space and arrows
 - 8 procedural wallpapers + solid color (I-6); the last style becomes the default
@@ -140,7 +142,9 @@
 - Vector arrow, spring, zero error on the click frame, ripple, size 1–3×, hide, auto-hide after 3s
 - "Cursor" side panel
 
-### Step 8 — Timeline and trim (F-09, F-16)
+### Step 8 — Timeline and trim (F-09, F-16) ⏳ (2026-11-04)
+> Done: pure edits and undo history in `core` (randomized tests), the timeline component and its integration in the editor (move/resize/scale/delete/create zooms, trim handles, scrub, mic/computer rows, undo/redo). Pending: the "Trim the last 2s?" suggestion in the UI (`suggestEndTrim` exists), a DOM test for drag interactions, and a check that every i18n key used in code exists in the locales (`i18n:check` only compares locales with each other).
+
 - Tracks: video (trim handles), audio (volume and mute per track), zooms (pink blocks)
 - Move, stretch, scale 1–4× (step 0.25), delete, double click creates 2s/2.0×, no overlap, scrub on the ruler
 - Undo/redo ≥ 50 steps; `project.trim`; suggestion "Trim the last 2s?"
