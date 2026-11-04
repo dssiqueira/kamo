@@ -25,6 +25,14 @@ mac:
       arch: arm64
   category: public.app-category.video
   hardenedRuntime: true
+  # The hardened runtime blocks the microphone and the camera without these entitlements.
+  # Screen Recording needs none: macOS asks through its own prompt.
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # What macOS shows in its permission prompts (F-04 microphone, A-03 webcam).
+  extendInfo:
+    NSMicrophoneUsageDescription: Kamo records your voice and your computer's sound with the screen recording, only when you turn them on.
+    NSCameraUsageDescription: Kamo shows your webcam in a bubble on the screen recording, only when you turn it on.
   # Capture helper (D-023), built by `swift build` before packaging (native/mac/README.md).
   # It must be signed with the app and the hardened runtime in step 10.
   extraResources:
@@ -33,9 +41,10 @@ mac:
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES
-    # The tray / menu bar icon (close to tray, F-15).
-    - from: build/icon.png
-      to: icon.png
+    # The menu bar icon (close to tray, F-15): the monochrome template only, a few KB.
+    - from: build/tray
+      to: tray
+      filter: ['trayTemplate*.png']
   # Signing and notarization arrive with the release workflow (step 10).
   identity: null
 
@@ -54,9 +63,10 @@ win:
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES
-    # The tray / menu bar icon (close to tray, F-15).
-    - from: build/icon.png
-      to: icon.png
+    # The tray icon (close to tray, F-15): the colour one at 100%–300% scaling, a few KB.
+    - from: build/tray
+      to: tray
+      filter: ['tray.png', 'tray@*.png']
 
 nsis:
   oneClick: false

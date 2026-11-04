@@ -1,3 +1,5 @@
+// First: the app name and app-data folder must be set before any module reads a path.
+import './app-identity.ts'
 import {
   app,
   BrowserWindow,
@@ -38,7 +40,7 @@ import { runAudioSelfTest } from './audio/self-test.ts'
 import { recordingCamera, setupCamera } from './camera/index.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import type { TrayLabels } from './recording-tray.ts'
-import { AppTray, type AppTrayLabels } from './app-tray.ts'
+import { AppTray, trayIconFile, type AppTrayLabels } from './app-tray.ts'
 import {
   closeToTrayEnabled,
   shouldHideOnClose,
@@ -79,8 +81,10 @@ const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
 
 const DEV_ICON = join(app.getAppPath(), 'build', 'icon.png')
-// The tray icon (F-15): electron-builder copies build/icon.png into the resources folder.
-const TRAY_ICON = app.isPackaged ? join(process.resourcesPath, 'icon.png') : DEV_ICON
+// The tray icon (F-15): electron-builder copies build/tray/ into the resources folder.
+const TRAY_ICON = trayIconFile(
+  app.isPackaged ? join(process.resourcesPath, 'tray') : join(app.getAppPath(), 'build', 'tray'),
+)
 
 const SMOKE_TEST_TIMEOUT_MS = 60_000
 const SMOKE_SCREENSHOT_DELAY_MS = 2000
@@ -182,6 +186,7 @@ function updateAppTray(): void {
   })
   if (!show) return appTray.hide()
   try {
+    if (!appTray.isShown() && !appTray.hasIcon()) getServices().log.warn('tray.icon_missing')
     appTray.show()
   } catch (error) {
     // No tray on this desktop: closing the window closes it, as if the setting were off.

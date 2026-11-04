@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hardened runtime entitlements (electron-builder.yml → mac.entitlements). The first three are
+  electron-builder's defaults, which Electron needs. Screen Recording has no entitlement: macOS
+  asks through its own TCC prompt (docs/integrations.md).
+-->
+<plist version="1.0">
+  <dict>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+    <!-- Microphone (F-04): without it the hardened runtime blocks the input silently. -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    <!-- Webcam bubble (A-03). -->
+    <key>com.apple.security.device.camera</key>
+    <true/>
+  </dict>
+</plist>
