@@ -8,7 +8,6 @@ export const PROJECT_FILES = {
   project: 'project.json',
   events: 'events.jsonl',
   transcript: 'transcript.json',
-  captions: 'captions.json',
   frames: 'frames',
 } as const
 

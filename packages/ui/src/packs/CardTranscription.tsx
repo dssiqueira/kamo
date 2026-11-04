@@ -7,6 +7,7 @@ import type { CardTranscriptState } from './types.ts'
 const FAILURE_KEYS: Record<string, string> = {
   pack_missing: 'transcription.errors.packMissing',
   audio_unreadable: 'transcription.errors.audioUnreadable',
+  transcript_edited: 'transcription.errors.transcriptEdited',
 }
 
 /** Lines of text with a speech bubble: "transcribe". */

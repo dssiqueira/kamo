@@ -502,7 +502,7 @@
 
 **Acceptance criteria**
 - [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the list of packs is fetched only when Settings → Packs comes into view or Transcribe is clicked (checked in the Electron build: no request before a click)
-- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Packages, and the "Connect to an agent" panel — Settings → Packs and a Transcribe button on Home's project cards done; the editor button comes with captions (step 24), the agent panel with step 26
+- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Packages, and the "Connect to an agent" panel — Settings → Packs, a Transcribe button on Home's project cards and in the editor's Captions section done; the agent panel comes with step 26
 - [x] Before downloading, shows the size and the quality choice: **Light** (~150MB, faster) or **Accurate** (~500MB, better in Portuguese) — exact sizes once the list loaded, "About …" before
 - [x] Download with progress, pause/cancel and integrity check (SHA-256) — resumes with HTTP Range, also after a restart
 - [x] Once installed, asks once: "Automatically transcribe the next recordings?" (yes → in the background; no → only when Transcribe is clicked)
@@ -537,11 +537,11 @@
 - [ ] Downloads come from versioned GitHub Releases assets, with SHA-256 verified — verified against a local fake release; `.github/workflows/packs.yml` builds the real assets but has not run yet
 
 ## A-06 — Automatic captions
-- [ ] Generated from `transcript.json` (A-05), without transcribing again
-- [ ] Without the transcription package installed, the Captions button explains that the package is needed and offers to download it (with the size)
-- [ ] Captions editable on the timeline (text and timing); the edit also corrects the transcript
-- [ ] Style: 3 presets (position at the bottom or middle), in the app font
-- [ ] On export, three options: no captions, captions burned into the video, or an `.srt` file next to the MP4 (timings adjusted to the F-16 trim)
+- [x] Generated from `transcript.json` (A-05), without transcribing again — the same core code draws them in the preview, the format previews and the export (rule 11); a transcription started from the editor turns them on when it finishes
+- [x] Without the transcription package installed, the Captions button explains that the package is needed and offers to download it (with the size) — the side panel says the pack's size and opens the same download offer as Home (checked in the Electron build; the real `packs` release is not published yet)
+- [ ] Captions editable on the timeline (text and timing); the edit also corrects the transcript — a captions lane with one block per segment: double-click or Enter edits the text inline, Delete removes it, dragging moves it or its edges; every edit is undoable with the rest of the editor and saved to `transcript.json` with `edited: true`. Text fixes, undo and redo checked in the Electron build; the timing drags are covered by core tests but not yet tried by hand
+- [x] Style: 3 presets (position at the bottom or middle), in the app font — Clean, Bold and Kamo, bottom or middle, 3 sizes; Inter with the system CJK fonts of the transcript's language; inside the screen frame in every format, above the camera card in the 9:16 split; spring fade in and out
+- [x] On export, three options: no captions, captions burned into the video, or an `.srt` file next to the MP4 (timings adjusted to the F-16 trim) — checked with real exports (9:16 burned in, 16:9 with its `.srt`)
 
 ---
 

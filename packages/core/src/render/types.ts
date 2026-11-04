@@ -26,6 +26,13 @@ export interface Context2D {
   shadowBlur: number
   shadowOffsetX: number
   shadowOffsetY: number
+  /** captions (A-06) */
+  font: string
+  textAlign: string
+  textBaseline: string
+  fillText(text: string, x: number, y: number): void
+  strokeText(text: string, x: number, y: number): void
+  measureText(text: string): { width: number }
   save(): void
   restore(): void
   beginPath(): void

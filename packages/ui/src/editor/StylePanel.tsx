@@ -16,6 +16,7 @@ import { useT } from '../i18n.tsx'
 import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
 import { PlusIcon } from '../timeline/icons.tsx'
 import type { BackgroundImageErrorCode } from './background-image.ts'
+import { CaptionsSection, type CaptionsSectionProps } from './CaptionsSection.tsx'
 
 export interface StylePanelProps {
   style: Style
@@ -35,6 +36,8 @@ export interface StylePanelProps {
   onSplitLayout?(): void
   /** "Your image" tile (A-04); missing when the platform cannot pick images */
   image?: ImageTileProps | undefined
+  /** Captions (A-06); missing hides the section */
+  captions?: CaptionsSectionProps | undefined
 }
 
 /** The background image tile (A-04). */
@@ -58,7 +61,10 @@ const IMAGE_ERROR_KEY: Record<BackgroundImageErrorCode, string> = {
   unreadable: 'editor.panel.imageErrors.unreadable',
 }
 
-/** Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam. */
+/**
+ * Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam,
+ * captions.
+ */
 export function StylePanel(props: StylePanelProps) {
   const { style, cursor, onStyle, onCursor } = props
   const t = useT()
@@ -195,6 +201,7 @@ export function StylePanel(props: StylePanelProps) {
           onSplitLayout={props.onSplitLayout}
         />
       )}
+      {props.captions && <CaptionsSection {...props.captions} />}
     </aside>
   )
 }

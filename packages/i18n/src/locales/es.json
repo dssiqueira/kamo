@@ -220,6 +220,31 @@
       "hidden": "Oculta",
       "hiddenBlock": "Cámara web oculta de {start} a {end}",
       "hiddenHint": "Arrastra para mover, tira de un borde para cambiar el tamaño. Las flechas lo ajustan, Supr vuelve a mostrar la cámara web."
+    },
+    "captions": {
+      "title": "Subtítulos",
+      "show": "Mostrar subtítulos",
+      "style": "Estilo",
+      "clean": "Limpio",
+      "bold": "Marcado",
+      "kamo": "Kamo",
+      "position": "Posición",
+      "bottom": "Abajo",
+      "middle": "En el medio",
+      "size": "Tamaño",
+      "small": "Pequeño",
+      "medium": "Mediano",
+      "large": "Grande",
+      "editHint": "Haz doble clic en un subtítulo de la línea de tiempo para corregir el texto. Tus correcciones también corrigen la transcripción.",
+      "fromTranscript": "Los subtítulos salen de la transcripción de esta grabación.",
+      "needsPack": "La transcripción es un paquete opcional ({size}) que funciona en tu computadora. Kamo solo lo descarga cuando lo pides.",
+      "download": "Descargar y transcribir",
+      "noSpeech": "No encontramos voz en esta grabación, así que no hay subtítulos.",
+      "track": "Subtítulos",
+      "block": "Subtítulo de {start} a {end}: {text}",
+      "blockHint": "Doble clic o Enter para corregir el texto. Arrastra para mover, tira de un borde para cambiar el tiempo. Supr lo elimina.",
+      "editLabel": "Texto del subtítulo",
+      "editHelp": "Enter guarda · Esc cancela"
     }
   },
   "style": {
@@ -457,6 +482,15 @@
       "message": "Cerrar ahora cancela la exportación y borra el archivo sin terminar.",
       "stop": "Cancelar exportación y cerrar",
       "keep": "Seguir exportando"
+    },
+    "captions": {
+      "label": "Subtítulos",
+      "none": "Ninguno",
+      "burn": "En el video",
+      "srt": "Archivo .srt",
+      "srtHint": "Un archivo .srt junto a cada video, ajustado al recorte.",
+      "burnHint": "En la imagen, con el estilo del panel Subtítulos.",
+      "srtFile": "+ {name}"
     }
   },
   "recovery": {
@@ -619,7 +653,14 @@
     },
     "errors": {
       "packMissing": "Descarga primero un paquete de transcripción.",
-      "audioUnreadable": "Kamo no pudo leer el audio de esta grabación."
+      "audioUnreadable": "Kamo no pudo leer el audio de esta grabación.",
+      "transcriptEdited": "Tus correcciones de los subtítulos se conservaron: la nueva transcripción no se guardó."
+    },
+    "replace": {
+      "title": "¿Reemplazar tus correcciones de los subtítulos?",
+      "body": "Corregiste esta transcripción desde los subtítulos. Transcribir de nuevo la reemplaza y tus correcciones se pierden.",
+      "confirm": "Transcribir de nuevo",
+      "keep": "Conservar mis correcciones"
     }
   }
 }

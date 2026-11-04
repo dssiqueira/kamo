@@ -2,6 +2,7 @@ import {
   buildCameraTrack,
   buildCursorTrack,
   cameraAt,
+  CAPTION_LOOKS,
   createRenderer,
   isSplitLayout,
   outputSize,
@@ -15,6 +16,7 @@ import {
   webcamPlacementAt,
   webcamVisibility,
   type BackgroundImage,
+  type CaptionTrack,
   type MouseEventRecord,
   type Project,
   type Renderer,
@@ -45,6 +47,8 @@ export interface PreviewProps {
   webcamVideo: RefObject<HTMLVideoElement | null>
   /** the decoded image of an image background (A-04); null = the fallback color */
   backgroundImage?: BackgroundImage | null
+  /** the captions burned in (A-06); null = none */
+  captions?: CaptionTrack | null
   /** Exposes `draw(timeMs)` so playback can redraw exactly on each presented frame. */
   drawRef: RefObject<((timeMs: number) => void) | null>
   /** Dragging the bubble in the preview (A-03): one undo step from start to end. */
@@ -80,6 +84,7 @@ export function Preview({
   webcamUrl,
   webcamVideo,
   backgroundImage = null,
+  captions = null,
   drawRef,
   onWebcamDragStart,
   onWebcamDrag,
@@ -137,6 +142,7 @@ export function Preview({
         cursor,
         webcam,
         backgroundImage,
+        captions,
       }
       const camElement = webcam ? webcamVideo.current : null
       if (webcam && camElement) correctWebcamDrift(element, camElement, webcam)
@@ -156,6 +162,7 @@ export function Preview({
       cursor,
       webcam,
       backgroundImage,
+      captions,
     ],
   )
 
@@ -166,6 +173,25 @@ export function Preview({
     const element = video.current
     if (element) draw(element.currentTime * 1000)
   }, [draw, drawRef, video])
+
+  // The canvas draws captions only with a loaded font: load the caption font, then redraw.
+  const captionFont = captions
+    ? `${CAPTION_LOOKS[captions.settings.preset].weight} 48px ${captions.fontFamily}`
+    : null
+  useEffect(() => {
+    if (!captionFont || typeof document === 'undefined' || !document.fonts) return
+    let live = true
+    void document.fonts.load(captionFont).then(
+      () => {
+        const element = video.current
+        if (live && element) drawRef.current?.(element.currentTime * 1000)
+      },
+      () => {},
+    )
+    return () => {
+      live = false
+    }
+  }, [captionFont, video, drawRef])
 
   // The webcam element follows the screen element (play, pause, seek, rate).
   const hasWebcam = webcam !== null

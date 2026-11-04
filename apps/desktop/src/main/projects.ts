@@ -19,7 +19,12 @@ export const MAX_PROJECT_NAME_LENGTH = 120
 /** `frames/0000.jpg`: the reference thumbnail of second 0 (docs/data-model.md). */
 export const THUMBNAIL_FILE = '0000.jpg'
 
-export type ProjectActionCode = 'invalid_name' | 'project_not_found'
+export type ProjectActionCode =
+  | 'invalid_name'
+  | 'project_not_found'
+  /** A-06: a caption save that is not a valid transcript, or with no transcript to correct. */
+  | 'invalid_transcript'
+  | 'transcript_not_found'
 
 /** Error with a stable code for the renderer (see `IPC_ERROR_PREFIX` in shared/api.ts). */
 export class ProjectActionError extends Error {

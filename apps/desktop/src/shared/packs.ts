@@ -66,7 +66,13 @@ export type TranscriptionJobState =
   'queued' | 'preparing' | 'transcribing' | 'done' | 'failed' | 'no_audio' | 'cancelled'
 
 export type TranscriptionErrorCode =
-  'pack_missing' | 'project_not_found' | 'audio_unreadable' | 'whisper_failed' | 'output_invalid'
+  | 'pack_missing'
+  | 'project_not_found'
+  | 'audio_unreadable'
+  | 'whisper_failed'
+  | 'output_invalid'
+  /** A-06: corrected through the captions meanwhile; the new transcript was not written. */
+  | 'transcript_edited'
 
 export interface TranscriptionJob {
   projectId: string

@@ -1,4 +1,4 @@
-import type { CursorSettings, Project, Style } from '@kamo/core'
+import type { CursorSettings, Project, Style, Transcript } from '@kamo/core'
 import type {
   AudioLevels,
   AudioSources,
@@ -69,6 +69,13 @@ export interface KamoApi {
   openRawVideo(projectId: string): Promise<void>
   /** Raw mouse events (events.jsonl text; '' when the project has none). Parse with core. */
   loadEvents(projectId: string): Promise<string>
+  /** A-06: transcript.json text (parse with core's parseTranscript), or null when there is none. */
+  loadTranscript(projectId: string): Promise<string | null>
+  /**
+   * A-06: caption edits correct transcript.json (always marked `edited`). Rejects with
+   * `invalid_transcript` or `transcript_not_found` (no transcript to correct).
+   */
+  saveTranscript(projectId: string, transcript: Transcript): Promise<void>
   /** Back from the editor to Home. */
   openHome(): Promise<void>
   /**
@@ -215,7 +222,11 @@ export interface KamoApi {
   onPacksChanged(listener: (status: PacksStatus) => void): () => void
 
   // Local transcription (A-05): in the background, one recording at a time.
-  transcribeProject(projectId: string): Promise<void>
+  /**
+   * Rejects with `transcript_edited` when the transcript was corrected through the captions
+   * (A-06): ask the user, then call again with `replaceEdited`.
+   */
+  transcribeProject(projectId: string, options?: { replaceEdited?: boolean }): Promise<void>
   cancelTranscription(projectId: string): Promise<void>
   /** This session's jobs. */
   getTranscriptionJobs(): Promise<TranscriptionJob[]>
@@ -456,6 +467,8 @@ export const IpcChannel = {
   openEditor: 'kamo:editor-open',
   openRawVideo: 'kamo:project-open-raw-video',
   loadEvents: 'kamo:project-events',
+  loadTranscript: 'kamo:project-transcript',
+  saveTranscript: 'kamo:project-transcript-save',
   openHome: 'kamo:home-open',
   pickBackgroundImage: 'kamo:background-image-pick',
   projectsChanged: 'kamo:projects-changed',

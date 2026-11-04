@@ -22,6 +22,7 @@ import {
   type TrimEdge,
 } from './scale.ts'
 import { useDrag } from './useDrag.ts'
+import { CaptionTrack, type CaptionBlockData, type CaptionTrackActions } from './CaptionTrack.tsx'
 import { WebcamTrack, type HiddenRange, type WebcamTrackActions } from './WebcamTrack.tsx'
 import { ZoomTrack } from './ZoomTrack.tsx'
 
@@ -45,6 +46,21 @@ export interface TimelineWebcam extends Omit<
   selectedIndex: number | null
 }
 
+/** The captions lane (A-06): shown once the recording has a transcript. */
+export interface TimelineCaptions extends Omit<
+  CaptionTrackActions,
+  'onTransactionStart' | 'onTransactionEnd'
+> {
+  /** the transcript's segments, sorted */
+  captions: readonly CaptionBlockData[]
+  /** captions turned off in the side panel */
+  off: boolean
+  selectedIndex: number | null
+  editingIndex: number | null
+  /** BCP 47 language of the transcript */
+  lang?: string | undefined
+}
+
 export interface TimelineProps {
   durationMs: number
   fps: number
@@ -57,6 +73,8 @@ export interface TimelineProps {
   tracks?: { mic?: TimelineAudioTrack; system?: TimelineAudioTrack }
   /** the webcam lane; missing when the project was recorded without the camera */
   webcam?: TimelineWebcam | undefined
+  /** the captions lane; missing until the recording has a transcript */
+  captions?: TimelineCaptions | undefined
   onScrub(tMs: number): void
   onSelectZoom(id: string | null): void
   /**
@@ -86,6 +104,7 @@ const ROW = {
   video: 'h-[32px]',
   zoom: 'h-[36px]',
   webcam: 'h-[28px]',
+  captions: 'h-[32px]',
   audio: 'h-[28px]',
 } as const
 
@@ -104,7 +123,8 @@ const FOCUS_RING =
  * Time flows left to right in every language (it is video notation), so the lanes are LTR.
  */
 export function Timeline(props: TimelineProps) {
-  const { durationMs, fps, trim, zooms, playheadMs, selectedZoomId, tracks, webcam } = props
+  const { durationMs, fps, trim, zooms, playheadMs, selectedZoomId, tracks, webcam, captions } =
+    props
   const t = useT()
   const lanesRef = useRef<HTMLDivElement>(null)
   const width = useElementWidth(lanesRef)
@@ -151,6 +171,7 @@ export function Timeline(props: TimelineProps) {
             </IconButton>
           </TrackHeader>
         )}
+        {captions && <TrackHeader className={ROW.captions} label={t('editor.captions.track')} />}
         {audio.map(({ id, track }) => (
           <AudioHeader
             key={id}
@@ -196,6 +217,23 @@ export function Timeline(props: TimelineProps) {
               selectedIndex={webcam.selectedIndex}
               actions={{
                 ...webcam,
+                onTransactionStart: props.onTransactionStart,
+                onTransactionEnd: props.onTransactionEnd,
+              }}
+            />
+          )}
+          {captions && (
+            <CaptionTrack
+              scale={scale}
+              fps={fps}
+              captions={captions.captions}
+              trim={trim}
+              off={captions.off}
+              selectedIndex={captions.selectedIndex}
+              editingIndex={captions.editingIndex}
+              lang={captions.lang}
+              actions={{
+                ...captions,
                 onTransactionStart: props.onTransactionStart,
                 onTransactionEnd: props.onTransactionEnd,
               }}
@@ -488,7 +526,7 @@ function TrimHandle({
   )
 }
 
-/** Dims what the trim cuts out, across the video, zoom, webcam and audio tracks. */
+/** Dims what the trim cuts out, across the video, zoom, webcam, captions and audio tracks. */
 function TrimShade({
   scale,
   trim,

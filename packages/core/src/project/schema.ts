@@ -145,6 +145,43 @@ export const DEFAULT_WEBCAM: WebcamSettings = {
   hidden: [],
 }
 
+/** Caption look (A-06): see render/captions.ts for what each preset paints. */
+export const CaptionPreset = z.enum(['clean', 'bold', 'kamo'])
+export type CaptionPreset = z.infer<typeof CaptionPreset>
+
+/** Where the captions sit in the screen frame. */
+export const CaptionPosition = z.enum(['bottom', 'middle'])
+export type CaptionPosition = z.infer<typeof CaptionPosition>
+
+export const CaptionSize = z.enum(['small', 'medium', 'large'])
+export type CaptionSize = z.infer<typeof CaptionSize>
+
+/**
+ * Captions (A-06). The text and its timing live in transcript.json (edits correct it); this
+ * is only how they show. Null until the user first turns captions on, so older files and
+ * projects without a transcript stay valid.
+ */
+export const CaptionSettings = z.object({
+  /** Shown in the preview and burned in by default; off keeps the settings. */
+  enabled: z.boolean(),
+  preset: CaptionPreset,
+  position: CaptionPosition,
+  size: CaptionSize,
+})
+export type CaptionSettings = z.infer<typeof CaptionSettings>
+
+export const DEFAULT_CAPTIONS: CaptionSettings = {
+  enabled: true,
+  preset: 'clean',
+  position: 'bottom',
+  size: 'medium',
+}
+
+/** The caption settings, the defaults (turned off) when never set. */
+export function projectCaptions(project: { captions: CaptionSettings | null }): CaptionSettings {
+  return project.captions ?? { ...DEFAULT_CAPTIONS, enabled: false }
+}
+
 /** The editor's format (`project.aspect`), 16:9 when missing. */
 export function projectAspect(project: { aspect?: Aspect | undefined }): Aspect {
   return project.aspect ?? '16:9'
@@ -221,8 +258,8 @@ export const Project = z
      */
     endTrimSuggestion: z.enum(['applied', 'dismissed']).optional(),
     webcam: WebcamSettings.nullable(),
-    // Captions arrive in v0.4 (A-06); until then always null.
-    captions: z.null(),
+    /** Caption look (A-06); null = never turned on (captions off). */
+    captions: CaptionSettings.nullable(),
     transcript: TranscriptState,
     cloud: z.array(CloudLink),
     trim: z.object({ startMs: nonNegative, endMs: nonNegative }),

@@ -1,19 +1,26 @@
 import {
   addWebcamHidden,
   backgroundImageFile,
+  buildCaptionTrack,
   createHistory,
+  deleteCaption,
   deleteWebcamHidden,
   createZoomAt,
   deleteZoom,
   endTrimSuggestionFor,
   generateZooms,
+  moveCaption,
   moveWebcamHidden,
   moveZoom,
   projectAspect,
   projectAutoZoom,
+  projectCaptions,
+  resizeCaption,
   resizeWebcamHidden,
   resizeZoom,
   setAspect,
+  setCaptions,
+  setCaptionText,
   setTrim,
   setWebcam,
   setZoomScale,
@@ -21,6 +28,7 @@ import {
   type Aspect,
   type MouseEventRecord,
   type Project,
+  type Transcript,
 } from '@kamo/core'
 import { formatTimecode } from '@kamo/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -31,6 +39,7 @@ import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
 import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { ExportSheet } from '../export/ExportSheet.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
+import { ReplaceTranscriptDialog } from '../packs/ReplaceTranscriptDialog.tsx'
 import type { ExportPlatform } from '../export/useExportRun.ts'
 import {
   loadBackgroundImage,
@@ -41,6 +50,7 @@ import {
 import { Preview } from './Preview.tsx'
 import { PreviewAudio, type PreviewAudioTrack } from './PreviewAudio.tsx'
 import { PreviewDecor } from './PreviewDecor.tsx'
+import type { EditorTranscription } from './CaptionsSection.tsx'
 import { StylePanel } from './StylePanel.tsx'
 import { usePlayback } from './usePlayback.ts'
 
@@ -66,6 +76,21 @@ export interface EditorProps {
    * "Your image" tile is not shown (an image background still shows if the URL loads).
    */
   backgroundImage?: BackgroundImagePlatform | undefined
+  /**
+   * transcript.json (A-05), the text of the captions (A-06); null = none yet. A new value from
+   * the app (a transcription finished) replaces the captions' text and clears the undo steps.
+   */
+  transcript?: Transcript | null | undefined
+  /** Caption edits correct the transcript (undoable like any edit); the app saves it. */
+  onTranscriptChange?(transcript: Transcript): void
+  /** Transcribe from the Captions section; missing when the platform cannot transcribe */
+  transcription?: EditorTranscription | undefined
+}
+
+/** Everything the editor's undo history covers: the project and the captions' text. */
+interface EditorDoc {
+  project: Project
+  transcript: Transcript | null
 }
 
 /** Editor (flows.md §5): preview in the middle, side panel on the right, timeline below. */
@@ -79,6 +104,9 @@ export function Editor({
   onBack,
   exportPlatform,
   backgroundImage: imagePlatform,
+  transcript: transcriptProp = null,
+  onTranscriptChange,
+  transcription,
 }: EditorProps) {
   const t = useT()
   const video = useRef<HTMLVideoElement | null>(null)
@@ -86,15 +114,27 @@ export function Editor({
   const draw = useRef<((timeMs: number) => void) | null>(null)
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
   const [selectedHidden, setSelectedHidden] = useState<number | null>(null)
+  const [selectedCaption, setSelectedCaption] = useState<number | null>(null)
+  const [editingCaption, setEditingCaption] = useState<number | null>(null)
+  const [askReplace, setAskReplace] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
 
-  // Every edit (timeline and side panel) goes through one history: Ctrl/⌘+Z undoes any of
-  // them, ≥ 50 steps, a whole drag is one step (F-09).
+  // Every edit (timeline and side panel, captions' text included) goes through one history:
+  // Ctrl/⌘+Z undoes any of them, ≥ 50 steps, a whole drag is one step (F-09).
   // The page remounts the editor per project, so the history is created once.
-  const [history] = useState(() => createHistory(initial))
+  const [history] = useState(() =>
+    createHistory<EditorDoc>({ project: initial, transcript: transcriptProp }),
+  )
   const [project, setProject] = useState(initial)
+  const [transcript, setTranscript] = useState(transcriptProp)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const onTranscriptChangeRef = useRef(onTranscriptChange)
+  onTranscriptChangeRef.current = onTranscriptChange
+  /** What the history held last time it was seen, to tell which part changed. */
+  const seen = useRef(history.present)
+  /** True while a transcript from the app replaces ours: it is not an edit to save. */
+  const replacing = useRef(false)
   // F-16: the answer to "Trim the last 2s?" is kept outside the undo history, so undoing an
   // applied trim brings the old end back but never the question; every save carries it.
   const [endTrimAnswer, setEndTrimAnswer] = useState(initial.endTrimSuggestion)
@@ -108,16 +148,70 @@ export function Editor({
   useEffect(
     () =>
       history.subscribe(() => {
-        const next = withAnswerRef.current(history.present)
-        setProject(next)
-        onChangeRef.current(next)
+        const present = history.present
+        const before = seen.current
+        seen.current = present
+        if (present.project !== before.project) {
+          const next = withAnswerRef.current(present.project)
+          setProject(next)
+          onChangeRef.current(next)
+        }
+        if (present.transcript !== before.transcript) {
+          setTranscript(present.transcript)
+          if (present.transcript && !replacing.current) {
+            onTranscriptChangeRef.current?.(present.transcript)
+          }
+        }
       }),
     [history],
   )
   useHistoryShortcuts(history, () => {})
 
-  const edit = (next: (p: Project) => Project) => history.push(next(history.present))
-  const fromBase = (next: (p: Project) => Project) => history.push(next(history.base))
+  // A transcription finished while the editor is open: its text becomes the captions'.
+  const lastTranscriptProp = useRef(transcriptProp)
+  useEffect(() => {
+    if (transcriptProp === lastTranscriptProp.current) return
+    lastTranscriptProp.current = transcriptProp
+    replacing.current = true
+    try {
+      history.reset({ ...history.present, transcript: transcriptProp })
+    } finally {
+      replacing.current = false
+    }
+    setSelectedCaption(null)
+    setEditingCaption(null)
+    // Transcribed for the first time with captions never set: they were asked for, show them.
+    const doc = history.present
+    if (transcriptProp?.segments.length && doc.project.captions === null) {
+      history.push({ ...doc, project: setCaptions(doc.project, { enabled: true }) })
+    }
+  }, [history, transcriptProp])
+
+  /** Applies a project edit to the present state (same project back = no undo step). */
+  const edit = (next: (p: Project) => Project) => {
+    const doc = history.present
+    const project = next(doc.project)
+    if (project !== doc.project) history.push({ ...doc, project })
+  }
+  /** Drags: applies the gesture's total delta to the state at its start. */
+  const fromBase = (next: (p: Project) => Project) => {
+    const doc = history.base
+    const project = next(doc.project)
+    history.push(project === doc.project ? doc : { ...doc, project })
+  }
+  /** Caption edits (A-06): they correct the transcript. */
+  const editText = (next: (t: Transcript) => Transcript) => {
+    const doc = history.present
+    if (!doc.transcript) return
+    const text = next(doc.transcript)
+    if (text !== doc.transcript) history.push({ ...doc, transcript: text })
+  }
+  const textFromBase = (next: (t: Transcript) => Transcript) => {
+    const doc = history.base
+    if (!doc.transcript) return
+    const text = next(doc.transcript)
+    history.push(text === doc.transcript ? doc : { ...doc, transcript: text })
+  }
 
   // A-04: the image in use, and the last one used, so the tile can bring it back after a
   // preset was picked. The decoded image goes to the preview and the format previews.
@@ -178,10 +272,34 @@ export function Editor({
       // setTrim changed nothing: no history step, so save the answer on its own.
       if (history.present !== before) return
     }
-    const next = withAnswer(history.present)
+    const next = withAnswer(history.present.project)
     setProject(next)
     onChangeRef.current(next)
   }
+  // A-06: the captions the preview burns in (the export burns the same ones, or none).
+  const captionSettings = projectCaptions(project)
+  const captionTrack = useMemo(
+    () => buildCaptionTrack(transcript, project.captions),
+    [transcript, project.captions],
+  )
+  const transcribeAgain = () => {
+    if (!transcription) return
+    if (transcript?.edited) setAskReplace(true)
+    else transcription.onTranscribe()
+  }
+  const editCaption = (index: number | null) => {
+    setEditingCaption(index)
+    if (index === null) return
+    setSelectedCaption(index)
+    // Show the start of that caption in the preview (faded in) while its text is fixed.
+    const segment = transcript?.segments[index]
+    if (segment) {
+      playback.seek(
+        Math.round(segment.startMs + Math.min(500, (segment.endMs - segment.startMs) / 2)),
+      )
+    }
+  }
+
   const noClicks = useMemo(
     () => !events.some((e) => e.type === 'down' && e.button === 'left'),
     [events],
@@ -295,6 +413,7 @@ export function Editor({
               webcamUrl={webcamUrl}
               webcamVideo={webcamVideo}
               backgroundImage={backgroundImage}
+              captions={captionTrack}
               drawRef={draw}
               onWebcamDragStart={() => history.begin()}
               onWebcamDrag={(placement) =>
@@ -363,6 +482,31 @@ export function Editor({
                   }
                 : undefined
             }
+            captions={
+              transcript
+                ? {
+                    captions: transcript.segments,
+                    off: !captionSettings.enabled,
+                    selectedIndex: selectedCaption,
+                    editingIndex: editingCaption,
+                    lang: transcript.language,
+                    onSelectCaption: setSelectedCaption,
+                    onEditCaption: editCaption,
+                    onCaptionText: (i, text) => {
+                      editText((t) => setCaptionText(t, i, text))
+                      if (!text.trim()) setSelectedCaption(null)
+                    },
+                    onMoveCaption: (i, d) =>
+                      textFromBase((t) => moveCaption(t, i, d, project.durationMs)),
+                    onResizeCaption: (i, edge, d) =>
+                      textFromBase((t) => resizeCaption(t, i, edge, d, project.durationMs)),
+                    onDeleteCaption: (i) => {
+                      editText((t) => deleteCaption(t, i))
+                      setSelectedCaption(null)
+                    },
+                  }
+                : undefined
+            }
             onScrub={playback.seek}
             onSelectZoom={setSelectedZoomId}
             onMoveZoom={(id, d) => fromBase((p) => moveZoom(p, id, d))}
@@ -415,6 +559,17 @@ export function Editor({
             // undo step for both.
             edit((p) => setAspect(setWebcam(p, { layout: 'split' }), '9:16'))
           }
+          captions={
+            transcript || transcription
+              ? {
+                  settings: captionSettings,
+                  transcript,
+                  transcription,
+                  onCaptions: (patch) => edit((p) => setCaptions(p, patch)),
+                  onTranscribeAgain: transcribeAgain,
+                }
+              : undefined
+          }
         />
       </div>
       {exportOpen && exportPlatform && (
@@ -427,10 +582,19 @@ export function Editor({
           webcamVideo={webcamUrl ? webcamVideo.current : null}
           backgroundImage={backgroundImage}
           timeMs={playback.timeMs}
+          transcript={transcript}
           platform={exportPlatform}
           onClose={() => setExportOpen(false)}
         />
       )}
+      <ReplaceTranscriptDialog
+        open={askReplace}
+        onReplace={() => {
+          setAskReplace(false)
+          transcription?.onTranscribe({ replaceEdited: true })
+        }}
+        onKeep={() => setAskReplace(false)}
+      />
     </div>
   )
 }

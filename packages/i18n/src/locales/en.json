@@ -220,6 +220,31 @@
       "hidden": "Hidden",
       "hiddenBlock": "Webcam hidden from {start} to {end}",
       "hiddenHint": "Drag to move, pull an edge to resize. Arrows nudge it, Delete shows the webcam again."
+    },
+    "captions": {
+      "title": "Captions",
+      "show": "Show captions",
+      "style": "Style",
+      "clean": "Clean",
+      "bold": "Bold",
+      "kamo": "Kamo",
+      "position": "Position",
+      "bottom": "Bottom",
+      "middle": "Middle",
+      "size": "Size",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "editHint": "Double-click a caption on the timeline to fix its text. Your fixes also correct the transcript.",
+      "fromTranscript": "Captions come from the transcript of this recording.",
+      "needsPack": "Transcription is an optional pack ({size}) that runs on your computer. Kamo downloads it only when you ask.",
+      "download": "Download and transcribe",
+      "noSpeech": "No speech was found in this recording, so there are no captions.",
+      "track": "Captions",
+      "block": "Caption from {start} to {end}: {text}",
+      "blockHint": "Double-click or press Enter to fix the text. Drag to move, pull an edge to change the timing. Delete removes it.",
+      "editLabel": "Caption text",
+      "editHelp": "Enter saves · Esc cancels"
     }
   },
   "style": {
@@ -457,6 +482,15 @@
       "message": "Closing now cancels the export and deletes the unfinished file.",
       "stop": "Cancel export and close",
       "keep": "Keep exporting"
+    },
+    "captions": {
+      "label": "Captions",
+      "none": "None",
+      "burn": "Burned in",
+      "srt": ".srt file",
+      "srtHint": "An .srt file next to each video, timed to the trim.",
+      "burnHint": "In the picture, with the style from the Captions panel.",
+      "srtFile": "+ {name}"
     }
   },
   "recovery": {
@@ -619,7 +653,14 @@
     },
     "errors": {
       "packMissing": "Download a transcription pack first.",
-      "audioUnreadable": "Kamo couldn't read this recording's audio."
+      "audioUnreadable": "Kamo couldn't read this recording's audio.",
+      "transcriptEdited": "Your caption fixes were kept: the new transcription was not saved."
+    },
+    "replace": {
+      "title": "Replace your caption fixes?",
+      "body": "You corrected this transcript through the captions. Transcribing again replaces it, and your fixes are lost.",
+      "confirm": "Transcribe again",
+      "keep": "Keep my fixes"
     }
   }
 }

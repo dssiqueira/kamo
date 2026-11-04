@@ -5,6 +5,7 @@ import { buildCameraTrack, cameraAt, viewportAt, type CameraTrack } from '../cam
 import { buildCursorTrack, cursorAt, type CursorTrack } from '../cursor/cursor.ts'
 import type { MouseEventRecord } from '../events/events.ts'
 import type { Aspect, Project, Style, WebcamSettings, Zoom } from '../project/schema.ts'
+import { captionLayerAt, type CaptionTrack } from './captions.ts'
 import { framingAt, framingFor } from './framing.ts'
 import { paddedArea } from './layout.ts'
 import type { RenderInput } from './renderer.ts'
@@ -25,6 +26,8 @@ export interface Scene {
    * has decoded it; missing = the fallback color. Keep the same object for every frame.
    */
   backgroundImage?: BackgroundImage | null
+  /** burned-in captions (A-06, buildCaptionTrack); missing/null = none */
+  captions?: CaptionTrack | null
 }
 
 /** The webcam frame on screen at this instant (picked with webcamTimeMs) and its size. */
@@ -39,9 +42,11 @@ export interface SceneInput {
   events: readonly MouseEventRecord[]
   /** zooms the camera uses: `visibleZooms(project.zooms, { autoZoom })` */
   zooms: readonly Zoom[]
+  /** captions to burn in (A-06): `buildCaptionTrack(transcript, settings)`; none when missing */
+  captions?: CaptionTrack | null
 }
 
-export function buildScene({ project, events, zooms }: SceneInput): Scene {
+export function buildScene({ project, events, zooms, captions }: SceneInput): Scene {
   const sourceSize = { width: project.source.width, height: project.source.height }
   return {
     sourceSize,
@@ -58,6 +63,7 @@ export function buildScene({ project, events, zooms }: SceneInput): Scene {
       durationMs: project.durationMs,
     }),
     webcam: project.webcam ?? null,
+    captions: captions ?? null,
   }
 }
 
@@ -89,6 +95,7 @@ export function sceneFrame(
     cursorSize: scene.cursor.size,
     webcam: null,
     backgroundImage: scene.backgroundImage ?? null,
+    captions: captionLayerAt(scene.captions, aspect, timeMs),
   }
   const keep: Point | null =
     aspect !== '16:9' && scene.cursor.rawT.length > 0 ? { x: cursor.x, y: cursor.y } : null

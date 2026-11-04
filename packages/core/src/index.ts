@@ -22,3 +22,5 @@ export * from './export/timing.ts'
 export * from './export/audio-mix.ts'
 // Local transcription (A-05): transcript.json, whisper output, 16kHz speech audio.
 export * from './transcript/index.ts'
+// Captions (A-06): cues, .srt and the timeline edits that correct transcript.json.
+export * from './captions/index.ts'

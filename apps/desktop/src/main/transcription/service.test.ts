@@ -21,6 +21,7 @@ import {
   type FakePackServer,
 } from '../packs/testing.ts'
 import { saveProjectData, setTranscriptState } from '../projects.ts'
+import { saveEditedTranscript } from '../transcript-file.ts'
 import { FileProjectStore } from '../storage/index.ts'
 import { PersistentQueue } from './queue.ts'
 import {
@@ -372,5 +373,64 @@ describe('TranscriptionService', () => {
     await service.enqueue(ghost)
     await service.idle()
     expect(jobOf(service, ghost)).toMatchObject({ state: 'failed', error: 'project_not_found' })
+  })
+
+  it('asks before replacing a transcript corrected through the captions (A-06)', async () => {
+    await packs.install('transcribe-light')
+    const project = await makeProject()
+    const first = harness()
+    await first.service.enqueue(project.id)
+    await first.service.idle()
+    const original = parseTranscript((await store.readText(project.id, PROJECT_FILES.transcript))!)!
+    await saveEditedTranscript(store, project.id, {
+      ...original,
+      segments: [{ ...original.segments[0]!, text: 'Corrigido à mão.' }],
+    })
+    const edited = await store.readText(project.id, PROJECT_FILES.transcript)
+    expect(parseTranscript(edited!)?.edited).toBe(true)
+
+    const { service } = harness()
+    await expect(service.enqueue(project.id)).rejects.toMatchObject({ code: 'transcript_edited' })
+    expect(await store.readText(project.id, PROJECT_FILES.transcript)).toBe(edited)
+
+    await service.enqueue(project.id, { replaceEdited: true })
+    await service.idle()
+    expect(jobOf(service, project.id)?.state).toBe('done')
+    const replaced = parseTranscript((await store.readText(project.id, PROJECT_FILES.transcript))!)
+    expect(replaced?.edited).toBe(false)
+    expect(replaced?.segments[0]?.text).toBe('Fake segment 1.')
+  })
+
+  it('keeps corrections made while a transcription runs, unless replacing was agreed', async () => {
+    await packs.install('transcribe-light')
+    const project = await makeProject()
+    const first = harness()
+    await first.service.enqueue(project.id)
+    await first.service.idle()
+    const original = parseTranscript((await store.readText(project.id, PROJECT_FILES.transcript))!)!
+
+    process.env['FAKE_WHISPER_SLOW_MS'] = '600'
+    try {
+      const { service } = harness()
+      let corrected = false
+      service.onChange((jobs) => {
+        if (jobs[0]?.state !== 'transcribing' || corrected) return
+        corrected = true
+        void saveEditedTranscript(store, project.id, { ...original, edited: true })
+      })
+      await service.enqueue(project.id)
+      await service.idle()
+      expect(jobOf(service, project.id)).toMatchObject({
+        state: 'failed',
+        error: 'transcript_edited',
+      })
+    } finally {
+      delete process.env['FAKE_WHISPER_SLOW_MS']
+    }
+    expect(
+      parseTranscript((await store.readText(project.id, PROJECT_FILES.transcript))!)?.edited,
+    ).toBe(true)
+    // An earlier transcript stays: still done.
+    expect((await loadProject(store, project.id)).transcript.status).toBe('done')
   })
 })

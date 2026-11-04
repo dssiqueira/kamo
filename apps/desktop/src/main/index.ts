@@ -75,6 +75,8 @@ import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './window
 import { registerExport } from './export-ipc.ts'
 import { PackError } from './packs/manager.ts'
 import { registerTranscription } from './transcription/index.ts'
+import { TranscriptionError } from './transcription/service.ts'
+import { loadTranscriptText, saveEditedTranscript } from './transcript-file.ts'
 import { runExportSmoke } from './export-smoke.ts'
 import {
   BACKGROUND_IMAGE_FILTER_EXTENSIONS,
@@ -268,7 +270,8 @@ function ipcErrorCodeOf(error: unknown): string | null {
     error instanceof BackgroundImageError ||
     error instanceof RecoveryError ||
     error instanceof PlaylistError ||
-    error instanceof PackError
+    error instanceof PackError ||
+    error instanceof TranscriptionError
   ) {
     return error.code
   }
@@ -582,6 +585,15 @@ async function chooseBackgroundImage(): Promise<string | null> {
 handle(IpcChannel.loadEvents, async (projectId) => {
   assertProjectId(projectId as string)
   return (await getServices().store.readText(projectId as string, PROJECT_FILES.events)) ?? ''
+})
+// A-06: the captions read transcript.json, and caption edits correct it.
+handle(IpcChannel.loadTranscript, async (projectId) => {
+  assertProjectId(projectId as string)
+  return loadTranscriptText(getServices().store, projectId as string)
+})
+handle(IpcChannel.saveTranscript, async (projectId, transcript) => {
+  assertProjectId(projectId as string)
+  await saveEditedTranscript(getServices().store, projectId as string, transcript)
 })
 // Interrupted recordings (F-02). Recordings started after this process did belong to it (one
 // may be running), so only earlier ones are offered.

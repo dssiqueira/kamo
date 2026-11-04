@@ -233,7 +233,8 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 - Light and Accurate transcription packs (whisper.cpp + model) assembled in CI as release assets
 - Background transcription (utility process), `transcript.json`, resume after closing, one-time question about automatic mode
 
-### Step 24 — Captions (A-06) (not started)
+### Step 24 — Captions (A-06) ⏳ (2026-11-04)
+> Done: `packages/core/src/captions` (cues: wrapping in units with CJK line breaking, long segments split on their word timings, trim clipping, `toSrt`; the caption edits that correct the transcript), `render/captions.ts` (presets, placement in the screen frame for every format and the split layout, spring fade) drawn by the core renderer, `project.captions`, the captions lane with inline text editing, the side panel's Captions section (Transcribe, or the pack offer with its size; presets, position, size), one undo history for the project and the captions' text, and the export choice (none / burned in / `.srt` next to each MP4). Main writes caption edits to `transcript.json` (`edited: true`) and refuses to transcribe over an edited transcript unless the user agreed (`transcript_edited`). Checked in the Electron build with a hand-written Portuguese transcript: presets in 16:9 and the 9:16 split, inline edit with undo and redo saved to disk, the replace question, the pack offer, a 9:16 burned-in export and a 16:9 `.srt`. Pending: trying the timing drags by hand, a real whisper transcript, the extension (after its editor, step 14).
 - Editable caption track (fixes the transcript), 3 presets, export with none / burned-in / `.srt` adjusted to the trim
 
 ### Step 25 — Local MCP (M-01) ⏳ (2026-11-04, built ahead of order; publishing pending)

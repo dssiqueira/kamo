@@ -1,10 +1,16 @@
 import {
   backgroundImageFile,
+  CAPTION_MAX_LINES,
+  captionCues,
+  captionMaxUnits,
+  projectCaptions,
+  toSrt,
   type Aspect,
   type ExportRecord,
   type FileSink,
   type MouseEventRecord,
   type Project,
+  type Transcript,
 } from '@kamo/core'
 import {
   exportErrorCode,
@@ -55,7 +61,12 @@ export interface ExportJob {
   /** final file name, once the sink opened it */
   name: string | null
   path: string | null
+  /** the .srt written next to it (A-06), once saved */
+  srtName?: string | null
 }
+
+/** Captions on export (A-06): none, burned into the picture, or an .srt next to the MP4. */
+export type CaptionExport = 'none' | 'burn' | 'srt'
 
 export type ExportRunState =
   | { phase: 'configuring' }
@@ -68,17 +79,62 @@ export interface ExportRunInput {
   events: readonly MouseEventRecord[]
   autoZoom: boolean
   platform: ExportPlatform
+  /** transcript.json (A-06): the captions' text; null = no captions to export */
+  transcript?: Transcript | null
+}
+
+/**
+ * The .srt of one format (A-06): the cues wrapped like the burned-in ones, clipped to the
+ * trim and timed from its start, so they line up with the exported video. Null when no
+ * caption falls inside the trim.
+ */
+export function srtFor(project: Project, transcript: Transcript, aspect: Aspect): string | null {
+  const settings = projectCaptions(project)
+  const cues = captionCues(transcript, {
+    maxUnits: captionMaxUnits(aspect, settings),
+    maxLines: CAPTION_MAX_LINES,
+    trim: project.trim,
+  })
+  return cues.length > 0 ? toSrt(cues, project.trim.startMs) : null
+}
+
+/** `Demo 16x9 1080p30 (2).mp4` → `Demo 16x9 1080p30 (2).srt`: players load it with the video. */
+export function srtName(videoName: string): string {
+  return `${videoName.replace(/.[^.]+$/, '')}.srt`
+}
+
+/** Writes a small text file through the sink (committed, or aborted on failure). */
+async function writeText(sink: FileSink, name: string, text: string): Promise<string> {
+  const file = await sink.open(name, 'application/x-subrip')
+  try {
+    const writer = file.stream.getWriter()
+    await writer.write({ type: 'write', data: new TextEncoder().encode(text), position: 0 })
+    writer.releaseLock()
+    await file.commit()
+    return file.name
+  } catch (error) {
+    await file.abort(error).catch(() => {})
+    throw error
+  }
 }
 
 /**
  * Exports the checked formats one after another (F-11), with progress per file. Cancel
  * aborts the current file (the sink deletes it) and goes back to configuring.
  */
-export function useExportRun({ project, events, autoZoom, platform }: ExportRunInput) {
+export function useExportRun({
+  project,
+  events,
+  autoZoom,
+  platform,
+  transcript = null,
+}: ExportRunInput) {
   const [state, setState] = useState<ExportRunState>({ phase: 'configuring' })
   const controller = useRef<AbortController | null>(null)
-  const latest = useRef({ project, events, autoZoom, platform })
-  latest.current = { project, events, autoZoom, platform }
+  const latest = useRef({ project, events, autoZoom, platform, transcript })
+  latest.current = { project, events, autoZoom, platform, transcript }
+  /** The captions choice of the current run (kept for "Try again"). */
+  const captionsMode = useRef<CaptionExport>('none')
 
   const busy = state.phase === 'exporting'
   useEffect(() => {
@@ -88,7 +144,8 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
   useEffect(() => () => controller.current?.abort(), [])
 
   const run = useCallback(async (jobs: ExportJob[]) => {
-    const { project, events, autoZoom, platform } = latest.current
+    const { project, events, autoZoom, platform, transcript } = latest.current
+    const captions = transcript ? captionsMode.current : 'none'
     const abort = new AbortController()
     controller.current = abort
     let current = jobs.map((job) => ({ ...job }))
@@ -119,6 +176,7 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
     for (let index = 0; index < current.length; index++) {
       const job = current[index] as ExportJob
       if (job.status === 'done') continue
+      const srt = captions === 'srt' && transcript ? srtFor(project, transcript, job.aspect) : null
       update(index, { status: 'exporting', progress: 0 })
       try {
         const file = await platform.sink.open(
@@ -139,6 +197,10 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
           webcam: project.webcam ? (platform.media.webcam ?? null) : null,
           backgroundImage: imageFile ? (platform.media.backgroundImage?.(imageFile) ?? null) : null,
           audio,
+          captions:
+            captions === 'burn' && transcript
+              ? { transcript, settings: projectCaptions(project) }
+              : null,
           aspect: job.aspect,
           resolution: EXPORT_RESOLUTION,
           fps: EXPORT_FPS,
@@ -154,7 +216,15 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
           },
         })
         result.warnings.forEach((w) => warnings.add(w))
-        update(index, { status: 'done', progress: 1, path: result.path, name: result.name })
+        // A-06: the .srt next to the video, named like it so players load it on their own.
+        const srtFile = srt ? await writeText(platform.sink, srtName(result.name), srt) : null
+        update(index, {
+          status: 'done',
+          progress: 1,
+          path: result.path,
+          name: result.name,
+          srtName: srtFile,
+        })
         platform.onExported?.({
           aspect: job.aspect,
           resolution: EXPORT_RESOLUTION,
@@ -182,7 +252,8 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
 
   return {
     state,
-    start: (aspects: readonly Aspect[]) =>
+    start: (aspects: readonly Aspect[], captions: CaptionExport = 'none') => {
+      captionsMode.current = captions
       void run(
         aspects.map((aspect) => ({
           aspect,
@@ -191,7 +262,8 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
           name: null,
           path: null,
         })),
-      ),
+      )
+    },
     /** After an error: exports again the files that did not finish. */
     retry: () => {
       if (state.phase === 'error') void run(state.jobs)

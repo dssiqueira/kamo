@@ -3,12 +3,19 @@
 // layout.ts, wallpapers.ts and ripple.ts.
 //
 // Per frame: backdrop (cached: wallpaper, color or the user's image, A-04) → frame clipped
-// to a rounded rect → source crop → ripple → cursor → webcam (A-03: the bubble, an overlay outside the frame clip, or the split
-// layout's camera card). The backdrop (wallpaper + frame shadow) only changes with the
+// to a rounded rect → source crop → ripple → cursor → webcam (A-03: the bubble, an overlay
+// outside the frame clip, or the split layout's camera card) → captions (A-06, on top). The backdrop (wallpaper + frame shadow) only changes with the
 // style, the output size or the frame box, so it is painted once into an offscreen canvas
 // and then costs one drawImage per frame.
 import { CURSOR_ARROW, type CursorFrame } from '../cursor/cursor.ts'
 import type { Aspect, Style } from '../project/schema.ts'
+import {
+  CAPTION_LIFT_EM,
+  CAPTION_LOOKS,
+  captionFontPx,
+  captionPlacement,
+  type CaptionLayer,
+} from './captions.ts'
 import {
   computeLayout,
   isInCrop,
@@ -61,6 +68,8 @@ export interface RenderInput {
    * backdrop is cached per image object.
    */
   backgroundImage?: BackgroundImage | null
+  /** the caption showing in this frame (A-06, captionLayerAt); null/missing = none */
+  captions?: CaptionLayer | null
 }
 
 /** One webcam frame and where it goes: a bubble (webcamBubbleAt) or a split card. */
@@ -179,6 +188,7 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         drawWebcamCard(ctx, input.webcam, input.webcam.card, layout, input.style)
       else if (input.webcam?.bubble)
         drawWebcam(ctx, input.webcam, input.webcam.bubble, layout.output)
+      if (input.captions) drawCaption(ctx, input.captions, layout)
       return layout
     },
     invalidate() {
@@ -340,6 +350,58 @@ function drawWebcamCard(
     card.width,
     card.height,
   )
+  ctx.restore()
+}
+
+/**
+ * A caption (A-06): the preset's box, then the lines centered, with an outline for the
+ * outline preset. Measured at the nominal size; captionPlacement shrinks lines too wide for
+ * the frame. While fading in, the lines rise CAPTION_LIFT_EM into place.
+ */
+function drawCaption(ctx: Context2D, layer: CaptionLayer, layout: Layout): void {
+  if (!(layer.opacity > 0) || layer.lines.length === 0) return
+  const look = CAPTION_LOOKS[layer.preset]
+  const font = (px: number) => `${look.weight} ${px}px ${layer.fontFamily}`
+  const nominal = captionFontPx(layout.output, layer)
+  ctx.save()
+  ctx.font = font(nominal)
+  const widths = layer.lines.map(
+    (line) => ctx.measureText(line)?.width ?? line.length * nominal * 0.5,
+  )
+  const place = captionPlacement(layout.frame, layout.output, layer, widths)
+  const opacity = Math.min(1, layer.opacity)
+  ctx.globalAlpha = opacity
+  if (layer.rising) ctx.translate(0, (1 - opacity) * CAPTION_LIFT_EM * place.fontPx)
+  const shadow = (on: boolean) => {
+    ctx.shadowColor = on && look.shadow ? look.shadow.color : 'transparent'
+    ctx.shadowBlur = on && look.shadow ? look.shadow.blur * place.fontPx : 0
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = on && look.shadow ? look.shadow.offsetY * place.fontPx : 0
+  }
+  if (look.box) {
+    shadow(true)
+    ctx.fillStyle = look.box
+    roundRectPath(ctx, place.box, place.radius)
+    ctx.fill()
+    shadow(false)
+  }
+  ctx.font = font(place.fontPx)
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  layer.lines.forEach((line, i) => {
+    const at = place.lines[i]
+    if (!at) return
+    if (look.stroke) {
+      shadow(true)
+      ctx.lineJoin = 'round'
+      ctx.lineWidth = look.stroke.width * place.fontPx
+      ctx.strokeStyle = look.stroke.color
+      ctx.strokeText(line, at.x, at.y)
+      shadow(false)
+    }
+    ctx.fillStyle = look.color
+    ctx.fillText(line, at.x, at.y)
+  })
   ctx.restore()
 }
 

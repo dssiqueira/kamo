@@ -1,10 +1,13 @@
 import {
+  buildCaptionTrack,
   buildScene,
   projectAspect,
+  projectCaptions,
   type Aspect,
   type BackgroundImage,
   type MouseEventRecord,
   type Project,
+  type Transcript,
   type Zoom,
 } from '@kamo/core'
 import { useEffect, useId, useMemo, useState } from 'react'
@@ -17,6 +20,7 @@ import {
   EXPORT_FPS,
   EXPORT_RESOLUTION,
   useExportRun,
+  type CaptionExport,
   type ExportJob,
   type ExportPlatform,
 } from './useExportRun.ts'
@@ -34,8 +38,17 @@ export interface ExportSheetProps {
   /** the decoded image of an image background (A-04), drawn in the format previews */
   backgroundImage?: BackgroundImage | null
   timeMs: number
+  /** transcript.json (A-06): with speech in it, the captions choice shows */
+  transcript?: Transcript | null
   platform: ExportPlatform
   onClose(): void
+}
+
+const CAPTION_CHOICES: readonly CaptionExport[] = ['none', 'burn', 'srt']
+const CAPTION_KEY: Record<CaptionExport, string> = {
+  none: 'export.captions.none',
+  burn: 'export.captions.burn',
+  srt: 'export.captions.srt',
 }
 
 /** F-11 formats plus the vertical 9:16 (A-02). */
@@ -70,6 +83,7 @@ export function ExportSheet({
   webcamVideo = null,
   backgroundImage = null,
   timeMs,
+  transcript = null,
   platform,
   onClose,
 }: ExportSheetProps) {
@@ -83,15 +97,32 @@ export function ExportSheet({
     [projectAspect(project)]: true,
   }))
   const [folder, setFolder] = useState<string | null>(null)
+  // A-06: captions on by default when they show in the editor.
+  const hasCaptions = (transcript?.segments.length ?? 0) > 0
+  const [captions, setCaptions] = useState<CaptionExport>(() =>
+    hasCaptions && projectCaptions(project).enabled ? 'burn' : 'none',
+  )
   const { state, start, retry, cancel, reset } = useExportRun({
     project,
     events,
     autoZoom,
     platform,
+    transcript: hasCaptions ? transcript : null,
   })
+  // The format previews show the captions only when they will be burned in.
+  const captionTrack = useMemo(
+    () =>
+      captions === 'burn'
+        ? buildCaptionTrack(transcript, { ...projectCaptions(project), enabled: true })
+        : null,
+    [captions, transcript, project],
+  )
   const scene = useMemo(
-    () => ({ ...buildScene({ project, events, zooms }), backgroundImage }),
-    [project, events, zooms, backgroundImage],
+    () => ({
+      ...buildScene({ project, events, zooms, captions: captionTrack }),
+      backgroundImage,
+    }),
+    [project, events, zooms, backgroundImage, captionTrack],
   )
   const selected = ASPECTS.filter((aspect) => checked[aspect])
   const exporting = state.phase === 'exporting'
@@ -199,6 +230,45 @@ export function ExportSheet({
                 <Chip selected>MP4</Chip>
                 <Chip>GIF</Chip>
               </dd>
+              {hasCaptions && (
+                <>
+                  <dt className="text-on-surface-muted">{t('export.captions.label')}</dt>
+                  <dd className="flex flex-col gap-xs">
+                    <div
+                      role="radiogroup"
+                      aria-label={t('export.captions.label')}
+                      className="flex flex-wrap gap-xs"
+                    >
+                      {CAPTION_CHOICES.map((choice) => (
+                        <button
+                          key={choice}
+                          type="button"
+                          role="radio"
+                          aria-checked={captions === choice}
+                          data-testid={`export-captions-${choice}`}
+                          onClick={() => setCaptions(choice)}
+                          className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] ${FOCUS_RING} ${
+                            captions === choice
+                              ? 'bg-tertiary-container text-on-surface'
+                              : 'text-on-surface-muted hover:bg-surface-raised'
+                          }`}
+                        >
+                          {t(CAPTION_KEY[choice])}
+                        </button>
+                      ))}
+                    </div>
+                    {captions !== 'none' && (
+                      <span className="text-label text-on-surface-muted">
+                        {t(
+                          captions === 'srt'
+                            ? 'export.captions.srtHint'
+                            : 'export.captions.burnHint',
+                        )}
+                      </span>
+                    )}
+                  </dd>
+                </>
+              )}
             </dl>
             <p className="-mt-sm text-label text-on-surface-muted">{t('export.laterNote')}</p>
 
@@ -231,7 +301,7 @@ export function ExportSheet({
                 type="button"
                 data-testid="export-start"
                 disabled={selected.length === 0}
-                onClick={() => start(selected)}
+                onClick={() => start(selected, hasCaptions ? captions : 'none')}
                 className={BUTTON_PRIMARY}
               >
                 {t('export.start', { count: selected.length })}
@@ -346,8 +416,18 @@ function JobRow({ job }: { job: ExportJob }) {
   return (
     <li className="flex flex-col gap-xs" data-testid={`export-job-${job.aspect}`}>
       <div className="flex items-baseline justify-between gap-md text-body">
-        <span className="min-w-0 truncate" title={label}>
-          {label}
+        <span className="flex min-w-0 flex-col">
+          <span className="min-w-0 truncate" title={label}>
+            {label}
+          </span>
+          {job.srtName && (
+            <span
+              className="min-w-0 truncate text-label text-on-surface-muted"
+              data-testid={`export-srt-${job.aspect}`}
+            >
+              {t('export.captions.srtFile', { name: job.srtName })}
+            </span>
+          )}
         </span>
         <span className="shrink-0 font-mono text-timecode tabular-nums text-on-surface-muted">
           {job.status === 'waiting' ? t('export.waiting') : percent}

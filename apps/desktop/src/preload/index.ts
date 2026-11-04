@@ -58,6 +58,10 @@ const api: KamoApi = {
   openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
   openRawVideo: (projectId) => invoke(IpcChannel.openRawVideo, projectId) as Promise<void>,
   loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
+  loadTranscript: (projectId) =>
+    invoke(IpcChannel.loadTranscript, projectId) as Promise<string | null>,
+  saveTranscript: (projectId, transcript) =>
+    invoke(IpcChannel.saveTranscript, projectId, transcript),
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   pickBackgroundImage: (projectId) =>
     invoke(IpcChannel.pickBackgroundImage, projectId) as Promise<string | null>,
@@ -142,7 +146,8 @@ const api: KamoApi = {
   cancelPack: (id) => invoke(IpcChannel.cancelPack, id),
   removePack: (id) => invoke(IpcChannel.removePack, id),
   onPacksChanged: (listener) => subscribe(IpcChannel.packsChanged, listener),
-  transcribeProject: (projectId) => invoke(IpcChannel.transcribeProject, projectId),
+  transcribeProject: (projectId, options) =>
+    invoke(IpcChannel.transcribeProject, projectId, options ?? {}),
   cancelTranscription: (projectId) => invoke(IpcChannel.cancelTranscription, projectId),
   getTranscriptionJobs: () => invoke(IpcChannel.getTranscriptionJobs),
   onTranscriptionChanged: (listener) => subscribe(IpcChannel.transcriptionChanged, listener),

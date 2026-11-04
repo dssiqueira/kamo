@@ -38,6 +38,7 @@ export type {
   BackgroundImagePick,
   BackgroundImagePlatform,
 } from './editor/background-image.ts'
+export type { EditorTranscription } from './editor/CaptionsSection.tsx'
 export { EditorStatus } from './editor/EditorStatus.tsx'
 export type { EditorStatusProps } from './editor/EditorStatus.tsx'
 export * from './timeline/index.ts'
@@ -45,7 +46,8 @@ export { Mascot } from './mascot/Mascot.tsx'
 export type { MascotPose, MascotProps } from './mascot/Mascot.tsx'
 export { ExportSheet } from './export/ExportSheet.tsx'
 export type { ExportSheetProps } from './export/ExportSheet.tsx'
-export type { ExportMedia, ExportPlatform } from './export/useExportRun.ts'
+export type { CaptionExport, ExportMedia, ExportPlatform } from './export/useExportRun.ts'
+export { srtFor, srtName } from './export/useExportRun.ts'
 // Settings (F-15), help (F-17), updates (F-14) and the permissions onboarding (F-13).
 export { Settings, localeName } from './settings/Settings.tsx'
 export type { SettingsProps } from './settings/Settings.tsx'

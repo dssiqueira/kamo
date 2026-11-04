@@ -375,3 +375,57 @@ describe('Context2D', () => {
     expect(typeof asImage).toBe('function')
   })
 })
+
+describe('captions (A-06)', () => {
+  const caption = {
+    lines: ['Olá, pessoal!', 'Hoje vamos ver o Kamo.'],
+    opacity: 1,
+    rising: false,
+    preset: 'clean',
+    position: 'bottom',
+    size: 'medium',
+    fontFamily: '"Inter", sans-serif',
+    aspect: '16:9',
+  } as const
+
+  it('draws the box and each line last, over the webcam bubble', () => {
+    const { log, renderer } = setup()
+    const bubble = {
+      x: 1700,
+      y: 900,
+      width: 200,
+      height: 200,
+      cornerRadius: 100,
+      radius: 100,
+      opacity: 1,
+    }
+    renderer.render(
+      input({
+        webcam: { source: SOURCE, sourceSize: { width: 1280, height: 720 }, bubble },
+        captions: caption,
+      }),
+    )
+    const main = names(log)
+    const texts = log.filter((c) => c.name === 'main.fillText')
+    expect(texts.map((c) => c.args[0])).toEqual(caption.lines)
+    // After the webcam's mirrored drawImage.
+    expect(main.lastIndexOf('drawImage')).toBeLessThan(main.indexOf('fillText'))
+    expect(log.some((c) => c.name === 'main.font=' && String(c.args[0]).includes('Inter'))).toBe(
+      true,
+    )
+  })
+
+  it('outlines the letters of the bold preset and draws no box', () => {
+    const { log, renderer } = setup()
+    renderer.render(input({ captions: { ...caption, preset: 'bold' } }))
+    expect(log.filter((c) => c.name === 'main.strokeText')).toHaveLength(2)
+    const fills = log.filter((c) => c.name === 'main.fillStyle=').map((c) => c.args[0])
+    expect(fills).not.toContain('rgba(26, 29, 27, 0.84)')
+  })
+
+  it('draws nothing for an invisible caption', () => {
+    const { log, renderer } = setup()
+    renderer.render(input({ captions: { ...caption, opacity: 0 } }))
+    expect(log.some((c) => c.name === 'main.fillText')).toBe(false)
+  })
+})

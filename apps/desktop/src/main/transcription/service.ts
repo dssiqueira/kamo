@@ -5,6 +5,7 @@
 import {
   PROJECT_FILES,
   loadProject,
+  parseTranscript,
   serializeTranscript,
   transcriptFromWhisper,
   type Project,
@@ -92,6 +93,22 @@ class JobFailure extends Error {
   }
 }
 
+/** A request the UI explains (main turns `code` into the IPC error code). */
+export class TranscriptionError extends Error {
+  constructor(readonly code: 'transcript_edited') {
+    super(code)
+    this.name = 'TranscriptionError'
+  }
+}
+
+export interface EnqueueOptions {
+  /**
+   * A-06: the transcript was corrected through the captions; the user confirmed that a new
+   * transcription replaces those corrections. Without it, enqueue refuses an edited one.
+   */
+  replaceEdited?: boolean
+}
+
 /** The voice to transcribe: the microphone when it was recorded, else the computer sound. */
 export async function pickSpeechTrack(
   store: ProjectStore,
@@ -115,6 +132,8 @@ export class TranscriptionService {
   private pumping: Promise<void> | null = null
   private readonly listeners = new Set<(jobs: TranscriptionJob[]) => void>()
   private lastProgressEmit = 0
+  /** Jobs allowed to overwrite a transcript the user corrected (A-06). */
+  private readonly replaceEdited = new Set<string>()
 
   constructor(private readonly deps: TranscriptionDeps) {}
 
@@ -128,10 +147,16 @@ export class TranscriptionService {
     return [...this.jobs.values()].map((job) => ({ ...job }))
   }
 
-  /** The user clicked Transcribe (or auto mode after a recording). */
-  async enqueue(projectId: string): Promise<void> {
+  /**
+   * The user clicked Transcribe (or auto mode after a recording). Rejects with
+   * TranscriptionError('transcript_edited') when the transcript was corrected through the
+   * captions, unless `replaceEdited` says the user agreed to lose those corrections.
+   */
+  async enqueue(projectId: string, options: EnqueueOptions = {}): Promise<void> {
     const existing = this.jobs.get(projectId)
     if (existing && (existing.state === 'queued' || this.current?.projectId === projectId)) return
+    if (options.replaceEdited) this.replaceEdited.add(projectId)
+    else if (await this.isEdited(projectId)) throw new TranscriptionError('transcript_edited')
     this.jobs.set(projectId, { projectId, state: 'queued', progress: 0, error: null })
     this.order.push(projectId)
     await this.deps.queue.add(projectId)
@@ -149,6 +174,7 @@ export class TranscriptionService {
     }
     if (job.state === 'queued') {
       this.dropFromOrder(projectId)
+      this.replaceEdited.delete(projectId)
       await this.deps.queue.remove(projectId)
       this.finish(job, 'cancelled', null)
     }
@@ -170,7 +196,22 @@ export class TranscriptionService {
     const settings = await this.deps.settings()
     if (!(await this.deps.packs.transcriber(settings.transcriptionPack))) return
     this.deps.log.info('transcription.resumed', { count: ids.length })
-    for (const id of ids) await this.enqueue(id)
+    for (const id of ids) {
+      // Corrected since (A-06): the old job must not overwrite the corrections.
+      await this.enqueue(id).catch(async (error: unknown) => {
+        if (!(error instanceof TranscriptionError)) throw error
+        await this.deps.queue.remove(id)
+      })
+    }
+  }
+
+  /** transcript.json was corrected through the captions (A-06). */
+  private async isEdited(projectId: string): Promise<boolean> {
+    const text = await this.deps
+      .store()
+      .readText(projectId, PROJECT_FILES.transcript)
+      .catch(() => null)
+    return text !== null && parseTranscript(text)?.edited === true
   }
 
   /** Resolves when the queue is empty (tests). */
@@ -277,6 +318,10 @@ export class TranscriptionService {
         if ((await store.readText(projectId, PROJECT_FILES.project)) === null) {
           throw new JobFailure('project_not_found')
         }
+        // Corrected in the editor meanwhile, without the user agreeing to replace it (A-06).
+        if (!this.replaceEdited.has(projectId) && (await this.isEdited(projectId))) {
+          throw new JobFailure('transcript_edited')
+        }
         await store.writeText(projectId, PROJECT_FILES.transcript, transcriptText)
         await this.deps.setTranscriptState(projectId, {
           status: 'done',
@@ -310,6 +355,7 @@ export class TranscriptionService {
       }
     } finally {
       release?.()
+      this.replaceEdited.delete(projectId)
       this.current = null
       await rm(workDir, { recursive: true, force: true }).catch(() => {})
       await this.deps.queue.remove(projectId).catch(() => {})

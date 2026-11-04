@@ -24,8 +24,8 @@ export class ExportFileError extends Error {
 }
 
 export const PARTIAL_SUFFIX = '.partial'
-/** Formats the export can produce (F-11 now, GIF in v0.4). */
-const ALLOWED_EXTENSIONS = ['.mp4', '.gif']
+/** Formats the export can produce (F-11 now, GIF in v0.4), and captions next to them (A-06). */
+const ALLOWED_EXTENSIONS = ['.mp4', '.gif', '.srt']
 /** Plenty for " (2)"… while never looping forever on a broken folder. */
 const MAX_NAME_ATTEMPTS = 1000
 const DISK_FULL_CODES = new Set(['ENOSPC', 'EDQUOT', 'EFBIG'])

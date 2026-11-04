@@ -220,6 +220,31 @@
       "hidden": "Escondida",
       "hiddenBlock": "Webcam escondida de {start} a {end}",
       "hiddenHint": "Arraste para mover, puxe uma borda para redimensionar. As setas ajustam, Delete mostra a webcam de novo."
+    },
+    "captions": {
+      "title": "Legendas",
+      "show": "Mostrar legendas",
+      "style": "Estilo",
+      "clean": "Limpo",
+      "bold": "Forte",
+      "kamo": "Kamo",
+      "position": "Posição",
+      "bottom": "Embaixo",
+      "middle": "No meio",
+      "size": "Tamanho",
+      "small": "Pequeno",
+      "medium": "Médio",
+      "large": "Grande",
+      "editHint": "Dê dois cliques numa legenda na linha do tempo pra corrigir o texto. A correção também vale pra transcrição.",
+      "fromTranscript": "As legendas vêm da transcrição desta gravação.",
+      "needsPack": "A transcrição é um pacote opcional ({size}) que roda no seu computador. O Kamo só baixa quando você pede.",
+      "download": "Baixar e transcrever",
+      "noSpeech": "Não encontramos fala nesta gravação, então não há legendas.",
+      "track": "Legendas",
+      "block": "Legenda de {start} a {end}: {text}",
+      "blockHint": "Dois cliques ou Enter pra corrigir o texto. Arraste pra mover, puxe uma borda pra mudar o tempo. Delete apaga.",
+      "editLabel": "Texto da legenda",
+      "editHelp": "Enter salva · Esc cancela"
     }
   },
   "style": {
@@ -457,6 +482,15 @@
       "message": "Fechar agora cancela a exportação e apaga o arquivo inacabado.",
       "stop": "Cancelar exportação e fechar",
       "keep": "Continuar exportando"
+    },
+    "captions": {
+      "label": "Legendas",
+      "none": "Nenhuma",
+      "burn": "No vídeo",
+      "srt": "Arquivo .srt",
+      "srtHint": "Um arquivo .srt ao lado de cada vídeo, com o tempo do corte.",
+      "burnHint": "Na imagem, com o estilo do painel Legendas.",
+      "srtFile": "+ {name}"
     }
   },
   "recovery": {
@@ -619,7 +653,14 @@
     },
     "errors": {
       "packMissing": "Baixe um pacote de transcrição primeiro.",
-      "audioUnreadable": "O Kamo não conseguiu ler o áudio desta gravação."
+      "audioUnreadable": "O Kamo não conseguiu ler o áudio desta gravação.",
+      "transcriptEdited": "Suas correções nas legendas foram mantidas: a nova transcrição não foi salva."
+    },
+    "replace": {
+      "title": "Substituir suas correções nas legendas?",
+      "body": "Você corrigiu esta transcrição pelas legendas. Transcrever de novo substitui ela, e as correções se perdem.",
+      "confirm": "Transcrever de novo",
+      "keep": "Manter minhas correções"
     }
   }
 }

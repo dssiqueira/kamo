@@ -111,9 +111,13 @@ export function registerTranscription(options: {
   handle(IpcChannel.cancelPack, (id) => packs.cancel(packId(id)))
   handle(IpcChannel.removePack, (id) => packs.remove(packId(id)))
   handle(IpcChannel.getTranscriptionJobs, () => service.list())
-  handle(IpcChannel.transcribeProject, async (projectId) => {
+  handle(IpcChannel.transcribeProject, async (projectId, options) => {
     assertProjectId(projectId as string)
-    await service.enqueue(projectId as string)
+    const replaceEdited =
+      typeof options === 'object' && options !== null && 'replaceEdited' in options
+        ? options.replaceEdited === true
+        : false
+    await service.enqueue(projectId as string, { replaceEdited })
   })
   handle(IpcChannel.cancelTranscription, async (projectId) => {
     assertProjectId(projectId as string)

@@ -15,8 +15,7 @@
         ├── events.jsonl      # raw mouse events
         ├── background-<hash>.png|jpg|webp  # optional: the user's wallpaper image (A-04), a copy of the picked file (≤ 25 MB, checked by its bytes); images replaced in an earlier session are deleted when the editor opens the project
         ├── frames/           # reference thumbnails every 5s (JPEG, 480px wide, named by video second: 0005.jpg), captured DURING recording, straight from the stream (no decoding afterwards)
-        ├── transcript.json   # local transcript (A-05, only with the pack installed)
-        └── captions.json     # optional: caption style and adjustments
+        └── transcript.json   # local transcript (A-05, only with the pack installed); caption edits correct it (A-06)
     playlists.json            # local playlists (see "Playlists" below); playlists.broken-<time>.json is an unreadable one set aside
 ```
 Global settings: `app-data/settings.json` (transcription: `autoTranscribe`, absent until the one-time question is answered; `transcriptionLanguage` `auto|en|pt|es|zh|ja`; `transcriptionPack`). Optional packs: `app-data/packs/<pack>/<version>/` + `app-data/packs.json` (`{ version: 1, packs: { <id>: { version, installedAt, entry, model: { name, path }, files: { path, size, sha256 }[] } } }`); a download in progress or paused stays in `app-data/packs/.downloads/<pack>-<version>/` until every file passed its SHA-256, then the folder is moved into place. Transcription: `app-data/transcription-queue.json` (`{ version: 1, projectIds }`, the jobs still to do, so they start again after a restart) and `app-data/transcription/<project-id>/` (the job's 16kHz WAV and whisper's output, deleted when it ends). Kamo Cloud session (if logged in): OS keychain, never in a plain file.
@@ -49,7 +48,7 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | autoZoom | boolean (optional) | the editor's "Auto-zoom" toggle (F-05): `false` hides the `auto` zooms in the preview and the export without deleting them; absent = on, so older files stay valid. An edit like any other (undoable) |
 | endTrimSuggestion | `applied` \| `dismissed` (optional) | the answer to the "Trim the last 2s?" suggestion (F-16); once set it is never shown again for this project. Kept outside the undo history: undoing an applied trim restores the old end, not the question. Absent = not answered |
 | webcam | WebcamSettings \| null | webcam bubble (A-03): visible, position (corner), optional anchor (free center dragged in the preview, 0..1 of the output frame; absent = in the corner), size (small/medium/large), optional shape (circle, square, landscape 16:9 or portrait 9:16; absent = circle), shrinkOnZoom, optional layout (`bubble` | `split`; absent = bubble; split stacks the screen and the camera as two cards, only in 9:16, the other formats keep the bubble), optional split `{ ratio, cameraFirst? }` (ratio = the screen's share of the height, clamped to 0.3–0.7 when drawn, default 0.5; cameraFirst puts the camera on top), hidden stretches `{ startMs, endMs }[]` (in split, the camera card collapses and the screen takes the whole height) and optional offsetMs; the camera itself is in `webcam.mp4`; null when recorded without the camera |
-| captions | CaptionSettings \| null | captions (v0.4) |
+| captions | CaptionSettings \| null | caption look (A-06); the text and timing live in `transcript.json`. Null until captions are first turned on (or a transcription started from the editor finishes), so older files stay valid; null = off |
 | transcript | `{ status: none \| pending \| done \| failed, language?, model? }` | transcription state; the content lives in `transcript.json` |
 | cloud | CloudLink[] | videos from this project uploaded to the cloud; empty if never uploaded |
 | trim | `{ startMs, endMs }` | trim of the start and end (F-16); does not alter the raw video |
@@ -107,6 +106,16 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 | radius | number (px) | default 12 |
 | shadow | boolean | default true |
 
+### CaptionSettings
+| Field | Type | Rule |
+|---|---|---|
+| enabled | boolean | shown in the preview, and burned in by default on export |
+| preset | `clean` \| `bold` \| `kamo` | clean: white on a soft dark pill; bold: bigger white letters with a dark outline, no box; kamo: very dark green on sage |
+| position | `bottom` \| `middle` | inside the screen frame (the video in 16:9, the crop in 1:1 and 9:16, the screen card in the 9:16 split, never over the camera card); 9:16 keeps the bottom 13% free |
+| size | `small` \| `medium` \| `large` | font size as a share of the output's short side (1080p: 39, 48, 59px; bold ×1.22) |
+
+Cues are computed, never stored: each segment is wrapped into at most 2 lines (a Latin letter counts 1, a CJK character 2; Chinese and Japanese break between characters, never before closing punctuation or after opening punctuation) and split into several cues when longer, each starting on its first word's time (`segments[].words`). Font: Inter, then the system CJK stack of the transcript's language.
+
 ### CursorSettings
 | Field | Type | Rule |
 |---|---|---|
@@ -126,7 +135,7 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 | fps | 30 \| 60 | 60 from v0.4 |
 | format | `mp4` \| `gif` | `gif` from v0.4 |
 | uploadToCloud | boolean | if checked, uploads to Kamo Cloud when finished (requires login) |
-| captions | `none` \| `burn` \| `srt` | captions burned into the video, an `.srt` file alongside, or nothing; only with a transcript (A-06) |
+| captions | `none` \| `burn` \| `srt` | captions burned into the video, an `.srt` file alongside, or nothing; only with a transcript that has speech (A-06). The `.srt` (UTF-8 SubRip) takes the MP4's final name (`Demo 16x9 1080p30 (2).srt`), is wrapped like that format's burned-in captions and is timed from the trim start |
 | status | `queued` \| `rendering` \| `done` \| `failed` | |
 | outputPaths | string[] | |
 
@@ -139,7 +148,7 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 | createdAt | ISO date | |
 | segments | `{ startMs, endMs, text, words? }[]` | sorted, in continuous video time (no pauses): the audio is aligned with its `offsetMs` before Whisper hears it, so no offset is applied afterwards; clamped to the video; no empty segments and no non-speech markers (`[BLANK_AUDIO]`, `(music)`, ♪) |
 | segments[].words | `{ startMs, endMs, text }[]` (optional) | per-word timing from Whisper's tokens, inside the segment; one per token in languages without spaces (zh, ja); left out for a segment whose tokens split a character |
-| edited | boolean | true if the user corrected it through the captions |
+| edited | boolean | true once the user corrected it through the captions (text, timing or a deleted caption on the timeline; undoable in the editor). Fixing a text drops that segment's `words`. Transcribing an edited transcript again asks first: main refuses (`transcript_edited`) unless the user agreed, and a job that finds it edited when it finishes keeps the fixes and fails with that code |
 
 Which audio is transcribed: the microphone (`audio.m4a`) when it was recorded, else the computer sound (`system.m4a`), never both mixed (the voice is the microphone; music or a call in the computer sound would only add noise). Main owns `project.transcript`: an autosave from the editor keeps the state that is on disk, so an editor opened before a transcription finished cannot reset it.
 

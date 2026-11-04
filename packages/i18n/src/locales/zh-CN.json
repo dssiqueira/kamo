@@ -220,6 +220,31 @@
       "hidden": "已隐藏",
       "hiddenBlock": "摄像头从 {start} 到 {end} 隐藏",
       "hiddenHint": "拖动以移动，拖拽边缘以调整长度。方向键微调，Delete 键重新显示摄像头。"
+    },
+    "captions": {
+      "title": "字幕",
+      "show": "显示字幕",
+      "style": "样式",
+      "clean": "简洁",
+      "bold": "醒目",
+      "kamo": "Kamo",
+      "position": "位置",
+      "bottom": "底部",
+      "middle": "中间",
+      "size": "大小",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "editHint": "在时间轴上双击字幕即可修改文字。修改也会同步更正转录。",
+      "fromTranscript": "字幕来自这段录屏的转录。",
+      "needsPack": "转录是一个可选扩展包（{size}），在你的电脑上运行。只有你需要时 Kamo 才会下载。",
+      "download": "下载并转录",
+      "noSpeech": "这段录屏里没有找到语音，所以没有字幕。",
+      "track": "字幕",
+      "block": "字幕 {start} 至 {end}：{text}",
+      "blockHint": "双击或按 Enter 修改文字。拖动可移动，拉动边缘可调整时间。按 Delete 删除。",
+      "editLabel": "字幕文字",
+      "editHelp": "Enter 保存 · Esc 取消"
     }
   },
   "style": {
@@ -457,6 +482,15 @@
       "message": "现在关闭将取消导出并删除未完成的文件。",
       "stop": "取消导出并关闭",
       "keep": "继续导出"
+    },
+    "captions": {
+      "label": "字幕",
+      "none": "无",
+      "burn": "烧录到画面",
+      "srt": ".srt 文件",
+      "srtHint": "每个视频旁边一个 .srt 文件，时间与剪辑一致。",
+      "burnHint": "显示在画面中，使用字幕面板的样式。",
+      "srtFile": "+ {name}"
     }
   },
   "recovery": {
@@ -619,7 +653,14 @@
     },
     "errors": {
       "packMissing": "请先下载一个转录扩展包。",
-      "audioUnreadable": "Kamo 无法读取此录制的音频。"
+      "audioUnreadable": "Kamo 无法读取此录制的音频。",
+      "transcriptEdited": "已保留你对字幕的修改：新的转录没有保存。"
+    },
+    "replace": {
+      "title": "要替换你对字幕的修改吗？",
+      "body": "你已通过字幕更正了这份转录。重新转录会替换它，你的修改将会丢失。",
+      "confirm": "重新转录",
+      "keep": "保留我的修改"
     }
   }
 }

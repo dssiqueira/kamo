@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { MouseEventRecord } from '../events/events.ts'
 import { createProject } from '../project/project.ts'
-import { DEFAULT_WEBCAM, type Project, type WebcamSettings } from '../project/schema.ts'
+import {
+  DEFAULT_CAPTIONS,
+  DEFAULT_WEBCAM,
+  type Project,
+  type WebcamSettings,
+} from '../project/schema.ts'
 import { outputSize, paddedArea } from './layout.ts'
+import { buildCaptionTrack } from './captions.ts'
 import { buildScene, sceneFrame } from './scene.ts'
 import { splitRegions } from './split.ts'
 
@@ -72,5 +78,23 @@ describe('sceneFrame', () => {
     const after = sceneFrame(s, SOURCE, '9:16', OUT, 9000)
     expect(before.focus?.x).toBeLessThan(960)
     expect(after.focus?.x).toBeGreaterThan(960)
+  })
+})
+
+describe('sceneFrame captions (A-06)', () => {
+  const transcript = {
+    language: 'pt',
+    segments: [{ startMs: 1000, endMs: 3000, text: 'Olá, pessoal!' }],
+  }
+
+  it('passes the cue on screen to the renderer, in every format', () => {
+    const track = buildCaptionTrack(transcript, DEFAULT_CAPTIONS)
+    const s = { ...scene(null), captions: track }
+    for (const aspect of ['16:9', '1:1', '9:16'] as const) {
+      const frame = sceneFrame(s, SOURCE, aspect, outputSize(aspect, '1080p'), 2000)
+      expect(frame.captions).toMatchObject({ lines: ['Olá, pessoal!'], aspect, opacity: 1 })
+    }
+    expect(sceneFrame(s, SOURCE, '16:9', OUT, 500).captions).toBeNull()
+    expect(sceneFrame(scene(null), SOURCE, '16:9', OUT, 2000).captions).toBeNull()
   })
 })

@@ -28,7 +28,20 @@ import {
 import type { MouseEventRecord } from '../events/events.ts'
 import type { SinkFile } from '../platform/sink.ts'
 import { MAX_BACKGROUND_IMAGE_BYTES } from '../project/background-image.ts'
-import { projectAutoZoom, type Aspect, type Fps, type Project } from '../project/schema.ts'
+import {
+  projectAutoZoom,
+  type Aspect,
+  type CaptionSettings,
+  type Fps,
+  type Project,
+} from '../project/schema.ts'
+import {
+  buildCaptionTrack,
+  CAPTION_LOOKS,
+  captionFontPx,
+  type CaptionTrack,
+} from '../render/captions.ts'
+import type { Transcript } from '../transcript/transcript.ts'
 import { outputSize, type Resolution } from '../render/layout.ts'
 import { createRenderer, type Renderer } from '../render/renderer.ts'
 import { buildScene, sceneFrame } from '../render/scene.ts'
@@ -89,6 +102,11 @@ export interface ExportVideoOptions {
   backgroundImage?: MediaFile | null
   /** microphone and computer sound; missing or muted tracks are simply left out */
   audio?: readonly ExportAudioTrack[]
+  /**
+   * captions to burn in (A-06): the transcript and the look (its `enabled` is ignored: asking
+   * to burn them is the choice). Missing = no captions in the picture.
+   */
+  captions?: { transcript: Transcript; settings: CaptionSettings } | null
   aspect: Aspect
   resolution: Resolution
   fps: Fps
@@ -193,7 +211,14 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     const zooms = visibleZooms(project.zooms, {
       autoZoom: options.autoZoom ?? projectAutoZoom(project),
     })
-    const scene = buildScene({ project, events: options.events, zooms })
+    const captions = options.captions
+      ? buildCaptionTrack(options.captions.transcript, {
+          ...options.captions.settings,
+          enabled: true,
+        })
+      : null
+    if (captions) await loadCaptionFont(captions, size)
+    const scene = buildScene({ project, events: options.events, zooms, captions })
     if (project.style.background.kind === 'image') {
       background = options.backgroundImage ? await decodeImage(options.backgroundImage) : null
       if (background) scene.backgroundImage = background
@@ -360,6 +385,19 @@ async function decodeImage(
   } catch {
     return null
   }
+}
+
+/**
+ * The canvas only draws with a font the page has loaded; Inter is loaded by the app's CSS,
+ * but maybe not yet at this weight. Without a FontFaceSet (a worker) the fallback is used.
+ */
+async function loadCaptionFont(track: CaptionTrack, output: Size): Promise<void> {
+  const fonts = (globalThis as { document?: { fonts?: { load(font: string): Promise<unknown> } } })
+    .document?.fonts
+  if (!fonts) return
+  const look = CAPTION_LOOKS[track.settings.preset]
+  const px = Math.round(captionFontPx(output, track.settings))
+  await fonts.load(`${look.weight} ${px}px ${track.fontFamily}`).catch(() => {})
 }
 
 interface FrameSample {
