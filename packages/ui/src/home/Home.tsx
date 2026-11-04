@@ -1,4 +1,5 @@
 import { useT } from '../i18n.tsx'
+import { Mascot } from '../mascot/Mascot.tsx'
 import type { DisplayOption } from './pickDisplay.ts'
 import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
 
@@ -42,7 +43,12 @@ export function Home({
       )}
 
       {notice && (
-        <p role="status" className={`rounded-md px-md py-sm text-body ${NOTICE_TONE[notice.tone]}`}>
+        <p
+          role="status"
+          className={`flex items-center gap-sm rounded-md px-md py-sm text-body ${NOTICE_TONE[notice.tone]}`}
+        >
+          {/* A saved recording gets Kamo's smile. */}
+          {notice.tone === 'success' && <Mascot pose="head-happy" size={36} />}
           {notice.text}
         </p>
       )}

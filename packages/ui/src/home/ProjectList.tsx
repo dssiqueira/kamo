@@ -1,6 +1,7 @@
 import { formatDate, formatDuration, resolveLocale } from '@kamo/i18n'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
+import { Mascot } from '../mascot/Mascot.tsx'
 
 /** Max project name length, the same limit main enforces (F-12). */
 export const MAX_PROJECT_NAME_LENGTH = 120
@@ -55,7 +56,15 @@ export function ProjectList({
   if (projects === null) return null
 
   if (projects.length === 0 && broken.length === 0) {
-    return <p className="font-serif text-title text-on-surface-muted">{t('projects.empty')}</p>
+    // DESIGN.md: Kamo shows up in empty states.
+    return (
+      <div className="flex items-center gap-lg py-md">
+        <Mascot pose="front" size={140} />
+        <p className="max-w-[360px] font-serif text-headline text-on-surface-muted">
+          {t('projects.empty')}
+        </p>
+      </div>
+    )
   }
 
   return (

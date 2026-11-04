@@ -128,7 +128,10 @@ function handle(channel: string, listener: (...args: unknown[]) => unknown): voi
  */
 async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   const screenshot = process.env['KAMO_SMOKE_SCREENSHOT']
-  // Visual checks of the editor: KAMO_SMOKE_PROJECT=<id> [KAMO_SMOKE_SEEK_MS=<ms>].
+  // Visual checks: KAMO_SMOKE_PAGE=countdown, or the editor with KAMO_SMOKE_PROJECT=<id>
+  // [KAMO_SMOKE_SEEK_MS=<ms>].
+  const page = process.env['KAMO_SMOKE_PAGE']
+  if (page === 'countdown') await loadPage(window, page)
   const project = process.env['KAMO_SMOKE_PROJECT']
   if (project) {
     await loadPage(window, 'editor', { project })

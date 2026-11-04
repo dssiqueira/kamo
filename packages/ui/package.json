@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@kamo/i18n": "workspace:*",
-    "@kamo/core": "workspace:*"
+    "@kamo/core": "workspace:*",
+    "@kamo/design-tokens": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

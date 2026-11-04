@@ -287,6 +287,9 @@ importers:
       '@kamo/core':
         specifier: workspace:*
         version: link:../core
+      '@kamo/design-tokens':
+        specifier: workspace:*
+        version: link:../design-tokens
       '@kamo/i18n':
         specifier: workspace:*
         version: link:../i18n

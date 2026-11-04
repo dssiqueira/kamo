@@ -16,11 +16,13 @@
     },
     "./tokens.css": "./generated/tokens.css",
     "./tailwind.css": "./generated/tailwind.css",
-    "./fonts.css": "./src/fonts.css"
+    "./fonts.css": "./src/fonts.css",
+    "./mascot/*": "./assets/mascot/*"
   },
   "files": [
     "generated",
-    "src/fonts.css"
+    "src/fonts.css",
+    "assets"
   ],
   "sideEffects": [
     "*.css"

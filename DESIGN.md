@@ -211,12 +211,14 @@ Light by default, with a Light / Dark / System selector in Settings.
 - **focus-ring:** water color, 2px, on every keyboard-focusable element.
 
 ## Mascot: Kamo
-- A chameleon with a simple stroke (thin line + flat pastel fill), no gradient or realism
+- A chameleon in **layered paper-cut** style: soft sage paper shapes with subtle texture and gentle drop shadows, big friendly eye, pink cheeks, curled tail in water tones. Cute, never realistic
+- **Artwork:** `packages/design-tokens/assets/mascot/` (published as `@kamo/design-tokens/mascot/*`, so the site uses the same files). `kamo-sheet.webp` is the master sheet; the cut-outs have transparent backgrounds: `kamo-scene` (with leaves, for hero/closing), `kamo-icon` (app icon), `kamo-front`, `kamo-side`, `kamo-back` (full body) and the heads `kamo-head-look`, `-look-side`, `-look-up`, `-blink`, `-happy`, `-wink`, `-tongue`. In the app, use the `Mascot` component from `packages/ui`
 - **Signature:** an eye that rotates and follows the cursor. On click, the tongue shoots out to the spot, which is the metaphor for zooming on click
 - **Color:** body `primary` (sage), tongue `secondary` (pink), iris `tertiary` (water). On the landing page and in the editor's background picker, the body changes color to match the chosen wallpaper (it's a chameleon, after all)
 - **Where it appears:** landing page (hero and closing), app icon (just the head with the eye), empty states, countdown (blinks on each number), export-complete screen (smiling)
 - **Where it doesn't appear:** inside the exported video and in the editor chrome during editing. There, the video is the protagonist
-- Respects `prefers-reduced-motion`: no eye animation, just the mascot standing still
+- In the app today: empty project list (`front`), countdown (`head-look`, swapping to `head-blink` on each number), saved-recording notice (`head-happy`), app icon (`kamo-icon`, upscaled placeholder until a native 1024px export exists)
+- Respects `prefers-reduced-motion`: no eye animation or blinking, just the mascot standing still
 
 ## Motion
 - All animation uses a spring (stiffness 170, damping 26), the same physics as the camera and the cursor. Never linear easing.
