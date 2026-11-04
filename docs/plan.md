@@ -34,7 +34,7 @@
 | # | Where | The problem | Proposal | By step |
 |---|---|---|---|---|
 | I-1 | `features.md` M-01 and `context.md` vs `integrations.md` and `data-model.md` | Default folder: `~/Kamo` or `~/Kamo/projects`? | Projects in `~/Kamo/projects/<id>`; the MCP accepts both (if given `~/Kamo`, it looks for `projects/` inside) | 2 |
-| I-2 | `data-model.md` (`screen.mp4`) vs `integrations.md` (Windows via `desktopCapturer`) | On Windows, the natural path is `MediaRecorder`, which records WebM (or H.264 MP4 in newer Chromium versions). The raw format on desktop is not decided | Spike in step 2; `core` already has to read WebM because of the extension, so accept `screen.webm` or `screen.mp4` on desktop and record it in `decisions.md` | 2 |
+| I-2 | `data-model.md` (`screen.mp4`) vs `integrations.md` (Windows via `desktopCapturer`) | Raw format on desktop | ✅ Resolved by D-023: the native helpers write `screen.mp4` (H.264) on both OSes; the extension records WebM or MP4 with `MediaRecorder` | 2 |
 | I-3 | `AGENTS.md` phase 0 | Asks for a prerelease of `@kamo/core` "since step 1", but `core` only has real content after the project format lands | Split step 1 into 1a (scaffold + published tokens) and 1b (project format, interfaces + Electron) | 1 |
 | I-4 | `data-model.md` Project.name | Default "Recording dd/mm hh:mm" is hardcoded in Portuguese and in BR format | i18n key `project.defaultName` with the date via `Intl.DateTimeFormat` | 2 |
 | I-5 | `features.md` F-15 | Cites C-09, which lives in `kamo-cloud` | Replace with "see C-01 and `account.get` in the contract" | 17 |
@@ -92,7 +92,7 @@
 **Done when:** the window opens on Windows (local) and on Mac (`macos-14` CI builds and runs a smoke test), and the project format tests pass.
 
 ### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0)
-**Spike:** hidden cursor on Windows and raw format (I-2).
+**Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (C++ on Windows, Swift on Mac). Requires Visual Studio Build Tools (C++ workload) on the Windows dev machine.
 - Home with displays and live thumbnails (≥ 1/s), primary pre-selected, choice remembered
 - 3-2-1 countdown in a transparent window on the chosen display; Esc cancels
 - Recording at 30fps at native resolution, no cursor; Mac via our ScreenCaptureKit helper (Swift), Windows via `desktopCapturer`/WGC

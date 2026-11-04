@@ -149,3 +149,11 @@
 - **Rejected:** one repo per app (separate desktop and extension would break the shared engine), site inside the public repository (commercial LPs and tests would be exposed) and site inside `kamo-cloud` (giving a designer access would expose the backend)
 - **Why:** each repository has a different audience: the open-source community, only the owner, and a designer or agency
 - **Accepted cost:** API contract between `kamo` and `kamo-cloud` versioned and agreed on; `@kamo/design-tokens` and `@kamo/core` packages published to npm for the site to use
+
+## D-023 — Native capture helper per OS
+- **Date:** 2026-11-03 · **Status:** accepted
+- **Decision:** screen capture on desktop runs in a small native helper process per OS, started and controlled by the Electron main process over stdio: **Windows** in C++ (Windows Graphics Capture with `IsCursorCaptureEnabled = false`, H.264 through Media Foundation) and **Mac** in Swift (ScreenCaptureKit with `showsCursor = false`). The helpers write `screen.mp4` (H.264) straight into the project folder. From step 3 on, the same helpers also emit the mouse events (mouse-only hooks, D-003), on the same clock as the video. Electron's `desktopCapturer` is still used for the live thumbnails on Home.
+- **Rejected:** recording through Electron (`getDisplayMedia` + `MediaRecorder`). Spike on Electron 45 / Chromium 156, Windows 11: the `cursor: 'never'` constraint is ignored (`getSupportedConstraints().cursor` is false, the track reports `cursor: "always"`) and the system cursor shows up in every frame, which breaks D-005. Also rejected: hiding the system cursor while recording (the user needs to see it) and erasing it afterwards (the pixels under it are lost).
+- **Why:** D-005 needs video without the system cursor. A helper also gives one clock for video and mouse events (≤ 33ms budget, F-03) and keeps native code out of the Electron process.
+- **Accepted cost:** two native codebases (C++ and Swift) and their toolchains: Visual Studio Build Tools on Windows and Xcode on Mac (or the `macos-14` CI runner). Each helper must stay small (installer budget, rule 6).
+- **Spike notes:** `MediaRecorder` in this Chromium records `video/mp4;codecs=avc1` natively, which the extension can use (E-01).
