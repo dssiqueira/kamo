@@ -14,6 +14,7 @@
     "package": "electron-vite build && electron-builder --publish never"
   },
   "devDependencies": {
+    "@kamo/core": "workspace:*",
     "@kamo/design-tokens": "workspace:*",
     "@kamo/i18n": "workspace:*",
     "@kamo/ui": "workspace:*",

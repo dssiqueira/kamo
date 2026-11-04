@@ -193,6 +193,9 @@ importers:
 
   apps/desktop:
     devDependencies:
+      '@kamo/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@kamo/design-tokens':
         specifier: workspace:*
         version: link:../../packages/design-tokens
