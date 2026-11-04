@@ -64,5 +64,45 @@
       "failed": "La grabación se detuvo de repente. Kamo intentará recuperarla la próxima vez."
     },
     "saved": "Guardado. El editor llega en la próxima versión."
+  },
+  "editor": {
+    "back": "← Proyectos",
+    "export": "Exportar",
+    "exportSoon": "La exportación llega en la próxima versión.",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "scrub": "Posición",
+    "loading": "Abriendo el proyecto…",
+    "errors": {
+      "load": "No se pudo abrir este proyecto."
+    },
+    "panel": {
+      "background": "Fondo",
+      "color": "Color sólido",
+      "frame": "Marco",
+      "padding": "Margen",
+      "corners": "Esquinas",
+      "shadow": "Sombra",
+      "cursor": "Cursor",
+      "cursorSize": "Tamaño",
+      "ripple": "Efecto al hacer clic",
+      "hideCursor": "Ocultar cursor",
+      "zooms": "Zooms",
+      "autoZoom": "Zoom automático",
+      "regenerate": "Regenerar zooms",
+      "noClicks": "Sin clics, nada que ampliar."
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "Salvia",
+      "cream": "Crema",
+      "blossom": "Flor",
+      "water": "Agua",
+      "peach": "Melocotón",
+      "lavender": "Lavanda",
+      "meadow": "Prado",
+      "dawn": "Amanecer"
+    }
   }
 }

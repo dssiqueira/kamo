@@ -44,6 +44,8 @@ const api: KamoApi = {
   showProjectInFolder: (projectId) =>
     invoke(IpcChannel.showProjectInFolder, projectId) as Promise<void>,
   openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
+  loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
+  openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
   getSettings: () => invoke(IpcChannel.getSettings) as Promise<AppSettings>,
   updateSettings: (update) => invoke(IpcChannel.updateSettings, update) as Promise<AppSettings>,

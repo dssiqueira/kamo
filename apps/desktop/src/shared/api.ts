@@ -39,6 +39,10 @@ export interface KamoApi {
   showProjectInFolder(projectId: string): Promise<void>
   /** Opens the editor on this project (the main window navigates to it). */
   openEditor(projectId: string): Promise<void>
+  /** Raw mouse events (events.jsonl text; '' when the project has none). Parse with core. */
+  loadEvents(projectId: string): Promise<string>
+  /** Back from the editor to Home. */
+  openHome(): Promise<void>
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
   onProjectsChanged(listener: () => void): () => void
 
@@ -146,6 +150,8 @@ export const IpcChannel = {
   deleteProject: 'kamo:project-delete',
   showProjectInFolder: 'kamo:project-show-in-folder',
   openEditor: 'kamo:editor-open',
+  loadEvents: 'kamo:project-events',
+  openHome: 'kamo:home-open',
   projectsChanged: 'kamo:projects-changed',
   getSettings: 'kamo:settings-get',
   updateSettings: 'kamo:settings-update',

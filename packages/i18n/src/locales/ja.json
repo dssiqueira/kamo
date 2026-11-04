@@ -64,5 +64,45 @@
       "failed": "録画が予期せず停止しました。次回起動時に復元を試みます。"
     },
     "saved": "保存しました。エディタは次のバージョンで登場します。"
+  },
+  "editor": {
+    "back": "← プロジェクト",
+    "export": "書き出し",
+    "exportSoon": "書き出しは次のバージョンで登場します。",
+    "play": "再生",
+    "pause": "一時停止",
+    "scrub": "再生位置",
+    "loading": "プロジェクトを開いています…",
+    "errors": {
+      "load": "このプロジェクトを開けませんでした。"
+    },
+    "panel": {
+      "background": "背景",
+      "color": "単色",
+      "frame": "フレーム",
+      "padding": "余白",
+      "corners": "角の丸み",
+      "shadow": "影",
+      "cursor": "カーソル",
+      "cursorSize": "サイズ",
+      "ripple": "クリックの波紋",
+      "hideCursor": "カーソルを隠す",
+      "zooms": "ズーム",
+      "autoZoom": "自動ズーム",
+      "regenerate": "ズームを再生成",
+      "noClicks": "クリックがないので、ズームはありません。"
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "セージ",
+      "cream": "クリーム",
+      "blossom": "ブロッサム",
+      "water": "ウォーター",
+      "peach": "ピーチ",
+      "lavender": "ラベンダー",
+      "meadow": "メドウ",
+      "dawn": "ドーン"
+    }
   }
 }

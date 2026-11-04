@@ -9,7 +9,7 @@ import {
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { isDeepStrictEqual } from 'node:util'
-import { ProjectError } from '@kamo/core'
+import { PROJECT_FILES, ProjectError } from '@kamo/core'
 import { tokens } from '@kamo/design-tokens'
 import { createI18n, resolveLocale } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
@@ -128,6 +128,18 @@ function handle(channel: string, listener: (...args: unknown[]) => unknown): voi
  */
 async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   const screenshot = process.env['KAMO_SMOKE_SCREENSHOT']
+  // Visual checks of the editor: KAMO_SMOKE_PROJECT=<id> [KAMO_SMOKE_SEEK_MS=<ms>].
+  const project = process.env['KAMO_SMOKE_PROJECT']
+  if (project) {
+    await loadPage(window, 'editor', { project })
+    await new Promise((resolve) => setTimeout(resolve, SMOKE_SCREENSHOT_DELAY_MS))
+    const seekMs = Number(process.env['KAMO_SMOKE_SEEK_MS'] ?? 0)
+    if (seekMs > 0) {
+      await window.webContents.executeJavaScript(
+        `document.querySelector('video').currentTime = ${seekMs / 1000}`,
+      )
+    }
+  }
   if (screenshot) {
     await new Promise((resolve) => setTimeout(resolve, SMOKE_SCREENSHOT_DELAY_MS))
     const image = await window.webContents.capturePage()
@@ -242,6 +254,14 @@ handle(IpcChannel.openEditor, async (projectId) => {
     return
   }
   await loadPage(mainWindow, 'editor', { project: projectId as string })
+})
+
+handle(IpcChannel.loadEvents, async (projectId) => {
+  assertProjectId(projectId as string)
+  return (await getServices().store.readText(projectId as string, PROJECT_FILES.events)) ?? ''
+})
+handle(IpcChannel.openHome, async () => {
+  if (mainWindow) await loadPage(mainWindow, 'index')
 })
 
 // Settings (F-01, F-08).

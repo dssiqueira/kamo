@@ -64,5 +64,45 @@
       "failed": "Recording stopped unexpectedly. Kamo will try to recover it next time."
     },
     "saved": "Saved. The editor arrives in the next version."
+  },
+  "editor": {
+    "back": "← Projects",
+    "export": "Export",
+    "exportSoon": "Export arrives in the next version.",
+    "play": "Play",
+    "pause": "Pause",
+    "scrub": "Playhead",
+    "loading": "Opening the project…",
+    "errors": {
+      "load": "This project couldn't be opened."
+    },
+    "panel": {
+      "background": "Background",
+      "color": "Solid color",
+      "frame": "Frame",
+      "padding": "Padding",
+      "corners": "Corners",
+      "shadow": "Shadow",
+      "cursor": "Cursor",
+      "cursorSize": "Size",
+      "ripple": "Click ripple",
+      "hideCursor": "Hide cursor",
+      "zooms": "Zooms",
+      "autoZoom": "Auto-zoom",
+      "regenerate": "Regenerate zooms",
+      "noClicks": "No clicks, nothing to zoom."
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "Sage",
+      "cream": "Cream",
+      "blossom": "Blossom",
+      "water": "Water",
+      "peach": "Peach",
+      "lavender": "Lavender",
+      "meadow": "Meadow",
+      "dawn": "Dawn"
+    }
   }
 }

@@ -1,5 +1,4 @@
 import tailwindcss from '@tailwindcss/vite'
-import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
@@ -58,9 +57,6 @@ function stripJsonImportAttributes(): Plugin {
   }
 }
 
-// The editor page is built in a later step; bundle it as soon as it exists.
-const editorPage = resolve(import.meta.dirname, 'src/renderer/editor.html')
-
 export default defineConfig({
   main: {
     build: {
@@ -86,7 +82,7 @@ export default defineConfig({
           index: resolve(import.meta.dirname, 'src/renderer/index.html'),
           countdown: resolve(import.meta.dirname, 'src/renderer/countdown.html'),
           'recording-bar': resolve(import.meta.dirname, 'src/renderer/recording-bar.html'),
-          ...(existsSync(editorPage) ? { editor: editorPage } : {}),
+          editor: resolve(import.meta.dirname, 'src/renderer/editor.html'),
         },
       },
     },

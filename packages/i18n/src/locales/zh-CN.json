@@ -64,5 +64,45 @@
       "failed": "录制意外停止。Kamo 会在下次启动时尝试恢复。"
     },
     "saved": "已保存。编辑器将在下个版本推出。"
+  },
+  "editor": {
+    "back": "← 项目",
+    "export": "导出",
+    "exportSoon": "导出功能将在下个版本推出。",
+    "play": "播放",
+    "pause": "暂停",
+    "scrub": "播放位置",
+    "loading": "正在打开项目…",
+    "errors": {
+      "load": "无法打开此项目。"
+    },
+    "panel": {
+      "background": "背景",
+      "color": "纯色",
+      "frame": "画框",
+      "padding": "内边距",
+      "corners": "圆角",
+      "shadow": "阴影",
+      "cursor": "光标",
+      "cursorSize": "大小",
+      "ripple": "点击波纹",
+      "hideCursor": "隐藏光标",
+      "zooms": "缩放",
+      "autoZoom": "自动缩放",
+      "regenerate": "重新生成缩放",
+      "noClicks": "没有点击，无需缩放。"
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "鼠尾草",
+      "cream": "奶油",
+      "blossom": "花朵",
+      "water": "水色",
+      "peach": "蜜桃",
+      "lavender": "薰衣草",
+      "meadow": "草地",
+      "dawn": "黎明"
+    }
   }
 }
