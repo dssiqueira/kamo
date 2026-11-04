@@ -183,32 +183,42 @@ function paintBackdrop(ctx: Context2D, style: Style, layout: Layout): void {
 }
 
 /**
- * Round webcam bubble: a shadowed cream disc (the ring), then the camera cover-fitted and
- * mirrored inside it. Sizes scale with the output's short side, like the frame shadow.
+ * Webcam bubble: a shadowed cream shape (the ring), then the camera cover-fitted to the
+ * shape and mirrored inside it. Sizes scale with the output's short side, like the frame
+ * shadow. The circle is a rounded box with half-side corners, so every shape takes one path.
  */
 function drawWebcam(ctx: Context2D, webcam: WebcamLayer, output: Size): void {
   const { bubble, sourceSize } = webcam
-  if (!(bubble.opacity > 0) || !(bubble.radius > 0)) return
+  if (!(bubble.opacity > 0) || !(bubble.width > 0 && bubble.height > 0)) return
   if (!(sourceSize.width > 0 && sourceSize.height > 0)) return
   const k = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
   const ring = Math.min(WEBCAM_RING.width * k, bubble.radius / 4)
-  const inner = bubble.radius - ring
-  const crop = webcamCoverCrop(sourceSize)
+  const outer: Box = {
+    x: bubble.x - bubble.width / 2,
+    y: bubble.y - bubble.height / 2,
+    width: bubble.width,
+    height: bubble.height,
+  }
+  const inner: Box = {
+    x: outer.x + ring,
+    y: outer.y + ring,
+    width: outer.width - ring * 2,
+    height: outer.height - ring * 2,
+  }
+  const crop = webcamCoverCrop(sourceSize, inner.width / inner.height)
   ctx.save()
   ctx.globalAlpha = Math.min(1, bubble.opacity)
   ctx.shadowColor = WEBCAM_SHADOW.color
   ctx.shadowBlur = WEBCAM_SHADOW.blur * k
   ctx.shadowOffsetX = 0
   ctx.shadowOffsetY = WEBCAM_SHADOW.offsetY * k
-  ctx.beginPath()
-  ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2)
+  roundRectPath(ctx, outer, bubble.cornerRadius)
   ctx.fillStyle = WEBCAM_RING.color
   ctx.fill()
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
-  ctx.beginPath()
-  ctx.arc(bubble.x, bubble.y, inner, 0, Math.PI * 2)
+  roundRectPath(ctx, inner, Math.max(0, bubble.cornerRadius - ring))
   ctx.clip()
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
@@ -221,10 +231,10 @@ function drawWebcam(ctx: Context2D, webcam: WebcamLayer, output: Size): void {
     crop.y,
     crop.width,
     crop.height,
-    -inner,
-    -inner,
-    inner * 2,
-    inner * 2,
+    -inner.width / 2,
+    -inner.height / 2,
+    inner.width,
+    inner.height,
   )
   ctx.restore()
 }

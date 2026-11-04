@@ -10,6 +10,8 @@
 //   same in 16:9, 1:1 and 9:16 and at 1080p and 4K.
 // - The camera frame is cover-fitted into the circle (centered square crop) and mirrored
 //   horizontally, like every selfie view: people expect to see themselves as in a mirror.
+// - Shapes: circle (default), rounded square, 16:9 and 9:16 rounded rectangles. The camera is
+//   cover-cropped to the shape's aspect, so a portrait camera fills a 9:16 bubble whole.
 // - Dragged in the preview, the bubble can sit anywhere (`anchor`, a fraction of the output,
 //   so it carries over to 1:1 and 9:16); dropped near a corner it snaps back to that corner.
 // - Shrink on zoom follows the camera's own scale, which is already the 170/26 spring
@@ -19,7 +21,7 @@
 //   starts WEBCAM_FADE_LEAD_MS before the stretch so it is gone when the stretch begins;
 //   the fade in starts when the stretch ends. Inside a stretch the bubble is never drawn.
 import { springSettleTime, springStep, type SpringState } from '../spring.ts'
-import type { WebcamPosition, WebcamSettings, WebcamSize } from '../project/schema.ts'
+import type { WebcamPosition, WebcamSettings, WebcamShape, WebcamSize } from '../project/schema.ts'
 import type { Box, Size } from './types.ts'
 
 /** Bubble diameter as a fraction of the output's short side (1080p: 173, 238, 324px). */
@@ -53,20 +55,42 @@ export const WEBCAM_RING = { width: 4, color: '#FAF7F2' } as const
 /** Soft shadow under the bubble at 1080p (smaller than the frame's, same tone). */
 export const WEBCAM_SHADOW = { blur: 28, offsetY: 8, color: 'rgba(43, 42, 38, 0.28)' } as const
 
+/**
+ * Width and height of each shape, in units of the size's diameter. The rectangles keep about
+ * the circle's area at the same size, so switching shape does not make the camera jump in
+ * size; 16:9 suits a camera recorded landscape, 9:16 one recorded portrait.
+ */
+export const WEBCAM_SHAPE_BOX: Readonly<Record<WebcamShape, { width: number; height: number }>> = {
+  circle: { width: 1, height: 1 },
+  square: { width: 1, height: 1 },
+  landscape: { width: 1.4, height: (1.4 * 9) / 16 },
+  portrait: { width: (1.4 * 9) / 16, height: 1.4 },
+}
+
+/** Corner radius of the square and rectangles, as a fraction of their short side. */
+export const WEBCAM_CORNER = 0.18
+
 /** The bubble in one frame, in output pixels. */
 export interface WebcamBubble {
   /** center */
   x: number
   y: number
-  /** outer radius, ring included */
+  /** outer size, ring included */
+  width: number
+  height: number
+  /** corner radius of the outer edge; half the side for the circle */
+  cornerRadius: number
+  /** half the short side (the circle's radius): snap distance and ring limit */
   radius: number
   /** 0..1 */
   opacity: number
 }
 
+type BubbleBox = Omit<WebcamBubble, 'opacity'>
+
 /**
- * The bubble's center and radius in output pixels, `scale` times its full size. In a corner
- * it keeps the outer corner in place while scaled; at a free `anchor` it keeps its center,
+ * The bubble's center and size in output pixels, `scale` times its full size. In a corner it
+ * keeps the outer corner in place while scaled; at a free `anchor` it keeps its center,
  * pulled in so the full-size bubble stays WEBCAM_MARGIN inside the frame in any format.
  */
 export function webcamBubbleBase(
@@ -75,55 +99,85 @@ export function webcamBubbleBase(
   output: Size,
   scale = 1,
   anchor?: { x: number; y: number },
-): { x: number; y: number; radius: number } {
+  shape: WebcamShape = 'circle',
+): BubbleBox {
   const short = Math.min(output.width, output.height)
-  const full = (WEBCAM_DIAMETER[size] * short) / 2
-  const radius = full * scale
+  const diameter = WEBCAM_DIAMETER[size] * short
+  const box = WEBCAM_SHAPE_BOX[shape]
+  const fullW = diameter * box.width
+  const fullH = diameter * box.height
+  const width = fullW * scale
+  const height = fullH * scale
+  const radius = Math.min(width, height) / 2
+  const cornerRadius = shape === 'circle' ? radius : Math.min(width, height) * WEBCAM_CORNER
   const margin = WEBCAM_MARGIN * short
   if (anchor) {
-    const inset = margin + full
+    const insetX = margin + fullW / 2
+    const insetY = margin + fullH / 2
     return {
-      x: clamp(anchor.x * output.width, inset, output.width - inset),
-      y: clamp(anchor.y * output.height, inset, output.height - inset),
+      x: clamp(anchor.x * output.width, insetX, output.width - insetX),
+      y: clamp(anchor.y * output.height, insetY, output.height - insetY),
+      width,
+      height,
+      cornerRadius,
       radius,
     }
   }
   const left = position === 'top-left' || position === 'bottom-left'
   const top = position === 'top-left' || position === 'top-right'
   return {
-    x: left ? margin + radius : output.width - margin - radius,
-    y: top ? margin + radius : output.height - margin - radius,
+    x: left ? margin + width / 2 : output.width - margin - width / 2,
+    y: top ? margin + height / 2 : output.height - margin - height / 2,
+    width,
+    height,
+    cornerRadius,
     radius,
   }
 }
 
+/** Whether `point` (output pixels) falls on the bubble, rounded corners ignored. */
+export function webcamBubbleContains(
+  bubble: Pick<WebcamBubble, 'x' | 'y' | 'width' | 'height'>,
+  point: { x: number; y: number },
+): boolean {
+  return (
+    Math.abs(point.x - bubble.x) <= bubble.width / 2 &&
+    Math.abs(point.y - bubble.y) <= bubble.height / 2
+  )
+}
+
 /**
  * Where a bubble dropped with its center at `center` (output pixels) ends up: the nearest
- * corner when the center lands within one radius of that corner's spot (snap), otherwise a
- * free anchor.
+ * corner when the center lands within half the bubble's short side of that corner's spot
+ * (snap), otherwise a free anchor.
  */
 export function webcamPlacementAt(
   center: { x: number; y: number },
   size: WebcamSize,
   output: Size,
+  shape: WebcamShape = 'circle',
 ): { position: WebcamPosition; anchor?: { x: number; y: number } } {
   let nearest: WebcamPosition = 'bottom-right'
   let best = Infinity
   for (const corner of WEBCAM_CORNERS) {
-    const spot = webcamBubbleBase(corner, size, output)
+    const spot = webcamBubbleBase(corner, size, output, 1, undefined, shape)
     const distance = Math.hypot(spot.x - center.x, spot.y - center.y)
     if (distance < best) {
       best = distance
       nearest = corner
     }
   }
-  const { radius } = webcamBubbleBase(nearest, size, output)
+  const { radius } = webcamBubbleBase(nearest, size, output, 1, undefined, shape)
   if (best <= radius) return { position: nearest }
   // Stored already clamped, so the anchor is where the bubble is actually drawn.
-  const placed = webcamBubbleBase(nearest, size, output, 1, {
-    x: center.x / output.width,
-    y: center.y / output.height,
-  })
+  const placed = webcamBubbleBase(
+    nearest,
+    size,
+    output,
+    1,
+    { x: center.x / output.width, y: center.y / output.height },
+    shape,
+  )
   return { position: nearest, anchor: { x: placed.x / output.width, y: placed.y / output.height } }
 }
 
@@ -196,6 +250,7 @@ export function webcamBubbleAt(
     output,
     shrink * fade,
     settings.anchor,
+    settings.shape,
   )
   return { ...base, opacity: visibility }
 }
@@ -205,10 +260,14 @@ export function webcamTimeMs(settings: Pick<WebcamSettings, 'offsetMs'>, timeMs:
   return Math.max(0, timeMs - (settings.offsetMs ?? 0))
 }
 
-/** Centered square of the camera frame that fills the circle (cover fit). */
-export function webcamCoverCrop(size: Size): Box {
-  const side = Math.min(size.width, size.height)
-  return { x: (size.width - side) / 2, y: (size.height - side) / 2, width: side, height: side }
+/**
+ * Centered part of the camera frame that fills a bubble of `aspect` (width / height) without
+ * stretching (cover fit): a square for the circle, wider or taller for the rectangles.
+ */
+export function webcamCoverCrop(size: Size, aspect = 1): Box {
+  const width = Math.min(size.width, size.height * aspect)
+  const height = width / aspect
+  return { x: (size.width - width) / 2, y: (size.height - height) / 2, width, height }
 }
 
 function mergeSpans(spans: { from: number; to: number }[]): { from: number; to: number }[] {

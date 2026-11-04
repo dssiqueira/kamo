@@ -6,6 +6,7 @@ import {
   outputSize,
   sceneFrame,
   webcamBubbleAt,
+  webcamBubbleContains,
   webcamPlacementAt,
   type MouseEventRecord,
   type Project,
@@ -154,7 +155,7 @@ export function Preview({
     const timeMs = element.currentTime * 1000
     const bubble = webcamBubbleAt(webcam, output, timeMs, cameraAt(camera, timeMs).scale)
     if (!bubble) return null
-    return Math.hypot(point.x - bubble.x, point.y - bubble.y) <= bubble.radius ? bubble : null
+    return webcamBubbleContains(bubble, point) ? bubble : null
   }
   const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     if (event.button !== 0) return
@@ -174,7 +175,7 @@ export function Preview({
     }
     if (!webcam) return
     const center = { x: point.x + drag.current.dx, y: point.y + drag.current.dy }
-    onWebcamDrag?.(webcamPlacementAt(center, webcam.size, output))
+    onWebcamDrag?.(webcamPlacementAt(center, webcam.size, output, webcam.shape))
   }
   const endDrag = () => {
     if (!drag.current) return

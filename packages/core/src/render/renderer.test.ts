@@ -262,14 +262,22 @@ describe('createRenderer', () => {
 
 describe('webcam bubble', () => {
   const CAMERA = { camera: true } as unknown as ImageSourceLike
-  const bubble = { x: 1700, y: 860, radius: 120, opacity: 0.5 }
+  const bubble = {
+    x: 1700,
+    y: 860,
+    width: 240,
+    height: 240,
+    cornerRadius: 120,
+    radius: 120,
+    opacity: 0.5,
+  }
   const webcam = { source: CAMERA, sourceSize: { width: 1280, height: 720 }, bubble }
 
-  it('draws after the frame, outside its clip: ring disc, round clip, mirrored camera', () => {
+  it('draws after the frame, outside its clip: ring, rounded clip, mirrored camera', () => {
     const { log, renderer } = setup()
     renderer.render(input({ cursor: null, webcam }))
     const main = names(log).filter((n) =>
-      ['drawImage', 'save', 'restore', 'clip', 'arc', 'fill', 'scale'].includes(n),
+      ['drawImage', 'save', 'restore', 'clip', 'fill', 'scale'].includes(n),
     )
     expect(main).toEqual([
       'drawImage', // backdrop
@@ -278,10 +286,8 @@ describe('webcam bubble', () => {
       'drawImage', // screen
       'restore',
       'save',
-      'arc', // ring + shadow
-      'fill',
-      'arc', // inner clip
-      'clip',
+      'fill', // ring + shadow
+      'clip', // inner shape
       'scale', // mirror
       'drawImage', // camera
       'restore',
@@ -300,7 +306,32 @@ describe('webcam bubble', () => {
   it('draws no bubble without a webcam layer', () => {
     const { log, renderer } = setup()
     renderer.render(input({ cursor: null, webcam: null }))
-    expect(names(log)).not.toContain('arc')
+    expect(names(log)).not.toContain('scale')
+  })
+
+  it('cover-crops the camera to a 16:9 rectangle', () => {
+    const { log, renderer } = setup()
+    const wide = {
+      x: 1500,
+      y: 800,
+      width: 320,
+      height: 180,
+      cornerRadius: 32,
+      radius: 90,
+      opacity: 1,
+    }
+    const portraitCamera = { width: 1080, height: 1920 }
+    renderer.render(
+      input({ cursor: null, webcam: { source: CAMERA, sourceSize: portraitCamera, bubble: wide } }),
+    )
+    const camera = log.filter((c) => c.name === 'main.drawImage')[2]?.args
+    const [, sx = 0, sy = 0, sw = 0, sh = 0, , , dw = 0, dh = 0] = camera as number[]
+    // A portrait camera in a landscape bubble: full width, a centered band the inner box's shape.
+    expect(sx).toBe(0)
+    expect(sw).toBe(1080)
+    expect(sw / sh).toBeCloseTo(dw / dh)
+    expect(dw / dh).toBeCloseTo(312 / 172)
+    expect(sy).toBeCloseTo((1920 - sh) / 2)
   })
 })
 

@@ -10,6 +10,7 @@ import {
   WEBCAM_SHRINK_MIN,
   webcamBubbleAt,
   webcamBubbleBase,
+  webcamBubbleContains,
   webcamCoverCrop,
   webcamPlacementAt,
   webcamShrink,
@@ -29,10 +30,14 @@ describe('webcamBubbleBase', () => {
     const r = (WEBCAM_DIAMETER.medium * 1080) / 2
     const at = (position: WebcamSettings['position']) =>
       webcamBubbleBase(position, 'medium', OUT_16x9)
-    expect(at('top-left')).toEqual({ x: margin + r, y: margin + r, radius: r })
-    expect(at('top-right')).toEqual({ x: 1920 - margin - r, y: margin + r, radius: r })
-    expect(at('bottom-left')).toEqual({ x: margin + r, y: 1080 - margin - r, radius: r })
-    expect(at('bottom-right')).toEqual({ x: 1920 - margin - r, y: 1080 - margin - r, radius: r })
+    expect(at('top-left')).toMatchObject({ x: margin + r, y: margin + r, radius: r })
+    expect(at('top-right')).toMatchObject({ x: 1920 - margin - r, y: margin + r, radius: r })
+    expect(at('bottom-left')).toMatchObject({ x: margin + r, y: 1080 - margin - r, radius: r })
+    expect(at('bottom-right')).toMatchObject({
+      x: 1920 - margin - r,
+      y: 1080 - margin - r,
+      radius: r,
+    })
   })
 
   it('sizes the bubble from the short side, so it reads the same in every format', () => {
@@ -214,6 +219,50 @@ describe('webcam helpers', () => {
       width: 480,
       height: 480,
     })
+  })
+})
+
+describe('shapes', () => {
+  it('sizes each shape around the same diameter and keeps it in the corner', () => {
+    const d = WEBCAM_DIAMETER.medium * 1080
+    const margin = WEBCAM_MARGIN * 1080
+    const square = webcamBubbleBase('top-left', 'medium', OUT_16x9, 1, undefined, 'square')
+    expect(square).toMatchObject({ width: d, height: d })
+    expect(square.cornerRadius).toBeLessThan(d / 2)
+    const wide = webcamBubbleBase('bottom-right', 'medium', OUT_16x9, 1, undefined, 'landscape')
+    expect(wide.width / wide.height).toBeCloseTo(16 / 9)
+    expect(wide.x + wide.width / 2).toBeCloseTo(1920 - margin)
+    expect(wide.y + wide.height / 2).toBeCloseTo(1080 - margin)
+    const tall = webcamBubbleBase('top-right', 'medium', OUT_16x9, 1, undefined, 'portrait')
+    expect(tall.height / tall.width).toBeCloseTo(16 / 9)
+    expect(tall.y - tall.height / 2).toBeCloseTo(margin)
+  })
+
+  it('keeps old projects without a shape round', () => {
+    const bubble = webcamBubbleAt(settings(), OUT_16x9, 0, 1)!
+    expect(bubble.width).toBe(bubble.height)
+    expect(bubble.cornerRadius).toBe(bubble.width / 2)
+  })
+
+  it('cover-crops the camera to the shape', () => {
+    expect(webcamCoverCrop({ width: 1280, height: 720 }, 9 / 16)).toEqual({
+      x: 437.5,
+      y: 0,
+      width: 405,
+      height: 720,
+    })
+    expect(webcamCoverCrop({ width: 1080, height: 1920 }, 9 / 16)).toEqual({
+      x: 0,
+      y: 0,
+      width: 1080,
+      height: 1920,
+    })
+  })
+
+  it('hit-tests the whole box', () => {
+    const b = webcamBubbleBase('top-left', 'medium', OUT_16x9, 1, undefined, 'landscape')
+    expect(webcamBubbleContains(b, { x: b.x + b.width / 2 - 1, y: b.y })).toBe(true)
+    expect(webcamBubbleContains(b, { x: b.x, y: b.y + b.height / 2 + 1 })).toBe(false)
   })
 })
 

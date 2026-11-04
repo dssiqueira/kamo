@@ -84,6 +84,10 @@ export type WebcamPosition = z.infer<typeof WebcamPosition>
 export const WebcamSize = z.enum(['small', 'medium', 'large'])
 export type WebcamSize = z.infer<typeof WebcamSize>
 
+/** Bubble outline: round, rounded square, or rounded 16:9 / 9:16 rectangles. */
+export const WebcamShape = z.enum(['circle', 'square', 'landscape', 'portrait'])
+export type WebcamShape = z.infer<typeof WebcamShape>
+
 /**
  * Webcam bubble (A-03). The camera is recorded to `webcam.mp4`; this is how it shows. Null on a
  * project recorded without the camera.
@@ -98,6 +102,8 @@ export const WebcamSettings = z.object({
    */
   anchor: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
   size: WebcamSize,
+  /** Absent on projects from before shapes existed: a circle. */
+  shape: WebcamShape.optional(),
   /** The bubble shrinks while the camera zooms in, and grows back after (A-03). */
   shrinkOnZoom: z.boolean(),
   /** Stretches of video time where the bubble is hidden (set on the timeline), sorted. */

@@ -5,6 +5,7 @@ import {
   type Style,
   type WebcamPatch,
   type WebcamPosition,
+  type WebcamShape,
   type WebcamSettings,
   type WebcamSize,
 } from '@kamo/core'
@@ -152,6 +153,27 @@ const WEBCAM_POSITIONS: readonly WebcamPosition[] = [
   'bottom-right',
 ]
 const WEBCAM_SIZES: readonly WebcamSize[] = ['small', 'medium', 'large']
+const WEBCAM_SHAPES: readonly WebcamShape[] = ['circle', 'square', 'landscape', 'portrait']
+/** Full name, for the tooltip and screen readers. */
+const SHAPE_KEY: Record<WebcamShape, string> = {
+  circle: 'editor.webcam.circle',
+  square: 'editor.webcam.square',
+  landscape: 'editor.webcam.landscape',
+  portrait: 'editor.webcam.portrait',
+}
+/** Short label under the icon. */
+const SHAPE_LABEL_KEY: Record<WebcamShape, string> = {
+  circle: 'editor.webcam.circleShort',
+  square: 'editor.webcam.squareShort',
+  landscape: 'editor.webcam.landscapeShort',
+  portrait: 'editor.webcam.portraitShort',
+}
+const SHAPE_ICON: Record<WebcamShape, string> = {
+  circle: 'size-[16px] rounded-full',
+  square: 'size-[16px] rounded-[4px]',
+  landscape: 'h-[12px] w-[21px] rounded-[3px]',
+  portrait: 'h-[21px] w-[12px] rounded-[3px]',
+}
 const POSITION_KEY: Record<WebcamPosition, string> = {
   'top-left': 'editor.webcam.topLeft',
   'top-right': 'editor.webcam.topRight',
@@ -222,6 +244,34 @@ function WebcamSection({
           })}
         </div>
         <span className="text-label text-on-surface-muted">{t('editor.webcam.dragHint')}</span>
+      </div>
+      <div role="radiogroup" aria-label={t('editor.webcam.shape')} className="flex flex-col gap-xs">
+        <span className="text-body">{t('editor.webcam.shape')}</span>
+        <div className="grid grid-cols-4 gap-xs">
+          {WEBCAM_SHAPES.map((shape) => {
+            const selected = (webcam.shape ?? 'circle') === shape
+            return (
+              <button
+                key={shape}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                aria-label={t(SHAPE_KEY[shape])}
+                title={t(SHAPE_KEY[shape])}
+                disabled={!webcam.visible}
+                data-testid={`webcam-shape-${shape}`}
+                onClick={() => onWebcam({ shape })}
+                className={`flex h-[48px] flex-col items-center justify-center gap-[4px] ${option(selected)}`}
+              >
+                <span
+                  aria-hidden
+                  className={`border-[1.5px] ${selected ? 'border-tertiary bg-tertiary/25' : 'border-current'} ${SHAPE_ICON[shape]}`}
+                />
+                <span className="text-[11px] leading-none">{t(SHAPE_LABEL_KEY[shape])}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
       <div role="radiogroup" aria-label={t('editor.webcam.size')} className="flex flex-col gap-xs">
         <span className="text-body">{t('editor.webcam.size')}</span>

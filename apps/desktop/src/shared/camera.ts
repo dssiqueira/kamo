@@ -39,11 +39,15 @@ export type CameraReport =
 /**
  * Capture size and rate (A-03: the bubble is at most a few hundred pixels wide in a 1080p
  * export, so 720p is plenty). Home's preview asks for the same, so both share one device mode.
+ * `resizeMode: 'none'` keeps the frame as the camera sends it: Chromium would otherwise crop
+ * a camera in portrait mode (an Insta360 Link set to vertical, say) down to a landscape band.
+ * The ideal size then only picks the closest native mode, in whatever orientation it comes.
  */
 export const CAMERA_CONSTRAINTS = {
   width: { ideal: 1280 },
   height: { ideal: 720 },
   frameRate: { ideal: 30 },
+  resizeMode: 'none',
 } as const
 
 /**
