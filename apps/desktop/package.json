@@ -5,11 +5,26 @@
   "description": "Kamo desktop app (Electron).",
   "license": "MIT",
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
+  "main": "./out/main/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit"
+    "dev": "install-electron && electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "install-electron && electron-vite preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "devDependencies": {
+    "@kamo/design-tokens": "workspace:*",
+    "@kamo/i18n": "workspace:*",
+    "@kamo/ui": "workspace:*",
+    "@tailwindcss/vite": "4.3.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "electron": "45.2.1",
+    "electron-vite": "6.0.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "tailwindcss": "4.3.4",
+    "vite": "8.3.5"
   }
 }
