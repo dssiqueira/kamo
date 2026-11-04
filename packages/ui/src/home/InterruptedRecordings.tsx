@@ -22,12 +22,18 @@ export interface InterruptedRecordingsProps {
   onRecover(projectId: string): Promise<RecoveryOutcome>
   /** Called after the user confirmed. */
   onDiscard(projectId: string): Promise<RecoveryOutcome>
+  /**
+   * Where Discard sends the recording: the system trash (desktop, default) or nowhere, for
+   * places without a trash like the extension's browser storage (E-01).
+   */
+  discardTo?: 'trash' | 'deletion'
 }
 
 export function InterruptedRecordings({
   recordings,
   onRecover,
   onDiscard,
+  discardTo = 'trash',
 }: InterruptedRecordingsProps) {
   if (recordings.length === 0) return null
   return (
@@ -38,6 +44,7 @@ export function InterruptedRecordings({
           recording={recording}
           onRecover={() => onRecover(recording.projectId)}
           onDiscard={() => onDiscard(recording.projectId)}
+          discardTo={discardTo}
         />
       ))}
     </div>
@@ -48,11 +55,12 @@ interface RowProps {
   recording: InterruptedRecordingData
   onRecover(): Promise<RecoveryOutcome>
   onDiscard(): Promise<RecoveryOutcome>
+  discardTo: 'trash' | 'deletion'
 }
 
 type RowState = 'idle' | 'confirming' | 'recovering' | 'discarding'
 
-function InterruptedRow({ recording, onRecover, onDiscard }: RowProps) {
+function InterruptedRow({ recording, onRecover, onDiscard, discardTo }: RowProps) {
   const t = useT()
   const locale = resolveLocale([useLocale()])
   const [state, setState] = useState<RowState>('idle')
@@ -97,7 +105,13 @@ function InterruptedRow({ recording, onRecover, onDiscard }: RowProps) {
           <span className="flex items-center gap-md">
             {busy ? (
               <span role="status" className="text-on-surface-muted">
-                {t(state === 'recovering' ? 'recovery.recovering' : 'recovery.discarding')}
+                {t(
+                  state === 'recovering'
+                    ? 'recovery.recovering'
+                    : discardTo === 'trash'
+                      ? 'recovery.discarding'
+                      : 'recovery.deleting',
+                )}
               </span>
             ) : (
               <>
@@ -114,6 +128,7 @@ function InterruptedRow({ recording, onRecover, onDiscard }: RowProps) {
       </div>
       {state === 'confirming' && (
         <ConfirmDiscard
+          discardTo={discardTo}
           onCancel={() => {
             setState('idle')
             // the Discard button is back on the next render
@@ -146,7 +161,15 @@ function DiscardButton({
   )
 }
 
-function ConfirmDiscard({ onCancel, onConfirm }: { onCancel(): void; onConfirm(): void }) {
+function ConfirmDiscard({
+  discardTo,
+  onCancel,
+  onConfirm,
+}: {
+  discardTo: 'trash' | 'deletion'
+  onCancel(): void
+  onConfirm(): void
+}) {
   const t = useT()
   const cancel = useRef<HTMLDivElement>(null)
   const textId = useId()
@@ -167,7 +190,7 @@ function ConfirmDiscard({ onCancel, onConfirm }: { onCancel(): void; onConfirm()
       className="flex flex-wrap items-center justify-between gap-sm border-t border-border pt-sm"
     >
       <p id={textId} className="text-body">
-        {t('recovery.discardConfirm')}
+        {t(discardTo === 'trash' ? 'recovery.discardConfirm' : 'recovery.deleteConfirm')}
       </p>
       <span ref={cancel} className="flex items-center gap-md">
         <LinkButton onClick={onCancel}>{t('common.cancel')}</LinkButton>
@@ -176,7 +199,7 @@ function ConfirmDiscard({ onCancel, onConfirm }: { onCancel(): void; onConfirm()
           onClick={onConfirm}
           className={`rounded-md bg-surface-raised px-[14px] py-[7px] text-body font-semibold text-error transition-colors duration-[120ms] hover:bg-border ${FOCUS_RING}`}
         >
-          {t('projects.moveToTrash')}
+          {t(discardTo === 'trash' ? 'projects.moveToTrash' : 'projects.delete')}
         </button>
       </span>
     </div>

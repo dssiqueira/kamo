@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+@import '@kamo/design-tokens/tailwind.css';
+@import '@kamo/design-tokens/fonts.css';
+@import '@kamo/ui/styles.css';
+
+/* Tailwind only scans this app by default; the components live in packages/ui. */
+@source '../../../../packages/ui/src';
+
+body {
+  margin: 0;
+  background-color: var(--kamo-color-background);
+}

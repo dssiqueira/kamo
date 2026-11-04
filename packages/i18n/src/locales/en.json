@@ -423,7 +423,39 @@
     "discarding": "Moving to the trash…",
     "discardConfirm": "Move this recording to the trash? You can restore it from there.",
     "unrecoverable": "None of the video can be played, so it can't be recovered.",
-    "failed": "That didn't work. Try again."
+    "failed": "That didn't work. Try again.",
+    "deleting": "Deleting…",
+    "deleteConfirm": "Delete this recording for good? The browser has no trash."
+  },
+  "extension": {
+    "name": "Kamo",
+    "description": "Record a tab and get a video that looks edited: automatic zoom on every click and a smooth cursor. Free, no account.",
+    "actionTitle": "Record this tab with Kamo",
+    "commandStop": "Stop the recording",
+    "popup": {
+      "tabToRecord": "Tab to record",
+      "record": "Record this tab",
+      "unrecordable": "Chrome doesn't let you record this page.",
+      "tabSound": "Tab sound",
+      "starting": "Getting ready…",
+      "saving": "Saving…",
+      "recent": "Latest recordings",
+      "noRecent": "Your recordings show up here.",
+      "projectMeta": "{duration} · {date}"
+    },
+    "microphone": {
+      "title": "Use your microphone",
+      "body": "Kamo records in the background, where Chrome can't ask for the microphone. Allow it here once, and your voice goes into every recording with the microphone on.",
+      "allow": "Allow microphone",
+      "granted": "Done. Open Kamo from the toolbar and hit Record.",
+      "denied": "Chrome blocked the microphone. Allow it in Chrome's site settings for Kamo, then try again."
+    },
+    "errors": {
+      "captureFailed": "Chrome didn't let Kamo record this tab. Try again.",
+      "tabClosed": "The tab was closed. Kamo saved what it recorded.",
+      "storageFull": "The browser ran out of space. Kamo saved what it recorded.",
+      "writeFailed": "Kamo couldn't keep writing the recording. It saved what it could."
+    }
   },
   "menu": {
     "file": "File",

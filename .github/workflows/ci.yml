@@ -25,6 +25,10 @@ jobs:
       # Rule 2: no system-wide keyboard capture anywhere in the app or the native helpers.
       - run: pnpm guard:keyboard
       - run: pnpm build
+      # Chrome extension (MV3) and its 5MB budget (rule 6). The 150KB popup check comes with
+      # the store publishing in step 15.
+      - run: pnpm --filter @kamo/extension build
+      - run: node scripts/check-size.ts 5 apps/extension/dist
 
   # Swift capture helper (D-023): must build with no warnings on the Mac runner.
   mac-helper:

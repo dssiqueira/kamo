@@ -1,13 +1,14 @@
 // Usage: node scripts/check-no-keyboard.ts  (run from the repo root; uses `git ls-files`)
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { findKeyboardCapture, isScanned } from './keyboard-guard.ts'
 
 const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
   encoding: 'utf8',
 })
   .split('\n')
-  .filter(isScanned)
+  // A file deleted but not staged yet is still listed by `--cached`.
+  .filter((file) => isScanned(file) && existsSync(file))
 
 const violations = files.flatMap((file) => findKeyboardCapture(file, readFileSync(file, 'utf8')))
 

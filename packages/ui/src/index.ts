@@ -51,3 +51,17 @@ export { acceleratorFromKeyPress, formatAccelerator } from './settings/shortcut.
 export type { KeyPress, KeyPressResult, ShortcutPlatform } from './settings/shortcut.ts'
 export type * from './settings/types.ts'
 export { CornerDecor, DecorPiece } from './decor/Decor.tsx'
+// Chrome extension screens (E-01): the popup and the microphone permission page.
+export { ExtensionPopup } from './extension/ExtensionPopup.tsx'
+export type {
+  ExtensionPopupProps,
+  PopupNotice,
+  PopupPhase,
+  PopupProject,
+  PopupTab,
+} from './extension/ExtensionPopup.tsx'
+export { MicrophonePermission } from './extension/MicrophonePermission.tsx'
+export type {
+  MicrophonePermissionProps,
+  MicrophoneStatus,
+} from './extension/MicrophonePermission.tsx'

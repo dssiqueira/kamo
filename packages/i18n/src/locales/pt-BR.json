@@ -423,7 +423,39 @@
     "discarding": "Movendo para a lixeira…",
     "discardConfirm": "Mover esta gravação para a lixeira? Dá para restaurar de lá.",
     "unrecoverable": "Nenhuma parte do vídeo pode ser reproduzida, então não dá para recuperar.",
-    "failed": "Não deu certo. Tente de novo."
+    "failed": "Não deu certo. Tente de novo.",
+    "deleting": "Apagando…",
+    "deleteConfirm": "Apagar esta gravação de vez? O navegador não tem lixeira."
+  },
+  "extension": {
+    "name": "Kamo",
+    "description": "Grave uma aba e receba um vídeo com cara de editado: zoom automático em cada clique e cursor suave. Grátis, sem conta.",
+    "actionTitle": "Gravar esta aba com o Kamo",
+    "commandStop": "Parar a gravação",
+    "popup": {
+      "tabToRecord": "Aba a gravar",
+      "record": "Gravar esta aba",
+      "unrecordable": "O Chrome não deixa gravar esta página.",
+      "tabSound": "Som da aba",
+      "starting": "Preparando…",
+      "saving": "Salvando…",
+      "recent": "Últimas gravações",
+      "noRecent": "Suas gravações aparecem aqui.",
+      "projectMeta": "{duration} · {date}"
+    },
+    "microphone": {
+      "title": "Use seu microfone",
+      "body": "O Kamo grava em segundo plano, onde o Chrome não consegue pedir o microfone. Permita aqui uma vez e sua voz entra em toda gravação com o microfone ligado.",
+      "allow": "Permitir microfone",
+      "granted": "Pronto. Abra o Kamo pela barra de ferramentas e clique em Gravar.",
+      "denied": "O Chrome bloqueou o microfone. Permita nas configurações do site do Kamo no Chrome e tente de novo."
+    },
+    "errors": {
+      "captureFailed": "O Chrome não deixou o Kamo gravar esta aba. Tente de novo.",
+      "tabClosed": "A aba foi fechada. O Kamo salvou o que gravou.",
+      "storageFull": "O navegador ficou sem espaço. O Kamo salvou o que gravou.",
+      "writeFailed": "O Kamo não conseguiu continuar gravando o arquivo. Salvou o que deu."
+    }
   },
   "menu": {
     "file": "Arquivo",

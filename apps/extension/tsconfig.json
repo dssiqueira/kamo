@@ -3,8 +3,9 @@
   "compilerOptions": {
     "noEmit": true,
     "allowImportingTsExtensions": true,
-    "lib": ["ES2023", "DOM"],
-    "types": []
+    "jsx": "react-jsx",
+    "lib": ["ES2023", "ESNext.Intl", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "types": ["chrome", "vite/client"]
   },
   "include": ["src"]
 }

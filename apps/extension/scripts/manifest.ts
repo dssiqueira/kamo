@@ -1,0 +1,93 @@
+// The extension's manifest.json and _locales/, generated at build time so the version comes
+// from package.json and every text Chrome shows comes from packages/i18n (rule 14).
+import { LOCALES, type Locale, type Messages } from '@kamo/i18n'
+
+/** Built entry points the manifest points to (see vite.config.ts). */
+export const SERVICE_WORKER = 'service-worker.js'
+export const POPUP = 'popup.html'
+
+/**
+ * Permissions of step 12 only (docs/integrations.md lists the full set: `downloads` arrives
+ * with export in step 15 and `identity` with the cloud login in step 17). `scripting` +
+ * `activeTab` draw the countdown over the tab the user clicked on; no host permission.
+ */
+export const PERMISSIONS = ['tabCapture', 'offscreen', 'storage', 'activeTab', 'scripting']
+
+/** Chrome's `_locales` folder names use an underscore: pt_BR, zh_CN. */
+export function chromeLocale(locale: Locale): string {
+  return locale.replace('-', '_')
+}
+
+/** Chrome wants 1 to 4 dot-separated integers; prereleases go to `version_name`. */
+export function chromeVersion(version: string): string {
+  const core = version.split(/[-+]/)[0] ?? ''
+  if (!/^\d+(\.\d+){0,3}$/.test(core)) throw new Error(`invalid version: ${version}`)
+  return core
+}
+
+export function buildManifest(version: string): Record<string, unknown> {
+  const icons = {
+    16: 'icons/icon-16.png',
+    32: 'icons/icon-32.png',
+    48: 'icons/icon-48.png',
+    128: 'icons/icon-128.png',
+  }
+  return {
+    manifest_version: 3,
+    name: '__MSG_extName__',
+    description: '__MSG_extDescription__',
+    version: chromeVersion(version),
+    version_name: version,
+    default_locale: 'en',
+    // 116: getMediaStreamId from the service worker, consumed by an offscreen document.
+    // 129: Intl.DurationFormat, which @kamo/i18n uses for durations (rule 14).
+    minimum_chrome_version: '129',
+    icons,
+    action: {
+      default_popup: POPUP,
+      default_title: '__MSG_actionTitle__',
+      default_icon: { 16: icons[16], 32: icons[32] },
+    },
+    background: { service_worker: SERVICE_WORKER, type: 'module' },
+    permissions: PERMISSIONS,
+    commands: {
+      'stop-recording': {
+        suggested_key: { default: 'Ctrl+Shift+2', mac: 'Command+Shift+2' },
+        description: '__MSG_commandStop__',
+      },
+    },
+  }
+}
+
+/** i18n key (packages/i18n) of each `__MSG_name__` the manifest uses. */
+export const MANIFEST_MESSAGES = {
+  extName: 'extension.name',
+  extDescription: 'extension.description',
+  actionTitle: 'extension.actionTitle',
+  commandStop: 'extension.commandStop',
+} as const
+
+function lookup(messages: Messages, key: string): string | undefined {
+  let node: string | Messages | undefined = messages
+  for (const part of key.split('.')) {
+    if (typeof node !== 'object') return undefined
+    node = node[part]
+  }
+  return typeof node === 'string' ? node : undefined
+}
+
+/** `_locales/<lang>/messages.json` for one language, English filling any gap. */
+export function chromeMessages(
+  messages: Messages,
+  fallback: Messages,
+): Record<string, { message: string }> {
+  return Object.fromEntries(
+    Object.entries(MANIFEST_MESSAGES).map(([name, key]) => {
+      const message = lookup(messages, key) ?? lookup(fallback, key)
+      if (message === undefined) throw new Error(`missing i18n key ${key}`)
+      return [name, { message }]
+    }),
+  )
+}
+
+export { LOCALES }

@@ -1,6 +1,6 @@
 // Usage: node scripts/check-i18n-usage.ts  (from the repo root; uses `git ls-files`)
 import { execFileSync } from 'node:child_process'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { findMissingKeys, flattenKeys, isUiSource } from './i18n-usage.ts'
 
 const source = JSON.parse(readFileSync('packages/i18n/src/locales/en.json', 'utf8'))
@@ -10,7 +10,8 @@ const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclud
   encoding: 'utf8',
 })
   .split('\n')
-  .filter(isUiSource)
+  // A file deleted but not staged yet is still listed by `--cached`.
+  .filter((file) => isUiSource(file) && existsSync(file))
 
 const missing = files.flatMap((file) => findMissingKeys(file, readFileSync(file, 'utf8'), keys))
 for (const m of missing) console.error(`${m.file}:${m.line}  missing i18n key "${m.key}"`)

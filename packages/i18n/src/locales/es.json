@@ -423,7 +423,39 @@
     "discarding": "Moviendo a la papelera…",
     "discardConfirm": "¿Mover esta grabación a la papelera? Puedes restaurarla desde allí.",
     "unrecoverable": "No se puede reproducir ninguna parte del video, así que no se puede recuperar.",
-    "failed": "No funcionó. Inténtalo de nuevo."
+    "failed": "No funcionó. Inténtalo de nuevo.",
+    "deleting": "Borrando…",
+    "deleteConfirm": "¿Borrar esta grabación para siempre? El navegador no tiene papelera."
+  },
+  "extension": {
+    "name": "Kamo",
+    "description": "Graba una pestaña y obtén un video que parece editado: zoom automático en cada clic y cursor suave. Gratis, sin cuenta.",
+    "actionTitle": "Grabar esta pestaña con Kamo",
+    "commandStop": "Detener la grabación",
+    "popup": {
+      "tabToRecord": "Pestaña a grabar",
+      "record": "Grabar esta pestaña",
+      "unrecordable": "Chrome no permite grabar esta página.",
+      "tabSound": "Sonido de la pestaña",
+      "starting": "Preparando…",
+      "saving": "Guardando…",
+      "recent": "Últimas grabaciones",
+      "noRecent": "Tus grabaciones aparecen aquí.",
+      "projectMeta": "{duration} · {date}"
+    },
+    "microphone": {
+      "title": "Usa tu micrófono",
+      "body": "Kamo graba en segundo plano, donde Chrome no puede pedir el micrófono. Permítelo aquí una vez y tu voz irá en cada grabación con el micrófono activado.",
+      "allow": "Permitir micrófono",
+      "granted": "Listo. Abre Kamo desde la barra de herramientas y pulsa Grabar.",
+      "denied": "Chrome bloqueó el micrófono. Permítelo en la configuración del sitio de Kamo en Chrome y vuelve a intentarlo."
+    },
+    "errors": {
+      "captureFailed": "Chrome no dejó que Kamo grabara esta pestaña. Inténtalo de nuevo.",
+      "tabClosed": "Se cerró la pestaña. Kamo guardó lo que grabó.",
+      "storageFull": "El navegador se quedó sin espacio. Kamo guardó lo que grabó.",
+      "writeFailed": "Kamo no pudo seguir escribiendo la grabación. Guardó lo que pudo."
+    }
   },
   "menu": {
     "file": "Archivo",
