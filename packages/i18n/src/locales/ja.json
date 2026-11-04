@@ -104,5 +104,27 @@
       "meadow": "メドウ",
       "dawn": "ドーン"
     }
+  },
+  "timeline": {
+    "label": "タイムライン",
+    "playhead": "再生位置",
+    "tracks": {
+      "video": "ビデオ",
+      "zoom": "ズーム",
+      "mic": "マイク",
+      "system": "パソコンの音"
+    },
+    "addZoom": "再生位置にズームを追加",
+    "mute": "{track}をミュート",
+    "volume": "{track}の音量",
+    "trimStart": "トリム開始",
+    "trimEnd": "トリム終了",
+    "trimTooShort": "少なくとも 1 秒は残してください。",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "ズーム {scale}（{start}〜{end}）",
+    "zoomBlockHint": "ドラッグで移動、端を引っぱって長さを変更。矢印キーで微調整、Delete で削除、Enter で倍率を変更。",
+    "scale": "ズーム倍率",
+    "scaleDown": "倍率を下げる",
+    "scaleUp": "倍率を上げる"
   }
 }

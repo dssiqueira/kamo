@@ -104,5 +104,27 @@
       "meadow": "Campo",
       "dawn": "Aurora"
     }
+  },
+  "timeline": {
+    "label": "Linha do tempo",
+    "playhead": "Posição",
+    "tracks": {
+      "video": "Vídeo",
+      "zoom": "Zoom",
+      "mic": "Microfone",
+      "system": "Som do computador"
+    },
+    "addZoom": "Adicionar zoom na posição atual",
+    "mute": "Silenciar {track}",
+    "volume": "Volume de {track}",
+    "trimStart": "Início do corte",
+    "trimEnd": "Fim do corte",
+    "trimTooShort": "Deixe pelo menos 1 segundo de vídeo.",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "Zoom {scale} de {start} a {end}",
+    "zoomBlockHint": "Arraste pra mover, puxe uma borda pra esticar. As setas ajustam, Delete apaga, Enter muda a escala.",
+    "scale": "Escala do zoom",
+    "scaleDown": "Diminuir escala",
+    "scaleUp": "Aumentar escala"
   }
 }

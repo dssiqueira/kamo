@@ -104,5 +104,27 @@
       "meadow": "Meadow",
       "dawn": "Dawn"
     }
+  },
+  "timeline": {
+    "label": "Timeline",
+    "playhead": "Playhead",
+    "tracks": {
+      "video": "Video",
+      "zoom": "Zoom",
+      "mic": "Microphone",
+      "system": "Computer sound"
+    },
+    "addZoom": "Add zoom at playhead",
+    "mute": "Mute {track}",
+    "volume": "{track} volume",
+    "trimStart": "Trim start",
+    "trimEnd": "Trim end",
+    "trimTooShort": "Keep at least 1 second of video.",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "Zoom {scale} from {start} to {end}",
+    "zoomBlockHint": "Drag to move, pull an edge to resize. Arrows nudge it, Delete removes it, Enter changes the scale.",
+    "scale": "Zoom scale",
+    "scaleDown": "Decrease scale",
+    "scaleUp": "Increase scale"
   }
 }

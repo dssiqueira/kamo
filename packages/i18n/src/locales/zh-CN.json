@@ -104,5 +104,27 @@
       "meadow": "草地",
       "dawn": "黎明"
     }
+  },
+  "timeline": {
+    "label": "时间轴",
+    "playhead": "播放位置",
+    "tracks": {
+      "video": "视频",
+      "zoom": "缩放",
+      "mic": "麦克风",
+      "system": "电脑声音"
+    },
+    "addZoom": "在当前位置添加缩放",
+    "mute": "静音{track}",
+    "volume": "{track}音量",
+    "trimStart": "裁剪起点",
+    "trimEnd": "裁剪终点",
+    "trimTooShort": "请至少保留 1 秒视频。",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "缩放 {scale}，从 {start} 到 {end}",
+    "zoomBlockHint": "拖动可移动，拉动边缘可调整长度。方向键微调，Delete 删除，Enter 修改倍数。",
+    "scale": "缩放倍数",
+    "scaleDown": "减小倍数",
+    "scaleUp": "增大倍数"
   }
 }

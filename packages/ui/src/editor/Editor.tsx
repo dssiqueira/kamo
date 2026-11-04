@@ -1,35 +1,63 @@
-import { generateZooms, visibleZooms, type MouseEventRecord, type Project } from '@kamo/core'
+import {
+  createHistory,
+  createZoomAt,
+  deleteZoom,
+  generateZooms,
+  moveZoom,
+  resizeZoom,
+  setTrim,
+  setZoomScale,
+  visibleZooms,
+  type MouseEventRecord,
+  type Project,
+} from '@kamo/core'
 import { formatTimecode } from '@kamo/i18n'
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n.tsx'
+import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
+import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { Preview } from './Preview.tsx'
 import { StylePanel } from './StylePanel.tsx'
 import { usePlayback } from './usePlayback.ts'
 
 export interface EditorProps {
+  /** Starting point; from then on the editor owns the project through its undo history. */
   project: Project
   events: readonly MouseEventRecord[]
   videoUrl: string
-  /** Every edit; the app autosaves it (F-12: no Save button). */
+  /** Every edit, undo and redo; the app autosaves it (F-12: no Save button). */
   onChange(project: Project): void
   onBack(): void
-  /** Timeline goes here (step 8). Gets the playback time and a seek function. */
-  renderTimeline?(props: { timeMs: number; seek(timeMs: number): void }): ReactNode
 }
 
-/** Editor (flows.md §5): preview in the middle, side panel on the right, transport below. */
-export function Editor({
-  project,
-  events,
-  videoUrl,
-  onChange,
-  onBack,
-  renderTimeline,
-}: EditorProps) {
+/** Editor (flows.md §5): preview in the middle, side panel on the right, timeline below. */
+export function Editor({ project: initial, events, videoUrl, onChange, onBack }: EditorProps) {
   const t = useT()
   const video = useRef<HTMLVideoElement | null>(null)
   const draw = useRef<((timeMs: number) => void) | null>(null)
   const [autoZoom, setAutoZoom] = useState(true)
+  const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
+
+  // Every edit (timeline and side panel) goes through one history: Ctrl/⌘+Z undoes any of
+  // them, ≥ 50 steps, a whole drag is one step (F-09).
+  // The page remounts the editor per project, so the history is created once.
+  const [history] = useState(() => createHistory(initial))
+  const [project, setProject] = useState(initial)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  useEffect(
+    () =>
+      history.subscribe(() => {
+        setProject(history.present)
+        onChangeRef.current(history.present)
+      }),
+    [history],
+  )
+  useHistoryShortcuts(history, () => {})
+
+  const edit = (next: (p: Project) => Project) => history.push(next(history.present))
+  const fromBase = (next: (p: Project) => Project) => history.push(next(history.base))
+
   const fps = project.source.fps
   const playback = usePlayback(video, project.trim, fps, (ms) => draw.current?.(ms))
 
@@ -40,11 +68,16 @@ export function Editor({
   )
 
   // F-10: Space plays/pauses, arrows step one frame (Shift: one second). Keys of Kamo's own
-  // window only; nothing system-wide (rule 2).
+  // window only; nothing system-wide (rule 2). Focused controls keep their own keys.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, button, [contenteditable="true"]')) return
+      if (
+        target?.closest(
+          'input, textarea, select, button, [role="slider"], [contenteditable="true"]',
+        )
+      )
+        return
       if (event.key === ' ') {
         event.preventDefault()
         playback.toggle()
@@ -58,15 +91,35 @@ export function Editor({
     return () => window.removeEventListener('keydown', onKey)
   }, [playback, fps])
 
-  const regenerate = () => {
-    const { zooms: next } = generateZooms({
-      events,
-      video: { width: project.source.width, height: project.source.height },
-      durationMs: project.durationMs,
-      existing: project.zooms,
-    })
-    onChange({ ...project, zooms: next })
+  const regenerate = () =>
+    edit((p) => ({
+      ...p,
+      zooms: generateZooms({
+        events,
+        video: { width: p.source.width, height: p.source.height },
+        durationMs: p.durationMs,
+        existing: p.zooms,
+      }).zooms,
+    }))
+
+  /** F-09: a new zoom centers on where the pointer was at that instant. */
+  const pointerAt = (tMs: number) => {
+    let point = { x: project.source.width / 2, y: project.source.height / 2 }
+    for (const e of events) {
+      if (e.t > tMs) break
+      if (!(e.type === 'move' && e.outside)) point = { x: e.x, y: e.y }
+    }
+    return point
   }
+
+  const audioTrack = (track: 'mic' | 'system'): TimelineAudioTrack | undefined =>
+    project.audio[track].enabled
+      ? { volume: project.audio[track].volume, muted: project.audio[track].volume === 0 }
+      : undefined
+  const mic = audioTrack('mic')
+  const system = audioTrack('system')
+  const setVolume = (track: 'mic' | 'system', volume: number) =>
+    edit((p) => ({ ...p, audio: { ...p.audio, [track]: { ...p.audio[track], volume } } }))
 
   return (
     <div className="flex h-screen flex-col bg-background font-sans text-on-surface">
@@ -99,67 +152,58 @@ export function Editor({
             video={video}
             drawRef={draw}
           />
-          <Transport
-            playing={playback.playing}
-            timeMs={playback.timeMs}
-            trim={project.trim}
+          <div className="flex items-center gap-md border-t border-border px-md py-sm">
+            <button
+              type="button"
+              onClick={playback.toggle}
+              className="w-[88px] rounded-md bg-surface-raised px-md py-sm text-body hover:bg-border focus-visible:outline-2 focus-visible:outline-tertiary"
+            >
+              {t(playback.playing ? 'editor.pause' : 'editor.play')}
+            </button>
+            <span className="font-mono text-timecode tabular-nums">
+              {formatTimecode(playback.timeMs - project.trim.startMs, fps)}
+              <span className="text-on-surface-muted">
+                {' / '}
+                {formatTimecode(project.trim.endMs - project.trim.startMs, fps)}
+              </span>
+            </span>
+          </div>
+          <Timeline
+            durationMs={project.durationMs}
             fps={fps}
-            onToggle={playback.toggle}
-            onSeek={playback.seek}
+            trim={project.trim}
+            zooms={project.zooms}
+            playheadMs={playback.timeMs}
+            selectedZoomId={selectedZoomId}
+            tracks={{ ...(mic ? { mic } : {}), ...(system ? { system } : {}) }}
+            onScrub={playback.seek}
+            onSelectZoom={setSelectedZoomId}
+            onMoveZoom={(id, d) => fromBase((p) => moveZoom(p, id, d))}
+            onResizeZoom={(id, edge, d) => fromBase((p) => resizeZoom(p, id, edge, d))}
+            onScaleZoom={(id, scale) => edit((p) => setZoomScale(p, id, scale))}
+            onDeleteZoom={(id) => {
+              edit((p) => deleteZoom(p, id))
+              setSelectedZoomId(null)
+            }}
+            onCreateZoom={(tMs) => edit((p) => createZoomAt(p, tMs, pointerAt(tMs)))}
+            onTrim={(start, end) => fromBase((p) => setTrim(p, start, end))}
+            onTrackVolume={setVolume}
+            onTrackMute={(track, muted) => setVolume(track, muted ? 0 : 1)}
+            onTransactionStart={() => history.begin()}
+            onTransactionEnd={() => history.commit()}
           />
-          {renderTimeline?.({ timeMs: playback.timeMs, seek: playback.seek })}
         </main>
         <StylePanel
           style={project.style}
           cursor={project.cursor}
           autoZoom={autoZoom}
           noClicks={noClicks}
-          onStyle={(style) => onChange({ ...project, style })}
-          onCursor={(cursor) => onChange({ ...project, cursor })}
+          onStyle={(style) => edit((p) => ({ ...p, style }))}
+          onCursor={(cursor) => edit((p) => ({ ...p, cursor }))}
           onAutoZoom={setAutoZoom}
           onRegenerate={regenerate}
         />
       </div>
-    </div>
-  )
-}
-
-interface TransportProps {
-  playing: boolean
-  timeMs: number
-  trim: { startMs: number; endMs: number }
-  fps: number
-  onToggle(): void
-  onSeek(timeMs: number): void
-}
-
-function Transport({ playing, timeMs, trim, fps, onToggle, onSeek }: TransportProps) {
-  const t = useT()
-  return (
-    <div className="flex items-center gap-md border-t border-border px-md py-sm">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-[88px] rounded-md bg-surface-raised px-md py-sm text-body hover:bg-border focus-visible:outline-2 focus-visible:outline-tertiary"
-      >
-        {t(playing ? 'editor.pause' : 'editor.play')}
-      </button>
-      <span className="font-mono text-timecode tabular-nums">
-        {formatTimecode(timeMs - trim.startMs, fps)}
-      </span>
-      <input
-        type="range"
-        aria-label={t('editor.scrub')}
-        min={trim.startMs}
-        max={trim.endMs}
-        step={1000 / fps}
-        value={Math.min(trim.endMs, Math.max(trim.startMs, timeMs))}
-        onChange={(e) => onSeek(Number(e.target.value))}
-        className="min-w-0 flex-1 accent-tertiary"
-      />
-      <span className="font-mono text-timecode text-on-surface-muted tabular-nums">
-        {formatTimecode(trim.endMs - trim.startMs, fps)}
-      </span>
     </div>
   )
 }

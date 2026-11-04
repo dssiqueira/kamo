@@ -104,5 +104,27 @@
       "meadow": "Prado",
       "dawn": "Amanecer"
     }
+  },
+  "timeline": {
+    "label": "Línea de tiempo",
+    "playhead": "Posición",
+    "tracks": {
+      "video": "Video",
+      "zoom": "Zoom",
+      "mic": "Micrófono",
+      "system": "Sonido del equipo"
+    },
+    "addZoom": "Añadir zoom en la posición actual",
+    "mute": "Silenciar {track}",
+    "volume": "Volumen de {track}",
+    "trimStart": "Inicio del recorte",
+    "trimEnd": "Fin del recorte",
+    "trimTooShort": "Deja al menos 1 segundo de video.",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "Zoom {scale} de {start} a {end}",
+    "zoomBlockHint": "Arrastra para mover, tira de un borde para cambiar la duración. Las flechas lo ajustan, Supr lo borra, Intro cambia la escala.",
+    "scale": "Escala del zoom",
+    "scaleDown": "Reducir escala",
+    "scaleUp": "Aumentar escala"
   }
 }

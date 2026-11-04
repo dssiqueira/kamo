@@ -15,3 +15,4 @@ export type { RecordingBarProps, RecordingClock } from './recording/RecordingBar
 export { useSpring } from './motion/useSpring.ts'
 export { Editor } from './editor/Editor.tsx'
 export type { EditorProps } from './editor/Editor.tsx'
+export * from './timeline/index.ts'
