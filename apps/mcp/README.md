@@ -69,6 +69,8 @@ All tools are read-only. Times come in milliseconds and as `hh:mm:ss`, on the ra
 | `get_transcript` | Timed transcript segments, all or a time range | `recordingId`, `fromMs?`, `toMs?`, `offset?` (0), `limit?` (100, max 500) |
 | `get_click_timeline` | Clicks and zooms (instant + position); scrolls and pointer moves only when asked | `recordingId`, `fromMs?`, `toMs?`, `includeZooms?` (true), `includeScrolls?` (false), `includeMoves?` (false), `offset?` (0), `limit?` (100, max 500) |
 | `get_frame` | The reference screenshot closest to an instant (JPEG image) and its real time | `recordingId`, `atMs` |
+| `list_playlists` | The local playlists made in the app, in creation order: id, name, dates, recording count and recording ids in playlist order | `offset?` (0), `limit?` (20, max 100) |
+| `get_playlist` | One playlist with its recordings in order (same fields as `list_recordings`), plus how many are missing | `playlist` (id or name), `offset?` (0), `limit?` (50, max 200) |
 
 `recordingId` is the id from `list_recordings` or `search_recordings` (the project id, or its folder name).
 
@@ -80,6 +82,7 @@ Things you can ask your agent:
 - "Find the recording where I talked about billing settings" → `search_recordings { "query": "billing settings" }`
 - "Write step-by-step docs from my onboarding demo" → `get_transcript`, `get_click_timeline` and a few `get_frame` calls
 - "What was on screen at 1:05?" → `get_frame { "recordingId": "…", "atMs": 65000 }`
+- "Summarize every video in my Release notes playlist" → `get_playlist { "playlist": "Release notes" }`, then `get_transcript` for each
 
 A `search_recordings` match looks like this:
 

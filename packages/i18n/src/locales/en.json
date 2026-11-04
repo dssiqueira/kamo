@@ -35,6 +35,33 @@
       "failed": "That didn't work. Try again."
     }
   },
+  "playlists": {
+    "label": "Playlists",
+    "all": "All",
+    "new": "New playlist",
+    "nameLabel": "Playlist name",
+    "count": "{count, plural, =0 {Empty} one {# recording} other {# recordings}}",
+    "rename": "Rename playlist",
+    "delete": "Delete playlist",
+    "deleteConfirm": "Delete the playlist “{name}”? The recordings in it stay in Kamo.",
+    "deleteAction": "Delete playlist",
+    "empty": "This playlist is empty. Use the playlist button on any recording to add it here.",
+    "reorderHint": "Drag the recordings, or use the arrows, to change the order.",
+    "addTo": "Add to playlist",
+    "menuTitle": "Playlists for “{name}”",
+    "none": "No playlists yet.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove from playlist",
+    "errors": {
+      "invalidName": "A playlist name needs at least one character (120 at most).",
+      "notFound": "That playlist isn't there anymore.",
+      "tooMany": "That's a lot of playlists. Delete one to make another.",
+      "full": "This playlist is full.",
+      "newerVersion": "Your playlists were saved by a newer version of Kamo. Update the app to change them.",
+      "failed": "That didn't work. Try again."
+    }
+  },
   "home": {
     "displays": "Screen to record",
     "displayName": "Display {index}",

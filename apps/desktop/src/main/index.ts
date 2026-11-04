@@ -19,6 +19,7 @@ import { isDeepStrictEqual } from 'node:util'
 import {
   DEFAULT_STYLE,
   PROJECT_FILES,
+  PlaylistError,
   ProjectError,
   backgroundImageFile,
   type Style,
@@ -36,6 +37,7 @@ import {
   renameProject,
   saveProjectData,
 } from './projects.ts'
+import { notifyPlaylistsChanged, registerPlaylists } from './playlists-ipc.ts'
 import { PreferenceError } from './preference-error.ts'
 import {
   currentStopShortcut,
@@ -258,7 +260,8 @@ function ipcErrorCodeOf(error: unknown): string | null {
     error instanceof SettingsError ||
     error instanceof PreferenceError ||
     error instanceof BackgroundImageError ||
-    error instanceof RecoveryError
+    error instanceof RecoveryError ||
+    error instanceof PlaylistError
   ) {
     return error.code
   }
@@ -456,6 +459,8 @@ handle(IpcChannel.loadProject, (projectId) => loadProjectById(getServices().stor
  * The style new recordings start with (F-08). A background image (A-04) lives in its own
  * project's folder, so it never carries over: new projects get the default wallpaper.
  */
+// Local playlists live next to them (`<projects>/playlists.json`).
+const playlists = registerPlaylists(handle)
 function styleForNewProjects(style: Style): Style {
   return backgroundImageFile(style.background) === null
     ? style
@@ -494,6 +499,17 @@ handle(IpcChannel.showProjectInFolder, async (projectId) => {
   const error = await shell.openPath(dir)
   if (error) {
     getServices().log.warn('project.show.failed', { error })
+  // A deleted recording leaves every playlist it was in.
+  if (await playlists.forgetProject(projectId as string)) notifyPlaylistsChanged()
+})
+// F-12: a damaged project's recording opens in the system's video player.
+handle(IpcChannel.openRawVideo, async (projectId) => {
+  const path = await rawVideoPath(getServices().store, projectId)
+  const error = await shell.openPath(path)
+  if (error) {
+    getServices().log.warn('project.raw_video.failed', { error })
+    throw new ProjectActionError('project_not_found')
+  }
     throw new ProjectActionError('project_not_found')
   }
 })

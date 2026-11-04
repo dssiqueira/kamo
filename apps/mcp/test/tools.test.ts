@@ -26,13 +26,15 @@ afterAll(async () => {
 })
 
 describe('tool list', () => {
-  it('exposes the six read-only tools', async () => {
+  it('exposes the eight read-only tools', async () => {
     const { tools } = await mcp.client.listTools()
     expect(tools.map((t) => t.name).sort()).toEqual([
       'get_click_timeline',
       'get_frame',
+      'get_playlist',
       'get_recording',
       'get_transcript',
+      'list_playlists',
       'list_recordings',
       'search_recordings',
     ])

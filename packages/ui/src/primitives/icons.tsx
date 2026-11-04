@@ -119,3 +119,45 @@ export function CloseIcon() {
     </Icon>
   )
 }
+
+// Local playlists (Home).
+export function PlaylistAddIcon() {
+  return (
+    <Icon>
+      <path d="M2.5 4h8M2.5 7.5h8M2.5 11h4.5M11.5 9v5M9 11.5h5" />
+    </Icon>
+  )
+}
+
+export function PlusIcon() {
+  return (
+    <Icon>
+      <path d="M8 3.5v9M3.5 8h9" />
+    </Icon>
+  )
+}
+
+export function ArrowUpIcon() {
+  return (
+    <Icon>
+      <path d="M8 12.5v-9M4.5 7L8 3.5 11.5 7" />
+    </Icon>
+  )
+}
+
+export function ArrowDownIcon() {
+  return (
+    <Icon>
+      <path d="M8 3.5v9M4.5 9L8 12.5 11.5 9" />
+    </Icon>
+  )
+}
+
+export function MinusCircleIcon() {
+  return (
+    <Icon>
+      <circle cx="8" cy="8" r="5.5" />
+      <path d="M5.5 8h5" />
+    </Icon>
+  )
+}

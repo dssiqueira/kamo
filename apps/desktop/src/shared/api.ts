@@ -80,6 +80,24 @@ export interface KamoApi {
    * it (`not_interrupted`, `unrecoverable`).
    */
   recoverRecording(projectId: string): Promise<RecoveredRecording>
+  // Local playlists (docs/data-model.md → Playlists): `<projects>/playlists.json`. Errors
+  // reject with a code: `invalid_name`, `playlist_not_found`, `project_not_found`,
+  // `too_many_playlists`, `playlist_full`, `invalid_order`, `newer_version`.
+  /** In creation order; only projects whose folder exists are listed. */
+  listPlaylists(): Promise<PlaylistInfo[]>
+  /** Trimmed, 1–120 characters; may start with some projects (a card's "New playlist"). */
+  createPlaylist(name: string, projectIds?: string[]): Promise<PlaylistInfo>
+  renamePlaylist(playlistId: string, name: string): Promise<void>
+  /** Deletes the playlist only; its recordings stay. Home asks for confirmation first. */
+  deletePlaylist(playlistId: string): Promise<void>
+  /** Appends the ones not in it yet. */
+  addToPlaylist(playlistId: string, projectIds: string[]): Promise<void>
+  removeFromPlaylist(playlistId: string, projectIds: string[]): Promise<void>
+  /** The playlist's projects in their new order. */
+  reorderPlaylist(playlistId: string, projectIds: string[]): Promise<void>
+  /** Any playlist changed (here, in another window, or a project left them). Returns unsubscribe. */
+  onPlaylistsChanged(listener: () => void): () => void
+
   /** Moves it to the system trash (`not_interrupted`). */
   discardRecording(projectId: string): Promise<void>
 
@@ -238,6 +256,17 @@ export interface AppSettings {
   stopShortcut?: string
   /** F-13. Set when the permissions onboarding was finished. */
   onboardingDone?: boolean
+/** A local playlist as Home sees it (core `Playlist`, with missing projects hidden). */
+export interface PlaylistInfo {
+  id: string
+  name: string
+  /** In playlist order. */
+  projectIds: string[]
+  /** ISO 8601. */
+  createdAt: string
+  updatedAt: string
+}
+
   /**
    * F-15. Closing the main window hides it to the tray (menu bar on Mac) instead of quitting.
    * Absent: AppInfo.closeToTrayDefault (on everywhere but Mac).
@@ -430,3 +459,11 @@ export const IpcChannel = {
   cameraChunk: 'kamo:camera-chunk',
 } as const
   openRawVideo: 'kamo:project-open-raw-video',
+  listPlaylists: 'kamo:playlists-list',
+  createPlaylist: 'kamo:playlist-create',
+  renamePlaylist: 'kamo:playlist-rename',
+  deletePlaylist: 'kamo:playlist-delete',
+  addToPlaylist: 'kamo:playlist-add',
+  removeFromPlaylist: 'kamo:playlist-remove',
+  reorderPlaylist: 'kamo:playlist-reorder',
+  playlistsChanged: 'kamo:playlists-changed',

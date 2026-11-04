@@ -6,6 +6,7 @@ import {
   type DisplayInfo,
   type InterruptedRecording,
   type KamoApi,
+  type PlaylistInfo,
   type ProjectListing,
   type ProjectSummary,
   type RecordingClock,
@@ -61,6 +62,20 @@ const api: KamoApi = {
   pickBackgroundImage: (projectId) =>
     invoke(IpcChannel.pickBackgroundImage, projectId) as Promise<string | null>,
   onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
+  // Local playlists
+  listPlaylists: () => invoke(IpcChannel.listPlaylists) as Promise<PlaylistInfo[]>,
+  createPlaylist: (name, projectIds) =>
+    invoke(IpcChannel.createPlaylist, name, projectIds ?? []) as Promise<PlaylistInfo>,
+  renamePlaylist: (playlistId, name) =>
+    invoke(IpcChannel.renamePlaylist, playlistId, name) as Promise<void>,
+  deletePlaylist: (playlistId) => invoke(IpcChannel.deletePlaylist, playlistId) as Promise<void>,
+  addToPlaylist: (playlistId, projectIds) =>
+    invoke(IpcChannel.addToPlaylist, playlistId, projectIds) as Promise<void>,
+  removeFromPlaylist: (playlistId, projectIds) =>
+    invoke(IpcChannel.removeFromPlaylist, playlistId, projectIds) as Promise<void>,
+  reorderPlaylist: (playlistId, projectIds) =>
+    invoke(IpcChannel.reorderPlaylist, playlistId, projectIds) as Promise<void>,
+  onPlaylistsChanged: (listener) => subscribe(IpcChannel.playlistsChanged, () => listener()),
   listInterruptedRecordings: () =>
     invoke(IpcChannel.listInterruptedRecordings) as Promise<InterruptedRecording[]>,
   recoverRecording: (projectId) =>

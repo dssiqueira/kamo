@@ -2,11 +2,15 @@
 // file's mtime and size, so an edit made in the app shows up on the next call without a
 // restart. Read-only (AGENTS.md rule 7): this module only stats, lists and reads files.
 import {
+  PLAYLISTS_FILE,
   PROJECT_FILES,
+  PlaylistError,
   ProjectError,
   parseEvents,
+  parsePlaylists,
   parseProject,
   type MouseEventRecord,
+  type Playlist,
   type Project,
 } from '@kamo/core'
 import { readFile, readdir, stat } from 'node:fs/promises'
@@ -76,6 +80,11 @@ export interface SearchableTranscript {
   normalized: string[]
 }
 
+export type PlaylistsRead =
+  | { kind: 'ok'; playlists: Playlist[]; dropped: number }
+  | { kind: 'missing' }
+  | { kind: 'invalid'; problem: string }
+
 interface Cached<T> {
   stamp: string
   value: T
@@ -141,6 +150,7 @@ export class Library {
     string,
     Cached<{ events: MouseEventRecord[]; skipped: number }>
   >()
+  private playlistsCache: Cached<PlaylistsRead> | null = null
 
   readonly dir: string
 
@@ -329,6 +339,35 @@ export class Library {
       throw new Error(`${frame.file} is ${info.size} bytes, too big for a reference frame`)
     }
     return readFile(path)
+  }
+
+  /**
+   * The app's local playlists (`<projects>/playlists.json`, docs/data-model.md → Playlists).
+   * Missing file: no playlists yet. Cached by mtime and size like everything else.
+   */
+  async playlists(): Promise<PlaylistsRead> {
+    const file = join(this.dir, PLAYLISTS_FILE)
+    const stamp = await stampOf(file)
+    if (stamp === null) {
+      this.playlistsCache = null
+      return { kind: 'missing' }
+    }
+    if (this.playlistsCache?.stamp === stamp) return this.playlistsCache.value
+    let value: PlaylistsRead
+    try {
+      const { file: parsed, dropped } = parsePlaylists(await readFile(file, 'utf8'))
+      value = { kind: 'ok', playlists: parsed.playlists, dropped }
+    } catch (error) {
+      value = {
+        kind: 'invalid',
+        problem:
+          error instanceof PlaylistError && error.code === 'newer_version'
+            ? 'playlists.json was saved by a newer Kamo app; update @kamo/mcp to read it'
+            : `playlists.json could not be read: ${error instanceof Error ? error.message : String(error)}`,
+      }
+    }
+    this.playlistsCache = { stamp, value }
+    return value
   }
 
   /** Which optional media files are in the project folder. */

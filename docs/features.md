@@ -244,10 +244,13 @@
 - [x] "Show in folder" opens the project folder
 - [x] Every edit is saved automatically, with no "Save" button
 - [x] `project.json` with a `version` field, migrated automatically when the format changes
+- [x] Local playlists (free, desktop): a row of chips above the list (All · each playlist · New playlist) filters it; a card's playlist button opens a checklist of playlists plus "New playlist"; inside a playlist, drag the cards or use the arrows to reorder, "Remove from playlist", rename and delete the playlist (with confirmation; the recordings stay). Saved in `<projects>/playlists.json` (see `data-model.md`); keyboard accessible. The extension does not have them yet
 
 **Edge cases**
 - Project folder deleted outside the app → disappears from the list without error
 - Corrupted `project.json` → offers to open only the raw video and recreate the edit (Home lists it with the button; opening the raw video in the editor is not built yet)
+- Project deleted in the app → leaves every playlist at once. Folder deleted or moved from outside → hidden from its playlists and cleaned from the file on the next playlist change (so a folder that comes back before that keeps its place)
+- `playlists.json` unreadable → set aside as `playlists.broken-<time>.json` and playlists start over; written by a newer Kamo → Home shows none and refuses changes instead of overwriting it
 
 ---
 
@@ -554,6 +557,8 @@
 | `get_transcript` | full transcript or of a range, with timings |
 | `get_click_timeline` | timeline of clicks and zooms (timestamp + position on screen) |
 | `get_frame` | reference frame closest to the requested timestamp (saved every 5s by the app), so the agent can "see" the screen |
+| `list_playlists` | the local playlists made on Home (name, dates, recording ids in order) |
+| `get_playlist` | one playlist (by id or name) with its recordings in playlist order; deleted ones counted as missing |
 
 **Acceptance criteria**
 - [ ] Installs and runs with one command, without configuring anything: finds the projects folder by reading the app's `settings.json` (local file, no network), falls back to `~/Kamo` if not found, or receives the path as an argument — folder discovery done (`--dir`, then `settings.json`, then `~/Kamo/projects`, I-1); `@kamo/mcp` is not on npm yet

@@ -35,6 +35,33 @@
       "failed": "Não deu certo. Tente de novo."
     }
   },
+  "playlists": {
+    "label": "Playlists",
+    "all": "Todos",
+    "new": "Nova playlist",
+    "nameLabel": "Nome da playlist",
+    "count": "{count, plural, =0 {Vazia} one {# gravação} other {# gravações}}",
+    "rename": "Renomear playlist",
+    "delete": "Excluir playlist",
+    "deleteConfirm": "Excluir a playlist “{name}”? As gravações dela continuam no Kamo.",
+    "deleteAction": "Excluir playlist",
+    "empty": "Esta playlist está vazia. Use o botão de playlist em qualquer gravação para trazê-la para cá.",
+    "reorderHint": "Arraste as gravações, ou use as setas, para mudar a ordem.",
+    "addTo": "Adicionar à playlist",
+    "menuTitle": "Playlists de “{name}”",
+    "none": "Nenhuma playlist ainda.",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "remove": "Tirar da playlist",
+    "errors": {
+      "invalidName": "O nome da playlist precisa de pelo menos um caractere (até 120).",
+      "notFound": "Essa playlist não existe mais.",
+      "tooMany": "Playlists demais. Exclua uma para criar outra.",
+      "full": "Esta playlist está cheia.",
+      "newerVersion": "Suas playlists foram salvas por uma versão mais nova do Kamo. Atualize o app para alterá-las.",
+      "failed": "Não deu certo. Tente de novo."
+    }
+  },
   "home": {
     "displays": "Tela pra gravar",
     "displayName": "Tela {index}",

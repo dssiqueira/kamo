@@ -17,6 +17,7 @@
         ├── frames/           # reference thumbnails every 5s (JPEG, 480px wide, named by video second: 0005.jpg), captured DURING recording, straight from the stream (no decoding afterwards)
         ├── transcript.json   # local transcript (A-05, only with the pack installed)
         └── captions.json     # optional: caption style and adjustments
+    playlists.json            # local playlists (see "Playlists" below); playlists.broken-<time>.json is an unreadable one set aside
 ```
 Global settings: `app-data/settings.json`. Optional packs: `app-data/packs/<pack>/<version>/` + `app-data/packs.json` (what is installed, version and SHA-256). Kamo Cloud session (if logged in): OS keychain, never in a plain file.
 
@@ -56,6 +57,24 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | exports | `{ aspect, resolution, fps, format, path, createdAt }[]` | history of local exports (used by the MCP and by "Show in folder") |
 | pendingUpload | `{ uploadId, aspect, partsDone: number[], totalParts, startedAt } \| null` | state of the in-progress multipart upload, to resume after closing the app (C-02) |
 | version | number | schema version, for migration |
+
+### Playlists (playlists.json)
+Local and free (desktop). One file at the root of the projects folder, so playlists follow the folder chosen in Settings and are read by the local MCP. A separate file rather than a field in each `project.json`: a project can be in several playlists, the order belongs to the playlist, and reordering touches one small file instead of many projects. Schema and pure operations in `core` (`packages/core/src/playlist`); the desktop writes it atomically (temp file + rename), one change at a time.
+
+| Field | Type | Rule |
+|---|---|---|
+| version | number | `1`. A newer version is never overwritten: the app shows no playlists and refuses changes |
+| playlists | Playlist[] | in creation order; at most 500 |
+
+Playlist
+| Field | Type | Rule |
+|---|---|---|
+| id | string (uuid) | generated on creation; stays the same forever (a cloud playlist can map to it later) |
+| name | string | trimmed, one line, 1–120 characters; not unique |
+| projectIds | string[] | project ids in playlist order, each at most once; at most 2000 |
+| createdAt / updatedAt | ISO date | `updatedAt` changes on rename, add, remove, reorder and cleanup |
+
+Reading is tolerant: an invalid playlist or a repeated id is dropped (and logged), the rest load. Unknown fields are kept on rewrite, so a newer app can add some (for example a cloud id) without an older one erasing them. A project id whose folder does not exist is hidden and removed from the file on the next write; deleting a project in the app removes it from every playlist at once.
 
 ### MouseEvent (events.jsonl)
 | Field | Type | Rule |

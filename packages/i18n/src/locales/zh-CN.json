@@ -35,6 +35,33 @@
       "failed": "操作失败，请重试。"
     }
   },
+  "playlists": {
+    "label": "播放列表",
+    "all": "全部",
+    "new": "新建播放列表",
+    "nameLabel": "播放列表名称",
+    "count": "{count, plural, =0 {空} other {# 个录制}}",
+    "rename": "重命名播放列表",
+    "delete": "删除播放列表",
+    "deleteConfirm": "删除播放列表“{name}”？其中的录制仍会保留在 Kamo 中。",
+    "deleteAction": "删除播放列表",
+    "empty": "这个播放列表是空的。在任意录制上点击播放列表按钮，即可添加到这里。",
+    "reorderHint": "拖动录制或使用箭头来调整顺序。",
+    "addTo": "添加到播放列表",
+    "menuTitle": "“{name}”所在的播放列表",
+    "none": "还没有播放列表。",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "remove": "从播放列表移除",
+    "errors": {
+      "invalidName": "播放列表名称至少需要一个字符（最多 120 个）。",
+      "notFound": "该播放列表已不存在。",
+      "tooMany": "播放列表太多了。删除一个后再新建。",
+      "full": "这个播放列表已满。",
+      "newerVersion": "你的播放列表由更新版本的 Kamo 保存。请更新应用后再修改。",
+      "failed": "没有成功，请重试。"
+    }
+  },
   "home": {
     "displays": "要录制的屏幕",
     "displayName": "显示器 {index}",

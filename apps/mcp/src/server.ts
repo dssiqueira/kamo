@@ -1,4 +1,4 @@
-// The six read-only tools of the local MCP (docs/features.md → M-01). Every answer is JSON in
+// The read-only tools of the local MCP (docs/features.md → M-01). Every answer is JSON in
 // a text block (plus the image for get_frame), small and paginated so it never floods the
 // agent's context. Times always come twice: `…Ms` (exact) and hh:mm:ss.
 import type { MouseEventRecord, Project } from '@kamo/core'
@@ -29,6 +29,7 @@ const MAX_ZOOMS_IN_RECORDING = 50
 
 const INSTRUCTIONS = `Kamo is a screen recorder. This server reads the user's local Kamo recordings (read-only, offline).
 Start with list_recordings or search_recordings to get a recording id, then use get_recording, get_transcript, get_click_timeline and get_frame.
+The user may group recordings into playlists: list_playlists and get_playlist return them in playlist order.
 Times are on the raw recording timeline, in ms and hh:mm:ss. Click and zoom positions are pixels of the recorded video (origin top-left).
 Results are paginated: when nextOffset is not null, call again with offset = nextOffset.`
 
@@ -619,6 +620,100 @@ export function createKamoServer(options: KamoServerOptions): {
           { type: 'image', data: data.toString('base64'), mimeType: frame.mimeType },
         ],
       }
+    },
+  )
+
+  /** Playlists plus the recordings they can point to; null with a message when unreadable. */
+  const loadPlaylists = async () => {
+    const [read, scan] = await Promise.all([library.playlists(), library.scan()])
+    const byId = new Map(scan.recordings.map((r) => [r.id, r]))
+    if (read.kind === 'invalid') return { scan, byId, playlists: null, problem: read.problem }
+    return { scan, byId, playlists: read.kind === 'ok' ? read.playlists : [], problem: null }
+  }
+
+  server.registerTool(
+    'list_playlists',
+    {
+      title: 'List playlists',
+      description:
+        "Lists the user's local Kamo playlists (made in the desktop app) in the order they were created: id, name, dates, how many recordings each has and their recording ids in playlist order. Use get_playlist for the recordings' details. Paginated.",
+      inputSchema: { offset, limit: limitOf(20, 100) },
+      annotations: READ_ONLY,
+    },
+    async (args) => {
+      const { scan, byId, playlists, problem } = await loadPlaylists()
+      if (!playlists) return failure(problem ?? 'playlists.json could not be read')
+      const { items, ...pagination } = page(playlists, args.offset, args.limit)
+      return json({
+        dir: scan.dir,
+        ...(playlists.length === 0
+          ? { message: 'No playlists yet. They are made on the Home screen of the Kamo app.' }
+          : {}),
+        ...pagination,
+        playlists: items.map((playlist) => {
+          const ids = playlist.projectIds.filter((id) => byId.has(id))
+          return {
+            id: playlist.id,
+            name: playlist.name,
+            createdAt: playlist.createdAt,
+            updatedAt: playlist.updatedAt,
+            recordingCount: ids.length,
+            recordingIds: ids,
+          }
+        }),
+      })
+    },
+  )
+
+  server.registerTool(
+    'get_playlist',
+    {
+      title: 'Get playlist',
+      description:
+        'Returns one local playlist with its recordings in playlist order (id, name, date, duration, transcript, Kamo Cloud links), by playlist id or exact name (case insensitive). Recordings that were deleted or cannot be read are counted in missingCount. Paginated.',
+      inputSchema: {
+        playlist: z
+          .string()
+          .trim()
+          .min(1)
+          .describe('Playlist id from list_playlists, or its name, e.g. "Release notes".'),
+        offset,
+        limit: limitOf(50, 200),
+      },
+      annotations: READ_ONLY,
+    },
+    async (args) => {
+      const { byId, playlists, problem } = await loadPlaylists()
+      if (!playlists) return failure(problem ?? 'playlists.json could not be read')
+      const wanted = args.playlist
+      const playlist =
+        playlists.find((p) => p.id === wanted) ??
+        playlists.find((p) => p.name.toLowerCase() === wanted.toLowerCase()) ??
+        null
+      if (!playlist) {
+        return failure(
+          playlists.length === 0
+            ? 'There are no playlists yet. They are made on the Home screen of the Kamo app.'
+            : `Playlist "${wanted}" not found. Use list_playlists to get a playlist id.`,
+        )
+      }
+      const recordings = playlist.projectIds.flatMap((id) => {
+        const recording = byId.get(id)
+        return recording ? [recording] : []
+      })
+      const { items, ...pagination } = page(recordings, args.offset, args.limit)
+      return json({
+        id: playlist.id,
+        name: playlist.name,
+        createdAt: playlist.createdAt,
+        updatedAt: playlist.updatedAt,
+        missingCount: playlist.projectIds.length - recordings.length,
+        ...pagination,
+        recordings: items.map((recording, i) => ({
+          position: pagination.offset + i + 1,
+          ...summary(recording),
+        })),
+      })
     },
   )
 

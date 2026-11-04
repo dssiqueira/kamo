@@ -51,7 +51,7 @@ describe('kamo-mcp CLI', () => {
       expect(client.getServerVersion()?.name).toBe('kamo')
       expect(client.getInstructions()).toMatch(/read-only/)
       const { tools } = await client.listTools()
-      expect(tools).toHaveLength(6)
+      expect(tools).toHaveLength(8)
       const list = (await client.callTool({
         name: 'list_recordings',
         arguments: {},

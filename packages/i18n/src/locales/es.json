@@ -35,6 +35,33 @@
       "failed": "No funcionó. Inténtalo de nuevo."
     }
   },
+  "playlists": {
+    "label": "Playlists",
+    "all": "Todos",
+    "new": "Nueva playlist",
+    "nameLabel": "Nombre de la playlist",
+    "count": "{count, plural, =0 {Vacía} one {# grabación} other {# grabaciones}}",
+    "rename": "Cambiar nombre de la playlist",
+    "delete": "Eliminar playlist",
+    "deleteConfirm": "¿Eliminar la playlist «{name}»? Las grabaciones siguen en Kamo.",
+    "deleteAction": "Eliminar playlist",
+    "empty": "Esta playlist está vacía. Usa el botón de playlist en cualquier grabación para añadirla aquí.",
+    "reorderHint": "Arrastra las grabaciones, o usa las flechas, para cambiar el orden.",
+    "addTo": "Añadir a una playlist",
+    "menuTitle": "Playlists de «{name}»",
+    "none": "Aún no hay playlists.",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "remove": "Quitar de la playlist",
+    "errors": {
+      "invalidName": "El nombre de la playlist necesita al menos un carácter (120 como máximo).",
+      "notFound": "Esa playlist ya no existe.",
+      "tooMany": "Son muchas playlists. Elimina una para crear otra.",
+      "full": "Esta playlist está llena.",
+      "newerVersion": "Tus playlists se guardaron con una versión más nueva de Kamo. Actualiza la app para cambiarlas.",
+      "failed": "No funcionó. Inténtalo de nuevo."
+    }
+  },
   "home": {
     "displays": "Pantalla para grabar",
     "displayName": "Pantalla {index}",
