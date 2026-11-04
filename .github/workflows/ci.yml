@@ -21,3 +21,35 @@ jobs:
       - run: pnpm test
       - run: pnpm i18n:check
       - run: pnpm build
+
+  # Builds the installers on both OSes, opens the packaged app once and enforces the
+  # 130MB installer budget (rule 6). Unsigned here; signing happens in the release workflow.
+  desktop-package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            installer: apps/desktop/release/*.exe
+            binary: apps/desktop/release/win-unpacked/Kamo.exe
+          - os: macos-14
+            installer: apps/desktop/release/*.dmg
+            binary: apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo
+    runs-on: ${{ matrix.os }}
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @kamo/desktop package
+      - name: Installer size budget
+        shell: bash
+        run: node scripts/check-size.ts 130 ${{ matrix.installer }}
+      - name: Smoke test (packaged app opens and renders)
+        shell: bash
+        run: ${{ matrix.binary }} --smoke-test

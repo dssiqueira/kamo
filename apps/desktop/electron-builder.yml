@@ -1,0 +1,42 @@
+# Installers (docs/integrations.md → Distribution). Budget: ≤ 130MB each (rule 6).
+appId: app.kamo.desktop
+productName: Kamo
+copyright: Copyright © 2026 Kamo contributors
+
+directories:
+  output: release
+  buildResources: build
+
+# Everything is bundled by electron-vite into out/; no node_modules ship with the app.
+files:
+  - out/**/*
+  - package.json
+asar: true
+compression: maximum
+# Only the languages Kamo supports; Electron ships ~50 locale packs otherwise.
+electronLanguages: [en, en-US, pt-BR, es, es-419, zh-CN, ja]
+
+mac:
+  target:
+    - target: dmg
+      arch: arm64
+  category: public.app-category.video
+  hardenedRuntime: true
+  # Signing and notarization arrive with the release workflow (step 10).
+  identity: null
+
+dmg:
+  artifactName: Kamo-${version}-mac-${arch}.${ext}
+
+win:
+  target:
+    - target: nsis
+      arch: x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: Kamo-${version}-win-${arch}-setup.${ext}
+
+publish: null

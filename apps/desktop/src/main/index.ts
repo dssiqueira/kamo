@@ -8,7 +8,17 @@ import { IpcChannel } from '../shared/api.ts'
 const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
 
+const SMOKE_TEST_TIMEOUT_MS = 60_000
+
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
+const isSmokeTest = process.argv.includes('--smoke-test')
+
+if (isSmokeTest) {
+  setTimeout(() => {
+    console.error('kamo: smoke test timed out before the window rendered')
+    app.exit(1)
+  }, SMOKE_TEST_TIMEOUT_MS).unref()
+}
 const rendererFile = join(import.meta.dirname, '../renderer/index.html')
 
 /** True only for the app's own renderer page (dev server or bundled file). */
@@ -41,7 +51,14 @@ function createWindow(): void {
     },
   })
 
-  window.once('ready-to-show', () => window.show())
+  window.once('ready-to-show', () => {
+    window.show()
+    // CI opens the packaged app with this flag and expects a clean exit once it renders.
+    if (isSmokeTest) {
+      console.log('kamo: smoke test ok')
+      app.exit(0)
+    }
+  })
 
   if (devServerUrl) void window.loadURL(devServerUrl)
   else void window.loadFile(rendererFile)
