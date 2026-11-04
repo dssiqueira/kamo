@@ -37,6 +37,11 @@ win:
   target:
     - target: nsis
       arch: x64
+  # Capture helper (D-023), built by `cargo build --release` before packaging
+  # (native/win/README.md).
+  extraResources:
+    - from: native/win/build/release/kamo-capture.exe
+      to: helpers/win/kamo-capture.exe
 
 nsis:
   oneClick: false

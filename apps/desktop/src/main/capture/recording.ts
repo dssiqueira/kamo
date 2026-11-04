@@ -119,6 +119,8 @@ export interface RecordingRequest {
   cursor?: CursorSettings
   /** Record mouse events into events.jsonl (F-03). Defaults to true. */
   mouse?: boolean
+  /** Windows: a physical screen point inside the display (PROTOCOL.md, `start`). */
+  monitorPoint?: { x: number; y: number }
 }
 
 export interface RecordingDeps {
@@ -345,6 +347,7 @@ export async function startRecording(
       frameIntervalMs: FRAME_INTERVAL_MS,
       frameWidth: FRAME_WIDTH,
       mouse: request.mouse ?? true,
+      ...(request.monitorPoint ? { monitorPoint: request.monitorPoint } : {}),
     })
     const started = await startedPromise
     logger.info('recording.started', {

@@ -25,6 +25,12 @@ export const StartCommand = z.strictObject({
   frameWidth: positiveInt,
   /** Emit `mouse` events (F-03). Absent means true; false records video only. */
   mouse: z.boolean().optional(),
+  /**
+   * Windows: a point inside the display, in physical pixels of the virtual screen. Electron's
+   * `Display.id` is not an `HMONITOR`, so the helper finds the monitor with MonitorFromPoint.
+   * Required by the Windows helper (`display_not_found` without it), ignored on Mac.
+   */
+  monitorPoint: z.strictObject({ x: z.number().int(), y: z.number().int() }).optional(),
 })
 export type StartCommand = z.infer<typeof StartCommand>
 

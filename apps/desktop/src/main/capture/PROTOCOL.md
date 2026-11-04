@@ -30,23 +30,23 @@ spawn ──► ready ──start──► started ──pause──► paused �
 
 | Command | Fields | Notes |
 |---|---|---|
-| `start` | `displayId: string`, `fps: 30 \| 60`, `output: string`, `framesDir: string`, `frameIntervalMs: int`, `frameWidth: int`, `mouse?: boolean` | `output` is the absolute path of `screen.mp4.partial`; `framesDir` is the absolute path of the project's `frames/` (main creates it). Today `frameIntervalMs` is 5000 and `frameWidth` 480. `mouse` (default `true`): send `mouse` events; `false` records video only and installs no mouse hook. Only the first `start` counts. |
+| `start` | `displayId: string`, `fps: 30 \| 60`, `output: string`, `framesDir: string`, `frameIntervalMs: int`, `frameWidth: int`, `mouse?: boolean`, `monitorPoint?: {x: int, y: int}` | `output` is the absolute path of `screen.mp4.partial`; `framesDir` is the absolute path of the project's `frames/` (main creates it). Today `frameIntervalMs` is 5000 and `frameWidth` 480. `mouse` (default `true`): send `mouse` events; `false` records video only and installs no mouse hook. `monitorPoint`: Windows only, see below. Only the first `start` counts. |
 | `pause` | — | Ignored if already paused. |
 | `resume` | — | Ignored if not paused. |
 | `stop` | — | Finalize and exit. |
 
 ```json
-{"cmd":"start","displayId":"65537","fps":30,"output":"C:\\Users\\me\\Kamo\\projects\\<id>\\screen.mp4.partial","framesDir":"C:\\Users\\me\\Kamo\\projects\\<id>\\frames","frameIntervalMs":5000,"frameWidth":480,"mouse":true}
+{"cmd":"start","displayId":"65537","fps":30,"output":"C:\\Users\\me\\Kamo\\projects\\<id>\\screen.mp4.partial","framesDir":"C:\\Users\\me\\Kamo\\projects\\<id>\\frames","frameIntervalMs":5000,"frameWidth":480,"mouse":true,"monitorPoint":{"x":1720,"y":720}}
 ```
 
-`displayId` is the Electron `Display.id` as a string (what Home lists, F-01). Each helper maps it to its own API (Windows: the `HMONITOR` whose device matches; Mac: `CGDirectDisplayID`, which is what Electron uses).
+`displayId` is the Electron `Display.id` as a string (what Home lists, F-01). On Mac it is the `CGDirectDisplayID`, which the helper uses directly. On Windows it is not an `HMONITOR` (nor anything Win32 can look up), so main also sends **`monitorPoint`**: a point inside the display in **physical pixels of the virtual screen**, computed from Electron (`screen.getAllDisplays()` → the display with that id → the center of its `bounds` → `screen.dipToScreenPoint`; `displays.ts → monitorPointFor`). The Windows helper records the monitor that contains it (`MonitorFromPoint` with `MONITOR_DEFAULTTONULL`); a missing `monitorPoint`, or one on no monitor, is a fatal `display_not_found`. Main omits it on Mac and the Mac helper ignores it.
 
 ## Events (stdout)
 
 | Event | Fields | When |
 |---|---|---|
 | `ready` | `version: string` | Once, on launch. |
-| `started` | `width: int`, `height: int`, `scaleFactor: number`, `fps: 30 \| 60` | Recording began. `width`/`height` are video pixels (physical pixels of the display); they go into `project.json → source`. |
+| `started` | `width: int`, `height: int`, `scaleFactor: number`, `fps: 30 \| 60` | Recording began. `width`/`height` are video pixels (physical pixels of the display, even, scaled down so the longest side is at most 4096); they go into `project.json → source`. `scaleFactor` is video pixels per display point (Mac) or per DIP (Windows: the monitor's DPI / 96), so it matches Electron's `Display.scaleFactor` unless the video was scaled down. |
 | `paused` | `tMs: number` | After `pause`; `tMs` is the video time at the pause. |
 | `resumed` | `tMs: number` | After `resume`; equals the `tMs` of the pause (paused time is not video time). |
 | `frame` | `file: string`, `tMs: number` | A reference thumbnail was written to `framesDir/file`. JPEG, `frameWidth` px wide, aspect kept. `file` is the video second, zero-padded to 4 digits: `0000.jpg`, `0005.jpg`, `0010.jpg`. Written straight from the capture stream, no decoding afterwards. |
@@ -58,7 +58,7 @@ Error codes: `display_not_found`, `permission_denied`, `encoder_failed`, `disk_f
 
 - **`fatal: true`**: the helper cannot go on and exits non-zero **without** `stopped`. Used for start failures (`display_not_found`, `permission_denied`, `encoder_failed`) and for anything that leaves no usable file. Main deletes the project folder if recording never started, and keeps it for recovery otherwise.
 - **`fatal: false`** with `display_lost` or `disk_full`: the helper stops **by itself**, finalizes what it has, sends the error, then `stopped`, then exits 0. Main saves the project and tells the user why it stopped (F-02 edge cases).
-- **`fatal: false`** with another code: a warning; recording continues. `mouse_unavailable` means the mouse cannot be observed (Mac: the event tap could not be created, i.e. a missing permission); the video goes on and `events.jsonl` stays empty. When it happens before `started`, the helper sends it right after `started`.
+- **`fatal: false`** with another code: a warning; recording continues. `mouse_unavailable` means the mouse cannot be observed (Mac: the event tap could not be created, i.e. a missing permission; Windows: the `WH_MOUSE_LL` hook could not be installed); the video goes on and `events.jsonl` stays empty. When it happens before `started`, the helper sends it right after `started`.
 
 ## Mouse events
 
@@ -75,9 +75,9 @@ Apart from `event`, the fields are exactly those of a line of `events.jsonl` (`M
 
 - `t`: video time in ms, the **same time base as `frame` and `durationMs`** (host clock − first frame − pauses). Sent only while recording: never before `started`, never between `paused` and `resumed` (main drops any that come), never for a moment that fell in a pause, never after `stopped`. So `0 ≤ t ≤ durationMs`. Target offset from the video: ≤ 1 frame (33ms).
 - `type`: `move` \| `down` \| `up` \| `scroll`. A drag is `down`, moves, `up`. Moves are thinned to about 60Hz, keeping the last position before the pointer rests.
-- `x`, `y`: pixels of the recorded video, origin at its top left (display position in points minus the display origin, times video pixels per point, so the scale factor and any downscaling are included).
+- `x`, `y`: pixels of the recorded video, origin at its top left (display position minus the display origin, times video pixels per display unit, so the scale factor and any downscaling are included; Mac works in points, Windows in physical pixels, the helper being per-monitor DPI aware).
 - `button`: `left` \| `right` \| `middle`, on `down`/`up` only (other buttons are not sent).
-- `dx`, `dy`: on `scroll` only, wheel delta in video pixels, coalesced to about 60Hz. Positive `dy` means scrolling toward the top of the content (a classic wheel rolled away from the user); the helpers pass the OS sign through, so the meaning under macOS natural scrolling is still to be checked on a Mac.
+- `dx`, `dy`: on `scroll` only, wheel delta in video pixels, coalesced to about 60Hz. Positive `dy` means scrolling toward the top of the content (a classic wheel rolled away from the user); the helpers pass the OS sign through, so the meaning under macOS natural scrolling is still to be checked on a Mac. Windows reports wheel notches, not pixels: the helper converts one notch (120) to 100 DIP, what Chromium scrolls by default.
 - `outside: true`: on `move` only, the pointer is off the recorded display; the camera ignores those stretches. `x`/`y` are then outside `[0, width] × [0, height]`. Off the display, `down` and `scroll` are not sent; an `up` is sent only if its `down` was, clamped to the display edge, so a drag that leaves the display still ends.
 
 Main streams them into `events.jsonl` through the store's `openWritable`: `events.jsonl.partial` while recording, renamed to `events.jsonl` with the project on a clean stop (empty when the mouse is off or unavailable). If the helper crashes, main closes the file as `events.jsonl` next to the marker and the video partial; if main itself dies, `events.jsonl.partial` stays. Either way the marker is what recovery looks for.

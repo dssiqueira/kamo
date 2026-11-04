@@ -14,6 +14,8 @@
 //   KAMO_FAKE_MOUSE_UNAVAILABLE=1       no mouse events, a non-fatal `mouse_unavailable` instead
 //   KAMO_FAKE_BAD_MOUSE=1               also send mouse events main must refuse: a key-looking
 //                                       one after `started`, and one while paused (x = 7777)
+//   KAMO_FAKE_REQUIRE_MONITOR_POINT=1   like the Windows helper: `start` without `monitorPoint`
+//                                       is a fatal display_not_found (otherwise it is ignored)
 //
 // Mouse (F-03): unless `start` says `mouse: false`, moves at 60Hz of video time along a curve
 // inside the video, plus a drag (down at 1000ms, up at 1200ms), a scroll at 1500ms and one move
@@ -143,10 +145,12 @@ function finish(): void {
 }
 
 function start(command: StartCommand): void {
-  if (env.KAMO_FAKE_FAIL_START) {
-    emit(
-      { event: 'error', code: env.KAMO_FAKE_FAIL_START, message: 'simulated', fatal: true },
-      () => process.exit(1),
+  const failCode =
+    env.KAMO_FAKE_FAIL_START ||
+    (env.KAMO_FAKE_REQUIRE_MONITOR_POINT && !command.monitorPoint ? 'display_not_found' : '')
+  if (failCode) {
+    emit({ event: 'error', code: failCode, message: 'simulated', fatal: true }, () =>
+      process.exit(1),
     )
     return
   }

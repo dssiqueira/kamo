@@ -18,9 +18,24 @@ describe('encodeCommand', () => {
     expect(JSON.parse(line)).toEqual(start)
     expect(encodeCommand({ cmd: 'stop' })).toBe('{"cmd":"stop"}\n')
     expect(JSON.parse(encodeCommand({ ...start, mouse: false }))).toMatchObject({ mouse: false })
+    const withPoint = { ...start, monitorPoint: { x: -1280, y: 540 } }
+    expect(JSON.parse(encodeCommand(withPoint))).toEqual(withPoint)
   })
 
   it('refuses an invalid command before it leaves main', () => {
+    const start = {
+      cmd: 'start',
+      displayId: '1',
+      fps: 30,
+      output: 'x',
+      framesDir: 'y',
+      frameIntervalMs: 5000,
+      frameWidth: 480,
+    } as const
+    // monitorPoint: physical pixels, integers, nothing else
+    for (const monitorPoint of [{ x: 1.5, y: 0 }, { x: 0 }, { x: 0, y: 0, z: 0 }]) {
+      expect(() => encodeCommand({ ...start, monitorPoint } as unknown as HelperCommand)).toThrow()
+    }
     expect(() => encodeCommand({ cmd: 'pause', extra: 1 } as unknown as HelperCommand)).toThrow()
     expect(() =>
       encodeCommand({

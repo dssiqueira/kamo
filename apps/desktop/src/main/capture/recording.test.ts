@@ -172,6 +172,14 @@ describe('startRecording', () => {
     expect(await store.listProjectIds()).toEqual([])
   })
 
+  it('passes the monitor point to the helper (Windows finds the monitor with it)', async () => {
+    const d = deps({ KAMO_FAKE_REQUIRE_MONITOR_POINT: '1' })
+    const error = await startRecording(d, request).catch((e: unknown) => e)
+    expect((error as RecordingError).code).toBe('display_not_found')
+    const session = await start(d, { monitorPoint: { x: 1720, y: 720 } })
+    await recordAndSave(session)
+  })
+
   it('fails to start on display_not_found and leaves nothing behind', async () => {
     const error = await startRecording(
       deps({ KAMO_FAKE_FAIL_START: 'display_not_found' }),
