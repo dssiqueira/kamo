@@ -1,14 +1,17 @@
 import { app, BrowserWindow, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { tokens } from '@kamo/design-tokens'
 import { IpcChannel } from '../shared/api.ts'
+import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 
 // DESIGN.md layout: minimum window 1024×680.
 const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
 
 const SMOKE_TEST_TIMEOUT_MS = 60_000
+const SMOKE_SCREENSHOT_DELAY_MS = 2000
 
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
 const isSmokeTest = process.argv.includes('--smoke-test')
@@ -30,6 +33,21 @@ function isAppUrl(url: string): boolean {
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
   const url = event.senderFrame?.url
   return url !== undefined && isAppUrl(url)
+}
+
+/**
+ * With KAMO_SMOKE_SCREENSHOT=<file.png>, saves a picture of the app window only (never the
+ * user's screen) once data has had time to load, for visual checks.
+ */
+async function finishSmokeTest(window: BrowserWindow): Promise<void> {
+  const screenshot = process.env['KAMO_SMOKE_SCREENSHOT']
+  if (screenshot) {
+    await new Promise((resolve) => setTimeout(resolve, SMOKE_SCREENSHOT_DELAY_MS))
+    const image = await window.webContents.capturePage()
+    await writeFile(screenshot, image.toPNG())
+  }
+  console.log('kamo: smoke test ok')
+  app.exit(0)
 }
 
 function createWindow(): void {
@@ -54,10 +72,7 @@ function createWindow(): void {
   window.once('ready-to-show', () => {
     window.show()
     // CI opens the packaged app with this flag and expects a clean exit once it renders.
-    if (isSmokeTest) {
-      console.log('kamo: smoke test ok')
-      app.exit(0)
-    }
+    if (isSmokeTest) void finishSmokeTest(window)
   })
 
   if (devServerUrl) void window.loadURL(devServerUrl)
@@ -90,6 +105,16 @@ ipcMain.handle(IpcChannel.getLocale, (event) => {
   return [...app.getPreferredSystemLanguages(), app.getLocale()]
 })
 
+ipcMain.handle(IpcChannel.listDisplays, (event) => {
+  if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
+  return listDisplays()
+})
+
+ipcMain.handle(IpcChannel.getScreenAccess, (event) => {
+  if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
+  return getScreenAccess()
+})
+
 void app.whenReady().then(() => {
   // Nothing needs permissions yet; capture (step 2) will allow only what it uses.
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
@@ -98,6 +123,11 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionCheckHandler(() => false)
 
   createWindow()
+  watchDisplays(() => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send(IpcChannel.displaysChanged)
+    }
+  })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

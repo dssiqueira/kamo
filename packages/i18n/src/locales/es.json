@@ -12,5 +12,14 @@
   "project": {
     "defaultName": "Grabación {date}",
     "count": "{count, plural, =0 {Aún no hay proyectos} one {# proyecto} other {# proyectos}}"
+  },
+  "home": {
+    "displays": "Pantalla para grabar",
+    "displayName": "Pantalla {index}",
+    "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
+    "primary": "Principal",
+    "record": "Grabar",
+    "noDisplays": "No se encontró ninguna pantalla. ¿Hay un monitor conectado?",
+    "needsPermission": "Kamo necesita permiso para grabar la pantalla. Actívalo en Ajustes del Sistema."
   }
 }

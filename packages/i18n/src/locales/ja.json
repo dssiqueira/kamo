@@ -12,5 +12,14 @@
   "project": {
     "defaultName": "録画 {date}",
     "count": "{count, plural, =0 {プロジェクトはまだありません} other {# 件のプロジェクト}}"
+  },
+  "home": {
+    "displays": "録画する画面",
+    "displayName": "ディスプレイ {index}",
+    "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
+    "primary": "メイン",
+    "record": "録画",
+    "noDisplays": "ディスプレイが見つかりません。モニターは接続されていますか？",
+    "needsPermission": "Kamo には画面収録の許可が必要です。システム設定で許可してください。"
   }
 }

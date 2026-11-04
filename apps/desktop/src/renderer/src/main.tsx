@@ -1,7 +1,8 @@
 import { createI18n, resolveLocale } from '@kamo/i18n'
-import { AppShell, I18nProvider } from '@kamo/ui'
+import { I18nProvider } from '@kamo/ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { DesktopHome } from './DesktopHome.tsx'
 import './index.css'
 
 const locale = resolveLocale(await window.kamo.getLocale())
@@ -17,7 +18,7 @@ if (!root) throw new Error('Missing #root element')
 createRoot(root).render(
   <StrictMode>
     <I18nProvider i18n={i18n}>
-      <AppShell />
+      <DesktopHome />
     </I18nProvider>
   </StrictMode>,
 )

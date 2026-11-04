@@ -12,5 +12,14 @@
   "project": {
     "defaultName": "录制 {date}",
     "count": "{count, plural, =0 {还没有项目} other {# 个项目}}"
+  },
+  "home": {
+    "displays": "要录制的屏幕",
+    "displayName": "显示器 {index}",
+    "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
+    "primary": "主显示器",
+    "record": "录制",
+    "noDisplays": "未找到显示器。显示器已连接吗？",
+    "needsPermission": "Kamo 需要屏幕录制权限。请在系统设置中允许。"
   }
 }
