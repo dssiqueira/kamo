@@ -142,9 +142,9 @@ One feature per session. Don't skip steps. Numbering is global, the same across 
 34. **[kamo-cloud]** "Agent connections" in the account, with revocation
 
 ## Status
-- **Current step:** 2 (list displays and record the screen; see `docs/plan.md`)
-- **Last thing that worked:** step 1b (2026-11-03): project format, events.jsonl + fixtures, platform interfaces, Electron window and Windows installer (113.8MB) with smoke test. `pnpm check` green; Mac packaging is verified by the `desktop-package` CI job
-- **Blockers:** the npm prerelease depends on the `@kamo` org and the `NPM_TOKEN` secret on GitHub; step 2 needs a Mac (or CI) to build the ScreenCaptureKit helper
+- **Current step:** 2 (record the screen) — pending the Windows Rust helper and a real Mac test; engine math of steps 5–7 already done (see `docs/plan.md`)
+- **Last thing that worked:** 2026-11-04: recording flow up to the helper protocol (Home, countdown, bar, store, recovery marker, fake helper end-to-end), Swift Mac helper building in CI, and zoom generation, spring camera and smoothed cursor in `core`. `pnpm check` green (261 tests)
+- **Blockers:** Rust + Visual Studio Build Tools on the Windows dev machine (Windows helper); a real Mac to test capture; the `@kamo` npm org and `NPM_TOKEN` secret for prereleases
 
 ## First prompt
 > Read AGENTS.md and everything it points to. Confirm for me what we are going to build, who will use it, what the product looks like and what the first feature is.

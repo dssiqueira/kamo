@@ -91,7 +91,9 @@
 
 **Done when:** the window opens on Windows (local) and on Mac (`macos-14` CI builds and runs a smoke test), and the project format tests pass.
 
-### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0)
+### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0) ⏳ (2026-11-04)
+> Done: Home with live display thumbnails, countdown, floating bar (excluded from capture), stop shortcut, on-disk store with recovery marker and disk check, local log, the stdio helper protocol with a fake helper and end-to-end tests, and the Swift Mac helper (builds on `macos-14`, ships in the dmg). Pending: the Rust Windows helper (needs Rust + Build Tools on the dev machine), a real recording test on a Mac, recovery UI for interrupted recordings, and the first-frame latency check (≤ 3.5s from Record).
+
 **Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (Rust on Windows, Swift on Mac). Requires Rust (rustup) and Visual Studio Build Tools (C++ workload, for the MSVC linker) on the Windows dev machine.
 - Home with displays and live thumbnails (≥ 1/s), primary pre-selected, choice remembered
 - 3-2-1 countdown in a transparent window on the chosen display; Esc cancels
@@ -118,17 +120,23 @@
 - Autosave of `project.json` with migration by `version`; corrupted project → open only the raw video
 - Visual regression: reference frames rendered by `core` compared in CI
 
-### Step 5 — Zoom generation (F-05)
+### Step 5 — Zoom generation (F-05) ⏳
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `generateZooms` and `visibleZooms` in `packages/core/src/zoom/`. Pending (needs the editor, step 4): the "Regenerate zooms" button, the auto-zoom toggle and the "no clicks" notice.
+
 - Grouping by time (~1.5s) and distance (~25%), `leadMs`, minimum 600ms, no overlap (the larger one absorbs), edge offset
 - "Regenerate zooms" preserves `manual`; auto-zoom toggle hides without deleting
 - Performance test: 10 min of events in < 1s; snapshots with the fixtures
 
-### Step 6 — Virtual camera with spring (F-06)
+### Step 6 — Virtual camera with spring (F-06) ⏳
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCameraTrack`/`cameraAt`/`viewportAt` in `packages/core/src/camera/`, 240Hz exact-spring samples. Pending: applying it in the renderer (step 4) and the preview = export check.
+
 - 170/26 spring (never easing curves); arrival at the target at the instant of the click (± 1 frame), resolving the start through `leadMs`
 - Framing clamped to the edges; cursor never leaves the frame with `follow`; adjacent zooms without returning to 1.0×
 - Deterministic per-frame tests (the same function feeds preview and export)
 
-### Step 7 — Smoothed cursor (F-07)
+### Step 7 — Smoothed cursor (F-07) ⏳
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCursorTrack`/`cursorAt` and the vector `CURSOR_ARROW` in `packages/core/src/cursor/`, exact at every click. Pending: drawing it in the renderer (the ripple `progress` is linear, so the renderer must drive its size/opacity with the spring, rule 10) and the Cursor side panel.
+
 - Vector arrow, spring, zero error on the click frame, ripple, size 1–3×, hide, auto-hide after 3s
 - "Cursor" side panel
 
