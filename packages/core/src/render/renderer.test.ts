@@ -260,6 +260,50 @@ describe('createRenderer', () => {
   })
 })
 
+describe('webcam bubble', () => {
+  const CAMERA = { camera: true } as unknown as ImageSourceLike
+  const bubble = { x: 1700, y: 860, radius: 120, opacity: 0.5 }
+  const webcam = { source: CAMERA, sourceSize: { width: 1280, height: 720 }, bubble }
+
+  it('draws after the frame, outside its clip: ring disc, round clip, mirrored camera', () => {
+    const { log, renderer } = setup()
+    renderer.render(input({ cursor: null, webcam }))
+    const main = names(log).filter((n) =>
+      ['drawImage', 'save', 'restore', 'clip', 'arc', 'fill', 'scale'].includes(n),
+    )
+    expect(main).toEqual([
+      'drawImage', // backdrop
+      'save',
+      'clip',
+      'drawImage', // screen
+      'restore',
+      'save',
+      'arc', // ring + shadow
+      'fill',
+      'arc', // inner clip
+      'clip',
+      'scale', // mirror
+      'drawImage', // camera
+      'restore',
+    ])
+    const draws = log.filter((c) => c.name === 'main.drawImage')
+    const ring = 4
+    const inner = bubble.radius - ring
+    // Centered square of the camera, cover-fitted in the inner circle.
+    expect(draws[2]?.args).toEqual([CAMERA, 280, 0, 720, 720, -inner, -inner, inner * 2, inner * 2])
+    expect(log.find((c) => c.name === 'main.scale')?.args).toEqual([-1, 1])
+    expect(log.find((c) => c.name === 'main.translate')?.args).toEqual([bubble.x, bubble.y])
+    const alpha = log.filter((c) => c.name === 'main.globalAlpha=').map((c) => c.args[0])
+    expect(alpha).toContain(0.5)
+  })
+
+  it('draws no bubble without a webcam layer', () => {
+    const { log, renderer } = setup()
+    renderer.render(input({ cursor: null, webcam: null }))
+    expect(names(log)).not.toContain('arc')
+  })
+})
+
 describe('Context2D', () => {
   it('accepts the real DOM 2D contexts and image sources (type-level check)', () => {
     const asContext = (c: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) =>

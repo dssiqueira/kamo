@@ -21,6 +21,7 @@ import {
   VideoSampleSink,
   WEBM,
   type InputAudioTrack,
+  type InputVideoTrack,
   type Source,
   type StreamTargetChunk,
 } from 'mediabunny'
@@ -30,6 +31,7 @@ import type { Aspect, Fps, Project } from '../project/schema.ts'
 import { outputSize, type Resolution } from '../render/layout.ts'
 import { createRenderer, type Renderer } from '../render/renderer.ts'
 import { buildScene, sceneFrame } from '../render/scene.ts'
+import { webcamTimeMs } from '../render/webcam.ts'
 import type { Context2D, Size } from '../render/types.ts'
 import { visibleZooms } from '../zoom/visible.ts'
 import {
@@ -73,6 +75,11 @@ export interface ExportVideoOptions {
   events: readonly MouseEventRecord[]
   /** the raw recording (screen.mp4 / screen.webm) */
   video: MediaFile
+  /**
+   * the webcam recording (webcam.mp4, A-03), drawn as the bubble when project.webcam is set
+   * and visible; unreadable → exported without the bubble and a warning
+   */
+  webcam?: MediaFile | null
   /** microphone and computer sound; missing or muted tracks are simply left out */
   audio?: readonly ExportAudioTrack[]
   aspect: Aspect
@@ -125,6 +132,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
   const inputs: Input[] = []
   let output: Output | null = null
   let picker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
+  let webcamPicker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
   let sinkError: unknown = null
 
   const checkAbort = () => {
@@ -149,6 +157,17 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     const encoder = await chooseVideoEncoder(size, fps, bitrate)
     if (!encoder) throw new ExportError('encoder_unavailable')
     if (!encoder.hardware) warnings.push('software_encoder')
+
+    // Webcam (A-03): decoded alongside the screen, frame by frame at the matching time.
+    const webcam = project.webcam
+    let webcamTrack: InputVideoTrack | null = null
+    if (webcam?.visible && options.webcam) {
+      const input = openInput(options.webcam)
+      inputs.push(input)
+      webcamTrack = await input.getPrimaryVideoTrack().catch(() => null)
+      if (webcamTrack && !(await webcamTrack.canDecode().catch(() => false))) webcamTrack = null
+      if (!webcamTrack) warnings.push('webcam_unreadable')
+    }
 
     const audioReaders = await openAudioTracks(options.audio ?? [], trimStartS, inputs, warnings)
     let withAudio = audioReaders.length > 0
@@ -236,18 +255,42 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     // Frames: output frame i shows the raw video at trim.start + i/fps.
     const samples = new VideoSampleSink(videoTrack).samples(trimStartS)
     picker = createFramePicker<FrameSample>(samples[Symbol.asyncIterator]())
+    if (webcam && webcamTrack) {
+      const fromS = webcamTimeMs(webcam, project.trim.startMs) / 1000
+      const webcamSamples = new VideoSampleSink(webcamTrack).samples(fromS)
+      webcamPicker = createFramePicker<FrameSample>(webcamSamples[Symbol.asyncIterator]())
+    }
     for (let i = 0; i < frames; i++) {
       checkAbort()
       const timeMs = exportFrameTimeMs(project.trim, i, fps)
       const frame = await picker.at(timeMs / 1000)
       if (!frame) throw new ExportError('source_unreadable')
-      renderer.render(sceneFrame(scene, frame.toCanvasImageSource(), aspect, size, timeMs))
+      // Before its first frame the webcam shows that frame; past its end, the last one.
+      const camera =
+        webcam && webcamPicker ? await webcamPicker.at(webcamTimeMs(webcam, timeMs) / 1000) : null
+      renderer.render(
+        sceneFrame(
+          scene,
+          frame.toCanvasImageSource(),
+          aspect,
+          size,
+          timeMs,
+          camera
+            ? {
+                source: camera.toCanvasImageSource(),
+                size: { width: camera.displayWidth, height: camera.displayHeight },
+              }
+            : null,
+        ),
+      )
       await videoSource.add(exportFrameTimestamp(i, fps), 1 / fps)
       await pumpAudio((i + 1) / fps + AUDIO_LEAD_S)
       options.onProgress?.((i + 1) / frames)
     }
     picker.release()
     picker = null
+    webcamPicker?.release()
+    webcamPicker = null
     await pumpAudio(Infinity)
     checkAbort()
 
@@ -265,6 +308,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     }
   } catch (error) {
     picker?.release()
+    webcamPicker?.release()
     if (output && output.state !== 'finalized' && output.state !== 'canceled') {
       await output.cancel().catch(() => {})
     }
@@ -277,6 +321,8 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
 
 interface FrameSample {
   readonly timestamp: number
+  readonly displayWidth: number
+  readonly displayHeight: number
   close(): void
   toCanvasImageSource(): CanvasImageSource
 }

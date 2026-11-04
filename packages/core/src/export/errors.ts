@@ -30,6 +30,8 @@ export type ExportWarning =
   | 'audio_unreadable'
   /** no AAC encoder on this machine; exported without sound */
   | 'audio_encoder_unavailable'
+  /** the webcam recording could not be read; exported without the bubble (A-03) */
+  | 'webcam_unreadable'
 
 export function exportErrorCode(error: unknown): ExportErrorCode {
   if (error instanceof ExportError) return error.code

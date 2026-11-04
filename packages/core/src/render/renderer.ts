@@ -3,7 +3,7 @@
 // layout.ts, wallpapers.ts and ripple.ts.
 //
 // Per frame: backdrop (cached) → frame clipped to a rounded rect → source crop → ripple →
-// cursor. The backdrop (wallpaper + shadow) only changes with the style or the output size,
+// cursor → webcam bubble (A-03, an overlay outside the frame clip). The backdrop (wallpaper + shadow) only changes with the style or the output size,
 // so it is painted once into an offscreen canvas and then costs one drawImage per frame.
 import { CURSOR_ARROW, type CursorFrame } from '../cursor/cursor.ts'
 import type { Aspect, Style } from '../project/schema.ts'
@@ -17,6 +17,7 @@ import {
 import { rippleLook } from './ripple.ts'
 import type { Box, Context2D, ImageSourceLike, Size } from './types.ts'
 import { drawWallpaper } from './wallpapers.ts'
+import { WEBCAM_RING, WEBCAM_SHADOW, webcamCoverCrop, type WebcamBubble } from './webcam.ts'
 
 /** Video shadow at 1080p (it is content, not UI chrome, so it is bigger than DESIGN's). */
 export const FRAME_SHADOW = { blur: 60, offsetY: 18, color: 'rgba(43, 42, 38, 0.28)' } as const
@@ -44,6 +45,17 @@ export interface RenderInput {
   cursor: CursorFrame | null
   /** cursor scale (CursorSettings.size, 1.0–3.0) */
   cursorSize: number
+  /** the webcam bubble (A-03); null/missing = none */
+  webcam?: WebcamLayer | null
+}
+
+/** One webcam frame and where its bubble goes (webcamBubbleAt). */
+export interface WebcamLayer {
+  /** current webcam frame: HTMLVideoElement, VideoFrame… */
+  source: ImageSourceLike
+  /** webcam video size in pixels */
+  sourceSize: Size
+  bubble: WebcamBubble
 }
 
 /** An offscreen surface for the cached backdrop. */
@@ -125,6 +137,7 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         }
       }
       ctx.restore()
+      if (input.webcam) drawWebcam(ctx, input.webcam, layout.output)
       return layout
     },
     invalidate() {
@@ -166,6 +179,53 @@ function paintBackdrop(ctx: Context2D, style: Style, layout: Layout): void {
   ctx.fillStyle = FRAME_FILL
   roundRectPath(ctx, frame, radius)
   ctx.fill()
+  ctx.restore()
+}
+
+/**
+ * Round webcam bubble: a shadowed cream disc (the ring), then the camera cover-fitted and
+ * mirrored inside it. Sizes scale with the output's short side, like the frame shadow.
+ */
+function drawWebcam(ctx: Context2D, webcam: WebcamLayer, output: Size): void {
+  const { bubble, sourceSize } = webcam
+  if (!(bubble.opacity > 0) || !(bubble.radius > 0)) return
+  if (!(sourceSize.width > 0 && sourceSize.height > 0)) return
+  const k = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
+  const ring = Math.min(WEBCAM_RING.width * k, bubble.radius / 4)
+  const inner = bubble.radius - ring
+  const crop = webcamCoverCrop(sourceSize)
+  ctx.save()
+  ctx.globalAlpha = Math.min(1, bubble.opacity)
+  ctx.shadowColor = WEBCAM_SHADOW.color
+  ctx.shadowBlur = WEBCAM_SHADOW.blur * k
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = WEBCAM_SHADOW.offsetY * k
+  ctx.beginPath()
+  ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2)
+  ctx.fillStyle = WEBCAM_RING.color
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+  ctx.beginPath()
+  ctx.arc(bubble.x, bubble.y, inner, 0, Math.PI * 2)
+  ctx.clip()
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  // Mirrored like a selfie view: flipped around the bubble's center.
+  ctx.translate(bubble.x, bubble.y)
+  ctx.scale(-1, 1)
+  ctx.drawImage(
+    webcam.source,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+    -inner,
+    -inner,
+    inner * 2,
+    inner * 2,
+  )
   ctx.restore()
 }
 
