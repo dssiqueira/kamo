@@ -8,6 +8,7 @@ import {
   type IpcMainInvokeEvent,
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { PROJECT_FILES, ProjectError } from '@kamo/core'
 import { tokens } from '@kamo/design-tokens'
@@ -48,6 +49,8 @@ protocol.registerSchemesAsPrivileged([
 // DESIGN.md layout: minimum window 1024×680.
 const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
+
+const DEV_ICON = join(app.getAppPath(), 'build', 'icon.png')
 
 const SMOKE_TEST_TIMEOUT_MS = 60_000
 const SMOKE_SCREENSHOT_DELAY_MS = 2000
@@ -161,6 +164,8 @@ function createMainWindow(): void {
     show: false,
     // Same cream as the page, so there is no white flash before the first paint.
     backgroundColor: tokens.colors.light.background,
+    // Packaged builds take the icon from the executable; dev shows Kamo too.
+    ...(isDev ? { icon: DEV_ICON } : {}),
   })
   window.once('ready-to-show', () => {
     window.show()
@@ -321,6 +326,7 @@ void app.whenReady().then(async () => {
   session.defaultSession.setPermissionCheckHandler(() => false)
   protocol.handle(MEDIA_SCHEME, (request) => serveMedia(request, getServices().projectsDir))
 
+  if (isDev && process.platform === 'darwin') app.dock?.setIcon(DEV_ICON)
   createMainWindow()
   void startServices().catch((error: unknown) =>
     getServices().log.error('app.start.failed', { error }),

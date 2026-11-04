@@ -32,8 +32,12 @@ export function Home({
   return (
     <main className="min-h-screen bg-background font-sans text-on-surface">
       <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-lg p-xl">
-        <header className="flex items-baseline justify-between gap-md">
-          <h1 className="font-serif text-headline">{t('app.name')}</h1>
+        <header className="flex items-center justify-between gap-md">
+          {/* Brand: Kamo next to the name, looking ahead (DESIGN.md → Mascot). */}
+          <div className="flex items-center gap-sm">
+            <Mascot pose="head-look" size={56} />
+            <h1 className="font-serif text-headline">{t('app.name')}</h1>
+          </div>
           <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
         </header>
 
