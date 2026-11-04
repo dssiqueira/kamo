@@ -66,7 +66,22 @@ export const CursorSettings = z.object({
 })
 export type CursorSettings = z.infer<typeof CursorSettings>
 
-const AudioTrack = z.object({ enabled: z.boolean(), volume: z.number().min(0).max(1) })
+export const AudioTrack = z.object({
+  enabled: z.boolean(),
+  volume: z.number().min(0).max(1),
+  /**
+   * Where the track's first sample sits on the video timeline, in ms (F-04 sync). Negative:
+   * the audio started before the first video frame, so export skips its first `-offsetMs`.
+   * Optional so version 1 files without it stay valid; missing means 0.
+   */
+  offsetMs: z.number().optional(),
+})
+export type AudioTrack = z.infer<typeof AudioTrack>
+
+/** The track's offset on the video timeline (`offsetMs`, 0 when missing). */
+export function audioOffsetMs(track: AudioTrack): number {
+  return track.offsetMs ?? 0
+}
 
 export const CloudLink = z.object({
   videoId: z.uuid(),

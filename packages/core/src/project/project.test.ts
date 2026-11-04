@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   DEFAULT_CURSOR,
   ProjectError,
+  audioOffsetMs,
   createProject,
   migrateProject,
   parseProject,
@@ -92,6 +93,35 @@ describe('parseProject / serializeProject', () => {
     ['trim shorter than 1s', { trim: { startMs: 5000, endMs: 5500 } }],
   ])('rejects %s', (_, overrides) => {
     const json = JSON.stringify(project(overrides as Partial<Project>))
+    expect(() => parseProject(json)).toThrow(ProjectError)
+  })
+
+  it('keeps audio tracks without offsetMs valid (version 1 files) and reads it as 0', () => {
+    const p = project()
+    expect(p.audio.mic).toEqual({ enabled: false, volume: 1 })
+    expect(audioOffsetMs(parseProject(serializeProject(p)).audio.mic)).toBe(0)
+  })
+
+  it('round-trips an audio offset, negative when the audio started first (F-04)', () => {
+    const p = project({
+      audio: {
+        mic: { enabled: true, volume: 0.8, offsetMs: -412 },
+        system: { enabled: true, volume: 1, offsetMs: 17 },
+      },
+    })
+    const parsed = parseProject(serializeProject(p))
+    expect(audioOffsetMs(parsed.audio.mic)).toBe(-412)
+    expect(audioOffsetMs(parsed.audio.system)).toBe(17)
+  })
+
+  it('rejects a non-numeric audio offset', () => {
+    const json = JSON.stringify({
+      ...project(),
+      audio: {
+        mic: { enabled: true, volume: 1, offsetMs: 'soon' },
+        system: project().audio.system,
+      },
+    })
     expect(() => parseProject(json)).toThrow(ProjectError)
   })
 

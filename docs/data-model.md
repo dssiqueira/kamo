@@ -10,8 +10,8 @@
         ├── project.json      # metadata + edits (source of truth)
         ├── screen.mp4        # raw capture
         ├── webcam.mp4        # optional (webcam bubble)
-        ├── audio.m4a         # microphone, optional
-        ├── system.m4a        # computer sound, optional (desktop; in the extension, the audio lives inside screen.webm)
+        ├── audio.m4a         # microphone, optional: AAC-LC 48kHz in fragmented MP4, from MediaRecorder (D-024)
+        ├── system.m4a        # computer sound, optional, same format (desktop; in the extension, the audio lives inside screen.webm)
         ├── events.jsonl      # raw mouse events
         ├── frames/           # reference thumbnails every 5s (JPEG, 480px wide, named by video second: 0005.jpg), captured DURING recording, straight from the stream (no decoding afterwards)
         ├── transcript.json   # local transcript (A-05, only with the pack installed)
@@ -48,7 +48,7 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | transcript | `{ status: none \| pending \| done \| failed, language?, model? }` | transcription state; the content lives in `transcript.json` |
 | cloud | CloudLink[] | videos from this project uploaded to the cloud; empty if never uploaded |
 | trim | `{ startMs, endMs }` | trim of the start and end (F-16); does not alter the raw video |
-| audio | `{ mic: { enabled, volume }, system: { enabled, volume } }` | recorded tracks and the volume of each in the export |
+| audio | `{ mic: { enabled, volume, offsetMs? }, system: { enabled, volume, offsetMs? } }` | recorded tracks and the volume of each in the export. `enabled` is true when the track's file exists. `offsetMs` (optional, missing = 0, so older version 1 files stay valid): where the track's first sample sits on the video timeline; negative when the audio started before the first video frame (export skips its first `-offsetMs`), positive when it started later (export adds silence first). Measured at recording time from the MediaRecorder `start` of each track and the helper's `started` (D-024). Pauses stop audio and video together, so one offset covers the whole take. A microphone unplugged mid-recording leaves silence in the file from that point on. If AAC/MP4 recording is ever unavailable, the desktop falls back to Opus in `audio.webm` / `system.webm` |
 | exports | `{ aspect, resolution, fps, format, path, createdAt }[]` | history of local exports (used by the MCP and by "Show in folder") |
 | pendingUpload | `{ uploadId, aspect, partsDone: number[], totalParts, startedAt } \| null` | state of the in-progress multipart upload, to resume after closing the app (C-02) |
 | version | number | schema version, for migration |
