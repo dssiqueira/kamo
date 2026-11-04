@@ -34,6 +34,9 @@ export interface KamoApi {
   stopRecording(): Promise<void>
   /** Floating bar: clock snapshots on every state change. Returns unsubscribe. */
   onRecordingClock(listener: (clock: RecordingClock) => void): () => void
+  /** Floating bar: the current clock, or null when not recording. Read once on mount, since
+   * the bar can finish booting after the first push. */
+  getRecordingClock(): Promise<RecordingClock | null>
   /** Home: how the last recording ended. Returns unsubscribe. */
   onRecordingStatus(listener: (status: RecordingStatus) => void): () => void
 
@@ -316,6 +319,7 @@ export const IpcChannel = {
   resumeRecording: 'kamo:recording-resume',
   stopRecording: 'kamo:recording-stop',
   recordingClock: 'kamo:recording-clock',
+  getRecordingClock: 'kamo:recording-clock-get',
   recordingStatus: 'kamo:recording-status',
   listProjects: 'kamo:projects-list',
   loadProject: 'kamo:project-load',

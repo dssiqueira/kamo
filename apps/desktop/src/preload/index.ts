@@ -42,6 +42,7 @@ const api: KamoApi = {
   resumeRecording: () => invoke(IpcChannel.resumeRecording) as Promise<void>,
   stopRecording: () => invoke(IpcChannel.stopRecording) as Promise<void>,
   onRecordingClock: (listener) => subscribe<RecordingClock>(IpcChannel.recordingClock, listener),
+  getRecordingClock: () => invoke(IpcChannel.getRecordingClock) as Promise<RecordingClock | null>,
   onRecordingStatus: (listener) => subscribe<RecordingStatus>(IpcChannel.recordingStatus, listener),
   listProjects: () => invoke(IpcChannel.listProjects) as Promise<ProjectListing>,
   loadProject: (projectId) => invoke(IpcChannel.loadProject, projectId) as Promise<Project>,

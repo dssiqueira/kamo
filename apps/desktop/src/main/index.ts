@@ -410,6 +410,7 @@ handle(IpcChannel.countdownDone, () => recording.countdownDone())
 handle(IpcChannel.pauseRecording, () => recording.pause())
 handle(IpcChannel.resumeRecording, () => recording.resume())
 handle(IpcChannel.stopRecording, () => recording.stop())
+handle(IpcChannel.getRecordingClock, () => recording.getClock())
 
 /** Native helper backend (D-023), with project names in the user's language. */
 async function createBackend(): Promise<RecordingBackend> {

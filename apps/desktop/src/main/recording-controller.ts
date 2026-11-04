@@ -185,7 +185,13 @@ export class RecordingController {
       this.registeredShortcut = stopShortcut
     }
     this.sendClock()
-    this.tray?.show()
+    // The controls are UI: if the tray fails, the recording carries on and the bar (or the
+    // stop shortcut) still ends it.
+    try {
+      this.tray?.show()
+    } catch (error) {
+      this.log.error('recording.tray.failed', { error })
+    }
     this.log.info('recording.started', { fps: session.fps })
   }
 
