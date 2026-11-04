@@ -78,6 +78,38 @@ export const AudioTrack = z.object({
 })
 export type AudioTrack = z.infer<typeof AudioTrack>
 
+export const WebcamPosition = z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right'])
+export type WebcamPosition = z.infer<typeof WebcamPosition>
+
+export const WebcamSize = z.enum(['small', 'medium', 'large'])
+export type WebcamSize = z.infer<typeof WebcamSize>
+
+/**
+ * Webcam bubble (A-03). The camera is recorded to `webcam.mp4`; this is how it shows. Null on a
+ * project recorded without the camera.
+ */
+export const WebcamSettings = z.object({
+  /** Off hides the bubble in the whole video without deleting the recording. */
+  visible: z.boolean(),
+  position: WebcamPosition,
+  size: WebcamSize,
+  /** The bubble shrinks while the camera zooms in, and grows back after (A-03). */
+  shrinkOnZoom: z.boolean(),
+  /** Stretches of video time where the bubble is hidden (set on the timeline), sorted. */
+  hidden: z.array(z.object({ startMs: nonNegative, endMs: nonNegative })),
+  /** Same meaning as AudioTrack.offsetMs: where the webcam's first frame sits on video time. */
+  offsetMs: z.number().optional(),
+})
+export type WebcamSettings = z.infer<typeof WebcamSettings>
+
+export const DEFAULT_WEBCAM: WebcamSettings = {
+  visible: true,
+  position: 'bottom-right',
+  size: 'medium',
+  shrinkOnZoom: true,
+  hidden: [],
+}
+
 /** The track's offset on the video timeline (`offsetMs`, 0 when missing). */
 export function audioOffsetMs(track: AudioTrack): number {
   return track.offsetMs ?? 0
@@ -128,8 +160,8 @@ export const Project = z
     style: Style,
     zooms: z.array(Zoom),
     cursor: CursorSettings,
-    // Webcam bubble and captions arrive in v0.4 (A-03, A-06); until then always null.
-    webcam: z.null(),
+    webcam: WebcamSettings.nullable(),
+    // Captions arrive in v0.4 (A-06); until then always null.
     captions: z.null(),
     transcript: TranscriptState,
     cloud: z.array(CloudLink),
