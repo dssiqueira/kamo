@@ -46,7 +46,7 @@ export const CURSOR_VISIBLE_EPSILON = 1e-3
 /**
  * Arrow shape as a closed polygon in cursor units (1 unit = 1 video pixel at size 1.0),
  * hotspot at (0, 0). Vector, so the renderer can draw it sharp at any zoom (F-07). The
- * renderer fills it white with a dark outline and multiplies by `track.size`.
+ * renderer fills it dark with a white outline and multiplies by `track.size`.
  */
 export const CURSOR_ARROW: readonly (readonly [number, number])[] = [
   [0, 0],
