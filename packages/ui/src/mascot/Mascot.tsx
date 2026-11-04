@@ -30,6 +30,8 @@ export interface MascotProps {
   pose: MascotPose
   /** Rendered height in px; width follows the artwork. */
   size: number
+  /** Mirrors the artwork so Kamo faces left (the drawings face right). */
+  flip?: boolean
   className?: string
 }
 
@@ -37,7 +39,7 @@ export interface MascotProps {
  * Kamo, the chameleon (DESIGN.md → Mascot). Decorative: it never carries information, so it
  * is hidden from assistive tech. Never inside the exported video or the editor chrome.
  */
-export function Mascot({ pose, size, className }: MascotProps) {
+export function Mascot({ pose, size, flip, className }: MascotProps) {
   return (
     <img
       src={POSES[pose]}
@@ -45,7 +47,7 @@ export function Mascot({ pose, size, className }: MascotProps) {
       aria-hidden
       draggable={false}
       className={`select-none ${className ?? ''}`}
-      style={{ height: size, width: 'auto' }}
+      style={{ height: size, width: 'auto', ...(flip ? { transform: 'scaleX(-1)' } : {}) }}
     />
   )
 }

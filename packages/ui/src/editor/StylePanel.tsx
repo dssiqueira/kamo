@@ -1,6 +1,7 @@
-import { WALLPAPERS, type CursorSettings, type Style } from '@kamo/core'
-import type { ReactNode } from 'react'
+import { WALLPAPERS, drawWallpaper, type CursorSettings, type Style } from '@kamo/core'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
+import { Switch } from '../primitives/controls.tsx'
 
 export interface StylePanelProps {
   style: Style
@@ -36,11 +37,13 @@ export function StylePanel(props: StylePanelProps) {
                 onClick={() =>
                   onStyle({ ...style, background: { kind: 'preset', value: wallpaper.id } })
                 }
-                className={`aspect-square rounded-md border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary ${
+                className={`aspect-square overflow-hidden rounded-md border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary ${
                   selected ? 'border-tertiary' : 'border-border'
                 }`}
                 style={{ backgroundColor: wallpaper.swatch }}
-              />
+              >
+                <WallpaperSwatch id={wallpaper.id} />
+              </button>
             )
           })}
         </div>
@@ -77,7 +80,7 @@ export function StylePanel(props: StylePanelProps) {
           step={1}
           onChange={(radius) => onStyle({ ...style, radius })}
         />
-        <Toggle
+        <Switch
           label={t('editor.panel.shadow')}
           checked={style.shadow}
           onChange={(shadow) => onStyle({ ...style, shadow })}
@@ -93,12 +96,12 @@ export function StylePanel(props: StylePanelProps) {
           step={0.25}
           onChange={(size) => onCursor({ ...cursor, size })}
         />
-        <Toggle
+        <Switch
           label={t('editor.panel.ripple')}
           checked={cursor.clickRipple}
           onChange={(clickRipple) => onCursor({ ...cursor, clickRipple })}
         />
-        <Toggle
+        <Switch
           label={t('editor.panel.hideCursor')}
           checked={cursor.hidden}
           onChange={(hidden) => onCursor({ ...cursor, hidden })}
@@ -106,7 +109,7 @@ export function StylePanel(props: StylePanelProps) {
       </Section>
 
       <Section title={t('editor.panel.zooms')}>
-        <Toggle
+        <Switch
           label={t('editor.panel.autoZoom')}
           checked={props.autoZoom}
           onChange={props.onAutoZoom}
@@ -164,25 +167,23 @@ function Slider({ label, value, min, max, step, onChange }: SliderProps) {
   )
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string
-  checked: boolean
-  onChange(on: boolean): void
-}) {
+/** The real wallpaper, drawn by the same core code as the video (not a flat swatch). */
+function WallpaperSwatch({ id }: { id: string }) {
+  const canvas = useRef<HTMLCanvasElement | null>(null)
+  useEffect(() => {
+    const ctx = canvas.current?.getContext('2d')
+    if (ctx)
+      drawWallpaper(ctx, { kind: 'preset', value: id }, { width: SWATCH_PX, height: SWATCH_PX })
+  }, [id])
   return (
-    <label className="flex items-center justify-between gap-sm text-body">
-      {label}
-      <input
-        type="checkbox"
-        role="switch"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="size-[18px] accent-tertiary"
-      />
-    </label>
+    <canvas
+      ref={canvas}
+      width={SWATCH_PX}
+      height={SWATCH_PX}
+      className="h-full w-full"
+      aria-hidden
+    />
   )
 }
+
+const SWATCH_PX = 96

@@ -14,6 +14,8 @@ import {
 import { formatTimecode } from '@kamo/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n.tsx'
+import { FOCUS_RING } from '../primitives/controls.tsx'
+import { ArrowBackIcon, PauseIcon, PlayIcon } from '../primitives/icons.tsx'
 import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
 import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { Preview } from './Preview.tsx'
@@ -127,8 +129,9 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
         <button
           type="button"
           onClick={onBack}
-          className="rounded-md px-sm py-xs text-body text-tertiary-strong hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-tertiary"
+          className="flex items-center gap-xs rounded-md px-sm py-xs text-body text-tertiary-strong hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-tertiary"
         >
+          <ArrowBackIcon />
           {t('editor.back')}
         </button>
         <h1 className="min-w-0 flex-1 truncate text-title">{project.name}</h1>
@@ -156,9 +159,11 @@ export function Editor({ project: initial, events, videoUrl, onChange, onBack }:
             <button
               type="button"
               onClick={playback.toggle}
-              className="w-[88px] rounded-md bg-surface-raised px-md py-sm text-body hover:bg-border focus-visible:outline-2 focus-visible:outline-tertiary"
+              aria-label={t(playback.playing ? 'editor.pause' : 'editor.play')}
+              title={t(playback.playing ? 'editor.pause' : 'editor.play')}
+              className={`flex size-[40px] items-center justify-center rounded-full bg-surface-raised text-on-surface transition-colors duration-[120ms] hover:bg-border ${FOCUS_RING}`}
             >
-              {t(playback.playing ? 'editor.pause' : 'editor.play')}
+              {playback.playing ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
             </button>
             <span className="font-mono text-timecode tabular-nums">
               {formatTimecode(playback.timeMs - project.trim.startMs, fps)}

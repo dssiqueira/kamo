@@ -2,6 +2,8 @@ import { formatDate, formatDuration, resolveLocale } from '@kamo/i18n'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
+import { IconButton } from '../primitives/controls.tsx'
+import { FolderIcon, PencilIcon, TrashIcon } from '../primitives/icons.tsx'
 
 /** Max project name length, the same limit main enforces (F-12). */
 export const MAX_PROJECT_NAME_LENGTH = 120
@@ -101,7 +103,14 @@ export function ProjectList({
 function Thumbnail({ url }: { url: string | null }) {
   return (
     <div className="flex aspect-video items-center justify-center overflow-hidden rounded-md bg-surface-raised">
-      {url && <img src={url} alt="" className="h-full w-full object-cover" draggable={false} />}
+      {url && (
+        <img
+          src={url}
+          alt=""
+          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+          draggable={false}
+        />
+      )}
     </div>
   )
 }
@@ -136,58 +145,57 @@ function ProjectCard({ project, onOpen, onRename, onDelete, onShowInFolder }: Pr
         type="button"
         onClick={onOpen}
         aria-label={t('projects.openNamed', { name: project.name })}
-        className={`rounded-md ${FOCUS_RING}`}
+        title={t('projects.open')}
+        className={`group rounded-md ${FOCUS_RING}`}
       >
         <Thumbnail url={project.thumbnailUrl} />
       </button>
 
-      {editing ? (
-        <NameEditor initial={project.name} onDone={finishEditing} />
-      ) : (
-        <h3
-          className="truncate px-xs text-title"
-          title={project.name}
-          onDoubleClick={() => setEditing(true)}
-        >
-          {project.name}
-        </h3>
-      )}
-
-      <p className="flex flex-wrap gap-x-sm px-xs text-label text-on-surface-muted">
-        <span>{formatDuration(locale, project.durationMs)}</span>
-        <span aria-hidden="true">·</span>
-        <time dateTime={project.createdAt}>
-          {formatDate(locale, new Date(project.createdAt), {
-            dateStyle: 'medium',
-            timeStyle: 'short',
-          })}
-        </time>
-      </p>
-
-      <div className="flex flex-wrap gap-xs">
-        <button type="button" onClick={onOpen} className={ACTION_BUTTON}>
-          {t('projects.open')}
-        </button>
-        <button
-          ref={renameButton}
-          type="button"
-          onClick={() => setEditing(true)}
-          className={ACTION_BUTTON}
-        >
-          {t('projects.rename')}
-        </button>
-        <button type="button" onClick={onShowInFolder} className={ACTION_BUTTON}>
-          {t('common.showInFolder')}
-        </button>
-        <button
-          ref={deleteButton}
-          type="button"
-          onClick={() => setConfirming(true)}
-          aria-expanded={confirming}
-          className={`${ACTION_BUTTON} hover:text-error`}
-        >
-          {t('projects.delete')}
-        </button>
+      <div className="flex items-start gap-xs">
+        <div className="flex min-w-0 flex-1 flex-col gap-xs px-xs">
+          {editing ? (
+            <NameEditor initial={project.name} onDone={finishEditing} />
+          ) : (
+            <h3
+              className="truncate text-title"
+              title={project.name}
+              onDoubleClick={() => setEditing(true)}
+            >
+              {project.name}
+            </h3>
+          )}
+          <p className="flex flex-wrap gap-x-sm text-label text-on-surface-muted">
+            <span>{formatDuration(locale, project.durationMs)}</span>
+            <span aria-hidden="true">·</span>
+            <time dateTime={project.createdAt}>
+              {formatDate(locale, new Date(project.createdAt), {
+                dateStyle: 'medium',
+                timeStyle: 'short',
+              })}
+            </time>
+          </p>
+        </div>
+        <div className="flex shrink-0">
+          <IconButton
+            label={t('projects.rename')}
+            buttonRef={renameButton}
+            onClick={() => setEditing(true)}
+          >
+            <PencilIcon />
+          </IconButton>
+          <IconButton label={t('common.showInFolder')} onClick={onShowInFolder}>
+            <FolderIcon />
+          </IconButton>
+          <IconButton
+            label={t('projects.delete')}
+            tone="danger"
+            buttonRef={deleteButton}
+            expanded={confirming}
+            onClick={() => setConfirming(true)}
+          >
+            <TrashIcon />
+          </IconButton>
+        </div>
       </div>
 
       {confirming && (

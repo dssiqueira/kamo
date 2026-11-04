@@ -24,7 +24,9 @@ export function Countdown({ value }: CountdownProps) {
         <Mascot
           pose={blinking ? 'head-blink' : 'head-look'}
           size={96}
-          className="absolute -top-[62px] start-[118px]"
+          // Perched on the circle's right shoulder, looking toward the number.
+          flip
+          className="absolute -top-[58px] start-[128px]"
         />
         <div className="relative flex size-[220px] items-center justify-center rounded-full bg-surface/90 shadow-[0_8px_24px_rgb(0_0_0/0.12)]">
           <span

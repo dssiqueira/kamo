@@ -30,62 +30,73 @@ export function Home({
   const canRecord = selectedId !== null && !needsPermission
 
   return (
-    <main className="flex min-h-screen flex-col gap-lg bg-background p-xl font-sans text-on-surface">
-      <header className="flex items-baseline justify-between gap-md">
-        <h1 className="font-serif text-headline">{t('app.name')}</h1>
-        <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
-      </header>
+    <main className="min-h-screen bg-background font-sans text-on-surface">
+      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-lg p-xl">
+        <header className="flex items-baseline justify-between gap-md">
+          <h1 className="font-serif text-headline">{t('app.name')}</h1>
+          <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
+        </header>
 
-      {needsPermission && (
-        <p role="alert" className="rounded-md bg-surface-raised px-md py-sm text-body text-warning">
-          {t('home.needsPermission')}
-        </p>
-      )}
-
-      {notice && (
-        <p
-          role="status"
-          className={`flex items-center gap-sm rounded-md px-md py-sm text-body ${NOTICE_TONE[notice.tone]}`}
-        >
-          {/* A saved recording gets Kamo's smile. */}
-          {notice.tone === 'success' && <Mascot pose="head-happy" size={36} />}
-          {notice.text}
-        </p>
-      )}
-
-      <section className="flex flex-col gap-md" aria-labelledby="displays-title">
-        <h2 id="displays-title" className="text-title">
-          {t('home.displays')}
-        </h2>
-        {displays.length === 0 ? (
-          <p className="text-body text-on-surface-muted">{t('home.noDisplays')}</p>
-        ) : (
-          <div role="radiogroup" aria-labelledby="displays-title" className="flex flex-wrap gap-md">
-            {displays.map((display, index) => (
-              <DisplayCard
-                key={display.id}
-                display={display}
-                name={display.label || t('home.displayName', { index: index + 1 })}
-                selected={display.id === selectedId}
-                onSelect={() => onSelect(display.id)}
-              />
-            ))}
-          </div>
+        {needsPermission && (
+          <p
+            role="alert"
+            className="rounded-md bg-surface-raised px-md py-sm text-body text-warning"
+          >
+            {t('home.needsPermission')}
+          </p>
         )}
-      </section>
 
-      <div>
-        <button
-          type="button"
-          disabled={!canRecord}
-          onClick={onRecord}
-          className="rounded-md bg-primary px-[20px] py-[12px] text-title text-on-primary transition-colors duration-[120ms] hover:bg-[#97CB90] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary disabled:opacity-50"
-        >
-          {t('home.record')}
-        </button>
+        {notice && (
+          <p
+            role="status"
+            className={`flex items-center gap-sm rounded-md px-md py-sm text-body ${NOTICE_TONE[notice.tone]}`}
+          >
+            {/* A saved recording gets Kamo's smile. */}
+            {notice.tone === 'success' && <Mascot pose="head-happy" size={36} />}
+            {notice.text}
+          </p>
+        )}
+
+        <section className="flex flex-col gap-md" aria-labelledby="displays-title">
+          <h2 id="displays-title" className="text-title">
+            {t('home.displays')}
+          </h2>
+          {displays.length === 0 ? (
+            <p className="text-body text-on-surface-muted">{t('home.noDisplays')}</p>
+          ) : (
+            <div
+              role="radiogroup"
+              aria-labelledby="displays-title"
+              className="flex flex-wrap gap-md"
+            >
+              {displays.map((display, index) => (
+                <DisplayCard
+                  key={display.id}
+                  display={display}
+                  name={display.label || t('home.displayName', { index: index + 1 })}
+                  selected={display.id === selectedId}
+                  onSelect={() => onSelect(display.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div>
+          <button
+            type="button"
+            disabled={!canRecord}
+            onClick={onRecord}
+            className="flex items-center gap-sm rounded-md bg-primary px-[20px] py-[12px] text-title text-on-primary transition-colors duration-[120ms] hover:bg-[#97CB90] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary disabled:opacity-50"
+          >
+            {/* DESIGN.md: coral is reserved for the REC dot. */}
+            <span aria-hidden className="size-[10px] rounded-full bg-recording" />
+            {t('home.record')}
+          </button>
+        </div>
+
+        {projects && <ProjectList {...projects} />}
       </div>
-
-      {projects && <ProjectList {...projects} />}
     </main>
   )
 }
