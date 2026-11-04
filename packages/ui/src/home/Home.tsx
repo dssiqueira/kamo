@@ -33,9 +33,9 @@ export function Home({
     <main className="min-h-screen bg-background font-sans text-on-surface">
       <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-lg p-xl">
         <header className="flex items-center justify-between gap-md">
-          {/* Brand: Kamo next to the name, looking ahead (DESIGN.md → Mascot). */}
+          {/* Brand: Kamo next to the name, turned toward the screen (DESIGN.md → Mascot). */}
           <div className="flex items-center gap-sm">
-            <Mascot pose="head-look" size={56} />
+            <Mascot pose="head-look" size={56} flip />
             <h1 className="font-serif text-headline">{t('app.name')}</h1>
           </div>
           <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
