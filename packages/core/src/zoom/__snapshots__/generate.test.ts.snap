@@ -1,0 +1,178 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`generateZooms on the fixtures > click-burst: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": false,
+  "zooms": [
+    {
+      "endMs": 4670,
+      "follow": true,
+      "id": "auto-2300",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 2300,
+      "target": {
+        "x": 967.5,
+        "y": 557.5,
+      },
+    },
+    {
+      "endMs": 8750,
+      "follow": true,
+      "id": "auto-7370",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 7370,
+      "target": {
+        "x": 1440,
+        "y": 270,
+      },
+    },
+  ],
+}
+`;
+
+exports[`generateZooms on the fixtures > drag: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": false,
+  "zooms": [
+    {
+      "endMs": 3800,
+      "follow": true,
+      "id": "auto-1000",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 1000,
+      "target": {
+        "x": 500,
+        "y": 500,
+      },
+    },
+  ],
+}
+`;
+
+exports[`generateZooms on the fixtures > edge-clicks: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": false,
+  "zooms": [
+    {
+      "endMs": 2080,
+      "follow": true,
+      "id": "auto-700",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 700,
+      "target": {
+        "x": 480,
+        "y": 270,
+      },
+    },
+    {
+      "endMs": 6160,
+      "follow": true,
+      "id": "auto-4780",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 4780,
+      "target": {
+        "x": 1440,
+        "y": 810,
+      },
+    },
+    {
+      "endMs": 9740,
+      "follow": true,
+      "id": "auto-8360",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 8360,
+      "target": {
+        "x": 1440,
+        "y": 540,
+      },
+    },
+  ],
+}
+`;
+
+exports[`generateZooms on the fixtures > no-clicks: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": true,
+  "zooms": [],
+}
+`;
+
+exports[`generateZooms on the fixtures > outside-display: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": false,
+  "zooms": [
+    {
+      "endMs": 5180,
+      "follow": true,
+      "id": "auto-3800",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 3800,
+      "target": {
+        "x": 1400,
+        "y": 450,
+      },
+    },
+  ],
+}
+`;
+
+exports[`generateZooms on the fixtures > spaced-clicks: matches the snapshot and the project invariants 1`] = `
+{
+  "noClicks": false,
+  "zooms": [
+    {
+      "endMs": 2280,
+      "follow": true,
+      "id": "auto-900",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 900,
+      "target": {
+        "x": 480,
+        "y": 300,
+      },
+    },
+    {
+      "endMs": 6060,
+      "follow": true,
+      "id": "auto-4680",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 4680,
+      "target": {
+        "x": 1440,
+        "y": 800,
+      },
+    },
+    {
+      "endMs": 11720,
+      "follow": true,
+      "id": "auto-10340",
+      "leadMs": 300,
+      "origin": "auto",
+      "scale": 2,
+      "startMs": 10340,
+      "target": {
+        "x": 480,
+        "y": 810,
+      },
+    },
+  ],
+}
+`;
