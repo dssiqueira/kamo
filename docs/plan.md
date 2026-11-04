@@ -99,7 +99,7 @@
 - Floating bar (excluded from capture), timecode, seamless pause/resume, global stop shortcut
 - Chunked disk writes (30 min without blowing memory), recovery of interrupted recording, warning when disk < 1GB, discard < 1s
 - Filesystem `ProjectStore` in `~/Kamo/projects/<id>/` (I-1)
-- **Reference frames:** 480px WebP every 5s in `frames/`, taken from the stream during recording
+- **Reference frames:** 480px JPEG every 5s in `frames/` (written by the helper; JPEG because neither OS ships a WebP encoder), taken from the stream during recording
 - Rotating local logger in `app-data/logs/` (basis of F-17), no personal data
 
 ### Step 3 — Mouse + microphone + system sound (F-03, F-04)

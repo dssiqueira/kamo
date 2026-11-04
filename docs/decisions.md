@@ -157,3 +157,4 @@
 - **Why:** D-005 needs video without the system cursor. A helper also gives one clock for video and mouse events (≤ 33ms budget, F-03) and keeps native code out of the Electron process.
 - **Accepted cost:** two native codebases (C++ and Swift) and their toolchains: Visual Studio Build Tools on Windows and Xcode on Mac (or the `macos-14` CI runner). Each helper must stay small (installer budget, rule 6).
 - **Spike notes:** `MediaRecorder` in this Chromium records `video/mp4;codecs=avc1` natively, which the extension can use (E-01).
+- **Reference frames are JPEG** (480px wide, `frames/0005.jpg`), not WebP: neither Windows (WIC) nor macOS (ImageIO) ships a WebP encoder, and at this size JPEG costs about the same. The extension writes the same format.

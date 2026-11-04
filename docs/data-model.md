@@ -13,7 +13,7 @@
         ├── audio.m4a         # microphone, optional
         ├── system.m4a        # computer sound, optional (desktop; in the extension, the audio lives inside screen.webm)
         ├── events.jsonl      # raw mouse events
-        ├── frames/           # reference thumbnails every 5s (WebP, 480px), captured DURING recording, straight from the stream (no decoding afterwards)
+        ├── frames/           # reference thumbnails every 5s (JPEG, 480px wide, named by video second: 0005.jpg), captured DURING recording, straight from the stream (no decoding afterwards)
         ├── transcript.json   # local transcript (A-05, only with the pack installed)
         └── captions.json     # optional: caption style and adjustments
 ```
