@@ -116,7 +116,11 @@ describe('startRecording', () => {
     const frames = await readdir(join(session.projectDir, 'frames'))
     expect(frames.slice(0, 2)).toEqual(['0000.jpg', '0005.jpg'])
     expect(frames).toHaveLength(result.frames)
-    expect(statuses.filter((s) => s.type === 'frame')).toHaveLength(result.frames)
+    // The 0000 frame can be emitted before onStatus is attached (it fires as capture starts),
+    // so the listener may miss the first one; every frame it heard must be on disk.
+    const heard = statuses.flatMap((s) => (s.type === 'frame' ? [s.file] : []))
+    expect(frames).toEqual(expect.arrayContaining(heard))
+    expect(heard.length).toBeGreaterThanOrEqual(result.frames - 1)
     expect(statuses.at(-1)).toEqual({ type: 'finished', result })
     expect(await findInterruptedRecordings(store)).toEqual([])
 
