@@ -15,7 +15,7 @@ jobs:
     if: github.repository == 'dssiqueira/kamo'
     strategy:
       matrix:
-        package: [design-tokens]
+        package: [design-tokens, core]
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
