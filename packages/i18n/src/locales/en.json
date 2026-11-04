@@ -344,5 +344,15 @@
       "stop": "Cancel export and close",
       "keep": "Keep exporting"
     }
+  },
+  "recovery": {
+    "found": "We found an interrupted recording from {date}.",
+    "recover": "Recover",
+    "recovering": "Recovering…",
+    "discard": "Discard",
+    "discarding": "Moving to the trash…",
+    "discardConfirm": "Move this recording to the trash? You can restore it from there.",
+    "unrecoverable": "None of the video can be played, so it can't be recovered.",
+    "failed": "That didn't work. Try again."
   }
 }

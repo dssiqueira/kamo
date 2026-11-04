@@ -344,5 +344,15 @@
       "stop": "Cancelar exportación y cerrar",
       "keep": "Seguir exportando"
     }
+  },
+  "recovery": {
+    "found": "Encontramos una grabación interrumpida del {date}.",
+    "recover": "Recuperar",
+    "recovering": "Recuperando…",
+    "discard": "Descartar",
+    "discarding": "Moviendo a la papelera…",
+    "discardConfirm": "¿Mover esta grabación a la papelera? Puedes restaurarla desde allí.",
+    "unrecoverable": "No se puede reproducir ninguna parte del video, así que no se puede recuperar.",
+    "failed": "No funcionó. Inténtalo de nuevo."
   }
 }

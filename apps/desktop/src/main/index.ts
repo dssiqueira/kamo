@@ -12,7 +12,7 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { PROJECT_FILES, ProjectError } from '@kamo/core'
-import { createI18n } from '@kamo/i18n'
+import { createI18n, formatProjectDate } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
 import { resolveHelperPath } from './capture/helper-path.ts'
 import { IPC_ERROR_PREFIX, IpcChannel } from '../shared/api.ts'
@@ -37,6 +37,12 @@ import { runAudioSelfTest } from './audio/self-test.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import type { TrayLabels } from './recording-tray.ts'
 import { getServices, startServices } from './services.ts'
+import {
+  RecoveryError,
+  discardRecording,
+  listInterruptedRecordings,
+  recoverRecording,
+} from './interrupted.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
@@ -130,7 +136,8 @@ function ipcErrorCodeOf(error: unknown): string | null {
     error instanceof ProjectError ||
     error instanceof ProjectActionError ||
     error instanceof SettingsError ||
-    error instanceof PreferenceError
+    error instanceof PreferenceError ||
+    error instanceof RecoveryError
   ) {
     return error.code
   }
@@ -344,6 +351,36 @@ handle(IpcChannel.openEditor, async (projectId) => {
 handle(IpcChannel.loadEvents, async (projectId) => {
   assertProjectId(projectId as string)
   return (await getServices().store.readText(projectId as string, PROJECT_FILES.events)) ?? ''
+})
+// Interrupted recordings (F-02). Recordings started after this process did belong to it (one
+// may be running), so only earlier ones are offered.
+const appStartedAt = new Date()
+handle(IpcChannel.listInterruptedRecordings, () =>
+  listInterruptedRecordings(getServices().store, { sessionStartedAt: appStartedAt }),
+)
+handle(IpcChannel.recoverRecording, async (projectId) => {
+  const { store, settings, log } = getServices()
+  const locale = await uiLocale()
+  const i18n = await createI18n(locale)
+  const project = await recoverRecording(store, projectId, {
+    sessionStartedAt: appStartedAt,
+    projectName: (date) => i18n.t('project.defaultName', { date: formatProjectDate(locale, date) }),
+    defaults: async () => {
+      const { lastStyle, lastCursor } = await settings.get()
+      return {
+        ...(lastStyle ? { style: lastStyle } : {}),
+        ...(lastCursor ? { cursor: lastCursor } : {}),
+      }
+    },
+  })
+  log.info('recording.recovered', { durationMs: project.durationMs })
+  notifyProjectsChanged()
+  return project
+})
+handle(IpcChannel.discardRecording, async (projectId) => {
+  await discardRecording(getServices().store, projectId, { sessionStartedAt: appStartedAt })
+  getServices().log.info('recording.discarded', { reason: 'interrupted' })
+  notifyProjectsChanged()
 })
 handle(IpcChannel.openHome, async () => {
   if (mainWindow) await loadPage(mainWindow, 'index')

@@ -57,6 +57,14 @@ export interface KamoApi {
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
   onProjectsChanged(listener: () => void): () => void
 
+  // Interrupted recordings (F-02): what a crash or a forced quit left, from earlier sessions.
+  /** Newest first; only the ones with a video to recover. */
+  listInterruptedRecordings(): Promise<InterruptedRecording[]>
+  /** Makes it a normal project and returns it (`not_interrupted`, `unrecoverable`). */
+  recoverRecording(projectId: string): Promise<Project>
+  /** Moves it to the system trash (`not_interrupted`). */
+  discardRecording(projectId: string): Promise<void>
+
   // Export (F-11). The renderer decodes, renders and encodes; main only reads the raw files
   // and writes the output. Errors reject with a code (`disk_full`, `write_failed`…).
   /** Size of screen.mp4 / audio.m4a / system.m4a, or null when the project has none. */
@@ -164,6 +172,15 @@ export interface BrokenProject {
 export interface ProjectListing {
   projects: ProjectSummary[]
   broken: BrokenProject[]
+}
+
+/** A recording a crash left without project.json (F-02). */
+export interface InterruptedRecording {
+  projectId: string
+  /** ISO date the recording started. */
+  startedAt: string
+  /** Size of the recorded video. */
+  sizeBytes: number
 }
 
 /** `app-data/settings.json` (docs/data-model.md). */
@@ -310,6 +327,9 @@ export const IpcChannel = {
   loadEvents: 'kamo:project-events',
   openHome: 'kamo:home-open',
   projectsChanged: 'kamo:projects-changed',
+  listInterruptedRecordings: 'kamo:interrupted-list',
+  recoverRecording: 'kamo:interrupted-recover',
+  discardRecording: 'kamo:interrupted-discard',
   getMediaSize: 'kamo:media-size',
   readMedia: 'kamo:media-read',
   openExportFile: 'kamo:export-file-open',

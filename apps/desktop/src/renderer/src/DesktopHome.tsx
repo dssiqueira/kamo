@@ -14,6 +14,7 @@ import {
   type ScreenAccess,
 } from '../../shared/api.ts'
 import type { AudioWarning } from '../../shared/audio.ts'
+import { DesktopInterruptedRecordings } from './DesktopInterruptedRecordings.tsx'
 import { DesktopUpdateBanner } from './preferences/DesktopUpdateBanner.tsx'
 import { useHomeAudio } from './useHomeAudio.ts'
 
@@ -162,7 +163,12 @@ export function DesktopHome() {
     <Home
       onOpenSettings={() => void window.kamo.openSettings()}
       onFixPermission={() => void window.kamo.openOnboarding()}
-      banner={<DesktopUpdateBanner />}
+      banner={
+        <>
+          <DesktopUpdateBanner />
+          <DesktopInterruptedRecordings />
+        </>
+      }
       displays={displays}
       selectedId={selectedId}
       onSelect={selectDisplay}

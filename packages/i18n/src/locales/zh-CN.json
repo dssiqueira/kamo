@@ -344,5 +344,15 @@
       "stop": "取消导出并关闭",
       "keep": "继续导出"
     }
+  },
+  "recovery": {
+    "found": "发现一段于 {date} 中断的录制。",
+    "recover": "恢复",
+    "recovering": "正在恢复…",
+    "discard": "丢弃",
+    "discarding": "正在移到废纸篓…",
+    "discardConfirm": "将这段录制移到废纸篓？之后可以从那里还原。",
+    "unrecoverable": "视频没有任何可播放的部分，无法恢复。",
+    "failed": "操作失败，请重试。"
   }
 }

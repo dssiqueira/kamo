@@ -8,6 +8,12 @@ export { ProjectList, MAX_PROJECT_NAME_LENGTH } from './home/ProjectList.tsx'
 export type { BrokenProjectData, ProjectCardData, ProjectListProps } from './home/ProjectList.tsx'
 export { pickDisplay } from './home/pickDisplay.ts'
 export type { DisplayOption } from './home/pickDisplay.ts'
+export { InterruptedRecordings } from './home/InterruptedRecordings.tsx'
+export type {
+  InterruptedRecordingData,
+  InterruptedRecordingsProps,
+  RecoveryOutcome,
+} from './home/InterruptedRecordings.tsx'
 export { AudioSources } from './home/AudioSources.tsx'
 export type {
   AudioLevelsView,

@@ -344,5 +344,15 @@
       "stop": "Cancelar exportação e fechar",
       "keep": "Continuar exportando"
     }
+  },
+  "recovery": {
+    "found": "Encontramos uma gravação interrompida de {date}.",
+    "recover": "Recuperar",
+    "recovering": "Recuperando…",
+    "discard": "Descartar",
+    "discarding": "Movendo para a lixeira…",
+    "discardConfirm": "Mover esta gravação para a lixeira? Dá para restaurar de lá.",
+    "unrecoverable": "Nenhuma parte do vídeo pode ser reproduzida, então não dá para recuperar.",
+    "failed": "Não deu certo. Tente de novo."
   }
 }

@@ -4,6 +4,7 @@ import {
   IpcChannel,
   type AppSettings,
   type DisplayInfo,
+  type InterruptedRecording,
   type KamoApi,
   type ProjectListing,
   type ProjectSummary,
@@ -54,6 +55,11 @@ const api: KamoApi = {
   loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
+  listInterruptedRecordings: () =>
+    invoke(IpcChannel.listInterruptedRecordings) as Promise<InterruptedRecording[]>,
+  recoverRecording: (projectId) =>
+    invoke(IpcChannel.recoverRecording, projectId) as Promise<Project>,
+  discardRecording: (projectId) => invoke(IpcChannel.discardRecording, projectId) as Promise<void>,
   // Export (F-11): typed by KamoApi, so `invoke`'s results are cast only here.
   getMediaSize: (projectId, file) =>
     invoke(IpcChannel.getMediaSize, projectId, file) as Promise<number | null>,
