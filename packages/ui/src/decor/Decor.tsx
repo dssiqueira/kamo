@@ -31,7 +31,8 @@ export function DecorPiece({
 
 /**
  * Paper-cut leaves in the bottom corners, with flowers and a butterfly (DESIGN.md → Mascot).
- * For rest screens only (onboarding, Home, empty states), never the editor or the countdown.
+ * For rest screens only (onboarding, Home, empty states), never the countdown. The editor has
+ * its own quieter version behind the preview (editor/PreviewDecor.tsx).
  * The parent must be `relative`; content above it should sit on a higher layer.
  */
 export function CornerDecor({

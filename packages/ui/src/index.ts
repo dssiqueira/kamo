@@ -31,6 +31,8 @@ export type { RecordingBarProps, RecordingClock } from './recording/RecordingBar
 export { useSpring } from './motion/useSpring.ts'
 export { Editor } from './editor/Editor.tsx'
 export type { EditorProps } from './editor/Editor.tsx'
+export { EditorStatus } from './editor/EditorStatus.tsx'
+export type { EditorStatusProps } from './editor/EditorStatus.tsx'
 export * from './timeline/index.ts'
 export { Mascot } from './mascot/Mascot.tsx'
 export type { MascotPose, MascotProps } from './mascot/Mascot.tsx'

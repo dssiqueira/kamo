@@ -24,8 +24,10 @@ import { ArrowBackIcon, PauseIcon, PlayIcon } from '../primitives/icons.tsx'
 import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
 import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { ExportSheet } from '../export/ExportSheet.tsx'
+import { Mascot } from '../mascot/Mascot.tsx'
 import type { ExportPlatform } from '../export/useExportRun.ts'
 import { Preview } from './Preview.tsx'
+import { PreviewDecor } from './PreviewDecor.tsx'
 import { StylePanel } from './StylePanel.tsx'
 import { usePlayback } from './usePlayback.ts'
 
@@ -157,7 +159,11 @@ export function Editor({
           <ArrowBackIcon />
           {t('editor.back')}
         </button>
-        <h1 className="min-w-0 flex-1 truncate text-title">{project.name}</h1>
+        {/* Brand mark like Home's, small: the header stays a slim working bar. */}
+        <div className="flex min-w-0 flex-1 items-center gap-sm">
+          <Mascot pose="icon" size={28} className="shrink-0" />
+          <h1 className="min-w-0 truncate text-title">{project.name}</h1>
+        </div>
         <button
           type="button"
           data-testid="export-open"
@@ -174,21 +180,25 @@ export function Editor({
 
       <div className="flex min-h-0 flex-1">
         <main className="flex min-w-0 flex-1 flex-col">
-          <Preview
-            project={project}
-            events={events}
-            zooms={zooms}
-            videoUrl={videoUrl}
-            video={video}
-            webcamUrl={webcamUrl}
-            webcamVideo={webcamVideo}
-            drawRef={draw}
-            onWebcamDragStart={() => history.begin()}
-            onWebcamDrag={(placement) =>
-              fromBase((p) => setWebcam(p, { ...placement, anchor: placement.anchor ?? null }))
-            }
-            onWebcamDragEnd={() => history.commit()}
-          />
+          {/* isolate: the decor sits behind the canvas, only in the preview's empty margins. */}
+          <div className="relative isolate flex min-h-0 flex-1 flex-col">
+            <PreviewDecor />
+            <Preview
+              project={project}
+              events={events}
+              zooms={zooms}
+              videoUrl={videoUrl}
+              video={video}
+              webcamUrl={webcamUrl}
+              webcamVideo={webcamVideo}
+              drawRef={draw}
+              onWebcamDragStart={() => history.begin()}
+              onWebcamDrag={(placement) =>
+                fromBase((p) => setWebcam(p, { ...placement, anchor: placement.anchor ?? null }))
+              }
+              onWebcamDragEnd={() => history.commit()}
+            />
+          </div>
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
             <button
               type="button"

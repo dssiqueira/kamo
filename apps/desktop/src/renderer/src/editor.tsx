@@ -5,7 +5,7 @@ import {
   type MouseEventRecord,
   type Project,
 } from '@kamo/core'
-import { Editor, useT } from '@kamo/ui'
+import { Editor, EditorStatus } from '@kamo/ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { boot } from './boot.tsx'
 import { desktopExportPlatform } from './export-platform.ts'
@@ -19,7 +19,6 @@ type State =
 
 /** Editor page: loads the project, generates zooms on first open (F-05) and autosaves. */
 function DesktopEditor({ projectId }: { projectId: string }) {
-  const t = useT()
   const [state, setState] = useState<State>({ kind: 'loading' })
   const pending = useRef<Project | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -110,22 +109,7 @@ function DesktopEditor({ projectId }: { projectId: string }) {
   )
 
   if (state.kind !== 'ready') {
-    return (
-      <main className="flex h-screen flex-col items-center justify-center gap-md bg-background font-sans text-on-surface">
-        <p className="text-body text-on-surface-muted">
-          {t(state.kind === 'loading' ? 'editor.loading' : 'editor.errors.load')}
-        </p>
-        {state.kind === 'failed' && (
-          <button
-            type="button"
-            onClick={() => void window.kamo.openHome()}
-            className="rounded-md bg-surface-raised px-md py-sm text-body focus-visible:outline-2 focus-visible:outline-tertiary"
-          >
-            {t('editor.back')}
-          </button>
-        )}
-      </main>
-    )
+    return <EditorStatus state={state.kind} onBack={() => void window.kamo.openHome()} />
   }
 
   return (

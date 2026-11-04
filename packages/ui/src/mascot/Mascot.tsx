@@ -45,7 +45,8 @@ export interface MascotProps {
 
 /**
  * Kamo, the chameleon (DESIGN.md → Mascot). Decorative: it never carries information, so it
- * is hidden from assistive tech. Never inside the exported video or the editor chrome.
+ * is hidden from assistive tech. Never inside the exported video; in the editor, only the small
+ * brand mark in the header.
  */
 export function Mascot({ pose, size, flip, backdrop, className }: MascotProps) {
   if (backdrop) {

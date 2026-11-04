@@ -216,8 +216,8 @@ Light by default, with a Light / Dark / System selector in Settings.
 - **Signature:** an eye that rotates and follows the cursor. On click, the tongue shoots out to the spot, which is the metaphor for zooming on click
 - **Color:** body `primary` (sage), tongue `secondary` (pink), iris `tertiary` (water). On the landing page and in the editor's background picker, the body changes color to match the chosen wallpaper (it's a chameleon, after all)
 - **Where it appears:** landing page (hero and closing), app icon (just the head with the eye), next to the name on Home, empty states, countdown (blinks on each number), export-complete screen (smiling)
-- **Where it doesn't appear:** inside the exported video and in the editor chrome during editing. There, the video is the protagonist
-- In the app today: next to the name on Home as the brand mark (`kamo-icon`), empty project list (`front`), countdown (`head-look`, swapping to `head-blink` on each number), saved-recording notice (`head-happy`), app icon (`kamo-icon`, upscaled placeholder until a native 1024px export exists)
+- **Where it doesn't appear:** inside the exported video, and nowhere near the editing work: in the editor only the small brand mark (`kamo-icon`) sits next to the project name, and quiet paper-cut leaves sit behind the preview, showing only in its empty margins (never over the video, timeline or panel, never in the render). There, the video is the protagonist
+- In the app today: next to the name on Home and next to the project name in the editor as the brand mark (`kamo-icon`), editor while opening (`head-look`) or when a project can't be read (`head-look-side`), empty project list (`front`), countdown (`head-look`, swapping to `head-blink` on each number), saved-recording notice (`head-happy`), app icon (`kamo-icon`, upscaled placeholder until a native 1024px export exists)
 - Respects `prefers-reduced-motion`: no eye animation or blinking, just the mascot standing still
 
 ## Motion
