@@ -115,7 +115,7 @@
 - Sync ≤ 33ms (events) and ≤ 40ms (audio), measured with a test recording with an audible click
 
 ### Step 4 — Editor, style and projects (F-08, F-10 partial, F-12) ⏳ (2026-11-04, almost done)
-> Done: Canvas 2D renderer in `core` (8 procedural wallpapers, padding, corners, cached shadow, camera crop, vector cursor and spring ripple; same code for export), editor page with live preview, side panel and autosave, Home project list (rename, trash, show in folder, damaged projects), `kamo-media://` with Range for the video, settings (remembered display, last style as default), and a sample project generator for development. Canvas 2D instead of WebGL for now: identical in preview and export and fast enough with the cached backdrop; WebGL only if profiling asks. Since then: Kamo the mascot in the empty project list, the countdown, onboarding and export (2c4154c, c63340a, 5d6d4d4), and the paper-cut look in the editor (07daa07). Pending: visual regression in CI, opening the raw video of a damaged project (Home already lists it with the button), auto-zoom toggle persistence (it is editor state only), and audio playback in the preview (F-10).
+> Done: Canvas 2D renderer in `core` (8 procedural wallpapers, padding, corners, cached shadow, camera crop, vector cursor and spring ripple; same code for export), editor page with live preview, side panel and autosave, Home project list (rename, trash, show in folder, damaged projects), `kamo-media://` with Range for the video, settings (remembered display, last style as default), and a sample project generator for development. Canvas 2D instead of WebGL for now: identical in preview and export and fast enough with the cached backdrop; WebGL only if profiling asks. Since then: Kamo the mascot in the empty project list, the countdown, onboarding and export (2c4154c, c63340a, 5d6d4d4), and the paper-cut look in the editor (07daa07). Pending: visual regression in CI, opening the raw video of a damaged project (Home already lists it with the button). Since then also: the auto-zoom toggle is saved in the project (`autoZoom`) and the preview plays the microphone and computer tracks in sync (F-10).
 
 - `packages/ui`: shadcn/ui + Tailwind with the tokens preset; base components from `DESIGN.md` (button-primary, panel, chip, timecode, toasts, cloud-badge)
 - Editor: preview in the center using the `core` renderer, side panel (background, padding, corners, shadow), play/pause, space and arrows
@@ -125,7 +125,7 @@
 - Visual regression: reference frames rendered by `core` compared in CI
 
 ### Step 5 — Zoom generation (F-05) ✅ (2026-11-04)
-> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `generateZooms` and `visibleZooms` in `packages/core/src/zoom/`. The editor now generates zooms on first open and has the "Regenerate zooms" button, the auto-zoom toggle and the "no clicks" notice. Left for step 4: remembering the auto-zoom toggle (today it resets when the editor reopens).
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `generateZooms` and `visibleZooms` in `packages/core/src/zoom/`. The editor now generates zooms on first open and has the "Regenerate zooms" button, the auto-zoom toggle and the "no clicks" notice. The toggle is now saved in `project.autoZoom` (undoable, respected by the export).
 
 - Grouping by time (~1.5s) and distance (~25%), `leadMs`, minimum 600ms, no overlap (the larger one absorbs), edge offset
 - "Regenerate zooms" preserves `manual`; auto-zoom toggle hides without deleting
@@ -145,7 +145,7 @@
 - "Cursor" side panel
 
 ### Step 8 — Timeline and trim (F-09, F-16) ⏳ (2026-11-04, almost done)
-> Done: pure edits and undo history in `core` (randomized tests), the timeline component and its integration in the editor (move/resize/scale/delete/create zooms, trim handles, scrub, mic/computer rows, undo/redo). Since then: `pnpm i18n:usage` checks that every key used in code exists (13c73bf, part of `pnpm check` and CI), and a Webcam lane hides the bubble in stretches (A-03). Pending: the "Trim the last 2s?" suggestion in the UI (`suggestEndTrim` exists) and a DOM test for drag interactions.
+> Done: pure edits and undo history in `core` (randomized tests), the timeline component and its integration in the editor (move/resize/scale/delete/create zooms, trim handles, scrub, mic/computer rows, undo/redo). Since then: `pnpm i18n:usage` checks that every key used in code exists (13c73bf, part of `pnpm check` and CI), and a Webcam lane hides the bubble in stretches (A-03). Since then also the "Trim the last 2s?" suggestion in the editor (`project.endTrimSuggestion`). Pending: a DOM test for drag interactions.
 
 - Tracks: video (trim handles), audio (volume and mute per track), zooms (pink blocks)
 - Move, stretch, scale 1–4× (step 0.25), delete, double click creates 2s/2.0×, no overlap, scrub on the ruler

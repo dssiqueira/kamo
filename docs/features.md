@@ -210,7 +210,7 @@
 - [ ] Playback at 30fps without stuttering on an average machine (M1 / i5 with 8GB) — not measured yet
 - [x] Space plays and pauses; arrows step 1 frame
 - [x] What appears in the preview is identical to the export (same rendering code)
-- [ ] Audio in sync with the image — the preview does not play the microphone and computer tracks yet (only the export mixes them)
+- [x] Audio in sync with the image: the preview plays the microphone and computer tracks with the export's offset and volume rules (hidden audio elements on the video's clock; small drift pulled in by a few % of rate, more than 150ms re-seeked); volume and mute apply live; frame steps and seeks are silent
 
 ---
 
@@ -296,7 +296,7 @@
 - [x] Handles at the start and end of the video track; dragging trims
 - [x] The preview, the zooms and the export respect the trim; zooms outside the trim disappear from the timeline (but are not deleted)
 - [x] Trim saved in `project.trim`, undoable like any edit
-- [ ] Optional automatic suggestion: "Trim the last 2s?" when the last event is the click on Stop — `suggestEndTrim` exists in `core`, not shown in the UI yet
+- [x] Optional automatic suggestion: "Trim the last 2s?" when the last event is the click on Stop — a discreet chip next to the timecode; one click trims (undoable), × dismisses; never shown again for that project (`project.endTrimSuggestion`)
 - [x] Cuts in the middle of the video remain out of scope (it is not a video editor)
 
 **Edge cases**
