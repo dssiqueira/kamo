@@ -11,6 +11,14 @@
 //   KAMO_FAKE_AUTOSTOP_CODE=display_lost  this error code (display_lost or disk_full)
 //   KAMO_FAKE_EXTRA_EVENTS=1            also send an event type main does not know yet
 //   KAMO_FAKE_SIZE=1920x1080@1.5        width x height @ scaleFactor reported in `started`
+//   KAMO_FAKE_MOUSE_UNAVAILABLE=1       no mouse events, a non-fatal `mouse_unavailable` instead
+//   KAMO_FAKE_BAD_MOUSE=1               also send mouse events main must refuse: a key-looking
+//                                       one after `started`, and one while paused (x = 7777)
+//
+// Mouse (F-03): unless `start` says `mouse: false`, moves at 60Hz of video time along a curve
+// inside the video, plus a drag (down at 1000ms, up at 1200ms), a scroll at 1500ms and one move
+// outside the display at 2000ms. They are generated on the video timeline, so none falls in a
+// pause, like the native helpers.
 import { closeSync, fsyncSync, mkdirSync, openSync, writeFileSync, writeSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
@@ -34,6 +42,36 @@ const FAKE_JPEG = Uint8Array.from([
   0xff, 0xd8, 0xff, 0xe0, 0, 16, 0x4a, 0x46, 0x49, 0x46, 0xff, 0xd9,
 ])
 const TICK_MS = 5
+const MOVE_INTERVAL_MS = 1000 / 60
+const videoWidth = Number(width)
+const videoHeight = Number(height)
+
+const round1 = (value: number): number => Math.round(value * 10) / 10
+
+/** Where the fake pointer is at video time `t`: a slow curve that stays inside the video. */
+function pointer(t: number): { x: number; y: number } {
+  return {
+    x: round1(videoWidth / 2 + (videoWidth / 3) * Math.sin(t / 700)),
+    y: round1(videoHeight / 2 + (videoHeight / 3) * Math.cos(t / 900)),
+  }
+}
+
+/** Scripted non-move events, by video time. */
+const SCRIPT: { t: number; event: (t: number) => Record<string, unknown> }[] = [
+  { t: 1000, event: (t) => ({ t, type: 'down', button: 'left', ...pointer(t) }) },
+  { t: 1200, event: (t) => ({ t, type: 'up', button: 'left', ...pointer(t) }) },
+  { t: 1500, event: (t) => ({ t, type: 'scroll', dx: 0, dy: -120, ...pointer(t) }) },
+  {
+    t: 2000,
+    event: (t) => ({
+      t,
+      type: 'move',
+      x: videoWidth + 100,
+      y: round1(videoHeight / 2),
+      outside: true,
+    }),
+  },
+]
 
 function emit(event: HelperEvent | Record<string, unknown>, done?: () => void): void {
   process.stdout.write(`${JSON.stringify(event)}\n`, done)
@@ -48,6 +86,22 @@ let nextFrameMs = 0
 let frames = 0
 let timer: NodeJS.Timeout | null = null
 let finished = false
+let mouse = false
+let nextMoveMs = 0
+let nextScripted = 0
+
+/** Mouse events due up to the current video time, in order. */
+function emitMouse(): void {
+  while (videoMs >= nextMoveMs) {
+    const t = round1(nextMoveMs)
+    while (nextScripted < SCRIPT.length && SCRIPT[nextScripted]!.t <= t) {
+      const step = SCRIPT[nextScripted++]!
+      emit({ event: 'mouse', ...step.event(step.t) })
+    }
+    emit({ event: 'mouse', t, type: 'move', ...pointer(t) })
+    nextMoveMs += MOVE_INTERVAL_MS
+  }
+}
 
 /** Advances video time to now. Paused time is not video time. */
 function tick(): void {
@@ -64,6 +118,7 @@ function tick(): void {
     emit({ event: 'frame', file, tMs: nextFrameMs })
     nextFrameMs += started.frameIntervalMs
   }
+  if (mouse && !paused) emitMouse()
   if (crashAfterMs !== undefined && videoMs >= crashAfterMs) {
     process.stderr.write('fake helper: simulated crash\n')
     process.exit(3)
@@ -107,7 +162,17 @@ function start(command: StartCommand): void {
     scaleFactor: Number(scale),
     fps: command.fps,
   })
-  if (env.KAMO_FAKE_EXTRA_EVENTS) emit({ event: 'mouse', type: 'move', x: 1, y: 2, t: 0 })
+  if (env.KAMO_FAKE_EXTRA_EVENTS) emit({ event: 'webcam', t: 0 })
+  if (command.mouse !== false) {
+    if (env.KAMO_FAKE_MOUSE_UNAVAILABLE) {
+      emit({ event: 'error', code: 'mouse_unavailable', message: 'simulated', fatal: false })
+    } else {
+      mouse = true
+    }
+  }
+  if (env.KAMO_FAKE_BAD_MOUSE) {
+    emit({ event: 'mouse', t: 0, type: 'key', x: 0, y: 0, key: 'a' })
+  }
   timer = setInterval(tick, TICK_MS)
   tick()
 }
@@ -125,6 +190,8 @@ function handle(command: HelperCommand): void {
   if (command.cmd === 'pause' && !paused) {
     paused = true
     emit({ event: 'paused', tMs: videoMs })
+    // a buggy helper: main must drop mouse events between `paused` and `resumed`
+    if (env.KAMO_FAKE_BAD_MOUSE) emit({ event: 'mouse', t: videoMs, type: 'move', x: 7777, y: 1 })
   } else if (command.cmd === 'resume' && paused) {
     paused = false
     emit({ event: 'resumed', tMs: videoMs })

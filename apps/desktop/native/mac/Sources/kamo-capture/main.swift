@@ -1,5 +1,5 @@
 // kamo-capture: Mac screen capture helper (D-023). Started by the Electron main process,
-// controlled over stdio (PROTOCOL.md). Video only: mouse events and audio arrive in step 3.
+// controlled over stdio (PROTOCOL.md). Video and mouse events (F-03); audio arrives in step 3.
 import Foundation
 
 /// Reads commands line by line on a background thread; stdin EOF means `stop`.

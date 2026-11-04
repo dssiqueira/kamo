@@ -1,5 +1,5 @@
 // End-to-end lifecycle against the real on-disk store, with fake-helper.ts as the helper.
-import { loadProject } from '@kamo/core'
+import { loadProject, parseEvents, type MouseEventRecord } from '@kamo/core'
 import { existsSync } from 'node:fs'
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -19,7 +19,7 @@ import {
 } from './recording.ts'
 
 const FAKE_HELPER = fileURLToPath(new URL('./fake-helper.ts', import.meta.url))
-// 20× faster: a 5s reference frame every 250ms of wall time
+// 20Ã— faster: a 5s reference frame every 250ms of wall time
 const SCALE = 20
 
 let dir: string
@@ -57,14 +57,33 @@ function deps(env: Record<string, string> = {}, extra: Partial<RecordingDeps> = 
 
 const request = { displayId: '42', fps: 30 as const, name: 'Recording test' }
 
-async function start(d: RecordingDeps): Promise<RecordingSession> {
-  const session = await startRecording(d, request)
+async function start(
+  d: RecordingDeps,
+  overrides: Partial<Parameters<typeof startRecording>[1]> = {},
+): Promise<RecordingSession> {
+  const session = await startRecording(d, { ...request, ...overrides })
   sessions.push(session)
   return session
 }
 
 /** Wall time for `videoMs` of video at the fake's time scale. */
 const video = (videoMs: number) => sleep(videoMs / SCALE)
+
+/** events.jsonl of a saved project; every line must parse. */
+async function readSavedEvents(projectDir: string): Promise<MouseEventRecord[]> {
+  const text = await readFile(join(projectDir, 'events.jsonl'), 'utf8')
+  const { events, skippedLines } = parseEvents(text)
+  expect(skippedLines).toEqual([])
+  return events
+}
+
+/** Records a few seconds of video time, then stops and expects a saved project. */
+async function recordAndSave(session: RecordingSession, videoMs = 3000) {
+  await video(videoMs)
+  const result = await session.stop()
+  if (!('project' in result)) throw new Error('expected a saved project')
+  return result
+}
 
 describe('startRecording', () => {
   it('records, pauses, resumes and saves a valid project', async () => {
@@ -111,7 +130,7 @@ describe('startRecording', () => {
     expect(paused && resumed && paused.tMs === resumed.tMs).toBe(true)
 
     const files = await readdir(session.projectDir)
-    expect(files.sort()).toEqual(['frames', 'project.json', 'screen.mp4'])
+    expect(files.sort()).toEqual(['events.jsonl', 'frames', 'project.json', 'screen.mp4'])
     expect((await readFile(join(session.projectDir, 'screen.mp4'))).length).toBeGreaterThan(0)
     const frames = await readdir(join(session.projectDir, 'frames'))
     expect(frames.slice(0, 2)).toEqual(['0000.jpg', '0005.jpg'])
@@ -123,6 +142,23 @@ describe('startRecording', () => {
     expect(heard.length).toBeGreaterThanOrEqual(result.frames - 1)
     expect(statuses.at(-1)).toEqual({ type: 'finished', result })
     expect(await findInterruptedRecordings(store)).toEqual([])
+
+    // F-03: mouse events in video time, the pause excluded
+    const events = await readSavedEvents(session.projectDir)
+    expect(events.length).toBeGreaterThan((saved.durationMs / 1000) * 50)
+    for (const event of events) {
+      expect(event.t).toBeGreaterThanOrEqual(0)
+      expect(event.t).toBeLessThanOrEqual(saved.durationMs)
+    }
+    // moves at 60Hz of video time, with no hole where the pause was
+    const gaps = events.slice(1).map((event, i) => event.t - events[i]!.t)
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(1000 / 60 + 0.2)
+    expect(events).toContainEqual(
+      expect.objectContaining({ type: 'down', button: 'left', t: 1000 }),
+    )
+    expect(events).toContainEqual(expect.objectContaining({ type: 'up', button: 'left', t: 1200 }))
+    expect(events).toContainEqual(expect.objectContaining({ type: 'scroll', t: 1500 }))
+    expect(events).toContainEqual(expect.objectContaining({ type: 'move', outside: true, t: 2000 }))
 
     // stop is idempotent
     await expect(session.stop()).resolves.toBe(result)
@@ -165,6 +201,8 @@ describe('startRecording', () => {
     expect(files).toContain(RECORDING_MARKER)
     expect(files).toContain('screen.mp4.partial')
     expect(files).not.toContain('project.json')
+    // the mouse events recorded until the crash are kept (closed by main, which is still alive)
+    expect(await readSavedEvents(session.projectDir)).not.toHaveLength(0)
     expect(await findInterruptedRecordings(store)).toEqual([session.projectId])
   })
 
@@ -183,6 +221,7 @@ describe('startRecording', () => {
       expect(result.project.durationMs).toBeGreaterThanOrEqual(2000)
       expect(await loadProject(store, session.projectId)).toEqual(result.project)
       expect((await readdir(session.projectDir)).sort()).toEqual([
+        'events.jsonl',
         'frames',
         'project.json',
         'screen.mp4',
@@ -206,6 +245,50 @@ describe('startRecording', () => {
     await video(1500)
     const result = await session.stop()
     expect('project' in result).toBe(true)
-    expect(d.logger.warn).toHaveBeenCalledWith('capture.helper.unknown_event', { type: 'mouse' })
+    expect(d.logger.warn).toHaveBeenCalledWith('capture.helper.unknown_event', { type: 'webcam' })
+  })
+})
+
+describe('mouse events (F-03)', () => {
+  it('refuses anything that is not a mouse event, and mouse events sent while paused', async () => {
+    const d = deps({ KAMO_FAKE_BAD_MOUSE: '1' })
+    const session = await start(d)
+    await video(1500)
+    await session.pause()
+    await video(1000)
+    await session.resume()
+    const result = await recordAndSave(session, 1000)
+
+    const text = await readFile(join(session.projectDir, 'events.jsonl'), 'utf8')
+    expect(text).not.toContain('key')
+    const events = await readSavedEvents(session.projectDir)
+    expect(events.every((e) => ['move', 'down', 'up', 'scroll'].includes(e.type))).toBe(true)
+    expect(events.some((e) => e.x === 7777)).toBe(false)
+    expect(events.at(-1)!.t).toBeLessThanOrEqual(result.project.durationMs)
+    expect(d.logger.warn).toHaveBeenCalledWith('recording.mouse_event_invalid', {
+      issues: expect.any(Array),
+    })
+    expect(d.logger.info).toHaveBeenCalledWith(
+      'recording.mouse_events',
+      expect.objectContaining({ invalid: 1, droppedWhilePaused: 1 }),
+    )
+  })
+
+  it('keeps recording video when the mouse is unavailable', async () => {
+    const session = await start(deps({ KAMO_FAKE_MOUSE_UNAVAILABLE: '1' }))
+    const statuses: RecordingStatus[] = []
+    session.onStatus((s) => statuses.push(s))
+    const result = await recordAndSave(session)
+    expect(result.project.durationMs).toBeGreaterThanOrEqual(3000)
+    expect(await readSavedEvents(session.projectDir)).toEqual([])
+    // sent right after `started`, before onStatus could be attached: kept in `warnings`
+    expect(session.warnings).toEqual([{ code: 'mouse_unavailable', message: 'simulated' }])
+    expect(statuses.some((s) => s.type === 'failed')).toBe(false)
+  })
+
+  it('records no mouse events when asked not to', async () => {
+    const session = await start(deps(), { mouse: false })
+    await recordAndSave(session)
+    expect(await readSavedEvents(session.projectDir)).toEqual([])
   })
 })

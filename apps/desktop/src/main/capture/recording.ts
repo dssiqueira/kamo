@@ -1,8 +1,12 @@
-// Recording lifecycle on the desktop (F-02, D-023): disk check → project folder with the
-// recording marker → native helper → screen.mp4 + frames/ → project.json → marker cleared.
-// Everything platform-specific (helper path, Electron) is injected, so tests run in Node.
+// Recording lifecycle on the desktop (F-02, F-03, D-023): disk check → project folder with the
+// recording marker → native helper → screen.mp4 + frames/ + events.jsonl → project.json →
+// marker cleared. Everything platform-specific (helper path, Electron) is injected, so tests
+// run in Node.
 import {
+  MouseEventRecord,
+  PROJECT_FILES,
   createProject,
+  formatEvent,
   saveProject,
   type CursorSettings,
   type Fps,
@@ -99,6 +103,11 @@ export interface RecordingSession {
   /** Settles when the recording ends for any reason (stop, display lost, crash). */
   readonly done: Promise<RecordingResult>
   onStatus(listener: (status: RecordingStatus) => void): () => void
+  /**
+   * Non-fatal helper warnings heard so far, including those sent right after `started`,
+   * before any onStatus listener could be attached (e.g. `mouse_unavailable`).
+   */
+  readonly warnings: readonly { code: HelperErrorCode; message: string }[]
 }
 
 export interface RecordingRequest {
@@ -108,6 +117,8 @@ export interface RecordingRequest {
   name: string
   style?: Style
   cursor?: CursorSettings
+  /** Record mouse events into events.jsonl (F-03). Defaults to true. */
+  mouse?: boolean
 }
 
 export interface RecordingDeps {
@@ -175,6 +186,101 @@ async function renameWithRetry(from: string, to: string): Promise<void> {
   }
 }
 
+/** Invalid mouse events logged one by one; later ones are only counted. */
+const MAX_INVALID_MOUSE_LOGS = 5
+
+/**
+ * Streams the helper's `mouse` events into events.jsonl (F-03) through the store's
+ * openWritable: `events.jsonl.partial` while recording, renamed to `events.jsonl` by close().
+ * A crash of main leaves the `.partial`, next to the recording marker, for recovery.
+ *
+ * Every event is validated with MouseEventRecord, the schema of the file (strict: unknown
+ * fields are refused), so nothing but a mouse move/down/up/scroll is ever written (rule 2).
+ * Mouse events between `paused` and `resumed` are dropped as well: the helper must not send
+ * any (PROTOCOL.md), and video time does not advance while paused.
+ */
+class MouseEventsWriter {
+  private readonly encoder = new TextEncoder()
+  private paused = false
+  private closed = false
+  private failed = false
+  private written = 0
+  private invalid = 0
+  private droppedWhilePaused = 0
+
+  private constructor(
+    private readonly writer: WritableStreamDefaultWriter<Uint8Array>,
+    private readonly logger: CaptureLogger,
+  ) {}
+
+  static async open(
+    store: FileProjectStore,
+    projectId: string,
+    logger: CaptureLogger,
+  ): Promise<MouseEventsWriter> {
+    const stream = await store.openWritable(projectId, PROJECT_FILES.events)
+    return new MouseEventsWriter(stream.getWriter(), logger)
+  }
+
+  /** Listener for every helper event; only paused/resumed/mouse matter here. */
+  readonly handle = (event: HelperEvent): void => {
+    if (event.event === 'paused') this.paused = true
+    else if (event.event === 'resumed') this.paused = false
+    else if (event.event === 'mouse') this.add(event)
+  }
+
+  private add(event: HelperEventOf<'mouse'>): void {
+    if (this.closed) return
+    if (this.paused) {
+      this.droppedWhilePaused++
+      return
+    }
+    const { event: _event, ...fields } = event
+    const parsed = MouseEventRecord.safeParse(fields)
+    if (!parsed.success) {
+      this.invalid++
+      if (this.invalid <= MAX_INVALID_MOUSE_LOGS) {
+        // paths and codes only: never the values, whatever a broken helper put in them
+        const issues = parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.code}`)
+        this.logger.warn('recording.mouse_event_invalid', { issues })
+      }
+      return
+    }
+    if (this.failed) return
+    this.written++
+    // the stream queues writes in order; one failure stops the file, not the recording
+    this.writer.write(this.encoder.encode(formatEvent(parsed.data))).catch((error: unknown) => {
+      if (this.failed) return
+      this.failed = true
+      this.logger.error('recording.events_write_failed', { message: String(error) })
+    })
+  }
+
+  /** Flushes and renames to events.jsonl. Never throws: losing the events must not lose the video. */
+  async close(): Promise<void> {
+    if (this.closed) return
+    this.closed = true
+    try {
+      await this.writer.close()
+    } catch (error) {
+      if (!this.failed)
+        this.logger.error('recording.events_close_failed', { message: String(error) })
+    }
+    this.logger.info('recording.mouse_events', {
+      written: this.written,
+      invalid: this.invalid,
+      droppedWhilePaused: this.droppedWhilePaused,
+    })
+  }
+
+  /** Closes and deletes the file (nothing worth keeping was recorded). */
+  async abort(): Promise<void> {
+    if (this.closed) return
+    this.closed = true
+    await this.writer.abort().catch(() => {})
+  }
+}
+
 /**
  * Starts recording a display. Resolves once the helper confirms the first frames are being
  * captured. Rejects with a RecordingError; on a start failure nothing is left on disk.
@@ -207,16 +313,29 @@ export async function startRecording(
   })
 
   let helper: HelperProcess | undefined
+  let events: MouseEventsWriter | undefined
   try {
     await mkdir(framesDir, { recursive: true })
+    // always created, empty when the mouse is off or unavailable: every project has one
+    events = await MouseEventsWriter.open(store, projectId, logger)
     helper = (deps.spawnHelper ?? ((launch, log) => new HelperProcess(launch, { logger: log })))(
       deps.helper,
       logger,
     )
+    // subscribed before `start`: the first mouse events can share a chunk with `started`
+    helper.onEvent(events.handle)
     const startTimeoutMs = deps.startTimeoutMs ?? DEFAULT_START_TIMEOUT_MS
     const ready = await helper.waitFor('ready', { timeoutMs: startTimeoutMs })
     logger.info('recording.helper_ready', { version: ready.version, pid: helper.pid })
     const startedPromise = helper.waitFor('started', { timeoutMs: startTimeoutMs })
+    // Warnings sent right after `started` (same stdout chunk) arrive before the Session
+    // subscribes; keep them for it.
+    const earlyWarnings: HelperEventOf<'error'>[] = []
+    let startedSeen = false
+    const offEarly = helper.onEvent((event) => {
+      if (event.event === 'started') startedSeen = true
+      else if (startedSeen && event.event === 'error' && !event.fatal) earlyWarnings.push(event)
+    })
     helper.send({
       cmd: 'start',
       displayId: request.displayId,
@@ -225,6 +344,7 @@ export async function startRecording(
       framesDir,
       frameIntervalMs: FRAME_INTERVAL_MS,
       frameWidth: FRAME_WIDTH,
+      mouse: request.mouse ?? true,
     })
     const started = await startedPromise
     logger.info('recording.started', {
@@ -233,13 +353,19 @@ export async function startRecording(
       scaleFactor: started.scaleFactor,
       fps: started.fps,
     })
-    return new Session(deps, request, helper, {
+    // nothing can be dispatched between the end of the constructor and offEarly(): both run
+    // synchronously, so every warning is either replayed or heard by the Session
+    const session = new Session(deps, request, helper, {
       projectId,
       projectDir,
       partial,
       createdAt,
       started,
+      events,
+      earlyWarnings,
     })
+    offEarly()
+    return session
   } catch (error) {
     const failure = toRecordingError(error, 'start_timeout')
     logger.error('recording.start_failed', { code: failure.code, message: failure.message })
@@ -247,6 +373,8 @@ export async function startRecording(
       helper.dispose()
       await helper.exited
     }
+    // the file handle must be closed before the folder goes (Windows)
+    await events?.abort()
     // nothing was recorded: leave nothing behind (the trash is not for this)
     await rm(projectDir, { recursive: true, force: true }).catch((cleanupError: unknown) =>
       logger.warn('recording.cleanup_failed', { error: cleanupError }),
@@ -261,6 +389,9 @@ interface SessionInit {
   partial: string
   createdAt: Date
   started: HelperEventOf<'started'>
+  events: MouseEventsWriter
+  /** Non-fatal errors that came after `started` but before the Session subscribed. */
+  earlyWarnings: readonly HelperEventOf<'error'>[]
 }
 
 class Session implements RecordingSession {
@@ -278,6 +409,7 @@ class Session implements RecordingSession {
   private stoppedEvent: Promise<HelperEventOf<'stopped'>>
   private finalizing: Promise<RecordingResult> | undefined
   private fatal: HelperEventOf<'error'> | undefined
+  private readonly heardWarnings: { code: HelperErrorCode; message: string }[] = []
 
   constructor(
     private readonly deps: RecordingDeps,
@@ -306,6 +438,7 @@ class Session implements RecordingSession {
     this.stoppedEvent.catch(() => {})
 
     helper.onEvent(this.handleEvent)
+    for (const warning of init.earlyWarnings) this.handleEvent(warning)
     helper.onExit((exit) => {
       if (this.finalizing) return
       // exited without `stopped` while recording: a crash (or a fatal error)
@@ -318,6 +451,10 @@ class Session implements RecordingSession {
 
   get state(): RecordingState {
     return this.currentState
+  }
+
+  get warnings(): readonly { code: HelperErrorCode; message: string }[] {
+    return this.heardWarnings
   }
 
   onStatus(listener: (status: RecordingStatus) => void): () => void {
@@ -400,6 +537,8 @@ class Session implements RecordingSession {
           if (this.isActive()) this.currentState = 'stopping'
           this.emit({ type: 'stopping', reason: event.code })
         } else {
+          // e.g. mouse_unavailable: the video goes on, events.jsonl stays empty
+          this.heardWarnings.push({ code: event.code, message: event.message })
           this.emit({ type: 'warning', code: event.code, message: event.message })
         }
         break
@@ -428,6 +567,7 @@ class Session implements RecordingSession {
       })
 
       if (stopped.durationMs < MIN_DURATION_MS) {
+        await this.init.events.abort()
         await rm(this.projectDir, { recursive: true, force: true })
         logger.info('recording.discarded', { reason: 'too_short' })
         return this.succeed({
@@ -443,6 +583,8 @@ class Session implements RecordingSession {
         throw new RecordingError('output_missing', 'the helper left no video file')
       }
       await renameWithRetry(this.init.partial, join(this.projectDir, SCREEN_FILE))
+      // no mouse event can come after `stopped`: events.jsonl.partial → events.jsonl
+      await this.init.events.close()
 
       const project = createProject({
         id: this.projectId,
@@ -476,8 +618,13 @@ class Session implements RecordingSession {
     clearTimeout(this.stopTimer)
     this.currentState = 'failed'
     this.deps.logger.error('recording.failed', { code: error.code, message: error.message })
-    this.rejectDone(error)
-    this.emit({ type: 'failed', error })
+    // The folder stays for recovery (marker + partials). Keep the events recorded so far and
+    // release the file handle (so the folder can be moved or deleted while the app runs)
+    // before anyone hears about the failure. close() never rejects.
+    void this.init.events.close().then(() => {
+      this.rejectDone(error)
+      this.emit({ type: 'failed', error })
+    })
   }
 
   private emit(status: RecordingStatus): void {

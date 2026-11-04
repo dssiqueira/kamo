@@ -17,6 +17,7 @@ describe('encodeCommand', () => {
     expect(line.slice(0, -1)).not.toContain('\n')
     expect(JSON.parse(line)).toEqual(start)
     expect(encodeCommand({ cmd: 'stop' })).toBe('{"cmd":"stop"}\n')
+    expect(JSON.parse(encodeCommand({ ...start, mouse: false }))).toMatchObject({ mouse: false })
   })
 
   it('refuses an invalid command before it leaves main', () => {
@@ -44,6 +45,11 @@ describe('parseEvent', () => {
     ['{"event":"frame","file":"0005.jpg","tMs":5000}', 'frame'],
     ['{"event":"stopped","durationMs":61000,"frames":13}', 'stopped'],
     ['{"event":"error","code":"display_lost","message":"gone","fatal":false}', 'error'],
+    ['{"event":"error","code":"mouse_unavailable","message":"no tap","fatal":false}', 'error'],
+    ['{"event":"mouse","t":16.7,"type":"move","x":10.5,"y":20}', 'mouse'],
+    ['{"event":"mouse","t":17,"type":"move","x":-40,"y":20,"outside":true}', 'mouse'],
+    ['{"event":"mouse","t":20,"type":"down","x":1,"y":2,"button":"left"}', 'mouse'],
+    ['{"event":"mouse","t":30,"type":"scroll","x":1,"y":2,"dx":0,"dy":-12}', 'mouse'],
   ])('accepts %s', (line, type) => {
     const parsed = parseEvent(line)
     expect(parsed.reason).toBeNull()
@@ -56,9 +62,14 @@ describe('parseEvent', () => {
   })
 
   it('reports unknown event types separately (forward compatibility)', () => {
-    const parsed = parseEvent('{"event":"mouse","type":"move","x":1,"y":2,"t":0}')
+    const parsed = parseEvent('{"event":"webcam","t":0}')
     expect(parsed.event).toBeNull()
-    expect(parsed).toMatchObject({ unknownType: 'mouse' })
+    expect(parsed).toMatchObject({ unknownType: 'webcam' })
+  })
+
+  it('never passes on extra fields of a mouse event', () => {
+    const parsed = parseEvent('{"event":"mouse","t":1,"type":"move","x":1,"y":2,"key":"a"}')
+    expect(parsed.event).toEqual({ event: 'mouse', t: 1, type: 'move', x: 1, y: 2 })
   })
 
   it.each([
@@ -74,6 +85,8 @@ describe('parseEvent', () => {
     ['{"event":"paused","tMs":-1}', 'invalid paused'],
     ['{"event":"error","code":"oops","message":"x","fatal":true}', 'invalid error'],
     ['{"event":"stopped","durationMs":10,"frames":1.5}', 'invalid stopped'],
+    ['{"event":"mouse","t":1,"type":"move","x":"1","y":2}', 'invalid mouse'],
+    ['{"event":"mouse","type":"move","x":1,"y":2}', 'invalid mouse'],
   ])('rejects %j', (line, reason) => {
     const parsed = parseEvent(line)
     expect(parsed.event).toBeNull()

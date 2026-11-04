@@ -11,6 +11,8 @@ enum ErrorCode: String {
     case encoderFailed = "encoder_failed"
     case diskFull = "disk_full"
     case displayLost = "display_lost"
+    /// Non-fatal: no mouse event tap (F-03); the video goes on without mouse events.
+    case mouseUnavailable = "mouse_unavailable"
     case internalError = "internal"
 }
 
@@ -23,6 +25,8 @@ struct StartCommand: Decodable {
     let framesDir: String
     let frameIntervalMs: Int
     let frameWidth: Int
+    /// Emit `mouse` events (F-03). Absent means true.
+    let mouse: Bool?
 }
 
 enum Command {
@@ -97,6 +101,14 @@ enum Events {
 
     static func frame(file: String, tMs: Double) {
         send(["event": "frame", "file": file, "tMs": Int(max(0, tMs).rounded())])
+    }
+
+    /// One mouse event (F-03): `t` is video time in ms, the other fields are those of a line of
+    /// events.jsonl (MouseEventRecord in @kamo/core), built by MouseTrack.
+    static func mouse(_ fields: [String: Any]) {
+        var event = fields
+        event["event"] = "mouse"
+        send(event)
     }
 
     static func stopped(seconds: Double, frames: Int) {

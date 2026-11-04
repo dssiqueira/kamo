@@ -23,6 +23,8 @@ export const StartCommand = z.strictObject({
   framesDir: z.string().min(1),
   frameIntervalMs: positiveInt,
   frameWidth: positiveInt,
+  /** Emit `mouse` events (F-03). Absent means true; false records video only. */
+  mouse: z.boolean().optional(),
 })
 export type StartCommand = z.infer<typeof StartCommand>
 
@@ -47,6 +49,8 @@ export const HelperErrorCode = z.enum([
   'encoder_failed',
   'disk_full',
   'display_lost',
+  /** Non-fatal: the mouse cannot be observed (no event tap); the video goes on without it. */
+  'mouse_unavailable',
   'internal',
 ])
 export type HelperErrorCode = z.infer<typeof HelperErrorCode>
@@ -68,6 +72,21 @@ export const HelperEvent = z.discriminatedUnion('event', [
     // zero-padded seconds of video time; a plain name, never a path
     file: z.string().regex(/^\d{4,}\.jpg$/),
     tMs: nonNegative,
+  }),
+  // One mouse event (F-03), in video time like `frame`. Only the shape is checked here: the
+  // fields are those of a line of events.jsonl, and recording.ts validates them with the
+  // MouseEventRecord schema of @kamo/core before writing them, so anything that is not a
+  // mouse move/down/up/scroll (rule 2: never a key) is dropped there.
+  z.object({
+    event: z.literal('mouse'),
+    t: z.number(),
+    type: z.string(),
+    x: z.number(),
+    y: z.number(),
+    button: z.string().optional(),
+    dx: z.number().optional(),
+    dy: z.number().optional(),
+    outside: z.boolean().optional(),
   }),
   z.object({
     event: z.literal('stopped'),
@@ -91,6 +110,7 @@ const KNOWN_EVENTS: ReadonlySet<string> = new Set<HelperEventType>([
   'paused',
   'resumed',
   'frame',
+  'mouse',
   'stopped',
   'error',
 ])

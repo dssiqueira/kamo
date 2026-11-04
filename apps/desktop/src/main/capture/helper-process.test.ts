@@ -68,7 +68,7 @@ describe('HelperProcess', () => {
       new HelperProcess(
         inline(`
           process.stderr.write('booting\\n')
-          process.stdout.write('{"event":"mouse","x":1}\\nnot json\\n{"event":"rea')
+          process.stdout.write('{"event":"webcam","x":1}\\nnot json\\n{"event":"rea')
           setTimeout(() => process.stdout.write('dy","version":"t"}\\n'), 20)
           setTimeout(() => process.exit(0), 40)
         `),
@@ -83,7 +83,7 @@ describe('HelperProcess', () => {
     })
     await helper.exited
     expect(events).toEqual([{ event: 'ready', version: 't' }])
-    expect(log.warn).toHaveBeenCalledWith('capture.helper.unknown_event', { type: 'mouse' })
+    expect(log.warn).toHaveBeenCalledWith('capture.helper.unknown_event', { type: 'webcam' })
     expect(log.warn).toHaveBeenCalledWith('capture.helper.invalid_line', { reason: 'not JSON' })
     expect(log.info).toHaveBeenCalledWith('capture.helper.stderr', { line: 'booting' })
   })

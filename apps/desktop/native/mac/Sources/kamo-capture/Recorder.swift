@@ -8,7 +8,9 @@
 //   video time = host time - startHost - pausedTotal
 // where startHost is the first frame and pausedTotal the sum of the pauses. Frames captured
 // while paused are dropped, so the MP4 is continuous and its duration excludes the pauses
-// (F-02); every tMs sent to main is video time.
+// (F-02); every tMs sent to main is video time. Mouse events (F-03, Mouse.swift) use the same
+// formula on their own host timestamps, and none is sent before the first frame, while paused,
+// or for a moment that fell in a pause.
 import AVFoundation
 import CoreGraphics
 import CoreMedia
@@ -55,6 +57,14 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     private var lastPixelBuffer: CVPixelBuffer?
     /// Video time (ms) of the next reference frame.
     private var nextFrameMs = 0.0
+
+    // Mouse (F-03). The tap runs on its own thread; the track lives on `queue`.
+    private var mouseTap: MouseTap?
+    private var mouseTrack: MouseTrack?
+    /// Host time of the last resume: an event from before it was captured during a pause.
+    private var resumeHost = -Double.infinity
+    /// Why the mouse tap failed before `started` went out; reported right after it.
+    private var mouseProblem: String?
 
     // MARK: - Commands
 
@@ -163,6 +173,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             Events.fatal(.internalError, "cannot add the stream output: \(describe(error))")
         }
         self.stream = stream
+        // Before the capture, so the first frames already have their mouse events.
+        if options.mouse ?? true { startMouse() }
         // `started` goes out with the first encoded frame (stream(_:didOutputSampleBuffer:of:)).
         stream.startCapture { error in
             guard let error else { return }
@@ -179,6 +191,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     private func pause() {
         guard state == .recording, pauseHost == nil else { return }
+        // Mouse events held back by the throttle belong before `paused`.
+        mouseTrack?.flush()
         let now = hostNow()
         pauseHost = now
         pausedVideoTime = max(0, videoTime(atHost: now))
@@ -187,7 +201,9 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     private func resume() {
         guard state == .recording, let pauseHost else { return }
-        pausedTotal += hostNow() - pauseHost
+        let now = hostNow()
+        pausedTotal += now - pauseHost
+        resumeHost = now
         self.pauseHost = nil
         // Paused time is not video time: the video resumes where it paused.
         Events.resumed(seconds: pausedVideoTime)
@@ -253,6 +269,10 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             state = .recording
             startMonitor()
             Events.started(width: videoWidth, height: videoHeight, scaleFactor: scaleFactor, fps: options.fps)
+            if let mouseProblem {
+                Events.error(.mouseUnavailable, mouseProblem, fatal: false)
+                self.mouseProblem = nil
+            }
         }
     }
 
@@ -283,6 +303,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             return
         }
         monitorTicks += 1
+        mouseTrack?.updateBounds(CGDisplayBounds(displayID))
         if monitorTicks % 5 == 0, let free = freeBytes(), free < minFreeBytes {
             finish(warning: (.diskFull, "less than 200MB free on the output volume"))
             return
@@ -328,7 +349,10 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     /// disk_full), the error goes out first as non-fatal, as PROTOCOL.md asks.
     private func finish(warning: (code: ErrorCode, message: String)?) {
         guard state == .recording, let writer, let options else { return }
+        // Mouse events held back by the throttle belong before `stopped`.
+        mouseTrack?.flush()
         state = .finishing
+        mouseTap?.stop()
         monitor?.cancel()
         monitor = nil
         stream?.stopCapture(completionHandler: nil)
@@ -361,6 +385,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             Events.fatal(.encoderFailed, "the first frame was refused: \(describe(writer?.error))")
         }
         state = .finishing
+        mouseTap?.stop()
         monitor?.cancel()
         monitor = nil
         stream?.stopCapture(completionHandler: nil)
@@ -378,6 +403,47 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             exit(0)
         }
         Events.fatal(.encoderFailed, "the MP4 writer failed: \(describe(error))")
+    }
+
+    // MARK: - Mouse
+
+    /// Starts the mouse tap (Mouse.swift). A tap that cannot be created is not fatal: the video
+    /// goes on and main hears `mouse_unavailable`.
+    private func startMouse() {
+        mouseTrack = MouseTrack(queue: queue, videoWidth: videoWidth, videoHeight: videoHeight,
+                                bounds: CGDisplayBounds(displayID),
+                                videoTime: { [unowned self] host in self.mouseVideoTime(atHost: host) })
+        // Diagnostics for F-13: does a mouse-only listen tap need Input Monitoring?
+        Log.diag("listen event access preflight: \(CGPreflightListenEventAccess())")
+        let tap = MouseTap { raw in
+            self.queue.async { self.mouseTrack?.add(raw) }
+        }
+        mouseTap = tap
+        tap.start { problem in
+            guard let problem else { return }
+            self.queue.async { self.mouseUnavailable(problem) }
+        }
+    }
+
+    private func mouseUnavailable(_ problem: String) {
+        mouseTap = nil
+        mouseTrack = nil
+        switch state {
+        case .starting:
+            mouseProblem = problem
+        case .recording:
+            Events.error(.mouseUnavailable, problem, fatal: false)
+        case .idle, .finishing:
+            break
+        }
+    }
+
+    /// Video time of a mouse event, or nil when that moment is not in the video.
+    private func mouseVideoTime(atHost host: Double) -> Double? {
+        guard state == .recording, pauseHost == nil, let startHost,
+              host >= startHost, host >= resumeHost
+        else { return nil }
+        return max(0, host - startHost - pausedTotal)
     }
 
     // MARK: - Clock
