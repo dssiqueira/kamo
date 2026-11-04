@@ -13,6 +13,28 @@
     "defaultName": "Grabación {date}",
     "count": "{count, plural, =0 {Aún no hay proyectos} one {# proyecto} other {# proyectos}}"
   },
+  "projects": {
+    "title": "Proyectos recientes",
+    "empty": "Todavía no hay nada. Pulsa Grabar y tu primer video aparecerá aquí.",
+    "open": "Abrir",
+    "openNamed": "Abrir {name}",
+    "rename": "Renombrar",
+    "nameLabel": "Nombre del proyecto",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Mover «{name}» a la papelera? Puedes restaurarlo desde allí.",
+    "moveToTrash": "Mover a la papelera",
+    "broken": {
+      "title": "Proyecto dañado",
+      "unreadable": "Kamo no pudo leer las ediciones de este proyecto. El video original puede estar bien.",
+      "newerVersion": "Creado con una versión más nueva de Kamo. Actualiza la app para abrirlo.",
+      "openRawVideo": "Abrir video original"
+    },
+    "errors": {
+      "invalidName": "El nombre necesita al menos un carácter (120 como máximo).",
+      "notFound": "Ese proyecto ya no está ahí.",
+      "failed": "No funcionó. Inténtalo de nuevo."
+    }
+  },
   "home": {
     "displays": "Pantalla para grabar",
     "displayName": "Pantalla {index}",

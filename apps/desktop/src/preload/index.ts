@@ -1,8 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { Project } from '@kamo/core'
 import {
   IpcChannel,
+  type AppSettings,
   type DisplayInfo,
   type KamoApi,
+  type ProjectListing,
+  type ProjectSummary,
   type RecordingClock,
   type RecordingStatus,
   type ScreenAccess,
@@ -31,6 +35,18 @@ const api: KamoApi = {
   stopRecording: () => invoke(IpcChannel.stopRecording) as Promise<void>,
   onRecordingClock: (listener) => subscribe<RecordingClock>(IpcChannel.recordingClock, listener),
   onRecordingStatus: (listener) => subscribe<RecordingStatus>(IpcChannel.recordingStatus, listener),
+  listProjects: () => invoke(IpcChannel.listProjects) as Promise<ProjectListing>,
+  loadProject: (projectId) => invoke(IpcChannel.loadProject, projectId) as Promise<Project>,
+  saveProject: (project) => invoke(IpcChannel.saveProject, project) as Promise<void>,
+  renameProject: (projectId, name) =>
+    invoke(IpcChannel.renameProject, projectId, name) as Promise<ProjectSummary>,
+  deleteProject: (projectId) => invoke(IpcChannel.deleteProject, projectId) as Promise<void>,
+  showProjectInFolder: (projectId) =>
+    invoke(IpcChannel.showProjectInFolder, projectId) as Promise<void>,
+  openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
+  onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
+  getSettings: () => invoke(IpcChannel.getSettings) as Promise<AppSettings>,
+  updateSettings: (update) => invoke(IpcChannel.updateSettings, update) as Promise<AppSettings>,
 }
 
 contextBridge.exposeInMainWorld('kamo', api)

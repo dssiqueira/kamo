@@ -13,6 +13,28 @@
     "defaultName": "录制 {date}",
     "count": "{count, plural, =0 {还没有项目} other {# 个项目}}"
   },
+  "projects": {
+    "title": "最近的项目",
+    "empty": "这里还空着。点击录制，你的第一个视频就会出现在这里。",
+    "open": "打开",
+    "openNamed": "打开 {name}",
+    "rename": "重命名",
+    "nameLabel": "项目名称",
+    "delete": "删除",
+    "deleteConfirm": "将“{name}”移到回收站？之后可以从那里恢复。",
+    "moveToTrash": "移到回收站",
+    "broken": {
+      "title": "项目已损坏",
+      "unreadable": "Kamo 无法读取此项目的编辑内容。原始视频可能仍然完好。",
+      "newerVersion": "此项目由更新版本的 Kamo 创建。请先更新应用再打开。",
+      "openRawVideo": "打开原始视频"
+    },
+    "errors": {
+      "invalidName": "名称至少需要一个字符（最多 120 个）。",
+      "notFound": "该项目已不存在。",
+      "failed": "操作失败，请重试。"
+    }
+  },
   "home": {
     "displays": "要录制的屏幕",
     "displayName": "显示器 {index}",

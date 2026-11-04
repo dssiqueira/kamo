@@ -42,6 +42,8 @@ export class RecordingController {
     private readonly backend: RecordingBackend,
     private readonly mainWindow: () => BrowserWindow | undefined,
     private readonly log: { info(e: string, d?: object): void; error(e: string, d?: object): void },
+    /** A new project is on disk (Home refreshes its list). */
+    private readonly onSaved: (projectId: string) => void = () => {},
   ) {}
 
   /** Record button: hides the app and shows the 3-2-1 on the chosen display. */
@@ -151,6 +153,7 @@ export class RecordingController {
     this.state.bar.destroy()
     this.state = { name: 'idle' }
     this.log.info('recording.finished', { kind: result.kind })
+    if (result.kind === 'saved') this.onSaved(result.projectId)
     this.report(
       result.kind === 'saved'
         ? {

@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
+import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
@@ -24,8 +25,9 @@ function contentSecurityPolicy(): Plugin {
           dev ? "script-src 'self' 'unsafe-inline'" : "script-src 'self'",
           dev ? "style-src 'self' 'unsafe-inline'" : "style-src 'self'",
           "font-src 'self'",
-          "img-src 'self' data: blob:",
-          "media-src 'self' blob:",
+          // kamo-media: project thumbnails and videos (src/main/media.ts), nowhere else.
+          "img-src 'self' data: blob: kamo-media:",
+          "media-src 'self' blob: kamo-media:",
           dev ? "connect-src 'self' ws://localhost:*" : "connect-src 'self'",
           "base-uri 'none'",
           "form-action 'none'",
@@ -56,6 +58,9 @@ function stripJsonImportAttributes(): Plugin {
   }
 }
 
+// The editor page is built in a later step; bundle it as soon as it exists.
+const editorPage = resolve(import.meta.dirname, 'src/renderer/editor.html')
+
 export default defineConfig({
   main: {
     build: {
@@ -81,6 +86,7 @@ export default defineConfig({
           index: resolve(import.meta.dirname, 'src/renderer/index.html'),
           countdown: resolve(import.meta.dirname, 'src/renderer/countdown.html'),
           'recording-bar': resolve(import.meta.dirname, 'src/renderer/recording-bar.html'),
+          ...(existsSync(editorPage) ? { editor: editorPage } : {}),
         },
       },
     },

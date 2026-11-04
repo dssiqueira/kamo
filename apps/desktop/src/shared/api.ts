@@ -1,3 +1,5 @@
+import type { CursorSettings, Project, Style } from '@kamo/core'
+
 /**
  * The only API the renderer gets from the preload (`window.kamo`). Keep it small and typed:
  * the renderer never sees `ipcRenderer` or any Node/Electron object.
@@ -23,6 +25,76 @@ export interface KamoApi {
   onRecordingClock(listener: (clock: RecordingClock) => void): () => void
   /** Home: how the last recording ended. Returns unsubscribe. */
   onRecordingStatus(listener: (status: RecordingStatus) => void): () => void
+
+  // Projects (F-12). Errors reject with a stable code: read it with `ipcErrorCode(error)`.
+  /** Every project, newest first, plus the ones whose project.json could not be read. */
+  listProjects(): Promise<ProjectListing>
+  loadProject(projectId: string): Promise<Project>
+  /** Autosave: validated with the core schema and written atomically (`invalid_project`). */
+  saveProject(project: Project): Promise<void>
+  /** Trimmed, 1–120 characters (`invalid_name`). */
+  renameProject(projectId: string, name: string): Promise<ProjectSummary>
+  /** Moves the folder to the system trash. Home asks for confirmation first. */
+  deleteProject(projectId: string): Promise<void>
+  showProjectInFolder(projectId: string): Promise<void>
+  /** Opens the editor on this project (the main window navigates to it). */
+  openEditor(projectId: string): Promise<void>
+  /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
+  onProjectsChanged(listener: () => void): () => void
+
+  // Settings (F-01 remembered display, F-08 last style as the default).
+  getSettings(): Promise<AppSettings>
+  updateSettings(update: SettingsUpdate): Promise<AppSettings>
+}
+
+export interface ProjectSummary {
+  id: string
+  name: string
+  /** ISO 8601. */
+  createdAt: string
+  /** Visible duration (after the trim). */
+  durationMs: number
+  /** `kamo-media://project/<id>/frames/0000.jpg`, or null when there is no thumbnail. */
+  thumbnailUrl: string | null
+  /** Recorded size in physical pixels. */
+  width: number
+  height: number
+}
+
+export interface BrokenProject {
+  projectId: string
+  /** Core `ProjectError` code: `invalid_json`, `invalid_project` or `newer_version`. */
+  code: string
+  /** Whether `screen.mp4` is there, so the raw video can still be opened. */
+  hasVideo: boolean
+}
+
+export interface ProjectListing {
+  projects: ProjectSummary[]
+  broken: BrokenProject[]
+}
+
+/** `app-data/settings.json` (docs/data-model.md). */
+export interface AppSettings {
+  version: 1
+  /** Display picked last time (F-01). */
+  lastDisplayId?: string
+  /** Style and cursor used last: defaults for new recordings (F-08). */
+  lastStyle?: Style
+  lastCursor?: CursorSettings
+}
+
+export type SettingsUpdate = Partial<Omit<AppSettings, 'version'>>
+
+/**
+ * Main rejects IPC calls with `Error('kamo-error:<code>')`; Electron wraps the message, so
+ * the renderer finds the code with `ipcErrorCode`.
+ */
+export const IPC_ERROR_PREFIX = 'kamo-error:'
+
+export function ipcErrorCode(error: unknown): string | null {
+  const message = error instanceof Error ? error.message : String(error)
+  return /kamo-error:([a-z_]+)/.exec(message)?.[1] ?? null
 }
 
 export interface RecordingClock {
@@ -67,4 +139,14 @@ export const IpcChannel = {
   stopRecording: 'kamo:recording-stop',
   recordingClock: 'kamo:recording-clock',
   recordingStatus: 'kamo:recording-status',
+  listProjects: 'kamo:projects-list',
+  loadProject: 'kamo:project-load',
+  saveProject: 'kamo:project-save',
+  renameProject: 'kamo:project-rename',
+  deleteProject: 'kamo:project-delete',
+  showProjectInFolder: 'kamo:project-show-in-folder',
+  openEditor: 'kamo:editor-open',
+  projectsChanged: 'kamo:projects-changed',
+  getSettings: 'kamo:settings-get',
+  updateSettings: 'kamo:settings-update',
 } as const

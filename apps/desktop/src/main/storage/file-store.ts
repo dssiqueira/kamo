@@ -1,12 +1,11 @@
 // On-disk ProjectStore for the desktop (docs/data-model.md): one folder per project under
 // ~/Kamo/projects/<id>/. Same contract as MemoryProjectStore in @kamo/core.
 import type { ProjectStore } from '@kamo/core'
-import { randomUUID } from 'node:crypto'
 import { openAsBlob } from 'node:fs'
-import { mkdir, open, readFile, readdir, rename, rm, stat } from 'node:fs/promises'
+import { mkdir, open, readFile, readdir, rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { basename, dirname, join, resolve } from 'node:path'
-import { setTimeout as sleep } from 'node:timers/promises'
+import { dirname, join, resolve } from 'node:path'
+import { errorCode, renameWithRetry, syncDirectory, writeFileAtomic } from './atomic.ts'
 import { assertProjectId, isValidProjectId, resolveInProject } from './paths.ts'
 
 /** Suffix of a file being streamed by openWritable; renamed away on close. */
@@ -35,46 +34,9 @@ export interface FileProjectStoreOptions {
 /** Tests and headless use: no trash available, so the folder is deleted. */
 const deleteForever: TrashFn = (path) => rm(path, { recursive: true, force: true })
 
-// Windows: antivirus, the indexer or a preview handler can hold a file for a moment and make
-// rename fail with EPERM/EBUSY/EACCES. Retry briefly (about 1s in total) before giving up.
-const RENAME_RETRIES = 10
-
-async function renameWithRetry(from: string, to: string): Promise<void> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      await rename(from, to)
-      return
-    } catch (error) {
-      const code = errorCode(error)
-      const transient = code === 'EPERM' || code === 'EBUSY' || code === 'EACCES'
-      if (!transient || attempt >= RENAME_RETRIES) throw error
-      await sleep(10 * (attempt + 1))
-    }
-  }
-}
-
-function errorCode(error: unknown): string | undefined {
-  return typeof error === 'object' && error !== null && 'code' in error
-    ? String((error as { code: unknown }).code)
-    : undefined
-}
-
 function isMissing(error: unknown): boolean {
   const code = errorCode(error)
   return code === 'ENOENT' || code === 'ENOTDIR'
-}
-
-/** POSIX: fsync the folder so the rename itself survives a power loss. No-op on Windows. */
-async function syncDirectory(dir: string): Promise<void> {
-  if (process.platform === 'win32') return
-  const handle = await open(dir, 'r')
-  try {
-    await handle.sync()
-  } catch {
-    // some file systems do not support fsync on folders; the rename is still atomic
-  } finally {
-    await handle.close()
-  }
 }
 
 export class FileProjectStore implements ProjectStore {
@@ -121,24 +83,7 @@ export class FileProjectStore implements ProjectStore {
    * the old file or the new one, never half of it.
    */
   async writeText(projectId: string, path: string, text: string): Promise<void> {
-    const file = resolveInProject(this.root, projectId, path)
-    const dir = dirname(file)
-    await mkdir(dir, { recursive: true })
-    const temp = join(dir, `.${basename(file)}.${randomUUID()}.tmp`)
-    try {
-      const handle = await open(temp, 'w')
-      try {
-        await handle.writeFile(text, 'utf8')
-        await handle.sync()
-      } finally {
-        await handle.close()
-      }
-      await renameWithRetry(temp, file)
-    } catch (error) {
-      await rm(temp, { force: true }).catch(() => {})
-      throw error
-    }
-    await syncDirectory(dir)
+    await writeFileAtomic(resolveInProject(this.root, projectId, path), text)
   }
 
   async readBlob(projectId: string, path: string): Promise<Blob | null> {

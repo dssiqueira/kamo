@@ -13,6 +13,28 @@
     "defaultName": "録画 {date}",
     "count": "{count, plural, =0 {プロジェクトはまだありません} other {# 件のプロジェクト}}"
   },
+  "projects": {
+    "title": "最近のプロジェクト",
+    "empty": "まだ何もありません。録画を押すと、最初の動画がここに表示されます。",
+    "open": "開く",
+    "openNamed": "{name} を開く",
+    "rename": "名前を変更",
+    "nameLabel": "プロジェクト名",
+    "delete": "削除",
+    "deleteConfirm": "「{name}」をゴミ箱に移動しますか？ゴミ箱から元に戻せます。",
+    "moveToTrash": "ゴミ箱に移動",
+    "broken": {
+      "title": "破損したプロジェクト",
+      "unreadable": "このプロジェクトの編集内容を読み込めませんでした。元の動画は無事かもしれません。",
+      "newerVersion": "新しいバージョンの Kamo で作成されています。アプリを更新してから開いてください。",
+      "openRawVideo": "元の動画を開く"
+    },
+    "errors": {
+      "invalidName": "名前は1文字以上（最大120文字）にしてください。",
+      "notFound": "そのプロジェクトはもう存在しません。",
+      "failed": "うまくいきませんでした。もう一度お試しください。"
+    }
+  },
   "home": {
     "displays": "録画する画面",
     "displayName": "ディスプレイ {index}",

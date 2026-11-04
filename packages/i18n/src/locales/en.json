@@ -13,6 +13,28 @@
     "defaultName": "Recording {date}",
     "count": "{count, plural, =0 {No projects yet} one {# project} other {# projects}}"
   },
+  "projects": {
+    "title": "Recent projects",
+    "empty": "Nothing here yet. Hit Record and your first video lands right here.",
+    "open": "Open",
+    "openNamed": "Open {name}",
+    "rename": "Rename",
+    "nameLabel": "Project name",
+    "delete": "Delete",
+    "deleteConfirm": "Move “{name}” to the trash? You can restore it from there.",
+    "moveToTrash": "Move to trash",
+    "broken": {
+      "title": "Damaged project",
+      "unreadable": "Kamo couldn't read this project's edits. The raw video may still be fine.",
+      "newerVersion": "Made with a newer version of Kamo. Update the app to open it.",
+      "openRawVideo": "Open raw video"
+    },
+    "errors": {
+      "invalidName": "A name needs at least one character (120 at most).",
+      "notFound": "That project isn't there anymore.",
+      "failed": "That didn't work. Try again."
+    }
+  },
   "home": {
     "displays": "Screen to record",
     "displayName": "Display {index}",

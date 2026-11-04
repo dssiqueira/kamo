@@ -1,5 +1,6 @@
 import { useT } from '../i18n.tsx'
 import type { DisplayOption } from './pickDisplay.ts'
+import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
 
 export interface HomeProps {
   displays: readonly DisplayOption[]
@@ -10,9 +11,11 @@ export interface HomeProps {
   needsPermission?: boolean
   /** How the last recording ended, already translated. */
   notice?: { tone: 'error' | 'warning' | 'success'; text: string } | null
+  /** Recent projects below the Record button (F-12). Omitted: no list at all. */
+  projects?: ProjectListProps
 }
 
-/** Home (flows.md §2): displays → Record. Toggles and recent projects arrive in steps 3–4. */
+/** Home (flows.md §2): displays → Record → recent projects. Toggles arrive with step 3. */
 export function Home({
   displays,
   selectedId,
@@ -20,6 +23,7 @@ export function Home({
   onRecord,
   needsPermission,
   notice,
+  projects,
 }: HomeProps) {
   const t = useT()
   const canRecord = selectedId !== null && !needsPermission
@@ -74,6 +78,8 @@ export function Home({
           {t('home.record')}
         </button>
       </div>
+
+      {projects && <ProjectList {...projects} />}
     </main>
   )
 }
