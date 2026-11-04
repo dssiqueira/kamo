@@ -43,7 +43,7 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | style | Style | |
 | zooms | Zoom[] | sorted by startMs, no overlap |
 | cursor | CursorSettings | |
-| webcam | WebcamSettings | null | webcam bubble (A-03): visible, position (corner), size (small/medium/large), shrinkOnZoom, hidden stretches `{ startMs, endMs }[]` and optional offsetMs; the camera itself is in `webcam.mp4`; null when recorded without the camera |
+| webcam | WebcamSettings \| null | webcam bubble (A-03): visible, position (corner), size (small/medium/large), shrinkOnZoom, hidden stretches `{ startMs, endMs }[]` and optional offsetMs; the camera itself is in `webcam.mp4`; null when recorded without the camera |
 | captions | CaptionSettings \| null | captions (v0.4) |
 | transcript | `{ status: none \| pending \| done \| failed, language?, model? }` | transcription state; the content lives in `transcript.json` |
 | cloud | CloudLink[] | videos from this project uploaded to the cloud; empty if never uploaded |
