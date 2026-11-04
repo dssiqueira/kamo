@@ -8,3 +8,7 @@ coverage/
 .env
 .env.*
 !.env.example
+# native helper build output (SwiftPM, cargo)
+apps/desktop/native/*/build/
+.build/
+.swiftpm/

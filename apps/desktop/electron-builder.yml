@@ -22,6 +22,11 @@ mac:
       arch: arm64
   category: public.app-category.video
   hardenedRuntime: true
+  # Capture helper (D-023), built by `swift build` before packaging (native/mac/README.md).
+  # It must be signed with the app and the hardened runtime in step 10.
+  extraResources:
+    - from: native/mac/build/release/kamo-capture
+      to: helpers/mac/kamo-capture
   # Signing and notarization arrive with the release workflow (step 10).
   identity: null
 

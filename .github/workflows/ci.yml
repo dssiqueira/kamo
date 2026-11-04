@@ -22,6 +22,14 @@ jobs:
       - run: pnpm i18n:check
       - run: pnpm build
 
+  # Swift capture helper (D-023): must build with no warnings on the Mac runner.
+  mac-helper:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift --version
+      - run: swift build -c release --package-path apps/desktop/native/mac --scratch-path apps/desktop/native/mac/build -Xswiftc -warnings-as-errors
+
   # Builds the installers on both OSes, opens the packaged app once and enforces the
   # 130MB installer budget (rule 6). Unsigned here; signing happens in the release workflow.
   desktop-package:
@@ -46,6 +54,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The Mac capture helper ships inside the app (extraResources in electron-builder.yml).
+      - name: Build the Mac capture helper
+        if: runner.os == 'macOS'
+        run: swift build -c release --package-path apps/desktop/native/mac --scratch-path apps/desktop/native/mac/build
       - run: pnpm --filter @kamo/desktop package
       - name: Installer size budget
         shell: bash
