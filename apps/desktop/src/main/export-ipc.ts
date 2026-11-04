@@ -26,8 +26,11 @@ const SMOKE_EXPORT_FILE = /^\.smoke-export\/[^/\\]+\.mp4$/
 
 export interface ExportService {
   files: ExportFiles
-  /** Asks before a window closes or reloads in the middle of an export. */
-  guardWindow(window: BrowserWindow): void
+  /**
+   * Asks before a window closes or reloads in the middle of an export. `onStay` runs when the
+   * user keeps the export going (a quit that started it is cancelled).
+   */
+  guardWindow(window: BrowserWindow, onStay?: () => void): void
   /** Smoke test: send exports to `<project>/.smoke-export` instead of the export folder. */
   useSmokeProject(projectId: string | null): string | null
 }
@@ -118,7 +121,7 @@ export function registerExport(): ExportService {
 
   return {
     files,
-    guardWindow(window) {
+    guardWindow(window, onStay) {
       // The editor's beforeunload says no while exporting; Electron then asks us (F-11).
       window.webContents.on('will-prevent-unload', (event) => {
         if (!files.isExporting(window.webContents.id)) {
@@ -126,6 +129,8 @@ export function registerExport(): ExportService {
           return
         }
         const t = translate ?? ((key: string) => key)
+        // Quitting from the tray while the window is hidden there: the question needs a window.
+        if (!window.isVisible()) window.show()
         const choice = dialog.showMessageBoxSync(window, {
           type: 'question',
           buttons: [t('export.closeDialog.stop'), t('export.closeDialog.keep')],
@@ -138,6 +143,7 @@ export function registerExport(): ExportService {
         })
         // preventDefault here means "ignore the page and unload anyway".
         if (choice === 0) event.preventDefault()
+        else onStay?.()
       })
     },
     useSmokeProject(projectId) {

@@ -106,6 +106,14 @@
       "paused": "Paused at {elapsed}"
     }
   },
+  "tray": {
+    "open": "Open Kamo",
+    "quit": "Quit Kamo",
+    "notice": {
+      "title": "Kamo is still running",
+      "body": "Kamo is in the system tray. Click its icon to open it, or right-click it to quit."
+    }
+  },
   "editor": {
     "back": "Projects",
     "export": "Export",
@@ -210,6 +218,12 @@
       "title": "Language",
       "label": "App language",
       "system": "Same as the system"
+    },
+    "window": {
+      "title": "Window",
+      "closeToTray": "Keep Kamo in the tray when the window is closed",
+      "closeToTrayHint": "Closing the window leaves Kamo running in the system tray. To quit, right-click its icon and choose Quit Kamo.",
+      "closeToTrayHintMac": "Closing the window leaves Kamo running with an icon in the menu bar. To quit, choose Quit Kamo there or press ⌘Q."
     },
     "folders": {
       "title": "Folders",

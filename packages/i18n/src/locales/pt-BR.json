@@ -106,6 +106,14 @@
       "paused": "Pausado em {elapsed}"
     }
   },
+  "tray": {
+    "open": "Abrir o Kamo",
+    "quit": "Sair do Kamo",
+    "notice": {
+      "title": "O Kamo continua rodando",
+      "body": "O Kamo está na bandeja do sistema. Clique no ícone para abrir ou use o botão direito para sair."
+    }
+  },
   "editor": {
     "back": "Projetos",
     "export": "Exportar",
@@ -210,6 +218,12 @@
       "title": "Idioma",
       "label": "Idioma do app",
       "system": "Igual ao do sistema"
+    },
+    "window": {
+      "title": "Janela",
+      "closeToTray": "Manter o Kamo na bandeja ao fechar a janela",
+      "closeToTrayHint": "Fechar a janela deixa o Kamo rodando na bandeja do sistema. Para sair, clique com o botão direito no ícone e escolha Sair do Kamo.",
+      "closeToTrayHintMac": "Fechar a janela deixa o Kamo rodando com um ícone na barra de menus. Para sair, escolha Sair do Kamo nele ou use ⌘Q."
     },
     "folders": {
       "title": "Pastas",

@@ -76,6 +76,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 ### 7. Settings
 - Kamo Cloud account: sign in/out, email, plan, space used, "Automatically upload new recordings" (off by default; uploaded as private) and a "Manage subscription" link (opens the web)
 - Projects folder
+- **Window:** "Keep Kamo in the tray when the window is closed" (on by default on Windows, off on Mac; D-026). The first time the window goes to the tray on Windows, a one-time balloon says Kamo is still running
 - OS permission status
 - Shortcuts
 - **Help:** "Copy diagnostics" (shows the text before copying) and "Open GitHub issue"

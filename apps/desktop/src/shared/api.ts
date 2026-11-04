@@ -224,6 +224,13 @@ export interface AppSettings {
   stopShortcut?: string
   /** F-13. Set when the permissions onboarding was finished. */
   onboardingDone?: boolean
+  /**
+   * F-15. Closing the main window hides it to the tray (menu bar on Mac) instead of quitting.
+   * Absent: AppInfo.closeToTrayDefault (on everywhere but Mac).
+   */
+  closeToTray?: boolean
+  /** Set by main once the "Kamo is still running in the tray" notice was shown. */
+  trayNoticeShown?: boolean
 }
 
 export type Theme = 'light' | 'dark' | 'system'
@@ -231,7 +238,7 @@ export type LanguageSetting = 'system' | 'en' | 'pt-BR' | 'es' | 'zh-CN' | 'ja'
 
 /** What the renderer may change with `updateSettings` (folders and shortcut have their own calls). */
 export type SettingsUpdate = Partial<
-  Omit<AppSettings, 'version' | 'projectsDir' | 'exportDir' | 'stopShortcut'>
+  Omit<AppSettings, 'version' | 'projectsDir' | 'exportDir' | 'stopShortcut' | 'trayNoticeShown'>
 >
 
 /** Main-side writes; `null` resets a field to its default. */
@@ -251,6 +258,8 @@ export interface AppInfo {
   version: string
   platform: 'mac' | 'windows' | 'linux'
   defaultStopShortcut: string
+  /** F-15: closeToTray when the user never changed it. */
+  closeToTrayDefault: boolean
 }
 
 export type PermissionKind = 'screen' | 'microphone' | 'inputMonitoring'

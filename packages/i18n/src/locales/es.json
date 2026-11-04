@@ -106,6 +106,14 @@
       "paused": "En pausa en {elapsed}"
     }
   },
+  "tray": {
+    "open": "Abrir Kamo",
+    "quit": "Salir de Kamo",
+    "notice": {
+      "title": "Kamo sigue funcionando",
+      "body": "Kamo está en la bandeja del sistema. Haz clic en su icono para abrirlo o clic derecho para salir."
+    }
+  },
   "editor": {
     "back": "Proyectos",
     "export": "Exportar",
@@ -210,6 +218,12 @@
       "title": "Idioma",
       "label": "Idioma de la app",
       "system": "El mismo que el sistema"
+    },
+    "window": {
+      "title": "Ventana",
+      "closeToTray": "Mantener Kamo en la bandeja al cerrar la ventana",
+      "closeToTrayHint": "Al cerrar la ventana, Kamo sigue funcionando en la bandeja del sistema. Para salir, haz clic derecho en su icono y elige Salir de Kamo.",
+      "closeToTrayHintMac": "Al cerrar la ventana, Kamo sigue funcionando con un icono en la barra de menús. Para salir, elige Salir de Kamo allí o pulsa ⌘Q."
     },
     "folders": {
       "title": "Carpetas",

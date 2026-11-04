@@ -217,6 +217,7 @@ export class RecordingController {
     } catch (error) {
       this.log.error('recording.tray.failed', { error })
     }
+    this.notifyActive(true)
     this.log.info('recording.started', { fps: session.fps })
   }
 
@@ -271,6 +272,24 @@ export class RecordingController {
     return this.registeredShortcut
   }
 
+  /** Called when a recording starts and ends (the app tray gives way to the recording one). */
+  onRecordingChange(listener: (recording: boolean) => void): () => void {
+    this.activeListeners.add(listener)
+    return () => this.activeListeners.delete(listener)
+  }
+
+  private readonly activeListeners = new Set<(recording: boolean) => void>()
+
+  private notifyActive(recording: boolean): void {
+    for (const listener of this.activeListeners) {
+      try {
+        listener(recording)
+      } catch (error) {
+        this.log.error('recording.listener.failed', { error })
+      }
+    }
+  }
+
   getClock(): RecordingClock | null {
     return this.state.name === 'recording' ? this.state.clock : null
   }
@@ -283,6 +302,7 @@ export class RecordingController {
     this.state.bar.destroy()
     this.tray?.hide()
     this.state = { name: 'idle' }
+    this.notifyActive(false)
     this.log.info('recording.finished', { kind: result.kind })
     // Both stop now; they are attached one after the other (each rewrites project.json).
     const cameraTake = this.stopCamera(camera)

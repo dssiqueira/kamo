@@ -4,6 +4,7 @@
 import { LOCALES, type Locale } from '@kamo/i18n'
 import { useEffect, useState } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
+import { Switch } from '../primitives/controls.tsx'
 import { ExternalIcon, FolderIcon } from '../primitives/icons.tsx'
 import { TextDialog } from './TextDialog.tsx'
 import { InlineNotice, Row, Section, SecondaryButton, Segmented, StatusPill } from './parts.tsx'
@@ -27,6 +28,10 @@ export interface SettingsProps {
   onThemeChange(theme: ThemeChoice): void
   language: LanguageChoice
   onLanguageChange(language: LanguageChoice): void
+
+  /** Closing the main window keeps Kamo running in the tray (menu bar on Mac). */
+  closeToTray: boolean
+  onCloseToTrayChange(closeToTray: boolean): void
 
   /** Null while loading. */
   folders: { projectsDir: string; exportDir: string } | null
@@ -83,6 +88,23 @@ export function Settings(props: SettingsProps) {
 
         <Section id="settings-language" title={t('settings.language.title')}>
           <LanguageRow value={props.language} onChange={props.onLanguageChange} />
+        </Section>
+
+        <Section id="settings-window" title={t('settings.window.title')}>
+          <div className="flex flex-col gap-xs">
+            <Switch
+              label={t('settings.window.closeToTray')}
+              checked={props.closeToTray}
+              onChange={props.onCloseToTrayChange}
+            />
+            <p className="text-label text-on-surface-muted">
+              {t(
+                props.platform === 'mac'
+                  ? 'settings.window.closeToTrayHintMac'
+                  : 'settings.window.closeToTrayHint',
+              )}
+            </p>
+          </div>
         </Section>
 
         <Section id="settings-folders" title={t('settings.folders.title')}>

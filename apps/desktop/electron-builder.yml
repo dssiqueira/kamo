@@ -33,6 +33,9 @@ mac:
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES
+    # The tray / menu bar icon (close to tray, F-15).
+    - from: build/icon.png
+      to: icon.png
   # Signing and notarization arrive with the release workflow (step 10).
   identity: null
 
@@ -51,6 +54,9 @@ win:
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES
+    # The tray / menu bar icon (close to tray, F-15).
+    - from: build/icon.png
+      to: icon.png
 
 nsis:
   oneClick: false

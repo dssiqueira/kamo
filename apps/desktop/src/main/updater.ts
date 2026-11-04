@@ -9,6 +9,7 @@ import type { AppUpdater } from 'electron-updater'
 import type { UpdateStatus } from '../shared/api.ts'
 import { isBusy } from './busy.ts'
 import { PreferenceError } from './preference-error.ts'
+import { markQuitting } from './quitting.ts'
 
 export const CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000
 
@@ -64,6 +65,8 @@ export class Updater {
     if (this.status.state !== 'ready' || !this.updater) return
     if (isBusy()) throw new PreferenceError('busy')
     this.log.info('update.restart', { version: this.status.version })
+    // On Mac the installer closes the windows before before-quit: they must close, not hide.
+    markQuitting()
     this.updater.quitAndInstall()
   }
 

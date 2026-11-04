@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   ipcMain,
   nativeTheme,
+  powerMonitor,
   protocol,
   session,
   shell,
@@ -15,7 +16,7 @@ import { PROJECT_FILES, ProjectError } from '@kamo/core'
 import { createI18n, formatProjectDate } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
 import { resolveHelperPath } from './capture/helper-path.ts'
-import { IPC_ERROR_PREFIX, IpcChannel } from '../shared/api.ts'
+import { IPC_ERROR_PREFIX, IpcChannel, type AppSettings } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 import { MEDIA_SCHEME, serveMedia } from './media.ts'
 import {
@@ -37,6 +38,14 @@ import { runAudioSelfTest } from './audio/self-test.ts'
 import { recordingCamera, setupCamera } from './camera/index.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import type { TrayLabels } from './recording-tray.ts'
+import { AppTray, type AppTrayLabels } from './app-tray.ts'
+import {
+  closeToTrayEnabled,
+  shouldHideOnClose,
+  shouldShowAppTray,
+  shouldShowTrayNotice,
+} from './close-to-tray.ts'
+import { clearQuitting, isQuitting, markQuitting } from './quitting.ts'
 import { getServices, startServices } from './services.ts'
 import {
   RecoveryError,
@@ -70,6 +79,8 @@ const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
 
 const DEV_ICON = join(app.getAppPath(), 'build', 'icon.png')
+// The tray icon (F-15): electron-builder copies build/icon.png into the resources folder.
+const TRAY_ICON = app.isPackaged ? join(process.resourcesPath, 'icon.png') : DEV_ICON
 
 const SMOKE_TEST_TIMEOUT_MS = 60_000
 const SMOKE_SCREENSHOT_DELAY_MS = 2000
@@ -84,6 +95,17 @@ const smokeTimeout = isSmokeTest
   : undefined
 
 let mainWindow: BrowserWindow | undefined
+
+// One Kamo at a time: launching it again while it sits in the tray brings the window back
+// instead of starting a second app with a second icon. Dev builds and smoke tests may run next
+// to an installed Kamo.
+if (app.isPackaged && !isSmokeTest) {
+  if (app.requestSingleInstanceLock()) {
+    app.on('second-instance', () => showMainWindow())
+  } else {
+    app.exit(0)
+  }
+}
 
 // Set once the app is ready (project names need the locale). The Record button lives in a
 // window created after that, so nothing can start a recording before.
@@ -110,6 +132,15 @@ let trayLabels: TrayLabels = {
   stop: 'Stop',
 }
 
+// App tray menu texts (F-15); English until the UI language loads in createBackend.
+let appTrayLabels: AppTrayLabels = {
+  tooltip: 'Kamo',
+  open: 'Open Kamo',
+  quit: 'Quit Kamo',
+  noticeTitle: 'Kamo is still running',
+  noticeBody: 'Kamo is in the system tray. Click its icon to open it, or right-click it to quit.',
+}
+
 const recording = new RecordingController(
   delegatingBackend,
   () => mainWindow,
@@ -127,6 +158,69 @@ const recording = new RecordingController(
   // A-03: the webcam, recorded in Electron like the audio (src/main/camera).
   recordingCamera,
 )
+
+// Close to tray (F-15). Cached from settings.json: the close event needs an answer at once.
+let closeToTraySetting: boolean | undefined
+let trayNoticeShown = false
+let recordingActive = false
+
+const appTray = new AppTray(TRAY_ICON, () => appTrayLabels, {
+  open: () => showMainWindow(),
+  quit: () => app.quit(),
+})
+
+function closeToTray(): boolean {
+  return closeToTrayEnabled(closeToTraySetting, process.platform)
+}
+
+/** Shows or hides the app tray icon to match the setting and the recording. */
+function updateAppTray(): void {
+  const show = shouldShowAppTray({
+    closeToTray: closeToTray(),
+    recording: recordingActive,
+    smokeTest: isSmokeTest,
+  })
+  if (!show) return appTray.hide()
+  try {
+    appTray.show()
+  } catch (error) {
+    // No tray on this desktop: closing the window closes it, as if the setting were off.
+    getServices().log.warn('tray.failed', { error })
+  }
+}
+
+/** Tray, Dock and second launch: brings the main window back (or reopens it). */
+function showMainWindow(): void {
+  if (!app.isReady()) return
+  if (!mainWindow) return createMainWindow()
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+function applyTraySettings(settings: AppSettings): void {
+  closeToTraySetting = settings.closeToTray
+  trayNoticeShown = settings.trayNoticeShown === true
+  updateAppTray()
+  // Turned off while the window sits in the tray: the icon is gone, so bring the window back.
+  if (!closeToTray() && mainWindow && !mainWindow.isVisible() && !recordingActive) {
+    showMainWindow()
+  }
+}
+
+function showTrayNoticeOnce(): void {
+  if (!shouldShowTrayNotice({ platform: process.platform, noticeShown: trayNoticeShown })) return
+  trayNoticeShown = true
+  appTray.showNotice()
+  void getServices()
+    .settings.update({ trayNoticeShown: true })
+    .catch((error: unknown) => getServices().log.warn('settings.save.failed', { error }))
+}
+
+recording.onRecordingChange((active) => {
+  recordingActive = active
+  updateAppTray()
+})
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
   const url = event.senderFrame?.url
@@ -273,11 +367,29 @@ function createMainWindow(page: 'index' | 'onboarding' = 'index'): void {
     // CI opens the packaged app with this flag and expects a clean exit once it renders.
     if (isSmokeTest) void finishSmokeTest(window)
   })
+  // F-15: X, Alt+F4 and Cmd+W hide the window to the tray; real quits still close it.
+  window.on('close', (event) => {
+    const hide = shouldHideOnClose({
+      quitting: isQuitting(),
+      closeToTray: closeToTray(),
+      trayAvailable: appTray.isShown(),
+      smokeTest: isSmokeTest,
+    })
+    if (!hide) return
+    event.preventDefault()
+    window.hide()
+    getServices().log.info('window.hidden_to_tray')
+    showTrayNoticeOnce()
+  })
+  // Windows shutdown or logoff: close for real, never hold the session open.
+  window.on('query-session-end', () => markQuitting())
+  window.on('session-end', () => markQuitting())
   window.on('closed', () => {
     if (mainWindow === window) mainWindow = undefined
   })
   mainWindow = window
-  exporter.guardWindow(window)
+  // Keeping an export running cancels the quit: the next close hides again.
+  exporter.guardWindow(window, clearQuitting)
 }
 
 // Every renderer is sandboxed, including any created later.
@@ -434,6 +546,14 @@ handle(IpcChannel.getRecordingClock, () => recording.getClock() ?? smokeRecordin
 async function createBackend(): Promise<RecordingBackend> {
   const locale = await uiLocale()
   const i18n = await createI18n(locale)
+  appTrayLabels = {
+    tooltip: i18n.t('app.name'),
+    open: i18n.t('tray.open'),
+    quit: i18n.t('tray.quit'),
+    noticeTitle: i18n.t('tray.notice.title'),
+    noticeBody: i18n.t('tray.notice.body'),
+  }
+  appTray.refresh()
   trayLabels = {
     recording: (elapsed) => i18n.t('recording.tray.recording', { elapsed }),
     paused: (elapsed) => i18n.t('recording.tray.paused', { elapsed }),
@@ -465,7 +585,10 @@ async function createBackend(): Promise<RecordingBackend> {
 }
 
 // Quitting mid-recording stops and saves it first (F-02: nothing recorded is lost).
+// Every real quit (tray Quit, Cmd+Q, app menu, relaunch, Mac shutdown) passes here first, so
+// the main window closes instead of hiding to the tray (F-15).
 app.on('before-quit', (event) => {
+  markQuitting()
   if (!recording.isRecording()) return
   event.preventDefault()
   void recording.stop().finally(() => app.quit())
@@ -477,6 +600,14 @@ void app.whenReady().then(async () => {
     .init()
     .catch((error: unknown) => getServices().log.warn('preferences.init.failed', { error }))
   backend = await createBackend()
+  // F-15: the tray icon follows the setting (and gives way to the recording one).
+  getServices().settings.onChange(applyTraySettings)
+  await getServices()
+    .settings.get()
+    .then(applyTraySettings)
+    .catch((error: unknown) => getServices().log.warn('tray.init.failed', { error }))
+  // Mac and Linux shutdown or logoff.
+  powerMonitor.on('shutdown', () => markQuitting())
   // Screen capture runs in the native helper (D-023), so every renderer permission is denied
   // except audio for the hidden audio recorder page (F-04, D-024; src/main/audio) and the
   // camera for Home's preview and the hidden camera recorder page (A-03; src/main/camera).
@@ -505,9 +636,8 @@ void app.whenReady().then(async () => {
       window.webContents.send(IpcChannel.displaysChanged)
     }
   })
-  app.on('activate', () => {
-    if (!mainWindow) createMainWindow()
-  })
+  // Mac Dock click: reopen the window, or bring it back from the menu bar.
+  app.on('activate', () => showMainWindow())
 })
 
 // Logged for 'Copy diagnostics' (F-17); a broken main process must not keep running.

@@ -25,6 +25,7 @@ import type {
 import { IpcChannel } from '../shared/api.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import { isBusy, registerBusyCheck } from './busy.ts'
+import { closeToTrayDefault } from './close-to-tray.ts'
 import { collectDiagnostics } from './diagnostics-collect.ts'
 import { buildIssueUrl, isIssueUrl } from './diagnostics.ts'
 import {
@@ -224,6 +225,7 @@ export function registerPreferences(deps: PreferencesDeps): Preferences {
     version: app.getVersion(),
     platform: platformName(),
     defaultStopShortcut: DEFAULT_STOP_SHORTCUT,
+    closeToTrayDefault: closeToTrayDefault(process.platform),
   }))
   handle(IpcChannel.getFolders, async () => folders(await settings.get()))
   handle(IpcChannel.chooseFolder, async (kind) => {

@@ -281,6 +281,7 @@
 - [ ] Theme: Light (default) / Dark / System
 - [ ] Projects folder and export folder
 - [ ] Global stop shortcut, editable
+- [ ] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
 - [ ] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), following the system language, with manual switching without restarting
 - [ ] Dates, durations, numbers and file sizes formatted to each language's standard (`Intl`)
 - [ ] No screen breaks with text 35% longer than English (German, French) or with Chinese and Japanese characters

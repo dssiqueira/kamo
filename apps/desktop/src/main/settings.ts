@@ -46,6 +46,9 @@ const StoredSettings = z.looseObject({
   // A-03 webcam toggle and the chosen camera ('' = the system default).
   cameraEnabled: z.boolean().optional().catch(undefined),
   cameraDeviceId: DeviceId.optional().catch(undefined),
+  // F-15 close to tray, and whether its one-time notice was shown (main only).
+  closeToTray: z.boolean().optional().catch(undefined),
+  trayNoticeShown: z.boolean().optional().catch(undefined),
 })
 
 /**
@@ -64,13 +67,15 @@ export const SettingsUpdateSchema = z.strictObject({
   systemAudioEnabled: z.boolean().optional(),
   cameraEnabled: z.boolean().optional(),
   cameraDeviceId: DeviceId.optional(),
+  closeToTray: z.boolean().optional(),
 })
 
-/** Every field main may write: the renderer's plus folders and the shortcut. */
+/** Every field main may write: the renderer's plus folders, the shortcut and the tray notice. */
 const StoredSettingsUpdateSchema = SettingsUpdateSchema.extend({
   projectsDir: FolderPath.optional(),
   exportDir: FolderPath.optional(),
   stopShortcut: Accelerator.optional(),
+  trayNoticeShown: z.boolean().optional(),
 })
 
 /** Stored settings plus whatever unknown fields the file had (kept on write). */
@@ -146,6 +151,8 @@ const PUBLIC_KEYS = [
   'systemAudioEnabled',
   'cameraEnabled',
   'cameraDeviceId',
+  'closeToTray',
+  'trayNoticeShown',
 ] as const satisfies readonly (keyof AppSettings)[]
 
 /** Only the known fields go to the renderer. */

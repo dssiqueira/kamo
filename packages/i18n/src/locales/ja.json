@@ -106,6 +106,14 @@
       "paused": "{elapsed} で一時停止中"
     }
   },
+  "tray": {
+    "open": "Kamo を開く",
+    "quit": "Kamo を終了",
+    "notice": {
+      "title": "Kamo は実行中です",
+      "body": "Kamo はシステムトレイにあります。アイコンをクリックすると開き、右クリックで終了できます。"
+    }
+  },
   "editor": {
     "back": "プロジェクト",
     "export": "書き出し",
@@ -210,6 +218,12 @@
       "title": "言語",
       "label": "アプリの言語",
       "system": "システムと同じ"
+    },
+    "window": {
+      "title": "ウィンドウ",
+      "closeToTray": "ウィンドウを閉じても Kamo をトレイに残す",
+      "closeToTrayHint": "ウィンドウを閉じても、Kamo はシステムトレイで動作し続けます。終了するには、アイコンを右クリックして「Kamo を終了」を選びます。",
+      "closeToTrayHintMac": "ウィンドウを閉じても、Kamo はメニューバーのアイコンとして動作し続けます。終了するには、そこで「Kamo を終了」を選ぶか ⌘Q を押します。"
     },
     "folders": {
       "title": "フォルダ",

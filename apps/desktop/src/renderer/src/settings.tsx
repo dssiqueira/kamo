@@ -30,7 +30,11 @@ function DesktopSettings() {
 
   if (!info || !settings) return null
 
-  const save = (update: { theme?: ThemeChoice; language?: LanguageChoice }) => {
+  const save = (update: {
+    theme?: ThemeChoice
+    language?: LanguageChoice
+    closeToTray?: boolean
+  }) => {
     setSettings((current) => current && { ...current, ...update })
     void window.kamo.updateSettings(update).catch(() => {
       void window.kamo.getSettings().then(setSettings)
@@ -45,6 +49,8 @@ function DesktopSettings() {
       onThemeChange={(theme) => save({ theme })}
       language={settings.language ?? 'system'}
       onLanguageChange={(language) => save({ language })}
+      closeToTray={settings.closeToTray ?? info.closeToTrayDefault}
+      onCloseToTrayChange={(closeToTray) => save({ closeToTray })}
       folders={folders}
       onChangeFolder={(kind) =>
         attempt(async () => {

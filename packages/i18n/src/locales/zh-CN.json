@@ -106,6 +106,14 @@
       "paused": "已暂停于 {elapsed}"
     }
   },
+  "tray": {
+    "open": "打开 Kamo",
+    "quit": "退出 Kamo",
+    "notice": {
+      "title": "Kamo 仍在运行",
+      "body": "Kamo 在系统托盘中。点击其图标即可打开，右键点击可退出。"
+    }
+  },
   "editor": {
     "back": "项目",
     "export": "导出",
@@ -210,6 +218,12 @@
       "title": "语言",
       "label": "应用语言",
       "system": "与系统相同"
+    },
+    "window": {
+      "title": "窗口",
+      "closeToTray": "关闭窗口时将 Kamo 保留在托盘中",
+      "closeToTrayHint": "关闭窗口后，Kamo 会继续在系统托盘中运行。要退出，请右键点击其图标并选择“退出 Kamo”。",
+      "closeToTrayHintMac": "关闭窗口后，Kamo 会继续运行，并在菜单栏中显示图标。要退出，请在那里选择“退出 Kamo”或按 ⌘Q。"
     },
     "folders": {
       "title": "文件夹",
