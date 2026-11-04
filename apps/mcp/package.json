@@ -4,6 +4,18 @@
   "description": "Local, read-only MCP server for your Kamo recordings. No network.",
   "license": "MIT",
   "type": "module",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "kamo",
+    "screen-recording"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "kamo-mcp": "./dist/cli.js"
+  },
   "exports": {
     ".": "./src/index.ts"
   },
@@ -16,7 +28,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.map"
   ],
   "repository": {
     "type": "git",
@@ -24,10 +37,13 @@
     "directory": "apps/mcp"
   },
   "scripts": {
+    "dev": "node --experimental-transform-types src/cli.ts",
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "inspect": "npx @modelcontextprotocol/inspector node --experimental-transform-types src/cli.ts"
   },
   "dependencies": {
+    "@kamo/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "zod": "^4.6.7"
   }

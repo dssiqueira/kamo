@@ -557,12 +557,12 @@
 - [ ] Installs and runs with one command, without configuring anything: finds the projects folder by reading the app's `settings.json` (local file, no network), falls back to `~/Kamo` if not found, or receives the path as an argument
 - [ ] The command shown in the app panel already includes the current folder path as an argument
 - [ ] In the app, Settings → "Connect to an agent" shows the ready-to-copy command, already with the current folder (`claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`), and instructions for other MCP clients
-- [ ] No tool modifies, deletes or creates files
-- [ ] No network calls (verifiable in the code and the tests)
-- [ ] `search_recordings` responds in under 1s with 500 recordings
-- [ ] `get_frame` returns the image in under 500ms, reading `frames/` (no video decoder, no FFmpeg)
-- [ ] The `@kamo/mcp` npm package is under 5MB, with no native binaries
-- [ ] Paginated responses, so as not to blow up the agent's context
+- [x] No tool modifies, deletes or creates files
+- [x] No network calls (verifiable in the code and the tests)
+- [x] `search_recordings` responds in under 1s with 500 recordings
+- [x] `get_frame` returns the image in under 500ms, reading `frames/` (no video decoder, no FFmpeg)
+- [x] The `@kamo/mcp` npm package is under 5MB, with no native binaries
+- [x] Paginated responses, so as not to blow up the agent's context
 - [ ] Works with the MCP Inspector and with Claude Code
 
 **Edge cases**
