@@ -1,6 +1,8 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
+import { CameraSource, type CameraSourceProps } from './CameraSource.tsx'
+import { SourceSwitch } from './SourceSwitch.tsx'
 
 /** One source as Home shows it (F-04). */
 export interface AudioSourceView {
@@ -36,6 +38,8 @@ export interface AudioSourcesProps {
    * does not re-render with them. Returns unsubscribe.
    */
   subscribeLevels(listener: (levels: AudioLevelsView) => void): () => void
+  /** Webcam toggle with a live preview (A-03), in the same row. Omitted: no camera card. */
+  camera?: CameraSourceProps
 }
 
 /** Home toggles for the microphone and the computer sound, with live level meters (F-04). */
@@ -52,7 +56,7 @@ export function AudioSources(props: AudioSourcesProps) {
   return (
     <section className="flex flex-col gap-md" aria-labelledby={titleId}>
       <h2 id={titleId} className="text-title">
-        {t('home.audio.title')}
+        {props.camera ? t('home.camera.sectionTitle') : t('home.audio.title')}
       </h2>
       <div className="flex flex-wrap gap-md">
         <SourceCard
@@ -91,6 +95,7 @@ export function AudioSources(props: AudioSourcesProps) {
           disabled={system.status === 'unsupported'}
           message={systemMessage(system, t)}
         />
+        {props.camera && <CameraSource {...props.camera} />}
       </div>
     </section>
   )
@@ -144,24 +149,12 @@ function SourceCard({
         <span id={labelId} className="truncate text-title">
           {label}
         </span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={on}
-          aria-labelledby={labelId}
+        <SourceSwitch
+          on={on}
+          labelId={labelId}
           disabled={disabled}
           onClick={() => onToggle(!source.enabled)}
-          className={`relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-[120ms] disabled:opacity-50 ${
-            on ? 'bg-tertiary' : 'bg-border'
-          } ${FOCUS_RING}`}
-        >
-          <span
-            aria-hidden
-            className={`absolute top-[3px] size-[16px] rounded-full bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.2)] transition-[inset-inline-start] duration-[120ms] ${
-              on ? 'start-[19px]' : 'start-[3px]'
-            }`}
-          />
-        </button>
+        />
       </div>
       <LevelMeter
         label={t('home.audio.level', { source: label })}

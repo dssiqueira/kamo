@@ -3,8 +3,10 @@
 import { BrowserWindow, globalShortcut, screen } from 'electron'
 import { IpcChannel, type RecordingClock, type RecordingStatus } from '../shared/api.ts'
 import type { AudioWarning } from '../shared/audio.ts'
+import type { CameraWarning } from '../shared/camera.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import type { AudioSession, AudioTake } from './audio/service.ts'
+import type { CameraSession, CameraTake } from './camera/service.ts'
 import { RecordingTray, type TrayLabels } from './recording-tray.ts'
 import { createAppWindow } from './windows.ts'
 
@@ -49,6 +51,19 @@ export interface RecordingAudio {
   attach(projectId: string, take: AudioTake, videoStartedAt: number): Promise<AudioWarning[]>
 }
 
+/**
+ * The webcam alongside the video (A-03, src/main/camera). Recorded in Electron like the audio,
+ * so it starts, pauses and stops in step with the helper here. It never costs the video.
+ */
+export interface RecordingCamera {
+  prepare(): Promise<void>
+  cancel(): Promise<void>
+  /** Starts the camera when the Home toggle is on; null otherwise. Never waits for the device. */
+  begin(): Promise<CameraSession | null>
+  /** Moves webcam.mp4 into the saved project with its offset; returns warnings for Home. */
+  attach(projectId: string, take: CameraTake, videoStartedAt: number): Promise<CameraWarning[]>
+}
+
 type State =
   | { name: 'idle' }
   | {
@@ -66,6 +81,8 @@ type State =
       clock: RecordingClock
       /** Resolves once the audio recorder was asked to start (null: no audio). */
       audio: Promise<AudioSession | null>
+      /** Same for the webcam (null: camera off). */
+      camera: Promise<CameraSession | null>
       /** `Date.now()` when the helper confirmed the first frame: video time 0. */
       videoStartedAt: number
     }
@@ -86,6 +103,8 @@ export class RecordingController {
     private readonly audio?: RecordingAudio,
     /** Tray menu texts in the UI language. Omitted: no tray icon. */
     trayLabels?: () => TrayLabels,
+    /** Webcam (A-03). Omitted: no camera. */
+    private readonly camera?: RecordingCamera,
   ) {
     this.tray = trayLabels
       ? new RecordingTray(
@@ -138,6 +157,9 @@ export class RecordingController {
     void this.audio?.prepare().catch((error: unknown) => {
       this.log.error('recording.audio.prepare.failed', { error })
     })
+    void this.camera?.prepare().catch((error: unknown) => {
+      this.log.error('recording.camera.prepare.failed', { error })
+    })
   }
 
   /** Esc during the countdown: back to Home, no project created (F-01). */
@@ -147,6 +169,7 @@ export class RecordingController {
     this.state.window.destroy()
     this.state = { name: 'idle' }
     void this.audio?.cancel().catch(() => {})
+    void this.camera?.cancel().catch(() => {})
     this.showMain()
   }
 
@@ -160,6 +183,7 @@ export class RecordingController {
     // Audio starts alongside the helper (not after it), so it covers the first frame; the
     // offset between the two starts goes into project.json (F-04 sync).
     const audio = this.beginAudio()
+    const camera = this.beginCamera()
     let session: BackendSession
     try {
       session = await this.backend.start(displayId)
@@ -167,6 +191,7 @@ export class RecordingController {
       this.log.error('recording.start.failed', { error })
       this.state = { name: 'idle' }
       void audio.then((a) => a?.stop()).then((take) => take?.discard())
+      void camera.then((c) => c?.stop()).then((take) => take?.discard())
       return this.report({ kind: 'error', code: errorCode(error) })
     }
     const videoStartedAt = Date.now()
@@ -178,7 +203,7 @@ export class RecordingController {
       at: Date.now(),
       fps: session.fps,
     }
-    this.state = { name: 'recording', session, bar, clock, audio, videoStartedAt }
+    this.state = { name: 'recording', session, bar, clock, audio, camera, videoStartedAt }
     session.onEnded((result) => void this.finish(result))
     const stopShortcut = this.stopShortcut()
     if (globalShortcut.register(stopShortcut, () => void this.stop())) {
@@ -197,9 +222,13 @@ export class RecordingController {
 
   async pause(): Promise<void> {
     if (this.state.name !== 'recording' || this.state.clock.state === 'paused') return
-    const { session, clock, audio } = this.state
-    // Both at once, so the audio pauses as close as possible to the video.
-    await Promise.all([session.pause(), audio.then((a) => a?.pause())])
+    const { session, clock, audio, camera } = this.state
+    // All at once, so the audio and the camera pause as close as possible to the video.
+    await Promise.all([
+      session.pause(),
+      audio.then((a) => a?.pause()),
+      camera.then((c) => c?.pause()),
+    ])
     if (this.state.name !== 'recording') return
     this.state.clock = { ...clock, state: 'paused', elapsedMs: elapsedNow(clock), at: Date.now() }
     this.sendClock()
@@ -208,8 +237,12 @@ export class RecordingController {
 
   async resume(): Promise<void> {
     if (this.state.name !== 'recording' || this.state.clock.state === 'recording') return
-    const { session, audio } = this.state
-    await Promise.all([session.resume(), audio.then((a) => a?.resume())])
+    const { session, audio, camera } = this.state
+    await Promise.all([
+      session.resume(),
+      audio.then((a) => a?.resume()),
+      camera.then((c) => c?.resume()),
+    ])
     if (this.state.name !== 'recording') return
     this.state.clock = { ...this.state.clock, state: 'recording', at: Date.now() }
     this.sendClock()
@@ -246,12 +279,15 @@ export class RecordingController {
     if (this.state.name !== 'recording') return
     if (this.registeredShortcut) globalShortcut.unregister(this.registeredShortcut)
     this.registeredShortcut = null
-    const { audio, videoStartedAt } = this.state
+    const { audio, camera, videoStartedAt } = this.state
     this.state.bar.destroy()
     this.tray?.hide()
     this.state = { name: 'idle' }
     this.log.info('recording.finished', { kind: result.kind })
+    // Both stop now; they are attached one after the other (each rewrites project.json).
+    const cameraTake = this.stopCamera(camera)
     const audioWarnings = await this.finishAudio(audio, result, videoStartedAt)
+    const cameraWarnings = await this.finishCamera(cameraTake, result, videoStartedAt)
     if (result.kind === 'saved') this.onSaved(result.projectId)
     this.report(
       result.kind === 'saved'
@@ -260,6 +296,7 @@ export class RecordingController {
             projectId: result.projectId,
             ...(result.warning ? { warning: result.warning } : {}),
             ...(audioWarnings.length ? { audioWarnings } : {}),
+            ...(cameraWarnings.length ? { cameraWarnings } : {}),
           }
         : result.kind === 'discarded'
           ? { kind: 'error', code: 'too_short' }
@@ -291,6 +328,37 @@ export class RecordingController {
     return this.audio.attach(result.projectId, take, videoStartedAt).catch((error: unknown) => {
       this.log.error('recording.audio.attach.failed', { error })
       return ['audio_failed' as const]
+    })
+  }
+
+  /** Never rejects: camera problems never cost the video. */
+  private beginCamera(): Promise<CameraSession | null> {
+    if (!this.camera) return Promise.resolve(null)
+    return this.camera.begin().catch((error: unknown) => {
+      this.log.error('recording.camera.start.failed', { error })
+      return null
+    })
+  }
+
+  private stopCamera(camera: Promise<CameraSession | null>): Promise<CameraTake | null> {
+    return camera.then((c) => c?.stop() ?? null).catch(() => null)
+  }
+
+  /** A saved recording gets the camera, anything else deletes it. */
+  private async finishCamera(
+    stopping: Promise<CameraTake | null>,
+    result: BackendResult,
+    videoStartedAt: number,
+  ): Promise<CameraWarning[]> {
+    const take = await stopping
+    if (!take) return []
+    if (result.kind !== 'saved' || !this.camera) {
+      await take.discard()
+      return []
+    }
+    return this.camera.attach(result.projectId, take, videoStartedAt).catch((error: unknown) => {
+      this.log.error('recording.camera.attach.failed', { error })
+      return ['camera_failed' as const]
     })
   }
 

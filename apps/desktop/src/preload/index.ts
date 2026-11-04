@@ -19,6 +19,7 @@ import type {
   MicrophoneAccess,
   RecorderCommand,
 } from '../shared/audio.ts'
+import type { CameraAccess, CameraCommand } from '../shared/camera.ts'
 
 /** Subscribes to one fixed channel; the renderer never receives the IPC event object. */
 function subscribe<T>(channel: string, listener: (value: T) => void): () => void {
@@ -108,6 +109,11 @@ const api: KamoApi = {
   onAudioCommand: (listener) => subscribe<RecorderCommand>(IpcChannel.audioCommand, listener),
   reportAudio: (report) => invoke(IpcChannel.audioReport, report) as Promise<void>,
   writeAudioChunk: (track, bytes) => invoke(IpcChannel.audioChunk, track, bytes) as Promise<void>,
+  // Webcam (A-03)
+  requestCameraAccess: () => invoke(IpcChannel.requestCameraAccess) as Promise<CameraAccess>,
+  onCameraCommand: (listener) => subscribe<CameraCommand>(IpcChannel.cameraCommand, listener),
+  reportCamera: (report) => invoke(IpcChannel.cameraReport, report) as Promise<void>,
+  writeCameraChunk: (bytes) => invoke(IpcChannel.cameraChunk, bytes) as Promise<void>,
 }
 
 contextBridge.exposeInMainWorld('kamo', api)

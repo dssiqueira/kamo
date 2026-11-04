@@ -13,6 +13,8 @@ import {
 import { join } from 'node:path'
 import { IpcChannel } from '../../shared/api.ts'
 import type { AudioSupport, MicrophoneAccess } from '../../shared/audio.ts'
+import { isCameraPageUrl } from '../camera/electron.ts'
+import { isCameraPermissionAllowed } from '../camera/model.ts'
 import { createAppWindow, isAppUrl, isPageUrl } from '../windows.ts'
 import {
   isAudioPermissionAllowed,
@@ -63,17 +65,23 @@ export function createAudioService(options: DesktopAudioOptions): AudioService {
 const isRecorderUrl = (url: string | undefined): boolean =>
   url !== undefined && url !== '' && isPageUrl(url, 'audio-recorder')
 
-/** Session permission handlers: everything denied except audio for the recorder page. */
+/**
+ * Session permission handlers: everything denied except audio for the audio recorder page and
+ * the camera (video only) for Home's preview and the camera recorder page (A-03).
+ */
 export function installAudioPermissions(session: Session): void {
+  const allowed = (permission: string, url: string | undefined, mediaTypes: string[]) =>
+    isAudioPermissionAllowed({ permission, fromRecorder: isRecorderUrl(url), mediaTypes }) ||
+    isCameraPermissionAllowed({ permission, fromCameraPage: isCameraPageUrl(url), mediaTypes })
   session.setPermissionRequestHandler((contents, permission, callback, details) => {
     const url = 'requestingUrl' in details ? details.requestingUrl : contents.getURL()
     const mediaTypes = 'mediaTypes' in details ? (details.mediaTypes ?? []) : []
-    callback(isAudioPermissionAllowed({ permission, fromRecorder: isRecorderUrl(url), mediaTypes }))
+    callback(allowed(permission, url, mediaTypes))
   })
   session.setPermissionCheckHandler((contents, permission, _origin, details) => {
     const url = details.requestingUrl ?? contents?.getURL()
     const mediaTypes = details.mediaType ? [details.mediaType] : []
-    return isAudioPermissionAllowed({ permission, fromRecorder: isRecorderUrl(url), mediaTypes })
+    return allowed(permission, url, mediaTypes)
   })
   // getDisplayMedia from the recorder page: a screen source plus loopback audio. The page
   // stops the video track at once; only the computer sound is recorded.

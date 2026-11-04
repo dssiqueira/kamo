@@ -7,9 +7,9 @@
 // way a clean stop does (capture/recording.ts) and writes project.json. Each step can be run
 // again: a recovery interrupted halfway is picked up where it stopped.
 //
-// Audio is not recovered: the microphone and computer-sound takes live in a temp folder of
-// their own (userData/recording-audio/<random id>/), with nothing tying them to the project,
-// and that folder is wiped when the next recording starts.
+// Audio and the webcam are not recovered: the microphone, computer-sound and camera takes live
+// in temp folders of their own (userData/recording-audio/ and recording-camera/<random id>/),
+// with nothing tying them to the project, and they are wiped when the next recording starts.
 import {
   PROJECT_FILES,
   ProjectError,

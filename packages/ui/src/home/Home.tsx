@@ -4,6 +4,7 @@ import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { SettingsButton } from '../settings/SettingsButton.tsx'
 import { AudioSources, type AudioSourcesProps } from './AudioSources.tsx'
+import type { CameraSourceProps } from './CameraSource.tsx'
 import type { DisplayOption } from './pickDisplay.ts'
 import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
 
@@ -20,6 +21,8 @@ export interface HomeProps {
   projects?: ProjectListProps
   /** Microphone and computer sound toggles with level meters (F-04). Omitted: none. */
   audio?: AudioSourcesProps
+  /** Webcam toggle and preview (A-03), shown with the audio sources. Omitted: none. */
+  camera?: CameraSourceProps
   /** Gear in the header (F-15). Omitted: no button. */
   onOpenSettings?(): void
   /** Missing permission: the warning links here (onboarding, F-13). */
@@ -38,6 +41,7 @@ export function Home({
   notice,
   projects,
   audio,
+  camera,
   onOpenSettings,
   onFixPermission,
   banner,
@@ -128,7 +132,7 @@ export function Home({
           )}
         </section>
 
-        {audio && <AudioSources {...audio} />}
+        {audio && <AudioSources {...audio} {...(camera ? { camera } : {})} />}
 
         <div>
           <button

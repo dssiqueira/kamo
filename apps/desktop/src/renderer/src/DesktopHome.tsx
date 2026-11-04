@@ -14,9 +14,11 @@ import {
   type ScreenAccess,
 } from '../../shared/api.ts'
 import type { AudioWarning } from '../../shared/audio.ts'
+import type { CameraWarning } from '../../shared/camera.ts'
 import { DesktopInterruptedRecordings } from './DesktopInterruptedRecordings.tsx'
 import { DesktopUpdateBanner } from './preferences/DesktopUpdateBanner.tsx'
 import { useHomeAudio } from './useHomeAudio.ts'
+import { useHomeCamera } from './useHomeCamera.ts'
 
 // Error codes from main (recording controller and capture helper) → i18n keys.
 const ERROR_KEYS: Record<string, string> = {
@@ -36,6 +38,12 @@ const AUDIO_WARNING_KEYS: Record<AudioWarning, string> = {
   mic_lost: 'recording.audio.micLost',
   system_unavailable: 'recording.audio.systemUnavailable',
   audio_failed: 'recording.audio.failed',
+}
+// A-03: camera problems of a saved recording.
+const CAMERA_WARNING_KEYS: Record<CameraWarning, string> = {
+  camera_unavailable: 'recording.camera.unavailable',
+  camera_lost: 'recording.camera.lost',
+  camera_failed: 'recording.camera.failed',
 }
 
 // Project actions (F-12): IPC error codes → i18n keys.
@@ -62,6 +70,8 @@ export function DesktopHome() {
   const t = useT()
   // F-04: microphone and computer sound toggles, meters and devices.
   const audio = useHomeAudio()
+  // A-03: webcam toggle, camera picker and live preview.
+  const camera = useHomeCamera()
 
   useEffect(() => window.kamo.onRecordingStatus(setStatus), [])
 
@@ -182,6 +192,7 @@ export function DesktopHome() {
       needsPermission={screenAccess !== 'granted'}
       projects={projects}
       {...(audio ? { audio } : {})}
+      {...(camera ? { camera } : {})}
     />
   )
 }
@@ -192,8 +203,11 @@ function notice(status: RecordingStatus | null, t: (key: string) => string): Not
     const tone = status.code === 'too_short' ? 'warning' : 'error'
     return { tone, text: t(ERROR_KEYS[status.code] ?? 'recording.errors.failed') }
   }
-  // F-04: the video is saved, but some audio is missing or cut short.
-  const audioTexts = (status.audioWarnings ?? []).map((warning) => t(AUDIO_WARNING_KEYS[warning]))
+  // F-04, A-03: the video is saved, but some audio or the camera is missing or cut short.
+  const audioTexts = [
+    ...(status.audioWarnings ?? []).map((warning) => t(AUDIO_WARNING_KEYS[warning])),
+    ...(status.cameraWarnings ?? []).map((warning) => t(CAMERA_WARNING_KEYS[warning])),
+  ]
   if (status.warning || audioTexts.length) {
     const texts = [...(status.warning ? [t(WARNING_KEYS[status.warning])] : []), ...audioTexts]
     return { tone: 'warning', text: texts.join(' ') }

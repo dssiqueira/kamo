@@ -5,13 +5,21 @@ import { pathToFileURL } from 'node:url'
 
 /** Renderer pages, one per window kind (`src/renderer/<page>.html`). */
 export type Page =
-  'index' | 'countdown' | 'recording-bar' | 'editor' | 'audio-recorder' | 'settings' | 'onboarding'
+  | 'index'
+  | 'countdown'
+  | 'recording-bar'
+  | 'editor'
+  | 'audio-recorder'
+  | 'camera-recorder'
+  | 'settings'
+  | 'onboarding'
 const PAGES: readonly Page[] = [
   'index',
   'countdown',
   'recording-bar',
   'editor',
   'audio-recorder',
+  'camera-recorder',
   'settings',
   'onboarding',
 ]

@@ -34,6 +34,7 @@ import {
 } from './preferences.ts'
 import { installAudioPermissions, recordingAudio, setupAudio } from './audio/index.ts'
 import { runAudioSelfTest } from './audio/self-test.ts'
+import { recordingCamera, setupCamera } from './camera/index.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import type { TrayLabels } from './recording-tray.ts'
 import { getServices, startServices } from './services.ts'
@@ -123,6 +124,8 @@ const recording = new RecordingController(
   recordingAudio,
   // F-02: pause/stop stay reachable from the tray, whatever monitor the user looks at.
   () => trayLabels,
+  // A-03: the webcam, recorded in Electron like the audio (src/main/camera).
+  recordingCamera,
 )
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
@@ -475,9 +478,11 @@ void app.whenReady().then(async () => {
     .catch((error: unknown) => getServices().log.warn('preferences.init.failed', { error }))
   backend = await createBackend()
   // Screen capture runs in the native helper (D-023), so every renderer permission is denied
-  // except audio for the hidden audio recorder page (F-04, D-024; src/main/audio).
+  // except audio for the hidden audio recorder page (F-04, D-024; src/main/audio) and the
+  // camera for Home's preview and the hidden camera recorder page (A-03; src/main/camera).
   installAudioPermissions(session.defaultSession)
   setupAudio(() => mainWindow)
+  setupCamera()
   if (process.env['KAMO_AUDIO_SELF_TEST'])
     void runAudioSelfTest(process.env['KAMO_AUDIO_SELF_TEST'])
   protocol.handle(MEDIA_SCHEME, (request) => serveMedia(request, getServices().projectsDir))

@@ -25,8 +25,8 @@ const FolderPath = z
   .max(1024)
   .refine((path) => isAbsolute(path))
 const Accelerator = z.string().refine(isValidAccelerator)
-// MediaDeviceInfo.deviceId (an opaque hash); '' means the system default microphone.
-const MicDeviceId = z.string().max(512)
+// MediaDeviceInfo.deviceId (an opaque hash); '' means the system default device.
+const DeviceId = z.string().max(512)
 
 // `.catch(undefined)`: one broken field never resets the others.
 const StoredSettings = z.looseObject({
@@ -41,8 +41,11 @@ const StoredSettings = z.looseObject({
   onboardingDone: z.boolean().optional().catch(undefined),
   // F-04 audio toggles and the chosen microphone (F-01: toggles are remembered).
   micEnabled: z.boolean().optional().catch(undefined),
-  micDeviceId: MicDeviceId.optional().catch(undefined),
+  micDeviceId: DeviceId.optional().catch(undefined),
   systemAudioEnabled: z.boolean().optional().catch(undefined),
+  // A-03 webcam toggle and the chosen camera ('' = the system default).
+  cameraEnabled: z.boolean().optional().catch(undefined),
+  cameraDeviceId: DeviceId.optional().catch(undefined),
 })
 
 /**
@@ -57,8 +60,10 @@ export const SettingsUpdateSchema = z.strictObject({
   language: Language.optional(),
   onboardingDone: z.boolean().optional(),
   micEnabled: z.boolean().optional(),
-  micDeviceId: MicDeviceId.optional(),
+  micDeviceId: DeviceId.optional(),
   systemAudioEnabled: z.boolean().optional(),
+  cameraEnabled: z.boolean().optional(),
+  cameraDeviceId: DeviceId.optional(),
 })
 
 /** Every field main may write: the renderer's plus folders and the shortcut. */
@@ -139,6 +144,8 @@ const PUBLIC_KEYS = [
   'micEnabled',
   'micDeviceId',
   'systemAudioEnabled',
+  'cameraEnabled',
+  'cameraDeviceId',
 ] as const satisfies readonly (keyof AppSettings)[]
 
 /** Only the known fields go to the renderer. */

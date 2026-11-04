@@ -15,6 +15,8 @@ export type {
   RecoveryOutcome,
 } from './home/InterruptedRecordings.tsx'
 export { AudioSources } from './home/AudioSources.tsx'
+export { CameraSource } from './home/CameraSource.tsx'
+export type { CameraOption, CameraSourceProps, CameraStatus } from './home/CameraSource.tsx'
 export type {
   AudioLevelsView,
   AudioSourcesProps,
