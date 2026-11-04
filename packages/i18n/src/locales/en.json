@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "Hit record. Click. Stop. It's already edited."
+  },
+  "common": {
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "close": "Close",
+    "showInFolder": "Show in folder"
+  },
+  "project": {
+    "defaultName": "Recording {date}",
+    "count": "{count, plural, =0 {No projects yet} one {# project} other {# projects}}"
+  }
+}

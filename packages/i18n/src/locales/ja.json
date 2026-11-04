@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "録画して、クリックして、止めるだけ。もう編集済み。"
+  },
+  "common": {
+    "cancel": "キャンセル",
+    "retry": "もう一度試す",
+    "close": "閉じる",
+    "showInFolder": "フォルダで表示"
+  },
+  "project": {
+    "defaultName": "録画 {date}",
+    "count": "{count, plural, =0 {プロジェクトはまだありません} other {# 件のプロジェクト}}"
+  }
+}

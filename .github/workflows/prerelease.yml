@@ -1,0 +1,37 @@
+name: Prerelease
+
+# 0.0.x-next prereleases on every merge to main: kamo-site uses these packages from phase 0.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.repository == 'dssiqueira/kamo'
+    strategy:
+      matrix:
+        package: [design-tokens]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - name: Publish @kamo/${{ matrix.package }}@next
+        working-directory: packages/${{ matrix.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "NPM_TOKEN not set; skipping."; exit 0; fi
+          pnpm build
+          npm pkg set version="0.0.${{ github.run_number }}-next"
+          pnpm publish --tag next --access public --no-git-checks --provenance

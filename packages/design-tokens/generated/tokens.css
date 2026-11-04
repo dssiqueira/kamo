@@ -1,0 +1,131 @@
+/* Generated from DESIGN.md by `pnpm --filter design-tokens build`. Do not edit. */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+  --kamo-color-background: #FAF7F2;
+  --kamo-color-surface: #FFFFFF;
+  --kamo-color-surface-raised: #F3EFE8;
+  --kamo-color-border: #E6E0D6;
+  --kamo-color-on-surface: #2B2A26;
+  --kamo-color-on-surface-muted: #6F6A61;
+  --kamo-color-primary: #A8D5A2;
+  --kamo-color-on-primary: #1F3A1C;
+  --kamo-color-primary-strong: #3F7539;
+  --kamo-color-primary-container: #E3F1E0;
+  --kamo-color-secondary: #F6B8CC;
+  --kamo-color-on-secondary: #4A1A2A;
+  --kamo-color-tertiary: #3E8C84;
+  --kamo-color-tertiary-strong: #2F6F68;
+  --kamo-color-tertiary-container: #CDE8E4;
+  --kamo-color-recording: #E0604F;
+  --kamo-color-success: #3F7539;
+  --kamo-color-warning: #875810;
+  --kamo-color-error: #B9412F;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --kamo-color-background: #1A1D1B;
+  --kamo-color-surface: #222624;
+  --kamo-color-surface-raised: #2A2F2C;
+  --kamo-color-border: #353B37;
+  --kamo-color-on-surface: #ECEAE4;
+  --kamo-color-on-surface-muted: #A3A69F;
+  --kamo-color-primary: #A8D5A2;
+  --kamo-color-on-primary: #1F3A1C;
+  --kamo-color-primary-strong: #A8D5A2;
+  --kamo-color-primary-container: #2F3D2D;
+  --kamo-color-secondary: #F2B5C8;
+  --kamo-color-on-secondary: #4A1A2A;
+  --kamo-color-tertiary: #A9D8D3;
+  --kamo-color-tertiary-strong: #A9D8D3;
+  --kamo-color-tertiary-container: #2E3B39;
+  --kamo-color-recording: #F08A7E;
+  --kamo-color-success: #A8D5A2;
+  --kamo-color-warning: #E8C07A;
+  --kamo-color-error: #F08A7E;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='system'] {
+    color-scheme: dark;
+    --kamo-color-background: #1A1D1B;
+    --kamo-color-surface: #222624;
+    --kamo-color-surface-raised: #2A2F2C;
+    --kamo-color-border: #353B37;
+    --kamo-color-on-surface: #ECEAE4;
+    --kamo-color-on-surface-muted: #A3A69F;
+    --kamo-color-primary: #A8D5A2;
+    --kamo-color-on-primary: #1F3A1C;
+    --kamo-color-primary-strong: #A8D5A2;
+    --kamo-color-primary-container: #2F3D2D;
+    --kamo-color-secondary: #F2B5C8;
+    --kamo-color-on-secondary: #4A1A2A;
+    --kamo-color-tertiary: #A9D8D3;
+    --kamo-color-tertiary-strong: #A9D8D3;
+    --kamo-color-tertiary-container: #2E3B39;
+    --kamo-color-recording: #F08A7E;
+    --kamo-color-success: #A8D5A2;
+    --kamo-color-warning: #E8C07A;
+    --kamo-color-error: #F08A7E;
+  }
+}
+
+:root {
+  --kamo-font-cjk: sans-serif;
+  --kamo-radius-sm: 6px;
+  --kamo-radius-md: 10px;
+  --kamo-radius-lg: 16px;
+  --kamo-radius-full: 9999px;
+  --kamo-space-xs: 4px;
+  --kamo-space-sm: 8px;
+  --kamo-space-md: 16px;
+  --kamo-space-lg: 24px;
+  --kamo-space-xl: 32px;
+  --kamo-space-2xl: 48px;
+  --kamo-font-display: "Instrument Serif", serif;
+  --kamo-text-display-size: 64px;
+  --kamo-text-display-weight: 400;
+  --kamo-text-display-line-height: 1.05;
+  --kamo-text-display-letter-spacing: -0.02em;
+  --kamo-font-headline: "Instrument Serif", serif;
+  --kamo-text-headline-size: 32px;
+  --kamo-text-headline-weight: 400;
+  --kamo-text-headline-line-height: 1.15;
+  --kamo-font-title: "Inter", sans-serif;
+  --kamo-text-title-size: 16px;
+  --kamo-text-title-weight: 600;
+  --kamo-text-title-line-height: 1.4;
+  --kamo-font-body: "Inter", sans-serif;
+  --kamo-text-body-size: 14px;
+  --kamo-text-body-weight: 400;
+  --kamo-text-body-line-height: 1.5;
+  --kamo-font-label: "Inter", sans-serif;
+  --kamo-text-label-size: 12px;
+  --kamo-text-label-weight: 500;
+  --kamo-text-label-line-height: 1.3;
+  --kamo-text-label-letter-spacing: 0.02em;
+  --kamo-font-timecode: "JetBrains Mono", monospace;
+  --kamo-text-timecode-size: 13px;
+  --kamo-text-timecode-weight: 500;
+  --kamo-text-timecode-line-height: 1.2;
+}
+
+:lang(zh-CN) {
+  --kamo-font-cjk: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC";
+}
+
+:lang(ja) {
+  --kamo-font-cjk: "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP";
+}
+
+:lang(ko) {
+  --kamo-font-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans CJK KR";
+}
+
+:root,
+[lang] {
+  --kamo-font-ui: "Inter", var(--kamo-font-cjk), sans-serif;
+}
+

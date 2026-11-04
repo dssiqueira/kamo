@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "Dale a grabar. Haz clic. Detén. Ya está editado."
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "retry": "Intentar de nuevo",
+    "close": "Cerrar",
+    "showInFolder": "Mostrar en la carpeta"
+  },
+  "project": {
+    "defaultName": "Grabación {date}",
+    "count": "{count, plural, =0 {Aún no hay proyectos} one {# proyecto} other {# proyectos}}"
+  }
+}

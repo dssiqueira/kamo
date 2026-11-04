@@ -1,0 +1,126 @@
+# integrations.md
+
+## Authentication
+- **The app works without an account.** Login only appears when the user chooses to use Kamo Cloud.
+- **Supabase Auth**, with email magic link and Google.
+- **Desktop:** the "Sign in" button opens the browser on the Kamo Cloud web app; after login, the session returns to the app via deep link (`kamo://auth`). The app never sees the password.
+- **Extension:** Google via `chrome.identity.launchWebAuthFlow` (`identity` permission, redirect `https://<extension-id>.chromiumapp.org/`); email via a **6-digit code** (Supabase OTP) typed in the extension itself. The magic link doesn't work here: it would open in a regular tab, outside the flow, and the session wouldn't return to the extension.
+- **Where the session is stored:** system keychain on desktop and `chrome.storage.local` in the extension.
+
+## Kamo Cloud API (contract used by the app)
+The server lives in the private repository `kamo-cloud`; the app and the extension only talk to it through this contract, implemented in `packages/cloud-client` (public, typed):
+- `auth`: sign in, sign out, refresh session (Supabase Auth; deep link on desktop, `launchWebAuthFlow` and email code in the extension)
+- `uploads.create(projectMeta, files: { video, thumbnail, frames[] }) → { videoId, shortId, uploadId, partUrls[], thumbnailUrl, frameUrls[] }` and `uploads.complete(...)`; checks plan limits before returning the URLs
+- `videos.get / replace / setVisibility` (what the app needs to show the link and "replace video")
+- `transcripts.put(videoId, transcript, { searchable, showInPlayer }) / transcripts.delete(videoId)` (v0.5)
+- `playlists.list / addVideo(playlistId, videoId)` (the "Add to a playlist" button after upload)
+- `account.get` (plan, space used, language), for Settings
+- Errors with stable codes (`plan_limit`, `unauthorized`, `not_found`, `rate_limited`), translated in the interface by `packages/i18n`
+Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the two repositories.
+
+## Operating system APIs
+| Resource | macOS | Windows |
+|---|---|---|
+| Screen capture | ScreenCaptureKit (≥ 13.3) | Windows Graphics Capture / desktopCapturer |
+| Mouse events | CGEventTap with a **mouse-only** mask, listen-only (check in step 3 whether macOS still requires Input Monitoring; if not, it is removed from onboarding) | `SetWindowsHookEx(WH_MOUSE_LL)`, mouse only |
+| Microphone | AVFoundation | MediaDevices |
+| System audio | ScreenCaptureKit (system audio, macOS 13+; the app itself can be excluded) | WASAPI loopback (via `desktopCapturer` with audio; records the whole system, which is why Kamo stays silent during recording) |
+| Webcam | AVFoundation | MediaDevices |
+| Keychain | Keychain Services | Credential Manager |
+| Login deep link | `kamo://` registered in the app | `kamo://` registered in the app |
+
+## External libraries
+- **i18next + ICU MessageFormat** — text and plurals in all languages, in a single package (`packages/i18n`, published as `@kamo/i18n`) shared by desktop, extension and the Kamo Cloud web app; the site (`kamo-site`) has its own marketing text
+- **WebCodecs + MP4 muxer** (e.g. mediabunny) — MP4 encoding and assembly, inside `core`, the same on desktop and extension (see D-011)
+- **FFmpeg** — desktop only, as plan B if the WebCodecs encoder fails; **not in the installer**, it is the optional "Video compatibility" pack
+- **whisper.cpp** — local transcription (v0.4); binary + model come in the optional transcription pack, never in the installer
+- **@modelcontextprotocol/sdk** — local and cloud MCP servers
+- **@supabase/supabase-js** — only inside `packages/cloud-client`, for login and cloud calls
+- **Multipart upload:** in the app, `fetch` directly to the signed URLs that Kamo Cloud returns
+- **electron-builder** — packaging
+- **electron-updater** — auto-update via GitHub Releases
+- **Our own native module `@kamo/mouse-hook`** — mouse events only. **Do not use `uiohook-napi`**: it installs a keyboard hook along with it, which violates D-003
+
+## Optional packs
+- Published as versioned assets on GitHub Releases (`kamo-pack-transcribe-light-<version>-<os>-<arch>.zip` etc.), with SHA-256 in the release's `packs-manifest.json`
+- The app downloads directly from GitHub, checks the hash and installs into `app-data/packs/`
+- No pack downloads on its own: always from a user click
+- If GitHub ever imposes limits, plan B is to serve the packs from Kamo Cloud storage
+
+## Distribution
+- GitHub Releases: `.dmg` (arm64) and `.exe` (x64), with a budget of **≤ 130MB** (Electron alone already takes up a good part; no model or FFmpeg inside)
+- Extension: **≤ 5MB** (estimate: 1–3MB). Uses the same `core` and the same `ui` as the desktop; what weighs on the desktop is Electron and the native modules, and the extension has neither
+- **Bundles per entry point in the extension:** popup (≤ 150KB, no `core` or editor), recording offscreen (capture, events and thumbnails only), editor (`core` + `ui`, loaded only when the editor tab opens) and service worker (minimal). Language strings loaded on demand, only the language in use
+- **Mac:** signed with a Developer ID Application certificate + notarization from v0.1 (uses the Apple Developer account that already exists; the certificate is created by the Account Holder)
+- **Windows:** unsigned in v0.1. The README and the site explain the SmartScreen "More info → Run anyway". Certificate only if the app gains traction.
+- **Mac App Store:** out (see D-009)
+
+## Chrome extension
+| Resource | API |
+|---|---|
+| Record the tab | `chrome.tabCapture.getMediaStreamId` + `getUserMedia` in an offscreen document (the MV3 service worker doesn't record media) |
+| Record the video | `MediaRecorder` → `screen.webm` (VP9/VP8 video + Opus audio from the tab and the microphone, mixed by `AudioContext` with one track each) in chunks to OPFS; doesn't hold the whole video in memory |
+| Microphone | the permission is requested **beforehand**, on a visible extension page (welcome or on the first click of the microphone toggle), because the offscreen document can't show the prompt; afterwards, the offscreen document uses `getUserMedia` normally |
+| Tab audio | comes along in the `tabCapture` stream; the offscreen document must play that audio back (`AudioContext`), otherwise the tab goes silent for the user during recording |
+| Clicks | content script injected only into the recorded tab, listening only to mouse events |
+| Editor | extension page (`editor.html`) opened in a new tab |
+| Projects | OPFS (`navigator.storage.getDirectory()`) |
+| Settings and cloud session | `chrome.storage.local` |
+| Export download | `chrome.downloads` |
+
+**Manifest permissions:** `tabCapture`, `offscreen`, `storage`, `downloads`, `scripting`, `activeTab`, `identity`, plus the cloud API and R2 domains in `host_permissions` (for upload only). `<all_urls>` only as **`optional_host_permissions`**, requested on the first recording with the explanation "to keep capturing clicks when the page changes site". If the user denies it, click capture works until the tab navigates to another domain (`activeTab` loses access at that point), and the video keeps recording normally. This eases Chrome Web Store review and reinforces privacy.
+
+**Known limits:**
+- Doesn't record internal pages (`chrome://`, the Chrome Web Store itself), nor capture clicks on them
+- Clicks inside cross-origin iframes may not be captured in the MVP
+- If the user switches tabs during recording, the recording continues on the original tab
+- Any element injected into the page shows up in the video (`tabCapture` records what the tab renders). That's why the extension doesn't inject a bar or buttons during recording; the controls live in the popup, the icon and the shortcut
+
+**Publishing:**
+- Chrome Web Store (one-time US$ 5 fee for the developer account)
+- Store privacy form: declare that nothing leaves the browser unless the user sends it to the cloud, and that uploaded videos stay in their account
+- Review can take from days to weeks, so submit with plenty of margin
+- Later: Edge Add-ons, same package
+
+## MCP
+### Local — `apps/mcp` (free, open source)
+- npm package `@kamo/mcp`, **stdio** transport, runs on the user's machine
+- Finds the projects folder in this order: `--dir` argument, the app's `settings.json` (local file), `~/Kamo/projects`; read-only
+- **No network access**: no dependency that makes external calls
+- Frames come from the reference thumbnails in `frames/` (saved by the app): the package stays small, with no decoder, no FFmpeg and no native binary
+- Command for Claude Code (the app shows it pre-filled): `claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`
+- Tested with the MCP Inspector on every release
+
+### Cloud
+The cloud MCP server lives in the private repository `kamo-cloud`. On the user's side, the command is `claude mcp add --transport http kamo https://mcp.<domain>/mcp`.
+
+## Languages
+- **Desktop:** system language (`app.getLocale()`), with manual override
+- **Extension:** browser language; store name and description via `_locales/<language>/messages.json`
+- **Site and LPs:** in the `kamo-site` repository (per-language routes and `hreflang`)
+- **Kamo Cloud web app:** in the `kamo-cloud` repository (profile or browser language)
+- **Cloud emails** (magic link, code, billing): in the language saved in the profile
+- **MCP:** tool names and descriptions in English (it's what agents understand best); returned content (transcripts, titles) stays in the original language
+
+## Environment variables
+```
+# build / CI
+APPLE_ID=
+APPLE_APP_SPECIFIC_PASSWORD=
+APPLE_TEAM_ID=
+CSC_LINK=
+CSC_KEY_PASSWORD=
+GH_TOKEN=
+
+# extension publishing (CI)
+CWS_EXTENSION_ID=
+CWS_CLIENT_ID=
+CWS_CLIENT_SECRET=
+CWS_REFRESH_TOKEN=
+
+# Kamo Cloud — shipped in the app (public)
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+
+```
+Server variables live in the private repository `kamo-cloud`. No secret goes into the app or extension bundle. Only `SUPABASE_URL` and `SUPABASE_ANON_KEY`, which are public by design; security comes from RLS.

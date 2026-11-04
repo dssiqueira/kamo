@@ -1,0 +1,37 @@
+{
+  "name": "@kamo/i18n",
+  "version": "0.0.0",
+  "description": "Kamo interface strings (ICU MessageFormat) and Intl formatters.",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dssiqueira/kamo.git",
+    "directory": "packages/i18n"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "check-keys": "node src/check-keys.cli.ts"
+  },
+  "dependencies": {
+    "i18next": "^26.7.1",
+    "i18next-icu": "^2.6.1",
+    "intl-messageformat": "^12.1.4"
+  }
+}

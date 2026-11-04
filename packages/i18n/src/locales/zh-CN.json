@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "点录制，点几下，停止。视频已经剪好了。"
+  },
+  "common": {
+    "cancel": "取消",
+    "retry": "重试",
+    "close": "关闭",
+    "showInFolder": "在文件夹中显示"
+  },
+  "project": {
+    "defaultName": "录制 {date}",
+    "count": "{count, plural, =0 {还没有项目} other {# 个项目}}"
+  }
+}

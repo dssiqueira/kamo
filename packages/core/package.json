@@ -1,0 +1,30 @@
+{
+  "name": "@kamo/core",
+  "version": "0.0.0",
+  "description": "Kamo engine: project format, auto zoom, virtual camera, smooth cursor, frame rendering and WebCodecs export. Platform-agnostic.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dssiqueira/kamo.git",
+    "directory": "packages/core"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  }
+}

@@ -1,0 +1,55 @@
+/* Generated from DESIGN.md by `pnpm --filter design-tokens build`. Do not edit. */
+@import './tokens.css';
+
+@theme inline {
+  --color-background: var(--kamo-color-background);
+  --color-surface: var(--kamo-color-surface);
+  --color-surface-raised: var(--kamo-color-surface-raised);
+  --color-border: var(--kamo-color-border);
+  --color-on-surface: var(--kamo-color-on-surface);
+  --color-on-surface-muted: var(--kamo-color-on-surface-muted);
+  --color-primary: var(--kamo-color-primary);
+  --color-on-primary: var(--kamo-color-on-primary);
+  --color-primary-strong: var(--kamo-color-primary-strong);
+  --color-primary-container: var(--kamo-color-primary-container);
+  --color-secondary: var(--kamo-color-secondary);
+  --color-on-secondary: var(--kamo-color-on-secondary);
+  --color-tertiary: var(--kamo-color-tertiary);
+  --color-tertiary-strong: var(--kamo-color-tertiary-strong);
+  --color-tertiary-container: var(--kamo-color-tertiary-container);
+  --color-recording: var(--kamo-color-recording);
+  --color-success: var(--kamo-color-success);
+  --color-warning: var(--kamo-color-warning);
+  --color-error: var(--kamo-color-error);
+  --radius-sm: var(--kamo-radius-sm);
+  --radius-md: var(--kamo-radius-md);
+  --radius-lg: var(--kamo-radius-lg);
+  --radius-full: var(--kamo-radius-full);
+  --spacing-xs: var(--kamo-space-xs);
+  --spacing-sm: var(--kamo-space-sm);
+  --spacing-md: var(--kamo-space-md);
+  --spacing-lg: var(--kamo-space-lg);
+  --spacing-xl: var(--kamo-space-xl);
+  --spacing-2xl: var(--kamo-space-2xl);
+  --font-sans: var(--kamo-font-ui);
+  --font-serif: "Instrument Serif", var(--kamo-font-cjk), serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --text-display: var(--kamo-text-display-size);
+  --text-display--line-height: var(--kamo-text-display-line-height);
+  --text-display--font-weight: var(--kamo-text-display-weight);
+  --text-headline: var(--kamo-text-headline-size);
+  --text-headline--line-height: var(--kamo-text-headline-line-height);
+  --text-headline--font-weight: var(--kamo-text-headline-weight);
+  --text-title: var(--kamo-text-title-size);
+  --text-title--line-height: var(--kamo-text-title-line-height);
+  --text-title--font-weight: var(--kamo-text-title-weight);
+  --text-body: var(--kamo-text-body-size);
+  --text-body--line-height: var(--kamo-text-body-line-height);
+  --text-body--font-weight: var(--kamo-text-body-weight);
+  --text-label: var(--kamo-text-label-size);
+  --text-label--line-height: var(--kamo-text-label-line-height);
+  --text-label--font-weight: var(--kamo-text-label-weight);
+  --text-timecode: var(--kamo-text-timecode-size);
+  --text-timecode--line-height: var(--kamo-text-timecode-line-height);
+  --text-timecode--font-weight: var(--kamo-text-timecode-weight);
+}
