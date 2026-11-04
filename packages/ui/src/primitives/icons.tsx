@@ -36,6 +36,14 @@ export function PauseIcon({ size }: { size?: number | undefined }) {
   )
 }
 
+export function StopIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <rect x="4" y="4" width="8" height="8" rx="1.75" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
 export function PencilIcon() {
   return (
     <Icon>

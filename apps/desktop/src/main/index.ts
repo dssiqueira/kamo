@@ -160,6 +160,18 @@ function handle(channel: string, listener: (...args: unknown[]) => unknown): voi
   })
 }
 
+/** A sample clock for the recording-bar visual check; null outside it. */
+function smokeRecordingClock() {
+  if (!isSmokeTest || process.env['KAMO_SMOKE_PAGE'] !== 'recording-bar') return null
+  const paused = process.env['KAMO_SMOKE_PAUSED'] === '1'
+  return {
+    state: paused ? 'paused' : 'recording',
+    elapsedMs: 83_400,
+    at: Date.now(),
+    fps: 30,
+  } as const
+}
+
 /**
  * With KAMO_SMOKE_SCREENSHOT=<file.png>, saves a picture of the app window only (never the
  * user's screen) once data has had time to load, for visual checks.
@@ -169,7 +181,10 @@ async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   // Visual checks: KAMO_SMOKE_PAGE=countdown, or the editor with KAMO_SMOKE_PROJECT=<id>
   // [KAMO_SMOKE_SEEK_MS=<ms>].
   const page = process.env['KAMO_SMOKE_PAGE']
-  if (page === 'countdown' || page === 'onboarding') await loadPage(window, page)
+  // KAMO_SMOKE_PAGE=recording-bar gets a sample clock (KAMO_SMOKE_PAUSED=1 for paused).
+  if (page === 'countdown' || page === 'onboarding' || page === 'recording-bar') {
+    await loadPage(window, page)
+  }
   // KAMO_SMOKE_PAGE=settings captures the Settings window; KAMO_SMOKE_THEME=dark|light
   // overrides the saved theme for this run only (nothing is written to settings.json).
   if (page === 'settings') {
@@ -410,7 +425,7 @@ handle(IpcChannel.countdownDone, () => recording.countdownDone())
 handle(IpcChannel.pauseRecording, () => recording.pause())
 handle(IpcChannel.resumeRecording, () => recording.resume())
 handle(IpcChannel.stopRecording, () => recording.stop())
-handle(IpcChannel.getRecordingClock, () => recording.getClock())
+handle(IpcChannel.getRecordingClock, () => recording.getClock() ?? smokeRecordingClock())
 
 /** Native helper backend (D-023), with project names in the user's language. */
 async function createBackend(): Promise<RecordingBackend> {
