@@ -1,0 +1,7 @@
+{
+  "name": "kamo-sample-project",
+  "private": true,
+  "description": "Dev tool: writes a sample Kamo project. Run with Electron, see README.md.",
+  "type": "module",
+  "main": "main.mjs"
+}
