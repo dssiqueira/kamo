@@ -424,5 +424,32 @@
     "discardConfirm": "この録画をゴミ箱に移動しますか？ゴミ箱から元に戻せます。",
     "unrecoverable": "再生できる部分がないため、この録画は復元できません。",
     "failed": "うまくいきませんでした。もう一度お試しください。"
+  },
+  "menu": {
+    "file": "ファイル",
+    "edit": "編集",
+    "view": "表示",
+    "window": "ウインドウ",
+    "settings": "設定…",
+    "about": "Kamo について",
+    "hide": "Kamo を隠す",
+    "hideOthers": "ほかを隠す",
+    "showAll": "すべてを表示",
+    "close": "ウインドウを閉じる",
+    "undo": "取り消す",
+    "redo": "やり直す",
+    "cut": "カット",
+    "copy": "コピー",
+    "paste": "ペースト",
+    "selectAll": "すべてを選択",
+    "reload": "再読み込み",
+    "devTools": "開発者ツール",
+    "resetZoom": "実際のサイズ",
+    "zoomIn": "拡大",
+    "zoomOut": "縮小",
+    "fullScreen": "フルスクリーン",
+    "minimize": "最小化",
+    "zoom": "ズーム",
+    "front": "すべてを手前に移動"
   }
 }

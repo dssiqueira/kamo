@@ -424,5 +424,32 @@
     "discardConfirm": "Mover esta gravação para a lixeira? Dá para restaurar de lá.",
     "unrecoverable": "Nenhuma parte do vídeo pode ser reproduzida, então não dá para recuperar.",
     "failed": "Não deu certo. Tente de novo."
+  },
+  "menu": {
+    "file": "Arquivo",
+    "edit": "Editar",
+    "view": "Exibir",
+    "window": "Janela",
+    "settings": "Configurações…",
+    "about": "Sobre o Kamo",
+    "hide": "Ocultar o Kamo",
+    "hideOthers": "Ocultar Outros",
+    "showAll": "Mostrar Tudo",
+    "close": "Fechar Janela",
+    "undo": "Desfazer",
+    "redo": "Refazer",
+    "cut": "Recortar",
+    "copy": "Copiar",
+    "paste": "Colar",
+    "selectAll": "Selecionar Tudo",
+    "reload": "Recarregar",
+    "devTools": "Ferramentas do Desenvolvedor",
+    "resetZoom": "Tamanho Real",
+    "zoomIn": "Aumentar Zoom",
+    "zoomOut": "Diminuir Zoom",
+    "fullScreen": "Tela Cheia",
+    "minimize": "Minimizar",
+    "zoom": "Zoom",
+    "front": "Trazer Tudo para a Frente"
   }
 }

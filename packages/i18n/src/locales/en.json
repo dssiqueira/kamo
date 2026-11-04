@@ -424,5 +424,32 @@
     "discardConfirm": "Move this recording to the trash? You can restore it from there.",
     "unrecoverable": "None of the video can be played, so it can't be recovered.",
     "failed": "That didn't work. Try again."
+  },
+  "menu": {
+    "file": "File",
+    "edit": "Edit",
+    "view": "View",
+    "window": "Window",
+    "settings": "Settings…",
+    "about": "About Kamo",
+    "hide": "Hide Kamo",
+    "hideOthers": "Hide Others",
+    "showAll": "Show All",
+    "close": "Close Window",
+    "undo": "Undo",
+    "redo": "Redo",
+    "cut": "Cut",
+    "copy": "Copy",
+    "paste": "Paste",
+    "selectAll": "Select All",
+    "reload": "Reload",
+    "devTools": "Developer Tools",
+    "resetZoom": "Actual Size",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "fullScreen": "Full Screen",
+    "minimize": "Minimize",
+    "zoom": "Zoom",
+    "front": "Bring All to Front"
   }
 }

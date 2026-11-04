@@ -4,6 +4,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  Menu,
   nativeTheme,
   powerMonitor,
   protocol,
@@ -40,6 +41,7 @@ import { runAudioSelfTest } from './audio/self-test.ts'
 import { recordingCamera, setupCamera } from './camera/index.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import type { TrayLabels } from './recording-tray.ts'
+import { appMenuLabels, appMenuTemplate } from './app-menu.ts'
 import { AppTray, trayIconFile, type AppTrayLabels } from './app-tray.ts'
 import {
   closeToTrayEnabled,
@@ -559,6 +561,18 @@ async function createBackend(): Promise<RecordingBackend> {
     noticeBody: i18n.t('tray.notice.body'),
   }
   appTray.refresh()
+  // The app menu follows the UI language too (Electron's default is English only).
+  void app.whenReady().then(() =>
+    Menu.setApplicationMenu(
+      Menu.buildFromTemplate(
+        appMenuTemplate(appMenuLabels(i18n.t.bind(i18n)), {
+          platform: process.platform,
+          dev: isDev,
+          openSettings: () => void preferences.openSettings(),
+        }),
+      ),
+    ),
+  )
   trayLabels = {
     recording: (elapsed) => i18n.t('recording.tray.recording', { elapsed }),
     paused: (elapsed) => i18n.t('recording.tray.paused', { elapsed }),
