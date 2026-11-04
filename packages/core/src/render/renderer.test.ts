@@ -190,6 +190,37 @@ describe('createRenderer', () => {
     expect(off.log.some((c) => c.name === 'backdrop.shadowBlur=')).toBe(false)
   })
 
+  it('paints an image background into the cached backdrop (A-04)', () => {
+    const { log, renderer } = setup()
+    const style: Style = {
+      ...DEFAULT_STYLE,
+      background: { kind: 'image', value: 'background-0123456789abcdef.webp' },
+    }
+    const picture = { picture: 1 } as unknown as ImageSourceLike
+    const image = { source: picture, size: { width: 1000, height: 1000 } }
+    // Before the image is decoded: the fallback only.
+    renderer.render(input({ style }))
+    const drawsOf = (source: ImageSourceLike) =>
+      log.filter((c) => c.name === 'backdrop.drawImage' && c.args[0] === source)
+    expect(drawsOf(picture)).toHaveLength(0)
+    // Decoded: a new backdrop with the image cover-cropped to 16:9, then cached.
+    for (let i = 0; i < 5; i++) renderer.render(input({ style, backgroundImage: image }))
+    expect(backdropBuilds(log)).toBe(2)
+    expect(drawsOf(picture)).toHaveLength(1)
+    expect(drawsOf(picture)[0]?.args).toEqual([picture, 0, 218.75, 1000, 562.5, 0, 0, 1920, 1080])
+    // Another decoded image (a replaced file): rebuilt with the new one.
+    const other = { source: { picture: 2 } as unknown as ImageSourceLike, size: image.size }
+    renderer.render(input({ style, backgroundImage: other }))
+    expect(backdropBuilds(log)).toBe(3)
+  })
+
+  it('ignores a background image when the style is not an image', () => {
+    const { log, renderer } = setup()
+    const picture = { picture: 1 } as unknown as ImageSourceLike
+    renderer.render(input({ backgroundImage: { source: picture, size: { width: 9, height: 9 } } }))
+    expect(log.some((c) => c.name === 'backdrop.drawImage' && c.args[0] === picture)).toBe(false)
+  })
+
   it('paints the wallpaper before the shadow-casting frame', () => {
     const { log, renderer } = setup()
     renderer.render(input())

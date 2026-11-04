@@ -248,7 +248,7 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 - 27 (not started; the Formats sheet shows 4K and 60fps as coming soon, never locked): 60fps recording on Home + 4K/60 export when the source allows
 - 28 ⏳ (2026-11-04: 9:16 in progress; GIF not started): 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
 - 29 ✅ (2026-11-04, built ahead of order: 48517e3, e1c5319, cf42d40, 57f94d0, 0c38467, 7d0fa3c): webcam in a separate file, bubble (4 corners, 3 sizes), shrinks on zoom, hidden per segment; camera requested only here. Also square, 16:9 and 9:16 shapes and free drag. Not yet tried by the user in a full real flow on a Mac
-- 30 (not started): wallpaper with own image copied into the project; record a window and a region (`source.kind`)
+- 30 ⏳ (2026-11-04: wallpaper with own image done on desktop, A-04; window and region not started): wallpaper with own image copied into the project; record a window and a region (`source.kind`)
 
 ---
 

@@ -1,5 +1,6 @@
 import {
   addWebcamHidden,
+  backgroundImageFile,
   createHistory,
   deleteWebcamHidden,
   createZoomAt,
@@ -29,6 +30,12 @@ import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { ExportSheet } from '../export/ExportSheet.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import type { ExportPlatform } from '../export/useExportRun.ts'
+import {
+  loadBackgroundImage,
+  useBackgroundImage,
+  type BackgroundImageErrorCode,
+  type BackgroundImagePlatform,
+} from './background-image.ts'
 import { Preview } from './Preview.tsx'
 import { PreviewDecor } from './PreviewDecor.tsx'
 import { StylePanel } from './StylePanel.tsx'
@@ -46,6 +53,11 @@ export interface EditorProps {
   onBack(): void
   /** Files, media and folders for the export (F-11); without it, Export stays disabled. */
   exportPlatform?: ExportPlatform
+  /**
+   * Wallpaper with your own image (A-04): picks and serves project images. Without it the
+   * "Your image" tile is not shown (an image background still shows if the URL loads).
+   */
+  backgroundImage?: BackgroundImagePlatform | undefined
 }
 
 /** Editor (flows.md §5): preview in the middle, side panel on the right, timeline below. */
@@ -57,6 +69,7 @@ export function Editor({
   onChange,
   onBack,
   exportPlatform,
+  backgroundImage: imagePlatform,
 }: EditorProps) {
   const t = useT()
   const video = useRef<HTMLVideoElement | null>(null)
@@ -86,6 +99,42 @@ export function Editor({
 
   const edit = (next: (p: Project) => Project) => history.push(next(history.present))
   const fromBase = (next: (p: Project) => Project) => history.push(next(history.base))
+
+  // A-04: the image in use, and the last one used, so the tile can bring it back after a
+  // preset was picked. The decoded image goes to the preview and the format previews.
+  const imageFile = backgroundImageFile(project.style.background)
+  const [lastImage, setLastImage] = useState(() => backgroundImageFile(initial.style.background))
+  const shownImage = imageFile ?? lastImage
+  const backgroundImage = useBackgroundImage(
+    imageFile && imagePlatform ? imagePlatform.url(imageFile) : null,
+  )
+  const [picking, setPicking] = useState(false)
+  const [imageError, setImageError] = useState<BackgroundImageErrorCode | null>(null)
+  const applyImage = (file: string) =>
+    edit((p) => ({ ...p, style: { ...p.style, background: { kind: 'image', value: file } } }))
+  const pickImage = async () => {
+    if (!imagePlatform || picking) return
+    setPicking(true)
+    setImageError(null)
+    try {
+      const result = await imagePlatform.pick()
+      if (result.kind === 'error') setImageError(result.code)
+      if (result.kind !== 'picked') return
+      // Only an image the page can decode becomes the background.
+      const ok = await loadBackgroundImage(imagePlatform.url(result.file)).then(
+        () => true,
+        () => false,
+      )
+      if (!ok) {
+        setImageError('unreadable')
+        return
+      }
+      setLastImage(result.file)
+      applyImage(result.file)
+    } finally {
+      setPicking(false)
+    }
+  }
 
   const fps = project.source.fps
   const playback = usePlayback(video, project.trim, fps, (ms) => draw.current?.(ms))
@@ -194,6 +243,7 @@ export function Editor({
               video={video}
               webcamUrl={webcamUrl}
               webcamVideo={webcamVideo}
+              backgroundImage={backgroundImage}
               drawRef={draw}
               onWebcamDragStart={() => history.begin()}
               onWebcamDrag={(placement) =>
@@ -276,7 +326,25 @@ export function Editor({
           cursor={project.cursor}
           autoZoom={autoZoom}
           noClicks={noClicks}
-          onStyle={(style) => edit((p) => ({ ...p, style }))}
+          onStyle={(style) => {
+            setImageError(null)
+            edit((p) => ({ ...p, style }))
+          }}
+          image={
+            imagePlatform
+              ? {
+                  thumbnailUrl: shownImage ? imagePlatform.url(shownImage) : null,
+                  selected: imageFile !== null,
+                  busy: picking,
+                  error: imageError,
+                  onPick: () => void pickImage(),
+                  onSelect: () => {
+                    setImageError(null)
+                    if (shownImage) applyImage(shownImage)
+                  },
+                }
+              : undefined
+          }
           onCursor={(cursor) => edit((p) => ({ ...p, cursor }))}
           onAutoZoom={setAutoZoom}
           onRegenerate={regenerate}
@@ -298,6 +366,7 @@ export function Editor({
           autoZoom={autoZoom}
           video={video.current}
           webcamVideo={webcamUrl ? webcamVideo.current : null}
+          backgroundImage={backgroundImage}
           timeMs={playback.timeMs}
           platform={exportPlatform}
           onClose={() => setExportOpen(false)}

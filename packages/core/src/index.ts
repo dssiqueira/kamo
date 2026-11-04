@@ -3,6 +3,7 @@
 export * from './spring.ts'
 export * from './project/schema.ts'
 export * from './project/project.ts'
+export * from './project/background-image.ts'
 export * from './events/events.ts'
 export * from './platform/store.ts'
 export * from './platform/memory-store.ts'

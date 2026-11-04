@@ -13,6 +13,7 @@
         ├── audio.m4a         # microphone, optional: AAC-LC 48kHz in fragmented MP4, from MediaRecorder (D-024)
         ├── system.m4a        # computer sound, optional, same format (desktop; in the extension, the audio lives inside screen.webm)
         ├── events.jsonl      # raw mouse events
+        ├── background-<hash>.png|jpg|webp  # optional: the user's wallpaper image (A-04), a copy of the picked file (≤ 25 MB, checked by its bytes); images replaced in an earlier session are deleted when the editor opens the project
         ├── frames/           # reference thumbnails every 5s (JPEG, 480px wide, named by video second: 0005.jpg), captured DURING recording, straight from the stream (no decoding afterwards)
         ├── transcript.json   # local transcript (A-05, only with the pack installed)
         └── captions.json     # optional: caption style and adjustments
@@ -80,7 +81,7 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 ### Style
 | Field | Type | Rule |
 |---|---|---|
-| background | `{ kind: preset \| image \| color, value }` | `image` from v0.4 |
+| background | `{ kind: preset \| image \| color, value }` | `preset`: wallpaper id; `color`: `#RRGGBB`; `image` (A-04): `value` is the copy inside the project folder, `background-<hash>.<png\|jpg\|webp>` (16+ hex of the SHA-256 of the bytes). The image is drawn cover-cropped to the whole output in every format. A value that is not such a name, or a missing or unreadable file, paints the neutral fallback color (`#F3EFE8`, also under transparent pixels) |
 | padding | number (%) | 0–20, default 8 |
 | radius | number (px) | default 12 |
 | shadow | boolean | default true |

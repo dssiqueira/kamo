@@ -27,10 +27,12 @@ import {
 } from 'mediabunny'
 import type { MouseEventRecord } from '../events/events.ts'
 import type { SinkFile } from '../platform/sink.ts'
+import { MAX_BACKGROUND_IMAGE_BYTES } from '../project/background-image.ts'
 import type { Aspect, Fps, Project } from '../project/schema.ts'
 import { outputSize, type Resolution } from '../render/layout.ts'
 import { createRenderer, type Renderer } from '../render/renderer.ts'
 import { buildScene, sceneFrame } from '../render/scene.ts'
+import type { BackgroundImage } from '../render/wallpapers.ts'
 import { webcamTimeMs } from '../render/webcam.ts'
 import type { Context2D, Size } from '../render/types.ts'
 import { visibleZooms } from '../zoom/visible.ts'
@@ -80,6 +82,11 @@ export interface ExportVideoOptions {
    * and visible; unreadable → exported without the bubble and a warning
    */
   webcam?: MediaFile | null
+  /**
+   * the background image file (A-04) when the style is `kind: 'image'`; decoded once and
+   * drawn under every frame. Missing or unreadable → the fallback color and a warning
+   */
+  backgroundImage?: MediaFile | null
   /** microphone and computer sound; missing or muted tracks are simply left out */
   audio?: readonly ExportAudioTrack[]
   aspect: Aspect
@@ -134,6 +141,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
   let picker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
   let webcamPicker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
   let sinkError: unknown = null
+  let background: (BackgroundImage & { source: ImageBitmap }) | null = null
 
   const checkAbort = () => {
     if (signal?.aborted) throw new ExportError('aborted', { cause: signal.reason })
@@ -184,6 +192,12 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     const renderer: Renderer = createRenderer(ctx as unknown as Context2D)
     const zooms = visibleZooms(project.zooms, { autoZoom: options.autoZoom ?? true })
     const scene = buildScene({ project, events: options.events, zooms })
+    if (project.style.background.kind === 'image') {
+      background = options.backgroundImage ? await decodeImage(options.backgroundImage) : null
+      if (background) scene.backgroundImage = background
+      else warnings.push('background_unreadable')
+      checkAbort()
+    }
 
     // Muxer → sink. The wrapper keeps the sink's own error (e.g. disk full), which the
     // muxer would otherwise rethrow as a generic failure.
@@ -316,6 +330,33 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     throw toExportError(sinkError ?? error)
   } finally {
     for (const input of inputs) input.dispose()
+    background?.source.close()
+  }
+}
+
+/** Decodes the whole image file once (A-04); null when it cannot be read or decoded. */
+async function decodeImage(
+  file: MediaFile,
+): Promise<(BackgroundImage & { source: ImageBitmap }) | null> {
+  try {
+    const blob =
+      typeof Blob !== 'undefined' && file instanceof Blob
+        ? file
+        : await (async () => {
+            const reader = file as RandomAccessFile
+            const size = await reader.size()
+            if (size > MAX_BACKGROUND_IMAGE_BYTES) return null
+            return new Blob([(await reader.read(0, size)) as Uint8Array<ArrayBuffer>])
+          })()
+    if (!blob || blob.size > MAX_BACKGROUND_IMAGE_BYTES) return null
+    const bitmap = await createImageBitmap(blob)
+    if (!(bitmap.width > 0 && bitmap.height > 0)) {
+      bitmap.close()
+      return null
+    }
+    return { source: bitmap, size: { width: bitmap.width, height: bitmap.height } }
+  } catch {
+    return null
   }
 }
 

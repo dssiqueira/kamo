@@ -139,7 +139,17 @@
       "zooms": "Zooms",
       "autoZoom": "Auto-zoom",
       "regenerate": "Regenerate zooms",
-      "noClicks": "No clicks, nothing to zoom."
+      "noClicks": "No clicks, nothing to zoom.",
+      "image": "Your image",
+      "imageAdd": "Add your own image",
+      "imageReplace": "Replace image…",
+      "imagePickTitle": "Choose a background image",
+      "imageFilter": "Images (PNG, JPG, WebP)",
+      "imageErrors": {
+        "unsupported": "That file is not a PNG, JPG or WebP image.",
+        "tooBig": "That image is too big. Pick one up to 25 MB.",
+        "unreadable": "That image could not be read. Try another one."
+      }
     },
     "webcam": {
       "title": "Webcam",
@@ -406,7 +416,8 @@
       "software_encoder": "This computer has no hardware video encoder, so the export used the slower software one.",
       "audio_unreadable": "A sound track could not be read, so it was left out.",
       "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound.",
-      "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble."
+      "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble.",
+      "background_unreadable": "The background image could not be read, so the video uses a plain background."
     },
     "closeDialog": {
       "title": "Export in progress",

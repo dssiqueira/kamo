@@ -3,17 +3,25 @@
 // need CORS and connect-src). Only the recording files, only inside the projects folder.
 import { open, realpath, stat } from 'node:fs/promises'
 import { isAbsolute, relative } from 'node:path'
+import { isBackgroundImageFile } from '@kamo/core'
 import { resolveInProject } from './storage/paths.ts'
 
-/** What the export reads: the screen and the two audio tracks (data-model.md). */
+/**
+ * What the export reads: the screen, the two audio tracks, the webcam and the background
+ * image copied into the project (A-04, `background-<hash>.<ext>`) (data-model.md).
+ */
 export const EXPORT_MEDIA_FILES = ['screen.mp4', 'audio.m4a', 'system.m4a', 'webcam.mp4'] as const
-export type ExportMediaFile = (typeof EXPORT_MEDIA_FILES)[number]
+export type ExportMediaFile =
+  (typeof EXPORT_MEDIA_FILES)[number] | `background-${string}.${'png' | 'jpg' | 'webp'}`
 
 /** Biggest single read; mediabunny asks for far less. */
 export const MAX_MEDIA_READ_BYTES = 64 * 2 ** 20
 
 export function isExportMediaFile(name: unknown): name is ExportMediaFile {
-  return typeof name === 'string' && (EXPORT_MEDIA_FILES as readonly string[]).includes(name)
+  return (
+    typeof name === 'string' &&
+    ((EXPORT_MEDIA_FILES as readonly string[]).includes(name) || isBackgroundImageFile(name))
+  )
 }
 
 /** Extra project-relative names a caller allows (the smoke test reads its own exports). */

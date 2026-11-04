@@ -2,8 +2,8 @@
 // editor preview and by the export (rule 11). Drawing stays thin: the math lives in
 // layout.ts, wallpapers.ts and ripple.ts.
 //
-// Per frame: backdrop (cached) → frame clipped to a rounded rect → source crop → ripple →
-// cursor → webcam (A-03: the bubble, an overlay outside the frame clip, or the split
+// Per frame: backdrop (cached: wallpaper, color or the user's image, A-04) → frame clipped
+// to a rounded rect → source crop → ripple → cursor → webcam (A-03: the bubble, an overlay outside the frame clip, or the split
 // layout's camera card). The backdrop (wallpaper + frame shadow) only changes with the
 // style, the output size or the frame box, so it is painted once into an offscreen canvas
 // and then costs one drawImage per frame.
@@ -18,7 +18,7 @@ import {
 } from './layout.ts'
 import { rippleLook } from './ripple.ts'
 import type { Box, Context2D, ImageSourceLike, Point, Size } from './types.ts'
-import { drawWallpaper } from './wallpapers.ts'
+import { drawWallpaper, type BackgroundImage } from './wallpapers.ts'
 import { WEBCAM_RING, WEBCAM_SHADOW, webcamCoverCrop, type WebcamBubble } from './webcam.ts'
 
 /** Video shadow at 1080p (it is content, not UI chrome, so it is bigger than DESIGN's). */
@@ -55,6 +55,12 @@ export interface RenderInput {
   cursorSize: number
   /** the webcam bubble (A-03); null/missing = none */
   webcam?: WebcamLayer | null
+  /**
+   * the decoded picture of an image background (A-04); missing while it loads or when it
+   * could not be read: the fallback color shows. Pass the same object every frame: the
+   * backdrop is cached per image object.
+   */
+  backgroundImage?: BackgroundImage | null
 }
 
 /** One webcam frame and where it goes: a bubble (webcamBubbleAt) or a split card. */
@@ -97,9 +103,21 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
   let backdrop: Surface | null = null
   let backdropSize: Size | null = null
   let backdropKey: string | null = null
+  // Each image object gets a number for the cache key (a new image, a new backdrop).
+  const imageIds = new WeakMap<object, number>()
+  let nextImageId = 1
+  const imageId = (image: BackgroundImage | null | undefined): number => {
+    if (!image || typeof image.source !== 'object') return 0
+    let id = imageIds.get(image.source)
+    if (id === undefined) {
+      id = nextImageId++
+      imageIds.set(image.source, id)
+    }
+    return id
+  }
 
-  function backdropFor(style: Style, layout: Layout): Surface {
-    const key = backdropCacheKey(style, layout)
+  function backdropFor(style: Style, layout: Layout, image: BackgroundImage | null): Surface {
+    const key = backdropCacheKey(style, layout, imageId(image))
     if (backdrop && backdropKey === key) return backdrop
     const { output } = layout
     if (
@@ -111,7 +129,7 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
       backdrop = createSurface(output)
       backdropSize = { width: output.width, height: output.height }
     }
-    paintBackdrop(backdrop.ctx, style, layout)
+    paintBackdrop(backdrop.ctx, style, layout, image)
     backdropKey = key
     return backdrop
   }
@@ -128,7 +146,8 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         focus: input.focus ?? null,
         keep: input.keep ?? null,
       })
-      ctx.drawImage(backdropFor(input.style, layout).canvas, 0, 0)
+      const image = input.style.background.kind === 'image' ? (input.backgroundImage ?? null) : null
+      ctx.drawImage(backdropFor(input.style, layout, image).canvas, 0, 0)
 
       const { frame, crop } = layout
       ctx.save()
@@ -168,11 +187,16 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
   }
 }
 
-/** Everything the backdrop depends on. Same key → the cached backdrop is reused. */
-export function backdropCacheKey(style: Style, layout: Layout): string {
+/**
+ * Everything the backdrop depends on. Same key → the cached backdrop is reused. `imageId`
+ * names the background image object drawn (0 = none): the image is decoded asynchronously,
+ * so the same style first paints without it and then with it.
+ */
+export function backdropCacheKey(style: Style, layout: Layout, imageId = 0): string {
   return JSON.stringify([
     style.background.kind,
     style.background.value,
+    imageId,
     style.shadow,
     layout.output.width,
     layout.output.height,
@@ -185,11 +209,16 @@ export function backdropCacheKey(style: Style, layout: Layout): string {
 }
 
 /** Wallpaper + (optional) soft shadow under where the frame will be. */
-function paintBackdrop(ctx: Context2D, style: Style, layout: Layout): void {
+function paintBackdrop(
+  ctx: Context2D,
+  style: Style,
+  layout: Layout,
+  image: BackgroundImage | null,
+): void {
   const { output, frame, radius } = layout
   ctx.save()
   ctx.clearRect(0, 0, output.width, output.height)
-  drawWallpaper(ctx, style.background, output)
+  drawWallpaper(ctx, style.background, output, image)
   if (style.shadow) {
     const k = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
     ctx.shadowColor = FRAME_SHADOW.color

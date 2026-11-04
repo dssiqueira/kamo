@@ -10,6 +10,7 @@ import { paddedArea } from './layout.ts'
 import type { RenderInput } from './renderer.ts'
 import { isSplitLayout, splitRegions } from './split.ts'
 import type { ImageSourceLike, Point, Size } from './types.ts'
+import type { BackgroundImage } from './wallpapers.ts'
 import { webcamBubbleAt, webcamVisibility } from './webcam.ts'
 
 export interface Scene {
@@ -19,6 +20,11 @@ export interface Scene {
   cursor: CursorTrack
   /** webcam bubble settings (A-03); null = no bubble */
   webcam: WebcamSettings | null
+  /**
+   * the decoded picture of an image background (A-04), when the style has one and the app
+   * has decoded it; missing = the fallback color. Keep the same object for every frame.
+   */
+  backgroundImage?: BackgroundImage | null
 }
 
 /** The webcam frame on screen at this instant (picked with webcamTimeMs) and its size. */
@@ -82,6 +88,7 @@ export function sceneFrame(
     cursor,
     cursorSize: scene.cursor.size,
     webcam: null,
+    backgroundImage: scene.backgroundImage ?? null,
   }
   const keep: Point | null =
     aspect !== '16:9' && scene.cursor.rawT.length > 0 ? { x: cursor.x, y: cursor.y } : null

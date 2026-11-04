@@ -58,6 +58,12 @@ export interface KamoApi {
   loadEvents(projectId: string): Promise<string>
   /** Back from the editor to Home. */
   openHome(): Promise<void>
+  /**
+   * A-04: native picker for PNG, JPEG or WebP; the image is copied into the project and its
+   * project-relative name returned (`background-<hash>.<ext>`), or null when cancelled.
+   * Rejects with `image_unsupported`, `image_too_big` or `image_unreadable`.
+   */
+  pickBackgroundImage(projectId: string): Promise<string | null>
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
   onProjectsChanged(listener: () => void): () => void
 
@@ -285,8 +291,13 @@ export type UpdateStatus =
  * Main rejects IPC calls with `Error('kamo-error:<code>')`; Electron wraps the message, so
  * the renderer finds the code with `ipcErrorCode`.
  */
-/** Raw files the export reads (data-model.md). */
-export type ExportMediaName = 'screen.mp4' | 'audio.m4a' | 'system.m4a' | 'webcam.mp4'
+/** Raw files the export reads (data-model.md), including the background image (A-04). */
+export type ExportMediaName =
+  | 'screen.mp4'
+  | 'audio.m4a'
+  | 'system.m4a'
+  | 'webcam.mp4'
+  | `background-${string}.${'png' | 'jpg' | 'webp'}`
 
 export const IPC_ERROR_PREFIX = 'kamo-error:'
 
@@ -355,6 +366,7 @@ export const IpcChannel = {
   openEditor: 'kamo:editor-open',
   loadEvents: 'kamo:project-events',
   openHome: 'kamo:home-open',
+  pickBackgroundImage: 'kamo:background-image-pick',
   projectsChanged: 'kamo:projects-changed',
   listInterruptedRecordings: 'kamo:interrupted-list',
   recoverRecording: 'kamo:interrupted-recover',

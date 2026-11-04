@@ -481,9 +481,9 @@
 - [x] The bubble can be hidden in specific stretches via the timeline
 
 ## A-04 — Wallpaper with your own image
-- [ ] Accepts PNG, JPG and WebP
-- [ ] Image copied to the project folder (the project keeps working if the original is deleted)
-- [ ] Automatic crop to cover the frame in any format (16:9, 1:1, 9:16)
+- [x] Accepts PNG, JPG and WebP (checked by the file's bytes, up to 25 MB; anything else shows a message in the panel). Desktop; the extension does not offer it yet
+- [x] Image copied to the project folder (the project keeps working if the original is deleted): `background-<hash>.<ext>`, see data-model.md
+- [x] Automatic crop to cover the frame in any format (16:9, 1:1, 9:16), the same in the preview, the format previews and the export
 
 ## A-08 — Record a window or a region
 - [ ] On the Home, besides "Full screen": **Window** (list of open windows, with thumbnail) and **Region** (drag a rectangle)

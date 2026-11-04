@@ -31,6 +31,11 @@ export type { RecordingBarProps, RecordingClock } from './recording/RecordingBar
 export { useSpring } from './motion/useSpring.ts'
 export { Editor } from './editor/Editor.tsx'
 export type { EditorProps } from './editor/Editor.tsx'
+export type {
+  BackgroundImageErrorCode,
+  BackgroundImagePick,
+  BackgroundImagePlatform,
+} from './editor/background-image.ts'
 export { EditorStatus } from './editor/EditorStatus.tsx'
 export type { EditorStatusProps } from './editor/EditorStatus.tsx'
 export * from './timeline/index.ts'

@@ -56,6 +56,8 @@ const api: KamoApi = {
   openEditor: (projectId) => invoke(IpcChannel.openEditor, projectId) as Promise<void>,
   loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
+  pickBackgroundImage: (projectId) =>
+    invoke(IpcChannel.pickBackgroundImage, projectId) as Promise<string | null>,
   onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
   listInterruptedRecordings: () =>
     invoke(IpcChannel.listInterruptedRecordings) as Promise<InterruptedRecording[]>,

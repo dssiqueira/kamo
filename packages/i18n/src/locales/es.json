@@ -139,7 +139,17 @@
       "zooms": "Zooms",
       "autoZoom": "Zoom automático",
       "regenerate": "Regenerar zooms",
-      "noClicks": "Sin clics, nada que ampliar."
+      "noClicks": "Sin clics, nada que ampliar.",
+      "image": "Tu imagen",
+      "imageAdd": "Añadir tu propia imagen",
+      "imageReplace": "Cambiar imagen…",
+      "imagePickTitle": "Elige una imagen de fondo",
+      "imageFilter": "Imágenes (PNG, JPG, WebP)",
+      "imageErrors": {
+        "unsupported": "Ese archivo no es una imagen PNG, JPG o WebP.",
+        "tooBig": "Esa imagen es demasiado grande. Elige una de hasta 25 MB.",
+        "unreadable": "No se pudo leer esa imagen. Prueba con otra."
+      }
     },
     "webcam": {
       "title": "Cámara web",
@@ -406,7 +416,8 @@
       "software_encoder": "Este ordenador no tiene codificador de video por hardware, así que la exportación usó el de software, más lento.",
       "audio_unreadable": "No se pudo leer una pista de sonido, así que quedó fuera.",
       "audio_encoder_unavailable": "Este ordenador no puede codificar sonido AAC, así que el video no tiene sonido.",
-      "webcam_unreadable": "No se pudo leer la grabación de la cámara web, así que el video no tiene la burbuja de la cámara."
+      "webcam_unreadable": "No se pudo leer la grabación de la cámara web, así que el video no tiene la burbuja de la cámara.",
+      "background_unreadable": "No se pudo leer la imagen de fondo, así que el vídeo usa un fondo liso."
     },
     "closeDialog": {
       "title": "Exportación en curso",

@@ -36,6 +36,11 @@ export const Source = z.object({
 export type Source = z.infer<typeof Source>
 
 export const Style = z.object({
+  /**
+   * `preset`: a wallpaper id (wallpapers.ts); `color`: `#RRGGBB`; `image` (A-04): the copy in
+   * the project folder, `background-<hash>.<png|jpg|webp>` (background-image.ts). An image
+   * value that is not such a name, or whose file is gone, paints the neutral fallback color.
+   */
   background: z.object({ kind: z.enum(['preset', 'image', 'color']), value: z.string() }),
   padding: z.number().min(0).max(20),
   radius: nonNegative,

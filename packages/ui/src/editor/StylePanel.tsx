@@ -14,6 +14,8 @@ import {
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
 import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
+import { PlusIcon } from '../timeline/icons.tsx'
+import type { BackgroundImageErrorCode } from './background-image.ts'
 
 export interface StylePanelProps {
   style: Style
@@ -31,6 +33,29 @@ export interface StylePanelProps {
   aspect?: Aspect
   /** picks the split layout (and the 9:16 format, where it shows) */
   onSplitLayout?(): void
+  /** "Your image" tile (A-04); missing when the platform cannot pick images */
+  image?: ImageTileProps | undefined
+}
+
+/** The background image tile (A-04). */
+export interface ImageTileProps {
+  /** the image in use or used last; null = none yet (the tile offers to add one) */
+  thumbnailUrl: string | null
+  /** the background is that image */
+  selected: boolean
+  /** the picker is open or the image is being checked */
+  busy: boolean
+  error: BackgroundImageErrorCode | null
+  /** opens the picker (add or replace) */
+  onPick(): void
+  /** goes back to the last image */
+  onSelect(): void
+}
+
+const IMAGE_ERROR_KEY: Record<BackgroundImageErrorCode, string> = {
+  unsupported: 'editor.panel.imageErrors.unsupported',
+  too_big: 'editor.panel.imageErrors.tooBig',
+  unreadable: 'editor.panel.imageErrors.unreadable',
 }
 
 /** Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam. */
@@ -65,7 +90,24 @@ export function StylePanel(props: StylePanelProps) {
               </button>
             )
           })}
+          {props.image && <ImageTile {...props.image} />}
         </div>
+        {props.image?.thumbnailUrl && (
+          <button
+            type="button"
+            data-testid="background-image-replace"
+            disabled={props.image.busy}
+            onClick={props.image.onPick}
+            className={`self-start rounded-sm text-label text-tertiary-strong hover:underline disabled:opacity-50 ${FOCUS_RING}`}
+          >
+            {t('editor.panel.imageReplace')}
+          </button>
+        )}
+        {props.image?.error && (
+          <p role="alert" data-testid="background-image-error" className="text-label text-error">
+            {t(IMAGE_ERROR_KEY[props.image.error])}
+          </p>
+        )}
         <label className="flex items-center justify-between gap-sm text-body">
           {t('editor.panel.color')}
           <input
@@ -446,6 +488,40 @@ function Slider({ label, value, min, max, step, onChange }: SliderProps) {
         className="accent-tertiary"
       />
     </label>
+  )
+}
+
+/**
+ * "Your image" (A-04): a + tile that opens the picker, or the image itself as a swatch once
+ * there is one (clicking it again while selected picks another).
+ */
+function ImageTile({ thumbnailUrl, selected, busy, onPick, onSelect }: ImageTileProps) {
+  const t = useT()
+  const label = t('editor.panel.image')
+  return (
+    <button
+      type="button"
+      aria-label={thumbnailUrl ? label : t('editor.panel.imageAdd')}
+      aria-pressed={thumbnailUrl ? selected : undefined}
+      aria-busy={busy || undefined}
+      title={thumbnailUrl ? label : t('editor.panel.imageAdd')}
+      data-testid="background-image-tile"
+      disabled={busy}
+      onClick={thumbnailUrl && !selected ? onSelect : onPick}
+      className={`relative flex aspect-square items-center justify-center overflow-hidden rounded-md border-2 bg-surface-raised text-on-surface-muted transition-colors duration-[120ms] hover:text-on-surface disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary ${
+        selected
+          ? 'border-tertiary'
+          : thumbnailUrl
+            ? 'border-border'
+            : 'border-dashed border-border'
+      }`}
+    >
+      {thumbnailUrl ? (
+        <img src={thumbnailUrl} alt="" draggable={false} className="h-full w-full object-cover" />
+      ) : (
+        <PlusIcon />
+      )}
+    </button>
   )
 }
 

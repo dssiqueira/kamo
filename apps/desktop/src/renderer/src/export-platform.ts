@@ -73,6 +73,8 @@ export function desktopExportPlatform(options: DesktopExportOptions): ExportPlat
       mic: options.micEnabled ? projectMedia(projectId, 'audio.m4a') : null,
       system: options.systemEnabled ? projectMedia(projectId, 'system.m4a') : null,
       webcam: options.webcamEnabled ? projectMedia(projectId, 'webcam.mp4') : null,
+      // A-04: main only serves names that look like a project background image.
+      backgroundImage: (file) => projectMedia(projectId, file),
     },
     getFolder: async () => (await window.kamo.getFolders()).exportDir,
     chooseFolder: async () => (await window.kamo.chooseFolder('export'))?.exportDir ?? null,

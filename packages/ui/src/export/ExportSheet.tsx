@@ -2,6 +2,7 @@ import {
   buildScene,
   projectAspect,
   type Aspect,
+  type BackgroundImage,
   type MouseEventRecord,
   type Project,
   type Zoom,
@@ -30,6 +31,8 @@ export interface ExportSheetProps {
   video: HTMLVideoElement | null
   /** the editor's webcam element, parked on the matching frame (A-03) */
   webcamVideo?: HTMLVideoElement | null
+  /** the decoded image of an image background (A-04), drawn in the format previews */
+  backgroundImage?: BackgroundImage | null
   timeMs: number
   platform: ExportPlatform
   onClose(): void
@@ -65,6 +68,7 @@ export function ExportSheet({
   autoZoom,
   video,
   webcamVideo = null,
+  backgroundImage = null,
   timeMs,
   platform,
   onClose,
@@ -85,7 +89,10 @@ export function ExportSheet({
     autoZoom,
     platform,
   })
-  const scene = useMemo(() => buildScene({ project, events, zooms }), [project, events, zooms])
+  const scene = useMemo(
+    () => ({ ...buildScene({ project, events, zooms }), backgroundImage }),
+    [project, events, zooms, backgroundImage],
+  )
   const selected = ASPECTS.filter((aspect) => checked[aspect])
   const exporting = state.phase === 'exporting'
 

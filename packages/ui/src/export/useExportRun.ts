@@ -1,4 +1,11 @@
-import type { Aspect, ExportRecord, FileSink, MouseEventRecord, Project } from '@kamo/core'
+import {
+  backgroundImageFile,
+  type Aspect,
+  type ExportRecord,
+  type FileSink,
+  type MouseEventRecord,
+  type Project,
+} from '@kamo/core'
 import {
   exportErrorCode,
   exportFileName,
@@ -18,6 +25,8 @@ export interface ExportMedia {
   system: MediaFile | null
   /** webcam.mp4 (A-03); null/missing when the project has no webcam */
   webcam?: MediaFile | null
+  /** a background image copied into the project (A-04, `style.background.value`) */
+  backgroundImage?(file: string): MediaFile | null
 }
 
 /** What the app gives the export screen; packages/ui never knows where files go (rule 1). */
@@ -106,6 +115,7 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
       })
     }
 
+    const imageFile = backgroundImageFile(project.style.background)
     for (let index = 0; index < current.length; index++) {
       const job = current[index] as ExportJob
       if (job.status === 'done') continue
@@ -127,6 +137,7 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
           events,
           video: platform.media.video,
           webcam: project.webcam ? (platform.media.webcam ?? null) : null,
+          backgroundImage: imageFile ? (platform.media.backgroundImage?.(imageFile) ?? null) : null,
           audio,
           aspect: job.aspect,
           resolution: EXPORT_RESOLUTION,

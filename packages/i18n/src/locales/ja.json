@@ -139,7 +139,17 @@
       "zooms": "ズーム",
       "autoZoom": "自動ズーム",
       "regenerate": "ズームを再生成",
-      "noClicks": "クリックがないので、ズームはありません。"
+      "noClicks": "クリックがないので、ズームはありません。",
+      "image": "自分の画像",
+      "imageAdd": "自分の画像を追加",
+      "imageReplace": "画像を変更…",
+      "imagePickTitle": "背景画像を選択",
+      "imageFilter": "画像（PNG、JPG、WebP）",
+      "imageErrors": {
+        "unsupported": "このファイルは PNG、JPG、WebP の画像ではありません。",
+        "tooBig": "画像が大きすぎます。25 MB までの画像を選んでください。",
+        "unreadable": "この画像を読み込めませんでした。別の画像をお試しください。"
+      }
     },
     "webcam": {
       "title": "Webカメラ",
@@ -406,7 +416,8 @@
       "software_encoder": "このコンピュータにはハードウェアの動画エンコーダーがないため、より遅いソフトウェアのエンコーダーで書き出しました。",
       "audio_unreadable": "読み込めない音声トラックがあったため、除外しました。",
       "audio_encoder_unavailable": "このコンピュータは AAC 音声をエンコードできないため、動画に音声はありません。",
-      "webcam_unreadable": "Webカメラの録画を読み込めなかったため、動画に Webカメラのバブルはありません。"
+      "webcam_unreadable": "Webカメラの録画を読み込めなかったため、動画に Webカメラのバブルはありません。",
+      "background_unreadable": "背景画像を読み込めなかったため、無地の背景で書き出しました。"
     },
     "closeDialog": {
       "title": "書き出し中です",

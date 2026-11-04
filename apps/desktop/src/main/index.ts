@@ -3,6 +3,7 @@ import './app-identity.ts'
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   Menu,
   nativeTheme,
@@ -15,7 +16,13 @@ import {
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
-import { PROJECT_FILES, ProjectError } from '@kamo/core'
+import {
+  DEFAULT_STYLE,
+  PROJECT_FILES,
+  ProjectError,
+  backgroundImageFile,
+  type Style,
+} from '@kamo/core'
 import { createI18n, formatProjectDate } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
 import { resolveHelperPath } from './capture/helper-path.ts'
@@ -62,6 +69,12 @@ import { UnsafePathError, assertProjectId } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
 import { runExportSmoke } from './export-smoke.ts'
+import {
+  BACKGROUND_IMAGE_FILTER_EXTENSIONS,
+  BackgroundImageError,
+  importBackgroundImage,
+  pruneBackgroundImages,
+} from './background-image.ts'
 
 // Must happen before `ready`: a standard, secure scheme that streams (video seeking) and
 // works with fetch, but still obeys the page CSP (src/main/media.ts).
@@ -241,6 +254,7 @@ function ipcErrorCodeOf(error: unknown): string | null {
     error instanceof ProjectActionError ||
     error instanceof SettingsError ||
     error instanceof PreferenceError ||
+    error instanceof BackgroundImageError ||
     error instanceof RecoveryError
   ) {
     return error.code
@@ -435,6 +449,16 @@ handle(IpcChannel.startRecording, (displayId) => {
 // Projects (F-12). Ids and data come from the renderer: the store and the schema check them.
 handle(IpcChannel.listProjects, () => listProjectSummaries(getServices().store))
 handle(IpcChannel.loadProject, (projectId) => loadProjectById(getServices().store, projectId))
+/**
+ * The style new recordings start with (F-08). A background image (A-04) lives in its own
+ * project's folder, so it never carries over: new projects get the default wallpaper.
+ */
+function styleForNewProjects(style: Style): Style {
+  return backgroundImageFile(style.background) === null
+    ? style
+    : { ...style, background: DEFAULT_STYLE.background }
+}
+
 handle(IpcChannel.saveProject, async (data) => {
   const { store, settings } = getServices()
   const { project, previous } = await saveProjectData(store, data)
@@ -443,7 +467,7 @@ handle(IpcChannel.saveProject, async (data) => {
   // Only real changes count, so merely opening an old project does not change the default.
   const update = {
     ...(previous && !isDeepStrictEqual(previous.style, project.style)
-      ? { lastStyle: project.style }
+      ? { lastStyle: styleForNewProjects(project.style) }
       : {}),
     ...(previous && !isDeepStrictEqual(previous.cursor, project.cursor)
       ? { lastCursor: project.cursor }
@@ -482,8 +506,52 @@ handle(IpcChannel.openEditor, async (projectId) => {
     getServices().log.warn('editor.missing')
     return
   }
+  // A-04: background images replaced in an earlier session go; the one in use stays.
+  const { store } = getServices()
+  const current = await loadProjectById(store, projectId)
+    .then((project) => backgroundImageFile(project.style.background))
+    .catch(() => undefined)
+  if (current !== undefined) {
+    await pruneBackgroundImages(store.projectDir(projectId as string), current).catch(
+      (error: unknown) => getServices().log.warn('background.prune.failed', { error }),
+    )
+  }
   await loadPage(mainWindow, 'editor', { project: projectId as string })
 })
+
+// A-04: wallpaper with your own image. The renderer never sees the original path: main shows
+// the dialog, checks the file and copies it into the project.
+handle(IpcChannel.pickBackgroundImage, async (projectId) => {
+  assertProjectId(projectId as string)
+  const { store, log } = getServices()
+  const ids = await store.listProjectIds()
+  if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
+  const source = await chooseBackgroundImage()
+  if (!source) return null
+  const name = await importBackgroundImage(store.projectDir(projectId as string), source)
+  log.info('background.image.imported')
+  return name
+})
+
+/** The picked image's path, or null when cancelled. */
+async function chooseBackgroundImage(): Promise<string | null> {
+  // Dev builds only: KAMO_SMOKE_BACKGROUND_IMAGE=<file> stands in for the native dialog, which
+  // automated checks cannot drive. A packaged app always shows the dialog.
+  const smoke = process.env['KAMO_SMOKE_BACKGROUND_IMAGE']
+  if (smoke && !app.isPackaged) return smoke
+  const i18n = await createI18n(await uiLocale())
+  const options = {
+    title: i18n.t('editor.panel.imagePickTitle'),
+    properties: ['openFile'] as Array<'openFile'>,
+    filters: [
+      { name: i18n.t('editor.panel.imageFilter'), extensions: BACKGROUND_IMAGE_FILTER_EXTENSIONS },
+    ],
+  }
+  const result = mainWindow
+    ? await dialog.showOpenDialog(mainWindow, options)
+    : await dialog.showOpenDialog(options)
+  return result.canceled ? null : (result.filePaths[0] ?? null)
+}
 
 handle(IpcChannel.loadEvents, async (projectId) => {
   assertProjectId(projectId as string)
@@ -505,7 +573,7 @@ handle(IpcChannel.recoverRecording, async (projectId) => {
     defaults: async () => {
       const { lastStyle, lastCursor } = await settings.get()
       return {
-        ...(lastStyle ? { style: lastStyle } : {}),
+        ...(lastStyle ? { style: styleForNewProjects(lastStyle) } : {}),
         ...(lastCursor ? { cursor: lastCursor } : {}),
       }
     },
@@ -589,7 +657,7 @@ async function createBackend(): Promise<RecordingBackend> {
     defaults: async () => {
       const { lastStyle, lastCursor } = await settings.get()
       return {
-        ...(lastStyle ? { style: lastStyle } : {}),
+        ...(lastStyle ? { style: styleForNewProjects(lastStyle) } : {}),
         ...(lastCursor ? { cursor: lastCursor } : {}),
       }
     },

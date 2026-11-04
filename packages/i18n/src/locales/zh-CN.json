@@ -139,7 +139,17 @@
       "zooms": "缩放",
       "autoZoom": "自动缩放",
       "regenerate": "重新生成缩放",
-      "noClicks": "没有点击，无需缩放。"
+      "noClicks": "没有点击，无需缩放。",
+      "image": "你的图片",
+      "imageAdd": "添加自己的图片",
+      "imageReplace": "更换图片…",
+      "imagePickTitle": "选择背景图片",
+      "imageFilter": "图片（PNG、JPG、WebP）",
+      "imageErrors": {
+        "unsupported": "该文件不是 PNG、JPG 或 WebP 图片。",
+        "tooBig": "图片太大。请选择 25 MB 以内的图片。",
+        "unreadable": "无法读取该图片。请换一张试试。"
+      }
     },
     "webcam": {
       "title": "摄像头",
@@ -406,7 +416,8 @@
       "software_encoder": "这台电脑没有硬件视频编码器，因此导出使用了较慢的软件编码器。",
       "audio_unreadable": "有一条音轨无法读取，已被略过。",
       "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。",
-      "webcam_unreadable": "无法读取摄像头录像，因此视频中没有摄像头气泡。"
+      "webcam_unreadable": "无法读取摄像头录像，因此视频中没有摄像头气泡。",
+      "background_unreadable": "无法读取背景图片，因此视频使用纯色背景。"
     },
     "closeDialog": {
       "title": "正在导出",

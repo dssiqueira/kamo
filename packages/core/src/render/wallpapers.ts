@@ -7,7 +7,7 @@
 // Node) and `drawWallpaper` just executes the layers.
 import type { Style } from '../project/schema.ts'
 import { isHexColor, rgba } from './color.ts'
-import type { Context2D, Size } from './types.ts'
+import type { Box, Context2D, ImageSourceLike, Size } from './types.ts'
 
 export interface GradientStop {
   /** 0..1 along the gradient */
@@ -174,7 +174,10 @@ export const WALLPAPERS: readonly WallpaperPreset[] = [
 
 export const DEFAULT_WALLPAPER_ID = 'sage'
 
-/** Neutral backdrop for `kind: 'image'` until custom images arrive (v0.4, A-08). */
+/**
+ * Neutral backdrop for `kind: 'image'` while the image is not there (loading, missing file or
+ * unreadable), and under transparent pixels of a PNG or WebP (A-04).
+ */
 export const IMAGE_FALLBACK_COLOR = '#F3EFE8'
 
 /** Finds a preset by id; unknown ids fall back to the default ('sage'). */
@@ -203,6 +206,29 @@ export type WallpaperLayer =
       r: number
       stops: readonly { offset: number; color: string }[]
     }
+  | {
+      /** the user's image (A-04): `crop` of the image (its pixels) drawn over the whole area */
+      kind: 'image'
+      crop: Box
+    }
+
+/** A decoded background image (A-04) and its size in pixels; the app decodes it. */
+export interface BackgroundImage {
+  /** anything drawImage accepts: HTMLImageElement, ImageBitmap… */
+  source: ImageSourceLike
+  size: Size
+}
+
+/**
+ * Cover crop: the largest centered part of an image of `image` size that has the aspect of
+ * `area`, so the image fills the area with no bars and no distortion, in any format.
+ */
+export function coverCrop(image: Size, area: Size): Box {
+  const aspect = area.width / area.height
+  const width = Math.min(image.width, image.height * aspect)
+  const height = width / aspect
+  return { x: (image.width - width) / 2, y: (image.height - height) / 2, width, height }
+}
 
 /** Fall-off of a blob from its center: a soft, almost gaussian edge. */
 const BLOB_FALLOFF: readonly (readonly [number, number])[] = [
@@ -217,14 +243,25 @@ const BLOB_FALLOFF: readonly (readonly [number, number])[] = [
  * Layers (in `size` pixels) that paint `background`, bottom to top. Pure and deterministic.
  * - preset: linear base + radial blobs; unknown id → 'sage'
  * - color: one solid fill; invalid hex → the image fallback color
- * - image: the neutral fallback (v0.4)
+ * - image: the neutral fallback, then the image cover-cropped to `size` when `imageSize` is
+ *   known (the image arrived); without it only the fallback
  */
-export function wallpaperPlan(background: Style['background'], size: Size): WallpaperLayer[] {
+export function wallpaperPlan(
+  background: Style['background'],
+  size: Size,
+  imageSize?: Size | null,
+): WallpaperLayer[] {
   if (background.kind === 'color') {
     const color = isHexColor(background.value) ? background.value : IMAGE_FALLBACK_COLOR
     return [{ kind: 'solid', color }]
   }
-  if (background.kind === 'image') return [{ kind: 'solid', color: IMAGE_FALLBACK_COLOR }]
+  if (background.kind === 'image') {
+    const layers: WallpaperLayer[] = [{ kind: 'solid', color: IMAGE_FALLBACK_COLOR }]
+    const drawable =
+      imageSize && imageSize.width > 0 && imageSize.height > 0 && size.width > 0 && size.height > 0
+    if (drawable) layers.push({ kind: 'image', crop: coverCrop(imageSize, size) })
+    return layers
+  }
 
   const wallpaper = wallpaperById(background.value)
   const { width: w, height: h } = size
@@ -261,9 +298,35 @@ export function wallpaperPlan(background: Style['background'], size: Size): Wall
   return layers
 }
 
-/** Paints `background` over the whole `size` area of `ctx`. */
-export function drawWallpaper(ctx: Context2D, background: Style['background'], size: Size): void {
-  for (const layer of wallpaperPlan(background, size)) {
+/**
+ * Paints `background` over the whole `size` area of `ctx`. `image` is the decoded picture of
+ * a `kind: 'image'` background; without it the fallback color shows.
+ */
+export function drawWallpaper(
+  ctx: Context2D,
+  background: Style['background'],
+  size: Size,
+  image?: BackgroundImage | null,
+): void {
+  for (const layer of wallpaperPlan(background, size, image?.size)) {
+    if (layer.kind === 'image') {
+      if (!image) continue
+      const { crop } = layer
+      ctx.imageSmoothingEnabled = true
+      ctx.imageSmoothingQuality = 'high'
+      ctx.drawImage(
+        image.source,
+        crop.x,
+        crop.y,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        size.width,
+        size.height,
+      )
+      continue
+    }
     if (layer.kind === 'solid') {
       ctx.fillStyle = layer.color
     } else {

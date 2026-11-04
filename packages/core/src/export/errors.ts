@@ -32,6 +32,8 @@ export type ExportWarning =
   | 'audio_encoder_unavailable'
   /** the webcam recording could not be read; exported without the bubble (A-03) */
   | 'webcam_unreadable'
+  /** the background image file is missing or could not be decoded; exported on the fallback color (A-04) */
+  | 'background_unreadable'
 
 export function exportErrorCode(error: unknown): ExportErrorCode {
   if (error instanceof ExportError) return error.code

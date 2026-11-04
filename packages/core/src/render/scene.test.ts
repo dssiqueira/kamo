@@ -28,6 +28,16 @@ function scene(webcam: Partial<WebcamSettings> | null) {
 }
 
 describe('sceneFrame', () => {
+  it('passes the decoded background image to every frame, in every format (A-04)', () => {
+    const image = { source: {}, size: { width: 800, height: 600 } }
+    const withImage = { ...scene(null), backgroundImage: image }
+    for (const aspect of ['16:9', '1:1', '9:16'] as const) {
+      const frame = sceneFrame(withImage, SOURCE, aspect, outputSize(aspect, '1080p'), 1000)
+      expect(frame.backgroundImage).toBe(image)
+    }
+    expect(sceneFrame(scene(null), SOURCE, '16:9', OUT, 0).backgroundImage).toBeNull()
+  })
+
   it('draws the split cards in 9:16 with a camera frame', () => {
     const frame = sceneFrame(scene({ layout: 'split' }), SOURCE, '9:16', OUT, 1000, CAMERA)
     const regions = splitRegions(OUT, 8, undefined)

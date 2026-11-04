@@ -14,6 +14,7 @@ import {
   webcamBubbleContains,
   webcamPlacementAt,
   webcamVisibility,
+  type BackgroundImage,
   type MouseEventRecord,
   type Project,
   type Renderer,
@@ -42,6 +43,8 @@ export interface PreviewProps {
   webcamUrl?: string | undefined
   /** the hidden webcam element, kept on the screen video's clock */
   webcamVideo: RefObject<HTMLVideoElement | null>
+  /** the decoded image of an image background (A-04); null = the fallback color */
+  backgroundImage?: BackgroundImage | null
   /** Exposes `draw(timeMs)` so playback can redraw exactly on each presented frame. */
   drawRef: RefObject<((timeMs: number) => void) | null>
   /** Dragging the bubble in the preview (A-03): one undo step from start to end. */
@@ -76,6 +79,7 @@ export function Preview({
   video,
   webcamUrl,
   webcamVideo,
+  backgroundImage = null,
   drawRef,
   onWebcamDragStart,
   onWebcamDrag,
@@ -132,6 +136,7 @@ export function Preview({
         camera,
         cursor,
         webcam,
+        backgroundImage,
       }
       const camElement = webcam ? webcamVideo.current : null
       if (webcam && camElement) correctWebcamDrift(element, camElement, webcam)
@@ -139,10 +144,22 @@ export function Preview({
         sceneFrame(scene, element, aspect, output, timeMs, webcamSourceOf(camElement)),
       )
     },
-    [video, webcamVideo, width, height, project.style, aspect, output, camera, cursor, webcam],
+    [
+      video,
+      webcamVideo,
+      width,
+      height,
+      project.style,
+      aspect,
+      output,
+      camera,
+      cursor,
+      webcam,
+      backgroundImage,
+    ],
   )
 
-  // Style, zooms, cursor, webcam or format changed: redraw the current frame right away
+  // Style (or its decoded image), zooms, cursor, webcam or format changed: redraw the current frame right away
   // (F-08). A new format also resizes the canvas, which clears it.
   useEffect(() => {
     drawRef.current = draw

@@ -5,12 +5,40 @@ import {
   type MouseEventRecord,
   type Project,
 } from '@kamo/core'
-import { Editor, EditorStatus } from '@kamo/ui'
+import { Editor, EditorStatus, type BackgroundImagePlatform } from '@kamo/ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { boot } from './boot.tsx'
+import { ipcErrorCode } from '../../shared/api.ts'
 import { desktopExportPlatform } from './export-platform.ts'
 
 const AUTOSAVE_DELAY_MS = 400
+
+const mediaUrl = (projectId: string, file: string) =>
+  `kamo-media://project/${encodeURIComponent(projectId)}/${encodeURIComponent(file)}`
+
+/** A-04: main shows the dialog and copies the image into the project. */
+function desktopBackgroundImage(projectId: string): BackgroundImagePlatform {
+  return {
+    url: (file) => mediaUrl(projectId, file),
+    async pick() {
+      try {
+        const file = await window.kamo.pickBackgroundImage(projectId)
+        return file ? { kind: 'picked', file } : { kind: 'cancelled' }
+      } catch (error) {
+        const code = ipcErrorCode(error)
+        return {
+          kind: 'error',
+          code:
+            code === 'image_unsupported'
+              ? 'unsupported'
+              : code === 'image_too_big'
+                ? 'too_big'
+                : 'unreadable',
+        }
+      }
+    },
+  }
+}
 
 type State =
   | { kind: 'loading' }
@@ -108,6 +136,8 @@ function DesktopEditor({ projectId }: { projectId: string }) {
     [projectId, micEnabled, systemEnabled, webcamEnabled],
   )
 
+  const backgroundImagePlatform = useMemo(() => desktopBackgroundImage(projectId), [projectId])
+
   if (state.kind !== 'ready') {
     return <EditorStatus state={state.kind} onBack={() => void window.kamo.openHome()} />
   }
@@ -123,6 +153,7 @@ function DesktopEditor({ projectId }: { projectId: string }) {
           : undefined
       }
       exportPlatform={exportPlatform}
+      backgroundImage={backgroundImagePlatform}
       onChange={(project) => {
         latest.current = project
         setState({ ...state, project })
