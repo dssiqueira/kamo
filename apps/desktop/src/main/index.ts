@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url'
 import { tokens } from '@kamo/design-tokens'
 import { IpcChannel } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
+import { getServices, startServices } from './services.ts'
 
 // DESIGN.md layout: minimum window 1024×680.
 const MIN_WIDTH = 1024
@@ -123,6 +124,9 @@ void app.whenReady().then(() => {
   session.defaultSession.setPermissionCheckHandler(() => false)
 
   createWindow()
+  void startServices().catch((error: unknown) =>
+    getServices().log.error('app.start.failed', { error }),
+  )
   watchDisplays(() => {
     for (const window of BrowserWindow.getAllWindows()) {
       window.webContents.send(IpcChannel.displaysChanged)
@@ -132,6 +136,13 @@ void app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+
+// Logged for 'Copy diagnostics' (F-17); a broken main process must not keep running.
+process.on('uncaughtException', (error) => {
+  getServices().log.error('main.uncaught', { error })
+  app.exit(1)
+})
+process.on('unhandledRejection', (error) => getServices().log.error('main.unhandled', { error }))
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
