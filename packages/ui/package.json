@@ -7,6 +7,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./gaze": "./src/mascot/gaze.ts",
     "./styles.css": "./src/styles.css"
   },
   "sideEffects": false,

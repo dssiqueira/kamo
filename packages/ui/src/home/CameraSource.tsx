@@ -55,7 +55,10 @@ export function CameraSource(props: CameraSourceProps) {
       </div>
       {enabled && (
         <div className="flex justify-center">
-          <Preview stream={status === 'live' ? stream : null} label={t('home.camera.preview')} />
+          <CameraPreview
+            stream={status === 'live' ? stream : null}
+            label={t('home.camera.preview')}
+          />
         </div>
       )}
       {enabled && cameras.length > 1 && (
@@ -87,8 +90,19 @@ export function CameraSource(props: CameraSourceProps) {
   )
 }
 
-/** Round, like the bubble it becomes in the video. Muted: the camera stream has no audio. */
-function Preview({ stream, label }: { stream: MediaStream | null; label: string }) {
+/**
+ * Round, like the bubble it becomes in the video. Muted: the camera stream has no audio. The
+ * extension popup shows it smaller.
+ */
+export function CameraPreview({
+  stream,
+  label,
+  size = 96,
+}: {
+  stream: MediaStream | null
+  label: string
+  size?: number
+}) {
   const video = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const element = video.current
@@ -97,7 +111,10 @@ function Preview({ stream, label }: { stream: MediaStream | null; label: string 
     if (stream) void element.play().catch(() => {})
   }, [stream])
   return (
-    <div className="size-[96px] overflow-hidden rounded-full bg-surface-raised">
+    <div
+      className="shrink-0 overflow-hidden rounded-full bg-surface-raised"
+      style={{ width: size, height: size }}
+    >
       {stream && (
         <video
           ref={video}

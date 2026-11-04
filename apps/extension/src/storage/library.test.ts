@@ -126,6 +126,25 @@ describe('recoverRecording', () => {
     expect(project.audio.mic).toEqual({ enabled: false, volume: 1 })
   })
 
+  it('brings the webcam back with its offset, when its file has data', async () => {
+    const store = new FakeStore()
+    const webcam = { file: 'webcam.mp4', offsetMs: 35 }
+    await store.writeText(ids.a, RECORDING_MARKER, marker({ webcam }))
+    store.put(ids.a, SCREEN_FILE, new Blob([new Uint8Array(100)]))
+    store.put(ids.a, 'webcam.mp4', new Blob([new Uint8Array(50)]))
+    const project = await recoverRecording(store, ids.a)
+    expect(project.webcam).toMatchObject({ visible: true, offsetMs: 35, hidden: [] })
+
+    await store.writeText(ids.b, RECORDING_MARKER, marker({ webcam }))
+    store.put(ids.b, SCREEN_FILE, new Blob([new Uint8Array(100)]))
+    expect((await recoverRecording(store, ids.b)).webcam).toBeNull()
+
+    // Only the webcam files the recorder writes are trusted.
+    await store.writeText(ids.c, RECORDING_MARKER, marker({ webcam: { ...webcam, file: '../x' } }))
+    store.put(ids.c, SCREEN_FILE, new Blob([new Uint8Array(100)]))
+    expect((await recoverRecording(store, ids.c)).webcam).toBeNull()
+  })
+
   it('refuses a recording with no video or under a second', async () => {
     const store = new FakeStore()
     await store.writeText(ids.a, RECORDING_MARKER, marker())

@@ -1,6 +1,7 @@
 // The extension's manifest.json and _locales/, generated at build time so the version comes
 // from package.json and every text Chrome shows comes from packages/i18n (rule 14).
 import { LOCALES, type Locale, type Messages } from '@kamo/i18n'
+import { TOOLBAR_ICON } from '../src/background/toolbar-frames.ts'
 
 /** Built entry points the manifest points to (see vite.config.ts). */
 export const SERVICE_WORKER = 'service-worker.js'
@@ -10,8 +11,16 @@ export const POPUP = 'popup.html'
  * Permissions of step 12 only (docs/integrations.md lists the full set: `downloads` arrives
  * with export in step 15 and `identity` with the cloud login in step 17). `scripting` +
  * `activeTab` draw the countdown over the tab the user clicked on; no host permission.
+ * `alarms` wakes the service worker about once a minute so the toolbar Kamo blinks or glances.
  */
-export const PERMISSIONS = ['tabCapture', 'offscreen', 'storage', 'activeTab', 'scripting']
+export const PERMISSIONS = [
+  'tabCapture',
+  'offscreen',
+  'storage',
+  'activeTab',
+  'scripting',
+  'alarms',
+]
 
 /** Chrome's `_locales` folder names use an underscore: pt_BR, zh_CN. */
 export function chromeLocale(locale: Locale): string {
@@ -46,7 +55,9 @@ export function buildManifest(version: string): Record<string, unknown> {
     action: {
       default_popup: POPUP,
       default_title: '__MSG_actionTitle__',
-      default_icon: { 16: icons[16], 32: icons[32] },
+      // Kamo's head on its own, which reads at 16px; it blinks now and then (icon.ts). The
+      // store and chrome://extensions keep the framed app icon above.
+      default_icon: TOOLBAR_ICON,
     },
     background: { service_worker: SERVICE_WORKER, type: 'module' },
     permissions: PERMISSIONS,

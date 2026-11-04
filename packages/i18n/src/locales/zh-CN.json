@@ -452,7 +452,9 @@
       "saving": "正在保存…",
       "recent": "最近的录制",
       "noRecent": "你的录制会显示在这里。",
-      "projectMeta": "{duration} · {date}"
+      "projectMeta": "{duration} · {date}",
+      "desktopOnly": "转写和字幕功能在 Kamo 桌面应用中提供。",
+      "getDesktop": "下载应用"
     },
     "microphone": {
       "title": "使用麦克风",
@@ -461,11 +463,22 @@
       "granted": "完成。从工具栏打开 Kamo，然后点击录制。",
       "denied": "Chrome 阻止了麦克风。请在 Chrome 中 Kamo 的网站设置里允许，然后重试。"
     },
+    "camera": {
+      "title": "使用摄像头",
+      "body": "Kamo 在后台录制，而 Chrome 无法在后台请求摄像头权限。在这里允许一次，之后开启摄像头的每次录制都会录下你的画面。",
+      "allow": "允许使用摄像头",
+      "granted": "完成。从工具栏打开 Kamo，然后点击录制。",
+      "denied": "Chrome 阻止了摄像头。请在 Chrome 中 Kamo 的网站设置里允许，然后重试。"
+    },
     "errors": {
       "captureFailed": "Chrome 未允许 Kamo 录制此标签页。请重试。",
       "tabClosed": "标签页已关闭。Kamo 已保存录下的内容。",
       "storageFull": "浏览器空间不足。Kamo 已保存录下的内容。",
       "writeFailed": "Kamo 无法继续写入录制文件，已保存能保存的部分。"
+    },
+    "notices": {
+      "micFallback": "未找到你选择的麦克风，Kamo 已改用默认麦克风。",
+      "cameraFallback": "未找到你选择的摄像头，Kamo 已改用默认摄像头。"
     }
   },
   "menu": {

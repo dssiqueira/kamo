@@ -65,8 +65,9 @@ export type {
   PopupProject,
   PopupTab,
 } from './extension/ExtensionPopup.tsx'
-export { MicrophonePermission } from './extension/MicrophonePermission.tsx'
+export { DevicePermission } from './extension/DevicePermission.tsx'
 export type {
-  MicrophonePermissionProps,
-  MicrophoneStatus,
-} from './extension/MicrophonePermission.tsx'
+  DevicePermissionProps,
+  PermissionDevice,
+  PermissionStatus,
+} from './extension/DevicePermission.tsx'

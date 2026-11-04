@@ -6,9 +6,12 @@
 //               ├─ tab sound ─▶ AudioContext ─▶ speakers  (the tab would go silent otherwise)
 //               └─ video ─▶ <video> ─▶ frames/0005.jpg every 5s
 //   microphone ───────────────▶ MediaRecorder ─▶ audio.webm
+//   camera (optional, A-03) ──▶ MediaRecorder ─▶ webcam.mp4  (webcam.webm without MP4)
 //
 // Files follow docs/data-model.md; project.json is written last, then the marker goes away.
+// The microphone and the camera are extras: when they fail, the tab still records.
 import {
+  DEFAULT_WEBCAM,
   createProject,
   formatEvent,
   saveProject,
@@ -23,6 +26,15 @@ import {
   videoBitrate,
 } from '../shared/capture.ts'
 import { RecordingTimer, frameFileName, nextFrameAt, type ClockSnapshot } from '../shared/clock.ts'
+import {
+  CAMERA_BITRATE,
+  CAMERA_CONSTRAINTS,
+  CAMERA_KEYFRAME_INTERVAL_MS,
+  deviceConstraint,
+  openWithFallback,
+  pickCameraMimeType,
+  webcamFileFor,
+} from '../shared/devices.ts'
 import type { Notice, PrepareRequest } from '../shared/messages.ts'
 import { serializeMarker, type RecordingMarker } from '../storage/marker.ts'
 import type { OpfsProjectStore } from '../storage/opfs-store.ts'
@@ -88,6 +100,45 @@ function waitForFrames(video: HTMLVideoElement, count: number, timeoutMs: number
   })
 }
 
+const MICROPHONE_PROCESSING = {
+  echoCancellation: true,
+  noiseSuppression: true,
+  autoGainControl: true,
+} as const
+
+/** The microphone, the chosen one or the default (with a notice) when it is gone. */
+async function openMicrophone(deviceId: string, notices: Notice[]): Promise<MediaStream | null> {
+  try {
+    const { stream, fellBack } = await openWithFallback(deviceId, (id) =>
+      navigator.mediaDevices.getUserMedia({
+        audio: { ...MICROPHONE_PROCESSING, ...deviceConstraint(id) },
+      }),
+    )
+    if (fellBack) notices.push({ key: 'extension.notices.micFallback', tone: 'warning' })
+    return stream
+  } catch {
+    notices.push({ key: 'recording.audio.micUnavailable', tone: 'warning' })
+    return null
+  }
+}
+
+/** The camera (video only: the microphone is its own file), like `openMicrophone`. */
+async function openCamera(deviceId: string, notices: Notice[]): Promise<MediaStream | null> {
+  try {
+    const { stream, fellBack } = await openWithFallback(deviceId, (id) =>
+      navigator.mediaDevices.getUserMedia({
+        video: { ...CAMERA_CONSTRAINTS, ...deviceConstraint(id) },
+        audio: false,
+      }),
+    )
+    if (fellBack) notices.push({ key: 'extension.notices.cameraFallback', tone: 'warning' })
+    return stream
+  } catch {
+    notices.push({ key: 'recording.camera.unavailable', tone: 'warning' })
+    return null
+  }
+}
+
 function whenStarted(recorder: MediaRecorder): Promise<number> {
   return new Promise((resolve) => {
     recorder.addEventListener('start', () => resolve(performance.now()), { once: true })
@@ -112,6 +163,13 @@ export class TabRecording implements CaptureSession {
   private screenRecorder: MediaRecorder | null = null
   private micRecorder: MediaRecorder | null = null
   private micOffsetMs: number | undefined
+  private cameraRecorder: MediaRecorder | null = null
+  /** `webcam.mp4` (or `.webm`) once the camera records. */
+  private cameraFile: string | null = null
+  private cameraOffsetMs: number | undefined
+  private cameraBytes = 0
+  /** The camera recording can't be kept (write failure): it is left out of the project. */
+  private cameraDropped = false
   private startedAt: Date | null = null
   /** Writes are chained so chunks land in order; a failure stops the recording. */
   private writes: Promise<void> = Promise.resolve()
@@ -126,6 +184,7 @@ export class TabRecording implements CaptureSession {
     private readonly options: TabRecordingOptions,
     private readonly tabStream: MediaStream,
     private readonly micStream: MediaStream | null,
+    private readonly cameraStream: MediaStream | null,
   ) {
     const { request } = options
     this.projectId = request.projectId
@@ -142,8 +201,8 @@ export class TabRecording implements CaptureSession {
   }
 
   /**
-   * Opens the tab stream (and the microphone) during the countdown, like the desktop opens its
-   * devices, so recording can begin the moment the countdown leaves the page.
+   * Opens the tab stream (and the microphone and camera) during the countdown, like the
+   * desktop opens its devices, so recording can begin the moment the countdown leaves the page.
    */
   static async prepare(options: TabRecordingOptions): Promise<TabRecording> {
     const { request } = options
@@ -153,20 +212,19 @@ export class TabRecording implements CaptureSession {
     } catch {
       throw new CaptureError({ key: 'extension.errors.captureFailed', tone: 'error' })
     }
-    let micStream: MediaStream | null = null
     const notices: Notice[] = []
-    if (request.microphone) {
-      try {
-        micStream = await navigator.mediaDevices.getUserMedia({
-          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        })
-      } catch {
-        notices.push({ key: 'recording.audio.micUnavailable', tone: 'warning' })
-      }
-    }
-    const recording = new TabRecording(options, tabStream, micStream)
+    const [micStream, cameraStream] = await Promise.all([
+      request.microphone ? openMicrophone(request.microphoneId, notices) : null,
+      request.camera ? openCamera(request.cameraId, notices) : null,
+    ])
+    const recording = new TabRecording(options, tabStream, micStream, cameraStream)
     recording.notices.push(...notices)
-    await recording.attach()
+    try {
+      await recording.attach()
+    } catch (error) {
+      recording.release()
+      throw error
+    }
     return recording
   }
 
@@ -226,14 +284,26 @@ export class TabRecording implements CaptureSession {
       micStarted = whenStarted(this.micRecorder)
     }
 
+    await this.prepareCamera()
+
     if (this.options.events) {
       await this.writer.open(projectId, EVENTS_FILE)
       await this.options.events.start((event) => this.pendingEvents.push(formatEvent(event)))
     }
 
-    // Same task for both, so the microphone lands within a few ms of the video (≤ 40ms, E-01).
+    // Same task for all, so the microphone lands within a few ms of the video (≤ 40ms, E-01).
+    const screenCalledAt = performance.now()
     this.screenRecorder.start(TIMESLICE_MS)
     this.micRecorder?.start(TIMESLICE_MS)
+    let cameraCalledAt: number | null = null
+    try {
+      if (this.cameraRecorder) {
+        cameraCalledAt = performance.now()
+        this.cameraRecorder.start(TIMESLICE_MS)
+      }
+    } catch {
+      this.dropCamera()
+    }
     this.timer.start()
     const screenAt = await screenStarted
     if (micStarted) {
@@ -242,6 +312,13 @@ export class TabRecording implements CaptureSession {
         (MediaTrackSettings & { latency?: number }) | undefined
       const latencyMs = (settings?.latency ?? 0) * 1000
       this.micOffsetMs = Math.round((await micStarted) - latencyMs - screenAt)
+    }
+    // Same convention for the camera (WebcamSettings.offsetMs, A-03), but from the start()
+    // calls: Chrome's MP4 recorder fires `start` only once its encoder is up (~0.5s later),
+    // yet its file still begins with the first frame after start(). The camera is already
+    // warm (opened during the countdown), so that frame comes within one frame time.
+    if (cameraCalledAt !== null && !this.cameraDropped) {
+      this.cameraOffsetMs = Math.round(cameraCalledAt - screenCalledAt)
     }
 
     await this.writeMarker()
@@ -256,6 +333,7 @@ export class TabRecording implements CaptureSession {
     if (this.timer.paused || this.stopping) return
     this.screenRecorder?.pause()
     this.micRecorder?.pause()
+    if (this.cameraRecorder?.state === 'recording') this.cameraRecorder.pause()
     this.options.events?.pause()
     this.timer.pause()
     this.options.onClock(this.timer.snapshot())
@@ -265,6 +343,7 @@ export class TabRecording implements CaptureSession {
     if (!this.timer.paused || this.stopping) return
     this.screenRecorder?.resume()
     this.micRecorder?.resume()
+    if (this.cameraRecorder?.state === 'paused') this.cameraRecorder.resume()
     this.options.events?.resume()
     this.timer.resume()
     this.options.onClock(this.timer.snapshot())
@@ -298,11 +377,16 @@ export class TabRecording implements CaptureSession {
     this.timer.pause()
     const durationMs = this.timer.elapsedMs()
     await this.options.events?.stop()
-    await Promise.all([whenStopped(this.screenRecorder), whenStopped(this.micRecorder)])
+    await Promise.all([
+      whenStopped(this.screenRecorder),
+      whenStopped(this.micRecorder),
+      whenStopped(this.cameraRecorder),
+    ])
     this.flushEvents()
     await this.writes.catch(() => undefined)
     const { projectId, options } = this
-    for (const path of [SCREEN_FILE, MICROPHONE_FILE, EVENTS_FILE]) {
+    for (const path of [SCREEN_FILE, MICROPHONE_FILE, EVENTS_FILE, this.cameraFile]) {
+      if (path === null) continue
       await this.writer.close(projectId, path).catch(() => undefined)
     }
     this.release()
@@ -329,6 +413,12 @@ export class TabRecording implements CaptureSession {
     if (this.micRecorder && this.micOffsetMs !== undefined) {
       project.audio.mic.offsetMs = this.micOffsetMs
     }
+    if (this.hasCamera()) {
+      project.webcam = { ...structuredClone(DEFAULT_WEBCAM), offsetMs: this.cameraOffsetMs ?? 0 }
+    } else if (this.cameraFile) {
+      // Nothing usable was recorded: the file would only take space.
+      await options.store.removeFile(projectId, this.cameraFile).catch(() => undefined)
+    }
     await saveProject(options.store, project)
     await options.store.removeFile(projectId, RECORDING_MARKER)
     return [{ key: 'recording.saved', tone: 'success' }, ...this.notices]
@@ -337,6 +427,7 @@ export class TabRecording implements CaptureSession {
   private release(): void {
     for (const track of this.tabStream.getTracks()) track.stop()
     for (const track of this.micStream?.getTracks() ?? []) track.stop()
+    for (const track of this.cameraStream?.getTracks() ?? []) track.stop()
     this.video.srcObject = null
     void this.audioContext?.close()
     this.writer.terminate()
@@ -347,20 +438,83 @@ export class TabRecording implements CaptureSession {
       const chunk = event.data
       if (chunk.size === 0) return
       this.writes = this.writes
-        .then(async () => this.writer.write(this.projectId, path, await chunk.arrayBuffer()))
-        .catch((error: unknown) => this.onWriteFailed(error))
+        .then(async () => {
+          const data = await chunk.arrayBuffer()
+          const bytes = data.byteLength
+          await this.writer.write(this.projectId, path, data)
+          if (path === this.cameraFile) this.cameraBytes += bytes
+        })
+        .catch((error: unknown) => this.onWriteFailed(error, path))
       this.tick()
     })
   }
 
-  private onWriteFailed(error: unknown): void {
+  private onWriteFailed(error: unknown, path = ''): void {
     if (this.stopping) return
     const full = error instanceof WriteError && error.code === 'quota'
+    if (!full && path !== '' && path === this.cameraFile) {
+      // The camera never costs the tab recording: drop it, keep recording (A-03).
+      this.dropCamera()
+      return
+    }
     this.notices.push({
       key: full ? 'extension.errors.storageFull' : 'extension.errors.writeFailed',
       tone: 'error',
     })
     void this.finishByItself()
+  }
+
+  /** Sets up the camera recorder (not started yet). Never throws: the camera is optional. */
+  private async prepareCamera(): Promise<void> {
+    const stream = this.cameraStream
+    const mimeType = pickCameraMimeType((type) => MediaRecorder.isTypeSupported(type))
+    if (!stream?.active || !mimeType) {
+      if (stream) this.notices.push({ key: 'recording.camera.unavailable', tone: 'warning' })
+      return
+    }
+    const file = webcamFileFor(mimeType)
+    try {
+      await this.writer.open(this.projectId, file)
+    } catch {
+      this.notices.push({ key: 'recording.camera.failed', tone: 'warning' })
+      return
+    }
+    this.cameraFile = file
+    const recorder = new MediaRecorder(stream, {
+      mimeType,
+      videoBitsPerSecond: CAMERA_BITRATE,
+      // Chrome-only option, missing from the DOM types (see CAMERA_KEYFRAME_INTERVAL_MS).
+      videoKeyFrameIntervalDuration: CAMERA_KEYFRAME_INTERVAL_MS,
+    } as MediaRecorderOptions)
+    this.cameraRecorder = recorder
+    this.pipe(recorder, file)
+    // Unplugged or taken by another app: MediaRecorder ends the file there (A-03 warns).
+    const lost = () => {
+      if (this.stopping || this.cameraDropped) return
+      if (this.notices.some((notice) => notice.key === 'recording.camera.lost')) return
+      this.notices.push({ key: 'recording.camera.lost', tone: 'warning' })
+    }
+    stream.getVideoTracks()[0]?.addEventListener('ended', lost)
+    recorder.addEventListener('error', lost)
+  }
+
+  /** Recorded and kept: the project gets the bubble (A-03). */
+  private hasCamera(): boolean {
+    return (
+      this.cameraFile !== null &&
+      !this.cameraDropped &&
+      this.cameraOffsetMs !== undefined &&
+      this.cameraBytes > 0
+    )
+  }
+
+  private dropCamera(): void {
+    if (this.cameraDropped) return
+    this.cameraDropped = true
+    this.notices.push({ key: 'recording.camera.failed', tone: 'warning' })
+    if (this.cameraRecorder?.state !== 'inactive') this.cameraRecorder?.stop()
+    for (const track of this.cameraStream?.getTracks() ?? []) track.stop()
+    void this.writeMarker().catch(() => undefined)
   }
 
   /** Clock for the badge and popup, thumbnails and the marker heartbeat. */
@@ -420,6 +574,9 @@ export class TabRecording implements CaptureSession {
         system: this.tabStream.getAudioTracks().length > 0,
         ...(this.micOffsetMs === undefined ? {} : { micOffsetMs: this.micOffsetMs }),
       },
+      ...(this.cameraFile && !this.cameraDropped && this.cameraOffsetMs !== undefined
+        ? { webcam: { file: this.cameraFile, offsetMs: this.cameraOffsetMs } }
+        : {}),
     }
     await this.options.store.writeText(this.projectId, RECORDING_MARKER, serializeMarker(marker))
   }

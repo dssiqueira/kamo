@@ -54,8 +54,8 @@ export default defineConfig(({ mode }) => {
           popup: resolve(root, 'popup.html'),
           // Hidden recorder: capture, thumbnails and the project files.
           offscreen: resolve(root, 'offscreen.html'),
-          // Asks for the microphone on a visible page (E-01).
-          microphone: resolve(root, 'microphone.html'),
+          // Asks for the microphone or the camera on a visible page (E-01, A-03).
+          permission: resolve(root, 'permission.html'),
           'service-worker': resolve(root, 'background/service-worker.ts'),
         },
         output: {

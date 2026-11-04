@@ -12,6 +12,13 @@ export const SCREEN_FILE = 'screen.webm'
  */
 export const MICROPHONE_FILE = 'audio.webm'
 
+/** Webcam (A-03): MP4 like the desktop, or WebM in a browser that records no MP4. */
+export const WEBCAM_FILES = ['webcam.mp4', 'webcam.webm'] as const
+
+export function isWebcamFile(name: string): boolean {
+  return (WEBCAM_FILES as readonly string[]).includes(name)
+}
+
 /**
  * Written when a recording starts and removed after project.json is saved, like the
  * desktop's `recording.lock`: a folder with it and no project.json is an interrupted recording.

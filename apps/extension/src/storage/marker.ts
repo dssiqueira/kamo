@@ -13,6 +13,8 @@ export interface RecordingMarker {
   /** Recorded time (pauses excluded) at the last heartbeat. */
   durationMs: number
   audio: { mic: boolean; system: boolean; micOffsetMs?: number }
+  /** The webcam file (`webcam.mp4`, or `webcam.webm` in a browser without MP4) and its offset. */
+  webcam?: { file: string; offsetMs: number }
 }
 
 /**

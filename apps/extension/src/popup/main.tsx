@@ -11,7 +11,15 @@ import {
 } from '@kamo/ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { isRecordableUrl } from '../shared/capture.ts'
+import {
+  CAMERA_CONSTRAINTS,
+  deviceConstraint,
+  deviceOptions,
+  openWithFallback,
+  type DeviceOption,
+} from '../shared/devices.ts'
 import { boot } from '../shared/boot.tsx'
+import { DESKTOP_DOWNLOAD_URL } from '../shared/links.ts'
 import {
   POPUP_PORT,
   STOP_COMMAND,
@@ -21,9 +29,10 @@ import {
 } from '../shared/messages.ts'
 import {
   DEFAULT_PREFERENCES,
+  devicePermission,
   loadPreferences,
-  microphonePermission,
   savePreferences,
+  type MediaDevice,
   type Preferences,
 } from '../shared/preferences.ts'
 import { readLibrary, type InterruptedSummary } from '../storage/library.ts'
@@ -124,12 +133,87 @@ function useStopShortcut(): string | undefined {
   return shortcut
 }
 
+/**
+ * Microphones and cameras for the pickers, refreshed when devices change. Labels need the
+ * permission, which the extension's origin gets once on permission.html.
+ */
+function useDevices(): { microphones: DeviceOption[]; cameras: DeviceOption[] } {
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
+  useEffect(() => {
+    let cancelled = false
+    const refresh = () =>
+      void navigator.mediaDevices
+        .enumerateDevices()
+        .then((all) => !cancelled && setDevices(all))
+        .catch(() => undefined)
+    refresh()
+    navigator.mediaDevices.addEventListener('devicechange', refresh)
+    return () => {
+      cancelled = true
+      navigator.mediaDevices.removeEventListener('devicechange', refresh)
+    }
+  }, [])
+  return useMemo(
+    () => ({
+      microphones: deviceOptions(devices, 'audioinput'),
+      cameras: deviceOptions(devices, 'videoinput'),
+    }),
+    [devices],
+  )
+}
+
+type CameraStatus = 'off' | 'starting' | 'live' | 'unavailable'
+
+/** The popup's round camera preview, open only while the camera toggle is on (A-03). */
+function useCameraPreview(enabled: boolean, cameraId: string) {
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [status, setStatus] = useState<CameraStatus>('off')
+  useEffect(() => {
+    if (!enabled) {
+      setStatus('off')
+      return
+    }
+    let cancelled = false
+    let opened: MediaStream | null = null
+    setStatus('starting')
+    void openWithFallback(cameraId, (id) =>
+      navigator.mediaDevices.getUserMedia({
+        video: { ...CAMERA_CONSTRAINTS, ...deviceConstraint(id) },
+        audio: false,
+      }),
+    ).then(
+      ({ stream: next }) => {
+        if (cancelled) {
+          for (const track of next.getTracks()) track.stop()
+          return
+        }
+        opened = next
+        setStream(next)
+        setStatus('live')
+      },
+      () => !cancelled && setStatus('unavailable'),
+    )
+    return () => {
+      cancelled = true
+      for (const track of opened?.getTracks() ?? []) track.stop()
+      setStream(null)
+    }
+  }, [enabled, cameraId])
+  return { stream, status }
+}
+
 function Popup() {
   const t = useT()
   const state = useBackgroundState()
   const tab = useActiveTab()
   const stopShortcut = useStopShortcut()
   const [preferences, setPreferences] = useState<Preferences>(DEFAULT_PREFERENCES)
+  const devices = useDevices()
+  // The preview is only for choosing: it closes once a recording starts.
+  const preview = useCameraPreview(
+    preferences.camera && (state?.session.phase ?? 'idle') === 'idle',
+    preferences.cameraId,
+  )
   const session = state?.session
   const phase = useMemo<PopupPhase>(
     () => (session ? toPhase(session) : { kind: 'idle' }),
@@ -139,9 +223,16 @@ function Popup() {
 
   useEffect(() => {
     void loadPreferences().then(async (stored) => {
-      // The permission can be revoked in Chrome's settings: the toggle follows it.
-      const micAllowed = (await microphonePermission()) === 'granted'
-      setPreferences({ ...stored, microphone: stored.microphone && micAllowed })
+      // A permission can be revoked in Chrome's settings: the toggles follow it.
+      const [micAllowed, cameraAllowed] = await Promise.all([
+        devicePermission('microphone').then((state) => state === 'granted'),
+        devicePermission('camera').then((state) => state === 'granted'),
+      ])
+      setPreferences({
+        ...stored,
+        microphone: stored.microphone && micAllowed,
+        camera: stored.camera && cameraAllowed,
+      })
     })
   }, [])
 
@@ -156,13 +247,19 @@ function Popup() {
     return () => window.removeEventListener('keydown', onKey)
   }, [phase.kind])
 
-  const setMicrophone = useCallback(async (on: boolean) => {
-    if (on && (await microphonePermission()) !== 'granted') {
+  const setDevice = useCallback(async (device: MediaDevice, on: boolean) => {
+    if (on && (await devicePermission(device)) !== 'granted') {
       // The offscreen recorder can't show Chrome's prompt: ask on a visible page.
-      await chrome.tabs.create({ url: chrome.runtime.getURL('microphone.html') })
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL(`permission.html?device=${device}`),
+      })
       return
     }
-    setPreferences(await savePreferences({ microphone: on }))
+    setPreferences(await savePreferences({ [device]: on }))
+  }, [])
+
+  const choose = useCallback(async (change: Partial<Preferences>) => {
+    setPreferences(await savePreferences(change))
   }, [])
 
   const setTabAudio = useCallback(async (on: boolean) => {
@@ -177,7 +274,10 @@ function Popup() {
       tabId: tab.id,
       options: {
         microphone: preferences.microphone,
+        microphoneId: preferences.microphoneId,
         tabAudio: preferences.tabAudio,
+        camera: preferences.camera,
+        cameraId: preferences.cameraId,
         projectName: t('project.defaultName', { date: formatProjectDate(locale, new Date()) }),
         devicePixelRatio: window.devicePixelRatio,
       },
@@ -214,8 +314,18 @@ function Popup() {
       tab={tab}
       microphone={preferences.microphone}
       tabAudio={preferences.tabAudio}
-      onMicrophoneChange={(on) => void setMicrophone(on)}
+      onMicrophoneChange={(on) => void setDevice('microphone', on)}
       onTabAudioChange={(on) => void setTabAudio(on)}
+      microphones={devices.microphones}
+      microphoneId={preferences.microphoneId}
+      onMicrophoneSelect={(id) => void choose({ microphoneId: id })}
+      camera={preferences.camera}
+      onCameraChange={(on) => void setDevice('camera', on)}
+      cameras={devices.cameras}
+      cameraId={preferences.cameraId}
+      onCameraSelect={(id) => void choose({ cameraId: id })}
+      cameraPreview={preview.stream}
+      cameraStatus={preview.status}
       onRecord={record}
       onCancel={() => void send({ type: 'cancel' })}
       onPause={() => void send({ type: 'pause' })}
@@ -228,6 +338,7 @@ function Popup() {
       interrupted={library.interrupted}
       onRecover={recover}
       onDiscard={discard}
+      desktopAppUrl={DESKTOP_DOWNLOAD_URL}
     />
   )
 }

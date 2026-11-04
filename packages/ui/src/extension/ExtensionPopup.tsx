@@ -1,17 +1,19 @@
 // The extension popup (flows.md → Chrome extension → Popup, 360px wide). It knows nothing about
 // Chrome: the extension passes the state in and gets the user's choices back (rule 1).
 //
-// Hierarchy: small mascot + the tab to record → Record → microphone and tab sound → latest
-// projects. While recording it becomes the control: timecode, pause, stop.
+// Hierarchy: small mascot + the tab to record → Record → microphone, tab sound and camera →
+// latest projects. While recording it becomes the control: timecode, pause, stop.
 import { formatDate, formatDuration, formatTimecode, resolveLocale } from '@kamo/i18n'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
+import { CameraPreview, type CameraOption } from '../home/CameraSource.tsx'
+import type { MicrophoneOption } from '../home/AudioSources.tsx'
 import {
   InterruptedRecordings,
   type InterruptedRecordingData,
   type RecoveryOutcome,
 } from '../home/InterruptedRecordings.tsx'
 import { useLocale, useT } from '../i18n.tsx'
-import { Mascot } from '../mascot/Mascot.tsx'
+import { GazingMascot } from '../mascot/GazingMascot.tsx'
 import { FOCUS_RING, IconButton, Switch } from '../primitives/controls.tsx'
 import { CloseIcon, PauseIcon, PlayIcon, StopIcon } from '../primitives/icons.tsx'
 import type { RecordingClock } from '../recording/RecordingBar.tsx'
@@ -55,6 +57,23 @@ export interface ExtensionPopupProps {
   tabAudio: boolean
   onMicrophoneChange(on: boolean): void
   onTabAudioChange(on: boolean): void
+  /** Microphones; the picker only shows with more than one. */
+  microphones: readonly MicrophoneOption[]
+  /** '' = the default microphone. */
+  microphoneId: string
+  onMicrophoneSelect(id: string): void
+  /** Webcam bubble (A-03), off by default. */
+  camera: boolean
+  onCameraChange(on: boolean): void
+  /** Cameras; the picker only shows with more than one. */
+  cameras: readonly CameraOption[]
+  /** '' = the default camera. */
+  cameraId: string
+  onCameraSelect(id: string): void
+  /** Live preview while the camera is on; the extension opens it. */
+  cameraPreview: MediaStream | null
+  /** `unavailable`: no camera, or another app holds it. */
+  cameraStatus: 'off' | 'starting' | 'live' | 'unavailable'
   onRecord(): void
   /** Cancels the countdown. */
   onCancel(): void
@@ -70,6 +89,11 @@ export interface ExtensionPopupProps {
   interrupted: readonly InterruptedRecordingData[]
   onRecover(projectId: string): Promise<RecoveryOutcome>
   onDiscard(projectId: string): Promise<RecoveryOutcome>
+  /**
+   * Where to get the desktop app, which has what the extension doesn't (transcription and
+   * captions). Shown as one quiet line under the latest recordings; omitted, no line.
+   */
+  desktopAppUrl?: string | undefined
 }
 
 export function ExtensionPopup(props: ExtensionPopupProps) {
@@ -104,7 +128,7 @@ function Header({ tab }: { tab: PopupTab | null }) {
   const t = useT()
   return (
     <header className="flex items-center gap-sm">
-      <Mascot pose="head-look" size={36} />
+      <GazingMascot size={36} />
       <div className="flex min-w-0 flex-col">
         <span className="text-label text-on-surface-muted">{t('extension.popup.tabToRecord')}</span>
         <span className="truncate text-title" title={tab?.title}>
@@ -143,11 +167,27 @@ function Ready(props: ExtensionPopupProps) {
           checked={props.microphone}
           onChange={props.onMicrophoneChange}
         />
+        {props.microphone && props.microphones.length > 1 && (
+          <DeviceSelect
+            label={t('home.audio.chooseMicrophone')}
+            defaultLabel={t('home.audio.defaultMicrophone')}
+            nameOf={(index) => t('home.audio.microphoneName', { index })}
+            options={props.microphones}
+            value={props.microphoneId}
+            onChange={props.onMicrophoneSelect}
+          />
+        )}
         <Switch
           label={t('extension.popup.tabSound')}
           checked={props.tabAudio}
           onChange={props.onTabAudioChange}
         />
+        <Switch
+          label={t('home.camera.title')}
+          checked={props.camera}
+          onChange={props.onCameraChange}
+        />
+        {props.camera && <CameraRow {...props} />}
       </div>
       <InterruptedRecordings
         recordings={props.interrupted}
@@ -156,7 +196,89 @@ function Ready(props: ExtensionPopupProps) {
         discardTo="deletion"
       />
       <Recent projects={props.recent} />
+      {props.desktopAppUrl && <DesktopNote url={props.desktopAppUrl} />}
     </>
+  )
+}
+
+/** Transcription and captions are desktop-only: one muted line, never a nag. */
+function DesktopNote({ url }: { url: string }) {
+  const t = useT()
+  return (
+    <p className="text-label text-on-surface-muted">
+      {t('extension.popup.desktopOnly')}{' '}
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className={`rounded-sm text-tertiary-strong underline underline-offset-2 hover:text-tertiary ${FOCUS_RING}`}
+      >
+        {t('extension.popup.getDesktop')}
+      </a>
+    </p>
+  )
+}
+
+function CameraRow(props: ExtensionPopupProps) {
+  const t = useT()
+  return (
+    <>
+      <div className="flex items-center gap-sm">
+        <CameraPreview
+          stream={props.cameraStatus === 'live' ? props.cameraPreview : null}
+          label={t('home.camera.preview')}
+          size={56}
+        />
+        {props.cameras.length > 1 && (
+          <DeviceSelect
+            label={t('home.camera.choose')}
+            defaultLabel={t('home.camera.default')}
+            nameOf={(index) => t('home.camera.name', { index })}
+            options={props.cameras}
+            value={props.cameraId}
+            onChange={props.onCameraSelect}
+          />
+        )}
+      </div>
+      {props.cameraStatus === 'unavailable' && (
+        <p role="alert" className="text-label text-warning">
+          {t('home.camera.unavailable')}
+        </p>
+      )}
+    </>
+  )
+}
+
+/** Microphone or camera picker. A remembered device that is gone reads as the default. */
+function DeviceSelect(props: {
+  label: string
+  defaultLabel: string
+  nameOf(index: number): string
+  options: readonly { id: string; label: string }[]
+  value: string
+  onChange(id: string): void
+}) {
+  const id = useId()
+  const selected = props.options.some((option) => option.id === props.value) ? props.value : ''
+  return (
+    <div className="min-w-0 flex-1">
+      <label htmlFor={id} className="sr-only">
+        {props.label}
+      </label>
+      <select
+        id={id}
+        value={selected}
+        onChange={(event) => props.onChange(event.target.value)}
+        className={`w-full truncate rounded-md border border-border bg-surface px-sm py-xs text-body ${FOCUS_RING}`}
+      >
+        <option value="">{props.defaultLabel}</option>
+        {props.options.map((option, index) => (
+          <option key={option.id} value={option.id}>
+            {option.label || props.nameOf(index + 1)}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 

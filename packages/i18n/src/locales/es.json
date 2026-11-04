@@ -452,7 +452,9 @@
       "saving": "Guardando…",
       "recent": "Últimas grabaciones",
       "noRecent": "Tus grabaciones aparecen aquí.",
-      "projectMeta": "{duration} · {date}"
+      "projectMeta": "{duration} · {date}",
+      "desktopOnly": "La transcripción y los subtítulos están en la app de Kamo para ordenador.",
+      "getDesktop": "Descargar la app"
     },
     "microphone": {
       "title": "Usa tu micrófono",
@@ -461,11 +463,22 @@
       "granted": "Listo. Abre Kamo desde la barra de herramientas y pulsa Grabar.",
       "denied": "Chrome bloqueó el micrófono. Permítelo en la configuración del sitio de Kamo en Chrome y vuelve a intentarlo."
     },
+    "camera": {
+      "title": "Usa tu cámara",
+      "body": "Kamo graba en segundo plano, donde Chrome no puede pedir la cámara. Permítela aquí una vez y tu webcam irá en cada grabación con la cámara activada.",
+      "allow": "Permitir cámara",
+      "granted": "Listo. Abre Kamo desde la barra de herramientas y pulsa Grabar.",
+      "denied": "Chrome bloqueó la cámara. Permítela en la configuración del sitio de Kamo en Chrome y vuelve a intentarlo."
+    },
     "errors": {
       "captureFailed": "Chrome no dejó que Kamo grabara esta pestaña. Inténtalo de nuevo.",
       "tabClosed": "Se cerró la pestaña. Kamo guardó lo que grabó.",
       "storageFull": "El navegador se quedó sin espacio. Kamo guardó lo que grabó.",
       "writeFailed": "Kamo no pudo seguir escribiendo la grabación. Guardó lo que pudo."
+    },
+    "notices": {
+      "micFallback": "No se encontró el micrófono elegido, así que Kamo usó el predeterminado.",
+      "cameraFallback": "No se encontró la cámara elegida, así que Kamo usó la predeterminada."
     }
   },
   "menu": {

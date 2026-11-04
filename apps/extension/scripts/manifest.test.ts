@@ -21,12 +21,27 @@ describe('manifest', () => {
     })
   })
 
+  it('shows the head in the toolbar and the framed app icon everywhere else', () => {
+    const manifest = buildManifest('0.2.0')
+    expect(manifest).toMatchObject({
+      icons: { 16: 'icons/icon-16.png', 128: 'icons/icon-128.png' },
+      action: { default_icon: { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' } },
+    })
+  })
+
   it('asks for no host permission and never <all_urls> (E-06)', () => {
     const manifest = buildManifest('0.2.0')
     expect(manifest).not.toHaveProperty('host_permissions')
     expect(manifest).not.toHaveProperty('content_scripts')
     expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
-    expect(PERMISSIONS).toEqual(['tabCapture', 'offscreen', 'storage', 'activeTab', 'scripting'])
+    expect(PERMISSIONS).toEqual([
+      'tabCapture',
+      'offscreen',
+      'storage',
+      'activeTab',
+      'scripting',
+      'alarms',
+    ])
   })
 
   it('stops with ⌘⇧2 / Ctrl+Shift+2', () => {

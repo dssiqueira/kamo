@@ -452,7 +452,9 @@
       "saving": "Saving…",
       "recent": "Latest recordings",
       "noRecent": "Your recordings show up here.",
-      "projectMeta": "{duration} · {date}"
+      "projectMeta": "{duration} · {date}",
+      "desktopOnly": "Transcription and captions are in the Kamo desktop app.",
+      "getDesktop": "Get the app"
     },
     "microphone": {
       "title": "Use your microphone",
@@ -461,11 +463,22 @@
       "granted": "Done. Open Kamo from the toolbar and hit Record.",
       "denied": "Chrome blocked the microphone. Allow it in Chrome's site settings for Kamo, then try again."
     },
+    "camera": {
+      "title": "Use your camera",
+      "body": "Kamo records in the background, where Chrome can't ask for the camera. Allow it here once, and your webcam goes into every recording with the camera on.",
+      "allow": "Allow camera",
+      "granted": "Done. Open Kamo from the toolbar and hit Record.",
+      "denied": "Chrome blocked the camera. Allow it in Chrome's site settings for Kamo, then try again."
+    },
     "errors": {
       "captureFailed": "Chrome didn't let Kamo record this tab. Try again.",
       "tabClosed": "The tab was closed. Kamo saved what it recorded.",
       "storageFull": "The browser ran out of space. Kamo saved what it recorded.",
       "writeFailed": "Kamo couldn't keep writing the recording. It saved what it could."
+    },
+    "notices": {
+      "micFallback": "The microphone you chose wasn't found, so Kamo used the default one.",
+      "cameraFallback": "The camera you chose wasn't found, so Kamo used the default one."
     }
   },
   "menu": {

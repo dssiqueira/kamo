@@ -33,7 +33,13 @@ export interface BackgroundState {
 
 export interface RecordOptions {
   microphone: boolean
+  /** '' = the default microphone. */
+  microphoneId: string
   tabAudio: boolean
+  /** Webcam bubble (A-03). */
+  camera: boolean
+  /** '' = the default camera. */
+  cameraId: string
   /** "Recording 03/11, 22:38", already translated by the popup (project.defaultName). */
   projectName: string
   /** The popup's devicePixelRatio, the best guess of the tab's (same display). */
@@ -62,7 +68,10 @@ export interface PrepareRequest {
   projectId: string
   projectName: string
   microphone: boolean
+  microphoneId: string
   tabAudio: boolean
+  camera: boolean
+  cameraId: string
   /** Requested video size (already capped at 1080p). */
   width: number
   height: number

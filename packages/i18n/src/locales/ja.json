@@ -452,7 +452,9 @@
       "saving": "保存しています…",
       "recent": "最近の録画",
       "noRecent": "録画はここに表示されます。",
-      "projectMeta": "{duration} · {date}"
+      "projectMeta": "{duration} · {date}",
+      "desktopOnly": "文字起こしと字幕は Kamo のデスクトップアプリで使えます。",
+      "getDesktop": "アプリを入手"
     },
     "microphone": {
       "title": "マイクを使う",
@@ -461,11 +463,22 @@
       "granted": "完了しました。ツールバーから Kamo を開いて「録画」を押してください。",
       "denied": "Chrome がマイクをブロックしました。Chrome の Kamo のサイト設定で許可してから、もう一度お試しください。"
     },
+    "camera": {
+      "title": "カメラを使う",
+      "body": "Kamo はバックグラウンドで録画するため、Chrome がその場でカメラの許可を求められません。ここで一度許可すれば、カメラをオンにした録画すべてにウェブカメラの映像が入ります。",
+      "allow": "カメラを許可",
+      "granted": "完了しました。ツールバーから Kamo を開いて「録画」を押してください。",
+      "denied": "Chrome がカメラをブロックしました。Chrome の Kamo のサイト設定で許可してから、もう一度お試しください。"
+    },
     "errors": {
       "captureFailed": "Chrome がこのタブの録画を許可しませんでした。もう一度お試しください。",
       "tabClosed": "タブが閉じられました。録画した分は保存されています。",
       "storageFull": "ブラウザの空き容量がなくなりました。録画した分は保存されています。",
       "writeFailed": "録画の書き込みを続けられませんでした。保存できた分は残っています。"
+    },
+    "notices": {
+      "micFallback": "選んだマイクが見つからなかったため、Kamo はデフォルトのマイクを使いました。",
+      "cameraFallback": "選んだカメラが見つからなかったため、Kamo はデフォルトのカメラを使いました。"
     }
   },
   "menu": {

@@ -22,7 +22,8 @@ import {
   type Session,
 } from '../shared/messages.ts'
 import { removeCountdown, showCountdown } from '../content/countdown-overlay.ts'
-import { setIdleIcon, setRecordingIcon } from './icon.ts'
+import { GAZE_ALARM, GAZE_PERIOD_MINUTES, gazeAlarmAction } from './gaze-alarm.ts'
+import { playGaze, setIdleIcon, setRecordingIcon } from './icon.ts'
 
 const STATE_KEY = 'kamo.background'
 const OFFSCREEN_URL = 'offscreen.html'
@@ -65,11 +66,25 @@ function addNotices(notices: Notice[]): Notice[] {
 }
 
 // ---------------------------------------------------------------------------------------------
-// Toolbar icon: coral dot and the recorded time on the badge while recording (flows.md step 4).
+// Toolbar icon: coral dot and the recorded time on the badge while recording (flows.md step 4);
+// otherwise Kamo's head, glancing around once a minute (gaze-alarm.ts).
 
 let lastBadge = ''
 
+async function syncGazeAlarm(phase: Session['phase']): Promise<void> {
+  const action = gazeAlarmAction(phase, (await chrome.alarms.get(GAZE_ALARM)) !== undefined)
+  if (action === 'create') {
+    await chrome.alarms.create(GAZE_ALARM, {
+      delayInMinutes: GAZE_PERIOD_MINUTES,
+      periodInMinutes: GAZE_PERIOD_MINUTES,
+    })
+  } else if (action === 'clear') {
+    await chrome.alarms.clear(GAZE_ALARM)
+  }
+}
+
 async function updateAction(session: Session): Promise<void> {
+  await syncGazeAlarm(session.phase).catch(() => undefined)
   if (session.phase === 'recording') {
     const paused = session.clock.state === 'paused'
     const text = formatBadge(session.clock.elapsedMs, chrome.i18n.getUILanguage())
@@ -105,7 +120,7 @@ async function ensureOffscreenDocument(): Promise<void> {
   await chrome.offscreen.createDocument({
     url: OFFSCREEN_URL,
     reasons: [chrome.offscreen.Reason.USER_MEDIA],
-    justification: 'Records the tab the user chose (tabCapture stream and microphone).',
+    justification: 'Records the tab the user chose (tabCapture stream, microphone and camera).',
   })
 }
 
@@ -180,7 +195,10 @@ async function record(tabId: number, options: RecordOptions): Promise<void> {
     projectId,
     projectName: options.projectName,
     microphone: options.microphone,
+    microphoneId: options.microphoneId,
     tabAudio: options.tabAudio,
+    camera: options.camera,
+    cameraId: options.cameraId,
     width: size.width,
     height: size.height,
     scaleFactor: size.width / cssSize.width,
@@ -340,3 +358,17 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 })
 
 chrome.runtime.onStartup.addListener(() => void loaded.then(() => updateAction(state.session)))
+chrome.runtime.onInstalled.addListener(() => void loaded.then(() => updateAction(state.session)))
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== GAZE_ALARM) return
+  void loaded.then(async () => {
+    if (state.session.phase !== 'idle') {
+      await syncGazeAlarm(state.session.phase)
+      return
+    }
+    // After a wake-up the icon state is unknown to this worker: settle it, then move the eye.
+    await setIdleIcon()
+    await playGaze()
+  })
+})

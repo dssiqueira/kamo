@@ -1,9 +1,10 @@
 // "We found an interrupted recording" in the extension (E-01: browser closed midway → offer to
 // recover on the next launch). What a closed browser leaves: the marker, `screen.webm` with
-// every chunk flushed so far (WebM plays up to the last complete cluster), maybe `audio.webm`
-// and `frames/`, and no project.json. Recovery turns that into a normal project. Loaded only
-// when the user clicks Recover, so the engine never weighs on the popup.
+// every chunk flushed so far (WebM plays up to the last complete cluster), maybe `audio.webm`,
+// `webcam.mp4` and `frames/`, and no project.json. Recovery turns that into a normal project.
+// Loaded only when the user clicks Recover, so the engine never weighs on the popup.
 import {
+  DEFAULT_WEBCAM,
   PROJECT_FILES,
   createProject,
   serializeProject,
@@ -11,7 +12,7 @@ import {
   type ProjectStore,
 } from '@kamo/core'
 import { parseMarker } from './marker.ts'
-import { MICROPHONE_FILE, RECORDING_MARKER, SCREEN_FILE } from './paths.ts'
+import { MICROPHONE_FILE, RECORDING_MARKER, SCREEN_FILE, isWebcamFile } from './paths.ts'
 
 export type RecoveryStore = Pick<ProjectStore, 'readText' | 'writeText' | 'deleteProject'> & {
   removeFile(projectId: string, path: string): Promise<void>
@@ -52,6 +53,16 @@ export async function recoverRecording(store: RecoveryStore, projectId: string):
   })
   if (project.audio.mic.enabled && marker.audio.micOffsetMs !== undefined) {
     project.audio.mic.offsetMs = marker.audio.micOffsetMs
+  }
+  // The camera was written like the video, chunk by chunk (fragmented MP4 or WebM): it plays
+  // up to the last complete chunk, so it comes back too.
+  const webcam = marker.webcam
+  if (
+    webcam &&
+    isWebcamFile(webcam.file) &&
+    ((await store.fileSize(projectId, webcam.file)) ?? 0) > 0
+  ) {
+    project.webcam = { ...structuredClone(DEFAULT_WEBCAM), offsetMs: webcam.offsetMs }
   }
   await store.writeText(projectId, PROJECT_FILES.project, serializeProject(project))
   await store.removeFile(projectId, RECORDING_MARKER)
