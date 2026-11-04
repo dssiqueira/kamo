@@ -20,6 +20,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm i18n:check
+      # Rule 2: no system-wide keyboard capture anywhere in the app or the native helpers.
+      - run: pnpm guard:keyboard
       - run: pnpm build
 
   # Swift capture helper (D-023): must build with no warnings on the Mac runner.
