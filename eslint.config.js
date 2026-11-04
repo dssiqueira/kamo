@@ -23,7 +23,7 @@ const platformImports = {
 
 export default tseslint.config(
   {
-    ignores: ['**/dist/**', '**/out/**', '**/release/**', '**/generated/**', '**/coverage/**'],
+    ignores: ['**/dist/**', '**/out/**', '**/out-*/**', '**/release/**', '**/generated/**', '**/coverage/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
