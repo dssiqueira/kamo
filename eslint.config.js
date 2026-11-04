@@ -28,6 +28,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
+    },
+  },
+  {
     files: ['packages/core/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', platformImports],
