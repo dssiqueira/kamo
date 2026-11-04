@@ -217,7 +217,7 @@ Light by default, with a Light / Dark / System selector in Settings.
 - **Color:** body `primary` (sage), tongue `secondary` (pink), iris `tertiary` (water). On the landing page and in the editor's background picker, the body changes color to match the chosen wallpaper (it's a chameleon, after all)
 - **Where it appears:** landing page (hero and closing), app icon (just the head with the eye), next to the name on Home, empty states, countdown (blinks on each number), export-complete screen (smiling)
 - **Where it doesn't appear:** inside the exported video and in the editor chrome during editing. There, the video is the protagonist
-- In the app today: next to the name on Home as the brand mark (`head-look`), empty project list (`front`), countdown (`head-look`, swapping to `head-blink` on each number), saved-recording notice (`head-happy`), app icon (`kamo-icon`, upscaled placeholder until a native 1024px export exists)
+- In the app today: next to the name on Home as the brand mark (`kamo-icon`), empty project list (`front`), countdown (`head-look`, swapping to `head-blink` on each number), saved-recording notice (`head-happy`), app icon (`kamo-icon`, upscaled placeholder until a native 1024px export exists)
 - Respects `prefers-reduced-motion`: no eye animation or blinking, just the mascot standing still
 
 ## Motion

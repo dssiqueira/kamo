@@ -7,6 +7,7 @@ import headLookUp from '@kamo/design-tokens/mascot/kamo-head-look-up.webp'
 import headLook from '@kamo/design-tokens/mascot/kamo-head-look.webp'
 import headTongue from '@kamo/design-tokens/mascot/kamo-head-tongue.webp'
 import headWink from '@kamo/design-tokens/mascot/kamo-head-wink.webp'
+import icon from '@kamo/design-tokens/mascot/kamo-icon.webp'
 import scene from '@kamo/design-tokens/mascot/kamo-scene.webp'
 import side from '@kamo/design-tokens/mascot/kamo-side.webp'
 
@@ -15,6 +16,8 @@ const POSES = {
   side,
   back,
   scene,
+  /** The app icon: the head framed in a rounded square, made to read at small sizes. */
+  icon,
   'head-look': headLook,
   'head-look-side': headLookSide,
   'head-look-up': headLookUp,
