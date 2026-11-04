@@ -35,6 +35,7 @@ import {
 import { installAudioPermissions, recordingAudio, setupAudio } from './audio/index.ts'
 import { runAudioSelfTest } from './audio/self-test.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
+import type { TrayLabels } from './recording-tray.ts'
 import { getServices, startServices } from './services.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
@@ -93,6 +94,15 @@ function notifyProjectsChanged(): void {
   }
 }
 
+// Tray menu texts; English until the UI language loads in createBackend.
+let trayLabels: TrayLabels = {
+  recording: (elapsed) => `Recording ${elapsed}`,
+  paused: (elapsed) => `Paused at ${elapsed}`,
+  pause: 'Pause',
+  resume: 'Resume',
+  stop: 'Stop',
+}
+
 const recording = new RecordingController(
   delegatingBackend,
   () => mainWindow,
@@ -105,6 +115,8 @@ const recording = new RecordingController(
   currentStopShortcut,
   // F-04: microphone and computer sound, recorded in Electron (src/main/audio, D-024).
   recordingAudio,
+  // F-02: pause/stop stay reachable from the tray, whatever monitor the user looks at.
+  () => trayLabels,
 )
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
@@ -366,6 +378,13 @@ handle(IpcChannel.stopRecording, () => recording.stop())
 async function createBackend(): Promise<RecordingBackend> {
   const locale = await uiLocale()
   const i18n = await createI18n(locale)
+  trayLabels = {
+    recording: (elapsed) => i18n.t('recording.tray.recording', { elapsed }),
+    paused: (elapsed) => i18n.t('recording.tray.paused', { elapsed }),
+    pause: i18n.t('recording.pause'),
+    resume: i18n.t('recording.resume'),
+    stop: i18n.t('recording.stop'),
+  }
   const { store, log, settings } = getServices()
   return createHelperBackend({
     store,

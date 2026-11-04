@@ -56,10 +56,12 @@
       "systemUnavailable": "Kamo 目前无法捕获电脑声音。录制将不包含电脑声音。",
       "systemSoon": "Mac 版即将推出。"
     },
-    "fixPermission": "去设置"
+    "fixPermission": "去设置",
+    "recordDisplay": "录制 · {display}"
   },
   "countdown": {
-    "cancelHint": "按 Esc 取消"
+    "cancelHint": "按 Esc 取消",
+    "stopHint": "按 {shortcut} 停止录制"
   },
   "recording": {
     "rec": "REC",
@@ -83,6 +85,10 @@
       "micLost": "录制时麦克风断开了连接。从那一刻起音频为静音。",
       "systemUnavailable": "已保存，但没有电脑声音：Kamo 无法捕获。",
       "failed": "已保存，但部分音频未能保留。"
+    },
+    "tray": {
+      "recording": "正在录制 {elapsed}",
+      "paused": "已暂停于 {elapsed}"
     }
   },
   "editor": {

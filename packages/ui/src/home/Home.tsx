@@ -44,6 +44,13 @@ export function Home({
 }: HomeProps) {
   const t = useT()
   const canRecord = selectedId !== null && !needsPermission
+  // The button says which screen it records: the last choice is remembered (F-01), so it may
+  // not be the one the user expects.
+  const selectedIndex = displays.findIndex((d) => d.id === selectedId)
+  const selected = displays[selectedIndex]
+  const selectedName = selected
+    ? selected.label || t('home.displayName', { index: selectedIndex + 1 })
+    : null
 
   return (
     <main className="relative min-h-screen bg-background font-sans text-on-surface">
@@ -132,7 +139,7 @@ export function Home({
           >
             {/* DESIGN.md: coral is reserved for the REC dot. */}
             <span aria-hidden className="size-[10px] rounded-full bg-recording" />
-            {t('home.record')}
+            {selectedName ? t('home.recordDisplay', { display: selectedName }) : t('home.record')}
           </button>
         </div>
 

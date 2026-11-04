@@ -56,10 +56,12 @@
       "systemUnavailable": "O Kamo não consegue captar o som do computador agora. As gravações vão sair sem ele.",
       "systemSoon": "Em breve no Mac."
     },
-    "fixPermission": "Configurar"
+    "fixPermission": "Configurar",
+    "recordDisplay": "Gravar · {display}"
   },
   "countdown": {
-    "cancelHint": "Esc pra cancelar"
+    "cancelHint": "Esc pra cancelar",
+    "stopHint": "{shortcut} encerra a gravação"
   },
   "recording": {
     "rec": "REC",
@@ -83,6 +85,10 @@
       "micLost": "O microfone foi desconectado durante a gravação. O áudio fica mudo a partir dali.",
       "systemUnavailable": "Salvo sem o som do computador: o Kamo não conseguiu captar.",
       "failed": "Salvo, mas parte do áudio não pôde ser mantida."
+    },
+    "tray": {
+      "recording": "Gravando {elapsed}",
+      "paused": "Pausado em {elapsed}"
     }
   },
   "editor": {

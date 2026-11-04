@@ -56,10 +56,12 @@
       "systemUnavailable": "Kamo can't capture the computer sound right now. Recordings will have no computer sound.",
       "systemSoon": "Coming soon on Mac."
     },
-    "fixPermission": "Set it up"
+    "fixPermission": "Set it up",
+    "recordDisplay": "Record · {display}"
   },
   "countdown": {
-    "cancelHint": "Esc to cancel"
+    "cancelHint": "Esc to cancel",
+    "stopHint": "{shortcut} stops the recording"
   },
   "recording": {
     "rec": "REC",
@@ -83,6 +85,10 @@
       "micLost": "The microphone was disconnected while recording. The audio is silent from that point on.",
       "systemUnavailable": "Saved without computer sound: Kamo couldn't capture it.",
       "failed": "Saved, but some of the audio couldn't be kept."
+    },
+    "tray": {
+      "recording": "Recording {elapsed}",
+      "paused": "Paused at {elapsed}"
     }
   },
   "editor": {

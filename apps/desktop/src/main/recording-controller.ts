@@ -5,6 +5,7 @@ import { IpcChannel, type RecordingClock, type RecordingStatus } from '../shared
 import type { AudioWarning } from '../shared/audio.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import type { AudioSession, AudioTake } from './audio/service.ts'
+import { RecordingTray, type TrayLabels } from './recording-tray.ts'
 import { createAppWindow } from './windows.ts'
 
 /** The default; Settings can change it (F-15), so the controller reads it through a getter. */
@@ -50,7 +51,14 @@ export interface RecordingAudio {
 
 type State =
   | { name: 'idle' }
-  | { name: 'countdown'; displayId: string; window: BrowserWindow; timer: NodeJS.Timeout }
+  | {
+      name: 'countdown'
+      displayId: string
+      /** Where the user was when they pressed Record: the floating bar opens there. */
+      controlDisplayId: number
+      window: BrowserWindow
+      timer: NodeJS.Timeout
+    }
   | {
       name: 'recording'
       session: BackendSession
@@ -76,7 +84,23 @@ export class RecordingController {
     private readonly stopShortcut: () => string = () => STOP_SHORTCUT,
     /** Microphone and computer sound (F-04). Omitted: video only. */
     private readonly audio?: RecordingAudio,
-  ) {}
+    /** Tray menu texts in the UI language. Omitted: no tray icon. */
+    trayLabels?: () => TrayLabels,
+  ) {
+    this.tray = trayLabels
+      ? new RecordingTray(
+          trayLabels,
+          {
+            pause: () => void this.pause(),
+            resume: () => void this.resume(),
+            stop: () => void this.stop(),
+          },
+          () => (this.state.name === 'recording' ? elapsedNow(this.state.clock) : 0),
+        )
+      : null
+  }
+
+  private readonly tray: RecordingTray | null
 
   /** The stop shortcut registered for the current recording (null when none). */
   private registeredShortcut: string | null = null
@@ -87,7 +111,13 @@ export class RecordingController {
     const display = screen.getAllDisplays().find((d) => String(d.id) === displayId)
     if (!display) return this.report({ kind: 'error', code: 'display_not_found' })
 
-    this.mainWindow()?.hide()
+    // The bar goes where the user is looking (the monitor with Kamo's window), which may not be
+    // the one being recorded. It is excluded from capture either way.
+    const main = this.mainWindow()
+    const controlDisplayId = (
+      main ? screen.getDisplayMatching(main.getBounds()) : screen.getPrimaryDisplay()
+    ).id
+    main?.hide()
     const window = createAppWindow('countdown', {
       ...display.bounds,
       frame: false,
@@ -104,7 +134,7 @@ export class RecordingController {
     window.once('ready-to-show', () => window.focus())
     // Safety net if the countdown page never reports back.
     const timer = setTimeout(() => void this.countdownDone(), (COUNTDOWN_SECONDS + 2) * 1000)
-    this.state = { name: 'countdown', displayId, window, timer }
+    this.state = { name: 'countdown', displayId, controlDisplayId, window, timer }
     void this.audio?.prepare().catch((error: unknown) => {
       this.log.error('recording.audio.prepare.failed', { error })
     })
@@ -122,7 +152,7 @@ export class RecordingController {
 
   async countdownDone(): Promise<void> {
     if (this.state.name !== 'countdown') return
-    const { displayId, window, timer } = this.state
+    const { displayId, controlDisplayId, window, timer } = this.state
     clearTimeout(timer)
     window.destroy()
     this.state = { name: 'stopping' }
@@ -141,7 +171,7 @@ export class RecordingController {
     }
     const videoStartedAt = Date.now()
 
-    const bar = this.openBar(displayId)
+    const bar = this.openBar(controlDisplayId)
     const clock: RecordingClock = {
       state: 'recording',
       elapsedMs: 0,
@@ -155,6 +185,7 @@ export class RecordingController {
       this.registeredShortcut = stopShortcut
     }
     this.sendClock()
+    this.tray?.show()
     this.log.info('recording.started', { fps: session.fps })
   }
 
@@ -166,6 +197,7 @@ export class RecordingController {
     if (this.state.name !== 'recording') return
     this.state.clock = { ...clock, state: 'paused', elapsedMs: elapsedNow(clock), at: Date.now() }
     this.sendClock()
+    this.tray?.setPaused(true)
   }
 
   async resume(): Promise<void> {
@@ -175,6 +207,7 @@ export class RecordingController {
     if (this.state.name !== 'recording') return
     this.state.clock = { ...this.state.clock, state: 'recording', at: Date.now() }
     this.sendClock()
+    this.tray?.setPaused(false)
   }
 
   async stop(): Promise<void> {
@@ -209,6 +242,7 @@ export class RecordingController {
     this.registeredShortcut = null
     const { audio, videoStartedAt } = this.state
     this.state.bar.destroy()
+    this.tray?.hide()
     this.state = { name: 'idle' }
     this.log.info('recording.finished', { kind: result.kind })
     const audioWarnings = await this.finishAudio(audio, result, videoStartedAt)
@@ -254,9 +288,9 @@ export class RecordingController {
     })
   }
 
-  private openBar(displayId: string): BrowserWindow {
+  private openBar(displayId: number): BrowserWindow {
     const display =
-      screen.getAllDisplays().find((d) => String(d.id) === displayId) ?? screen.getPrimaryDisplay()
+      screen.getAllDisplays().find((d) => d.id === displayId) ?? screen.getPrimaryDisplay()
     const { x, y, width, height } = display.workArea
     const bar = createAppWindow('recording-bar', {
       x: Math.round(x + (width - BAR_WIDTH) / 2),

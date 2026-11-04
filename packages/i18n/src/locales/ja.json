@@ -56,10 +56,12 @@
       "systemUnavailable": "Kamo は今パソコンの音を取り込めません。録画にパソコンの音は入りません。",
       "systemSoon": "Mac には近日対応予定です。"
     },
-    "fixPermission": "設定する"
+    "fixPermission": "設定する",
+    "recordDisplay": "録画 · {display}"
   },
   "countdown": {
-    "cancelHint": "Esc でキャンセル"
+    "cancelHint": "Esc でキャンセル",
+    "stopHint": "{shortcut} で録画を停止"
   },
   "recording": {
     "rec": "REC",
@@ -83,6 +85,10 @@
       "micLost": "録画中にマイクが外れました。その時点から音声は無音です。",
       "systemUnavailable": "保存しましたが、パソコンの音は入っていません。Kamo が取り込めませんでした。",
       "failed": "保存しましたが、音声の一部を残せませんでした。"
+    },
+    "tray": {
+      "recording": "録画中 {elapsed}",
+      "paused": "{elapsed} で一時停止中"
     }
   },
   "editor": {

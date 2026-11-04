@@ -6,6 +6,8 @@ import { useSpring } from '../motion/useSpring.ts'
 export interface CountdownProps {
   /** 3, 2, 1 */
   value: number
+  /** The global stop shortcut, already formatted for the platform (e.g. "Ctrl+Shift+2"). */
+  stopShortcut?: string
 }
 
 const BLINK_MS = 160
@@ -14,7 +16,7 @@ const BLINK_MS = 160
  * Full-screen 3-2-1 over the display being recorded (flows.md §3). Each number enters
  * 1.2 → 1.0, and Kamo, peeking over the circle, blinks on each one (DESIGN.md → Mascot).
  */
-export function Countdown({ value }: CountdownProps) {
+export function Countdown({ value, stopShortcut }: CountdownProps) {
   const t = useT()
   const scale = useSpring(1, 1.2, value)
   const blinking = useBlink(value)
@@ -40,6 +42,7 @@ export function Countdown({ value }: CountdownProps) {
       </div>
       <p className="rounded-full bg-surface/90 px-md py-xs text-label text-on-surface-muted">
         {t('countdown.cancelHint')}
+        {stopShortcut && <> · {t('countdown.stopHint', { shortcut: stopShortcut })}</>}
       </p>
     </div>
   )
