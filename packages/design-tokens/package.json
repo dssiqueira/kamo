@@ -17,7 +17,8 @@
     "./tokens.css": "./generated/tokens.css",
     "./tailwind.css": "./generated/tailwind.css",
     "./fonts.css": "./src/fonts.css",
-    "./mascot/*": "./assets/mascot/*"
+    "./mascot/*": "./assets/mascot/*",
+    "./decor/*": "./assets/decor/*"
   },
   "files": [
     "generated",

@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 320" fill="none">
+  <!-- Kamo decor: paper-cut leaf cluster for a bottom-left corner (mirror it for the right). -->
+  <defs>
+    <filter id="paper" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="grain" />
+      <feColorMatrix in="grain" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0" result="grainA" />
+      <feComposite in="grainA" in2="SourceGraphic" operator="in" result="grainIn" />
+      <feMerge result="textured"><feMergeNode in="SourceGraphic" /><feMergeNode in="grainIn" /></feMerge>
+      <feDropShadow in="textured" dx="0" dy="3" stdDeviation="3" flood-color="#1F3A1C" flood-opacity="0.22" />
+    </filter>
+    <!-- A leaf 100 long along +x from its stem at the origin; the upper half is a lighter tone. -->
+    <g id="leaf-deep">
+      <path d="M0 0C25-27 70-31 100 0C70 31 25 27 0 0Z" fill="#1F5E3B" />
+      <path d="M0 0C25-27 70-31 100 0Z" fill="#2B7148" />
+    </g>
+    <g id="leaf-mid">
+      <path d="M0 0C25-27 70-31 100 0C70 31 25 27 0 0Z" fill="#3F8A55" />
+      <path d="M0 0C25-27 70-31 100 0Z" fill="#55A068" />
+    </g>
+    <g id="leaf-light">
+      <path d="M0 0C25-27 70-31 100 0C70 31 25 27 0 0Z" fill="#7DB97F" />
+      <path d="M0 0C25-27 70-31 100 0Z" fill="#9CCD97" />
+    </g>
+    <g id="leaf-pale">
+      <path d="M0 0C25-27 70-31 100 0C70 31 25 27 0 0Z" fill="#A8D5A2" />
+      <path d="M0 0C25-27 70-31 100 0Z" fill="#C3E3BC" />
+    </g>
+  </defs>
+  <g filter="url(#paper)">
+    <use href="#leaf-mid" transform="translate(4 318) rotate(-98) scale(1.7)" />
+    <use href="#leaf-deep" transform="translate(14 320) rotate(-74) scale(2.55)" />
+    <use href="#leaf-light" transform="translate(30 320) rotate(-52) scale(2.2)" />
+    <use href="#leaf-deep" transform="translate(48 320) rotate(-33) scale(2.35)" />
+    <use href="#leaf-pale" transform="translate(70 320) rotate(-16) scale(1.95)" />
+    <use href="#leaf-mid" transform="translate(96 320) rotate(-4) scale(1.75)" />
+    <use href="#leaf-light" transform="translate(150 322) rotate(-24) scale(1.2)" />
+  </g>
+</svg>
