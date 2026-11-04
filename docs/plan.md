@@ -92,7 +92,7 @@
 **Done when:** the window opens on Windows (local) and on Mac (`macos-14` CI builds and runs a smoke test), and the project format tests pass.
 
 ### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0)
-**Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (C++ on Windows, Swift on Mac). Requires Visual Studio Build Tools (C++ workload) on the Windows dev machine.
+**Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (Rust on Windows, Swift on Mac). Requires Rust (rustup) and Visual Studio Build Tools (C++ workload, for the MSVC linker) on the Windows dev machine.
 - Home with displays and live thumbnails (≥ 1/s), primary pre-selected, choice remembered
 - 3-2-1 countdown in a transparent window on the chosen display; Esc cancels
 - Recording at 30fps at native resolution, no cursor; Mac via our ScreenCaptureKit helper (Swift), Windows via `desktopCapturer`/WGC
