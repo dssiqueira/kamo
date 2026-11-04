@@ -25,7 +25,8 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "fixtures": "node fixtures/write.ts"
   },
   "dependencies": {
     "zod": "^4.6.7"

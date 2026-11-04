@@ -36,7 +36,9 @@ export default tseslint.config(
     },
   },
   {
-    files: ['packages/core/**/*.{ts,tsx}', 'packages/ui/**/*.{ts,tsx}'],
+    files: ['packages/core/src/**/*.{ts,tsx}', 'packages/ui/src/**/*.{ts,tsx}'],
+    // Tests run in Node and may read fixtures from disk.
+    ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', platformImports],
       'no-restricted-globals': [

@@ -13,7 +13,8 @@
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
-    "i18n:check": "pnpm --filter @kamo/i18n check-keys"
+    "i18n:check": "pnpm --filter @kamo/i18n check-keys",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm i18n:check"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

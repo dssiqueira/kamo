@@ -59,7 +59,11 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | t | number (ms) | relative to the start of the recording |
 | x, y | number | always in pixels of the recorded video. Desktop: display coordinates normalized by scaleFactor. Extension: tab coordinates (CSS px) × devicePixelRatio, adjusted by the browser zoom |
 | type | `move` \| `down` \| `up` \| `scroll` | **never** keyboard events |
-| button | `left` \| `right` \| `middle` | only on down/up |
+| button | `left` \| `right` \| `middle` | only on down/up (required there) |
+| dx, dy | number | only on scroll (required there): wheel delta |
+| outside | `true` | only on move, optional: the pointer is outside the recorded area (e.g. another display); the camera ignores these stretches (F-03) |
+
+Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) is skipped and reported, never fatal. Unknown fields make a line invalid, so a keyboard field can never slip in.
 
 ### Zoom
 | Field | Type | Rule |
