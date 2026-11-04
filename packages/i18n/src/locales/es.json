@@ -136,6 +136,7 @@
       "title": "Cámara web",
       "show": "Mostrar cámara web",
       "position": "Posición",
+      "dragHint": "O arrastra la burbuja en el video para ponerla donde quieras",
       "topLeft": "Arriba a la izquierda",
       "topRight": "Arriba a la derecha",
       "bottomLeft": "Abajo a la izquierda",

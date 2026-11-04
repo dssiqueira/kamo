@@ -136,6 +136,7 @@
       "title": "摄像头",
       "show": "显示摄像头",
       "position": "位置",
+      "dragHint": "也可以在视频中拖动气泡，放到任意位置",
       "topLeft": "左上角",
       "topRight": "右上角",
       "bottomLeft": "左下角",

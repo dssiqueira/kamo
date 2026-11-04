@@ -136,6 +136,7 @@
       "title": "Webcam",
       "show": "Show webcam",
       "position": "Position",
+      "dragHint": "Or drag the bubble in the video to place it anywhere",
       "topLeft": "Top left",
       "topRight": "Top right",
       "bottomLeft": "Bottom left",

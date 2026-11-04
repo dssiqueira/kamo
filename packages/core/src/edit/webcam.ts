@@ -16,17 +16,36 @@ function withHidden(project: Project, webcam: WebcamSettings, hidden: Range[]): 
   return { ...project, webcam: { ...webcam, hidden } }
 }
 
-/** Updates the bubble's settings (visible, position, size, shrinkOnZoom). */
-export function setWebcam(
-  project: Project,
-  patch: Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs'>>,
-): Project {
+/** What the side panel and the preview can change on the bubble. */
+export type WebcamPatch = Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs' | 'anchor'>> & {
+  /** null drops the free placement (back to `position`'s corner) */
+  anchor?: { x: number; y: number } | null
+}
+
+/**
+ * Updates the bubble's settings (visible, position, anchor, size, shrinkOnZoom). Picking a
+ * corner without an anchor sends the bubble back to that corner.
+ */
+export function setWebcam(project: Project, patch: WebcamPatch): Project {
   const webcam = project.webcam
   if (!webcam) return project
-  const changed = (Object.keys(patch) as (keyof typeof patch)[]).some(
-    (key) => patch[key] !== undefined && patch[key] !== webcam[key],
-  )
-  return changed ? { ...project, webcam: { ...webcam, ...patch } } : project
+  const { anchor, ...rest } = patch
+  const next: WebcamSettings = { ...webcam }
+  for (const key of Object.keys(rest) as (keyof typeof rest)[]) {
+    if (rest[key] !== undefined) Object.assign(next, { [key]: rest[key] })
+  }
+  if (anchor) next.anchor = anchor
+  else if (anchor === null || (patch.position !== undefined && anchor === undefined)) {
+    delete next.anchor
+  }
+  const changed =
+    (Object.keys(next) as (keyof WebcamSettings)[]).some(
+      (key) => key !== 'anchor' && next[key] !== webcam[key],
+    ) ||
+    ('anchor' in webcam && !('anchor' in next)) ||
+    (next.anchor !== undefined &&
+      (next.anchor.x !== webcam.anchor?.x || next.anchor.y !== webcam.anchor?.y))
+  return changed ? { ...project, webcam: next } : project
 }
 
 /**

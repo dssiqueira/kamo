@@ -3,6 +3,7 @@ import {
   drawWallpaper,
   type CursorSettings,
   type Style,
+  type WebcamPatch,
   type WebcamPosition,
   type WebcamSettings,
   type WebcamSize,
@@ -22,7 +23,7 @@ export interface StylePanelProps {
   onRegenerate(): void
   /** null when recorded without the camera: the Webcam section is not shown (A-03) */
   webcam?: WebcamSettings | null
-  onWebcam?(patch: Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs'>>): void
+  onWebcam?(patch: WebcamPatch): void
 }
 
 /** Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam. */
@@ -169,7 +170,7 @@ function WebcamSection({
   onWebcam,
 }: {
   webcam: WebcamSettings
-  onWebcam(patch: Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs'>>): void
+  onWebcam(patch: WebcamPatch): void
 }) {
   const t = useT()
   const option = (selected: boolean) =>
@@ -193,7 +194,7 @@ function WebcamSection({
         <span className="text-body">{t('editor.webcam.position')}</span>
         <div className="grid w-[132px] grid-cols-2 gap-xs">
           {WEBCAM_POSITIONS.map((position) => {
-            const selected = webcam.position === position
+            const selected = !webcam.anchor && webcam.position === position
             const [vertical, horizontal] = position.split('-')
             return (
               <button
@@ -220,6 +221,7 @@ function WebcamSection({
             )
           })}
         </div>
+        <span className="text-label text-on-surface-muted">{t('editor.webcam.dragHint')}</span>
       </div>
       <div role="radiogroup" aria-label={t('editor.webcam.size')} className="flex flex-col gap-xs">
         <span className="text-body">{t('editor.webcam.size')}</span>

@@ -183,6 +183,11 @@ export function Editor({
             webcamUrl={webcamUrl}
             webcamVideo={webcamVideo}
             drawRef={draw}
+            onWebcamDragStart={() => history.begin()}
+            onWebcamDrag={(placement) =>
+              fromBase((p) => setWebcam(p, { ...placement, anchor: placement.anchor ?? null }))
+            }
+            onWebcamDragEnd={() => history.commit()}
           />
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
             <button

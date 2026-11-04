@@ -1,16 +1,27 @@
 import {
   buildCameraTrack,
   buildCursorTrack,
+  cameraAt,
   createRenderer,
   outputSize,
   sceneFrame,
+  webcamBubbleAt,
+  webcamPlacementAt,
   type MouseEventRecord,
   type Project,
   type Renderer,
   type Scene,
   type Zoom,
 } from '@kamo/core'
-import { useCallback, useEffect, useMemo, useRef, type RefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from 'react'
 import { correctWebcamDrift, syncWebcam, webcamSourceOf } from './webcam-sync.ts'
 
 export interface PreviewProps {
@@ -26,7 +37,13 @@ export interface PreviewProps {
   webcamVideo: RefObject<HTMLVideoElement | null>
   /** Exposes `draw(timeMs)` so playback can redraw exactly on each presented frame. */
   drawRef: RefObject<((timeMs: number) => void) | null>
+  /** Dragging the bubble in the preview (A-03): one undo step from start to end. */
+  onWebcamDragStart?(): void
+  onWebcamDrag?(placement: WebcamPlacement): void
+  onWebcamDragEnd?(): void
 }
+
+type WebcamPlacement = ReturnType<typeof webcamPlacementAt>
 
 const ASPECT = '16:9' as const
 
@@ -43,6 +60,9 @@ export function Preview({
   webcamUrl,
   webcamVideo,
   drawRef,
+  onWebcamDragStart,
+  onWebcamDrag,
+  onWebcamDragEnd,
 }: PreviewProps) {
   const canvas = useRef<HTMLCanvasElement | null>(null)
   const renderer = useRef<Renderer | null>(null)
@@ -117,14 +137,66 @@ export function Preview({
     )
   }, [hasWebcam, webcamUrl, video, webcamVideo, drawRef])
 
+  // Drag the bubble anywhere (A-03): the grab offset keeps it from jumping under the
+  // pointer; near a corner it snaps there (webcamPlacementAt).
+  const drag = useRef<{ dx: number; dy: number } | null>(null)
+  const [cursorStyle, setCursorStyle] = useState<'grab' | 'grabbing' | undefined>(undefined)
+  const toOutput = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    return {
+      x: ((event.clientX - rect.left) * output.width) / rect.width,
+      y: ((event.clientY - rect.top) * output.height) / rect.height,
+    }
+  }
+  const bubbleUnder = (point: { x: number; y: number }) => {
+    const element = video.current
+    if (!webcam || !webcamVideo.current || !element || !onWebcamDrag) return null
+    const timeMs = element.currentTime * 1000
+    const bubble = webcamBubbleAt(webcam, output, timeMs, cameraAt(camera, timeMs).scale)
+    if (!bubble) return null
+    return Math.hypot(point.x - bubble.x, point.y - bubble.y) <= bubble.radius ? bubble : null
+  }
+  const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    if (event.button !== 0) return
+    const point = toOutput(event)
+    const bubble = bubbleUnder(point)
+    if (!bubble) return
+    event.currentTarget.setPointerCapture(event.pointerId)
+    drag.current = { dx: bubble.x - point.x, dy: bubble.y - point.y }
+    setCursorStyle('grabbing')
+    onWebcamDragStart?.()
+  }
+  const onPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const point = toOutput(event)
+    if (!drag.current) {
+      setCursorStyle(bubbleUnder(point) ? 'grab' : undefined)
+      return
+    }
+    if (!webcam) return
+    const center = { x: point.x + drag.current.dx, y: point.y + drag.current.dy }
+    onWebcamDrag?.(webcamPlacementAt(center, webcam.size, output))
+  }
+  const endDrag = () => {
+    if (!drag.current) return
+    drag.current = null
+    setCursorStyle('grab')
+    onWebcamDragEnd?.()
+  }
+
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center p-md">
       <canvas
         ref={canvas}
         width={output.width}
         height={output.height}
-        className="max-h-full max-w-full rounded-md"
-        style={{ aspectRatio: `${output.width} / ${output.height}` }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={() => !drag.current && setCursorStyle(undefined)}
+        data-testid="preview-canvas"
+        className="max-h-full max-w-full touch-none rounded-md"
+        style={{ aspectRatio: `${output.width} / ${output.height}`, cursor: cursorStyle }}
       />
       {/* The source of every frame; never shown itself. */}
       <video ref={video} src={videoUrl} preload="auto" playsInline className="hidden" />

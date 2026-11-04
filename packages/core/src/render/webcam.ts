@@ -10,6 +10,8 @@
 //   same in 16:9, 1:1 and 9:16 and at 1080p and 4K.
 // - The camera frame is cover-fitted into the circle (centered square crop) and mirrored
 //   horizontally, like every selfie view: people expect to see themselves as in a mirror.
+// - Dragged in the preview, the bubble can sit anywhere (`anchor`, a fraction of the output,
+//   so it carries over to 1:1 and 9:16); dropped near a corner it snaps back to that corner.
 // - Shrink on zoom follows the camera's own scale, which is already the 170/26 spring
 //   (rule 10). No second spring, so the bubble moves exactly with the zoom and stays a pure
 //   function of time. While shrinking, the bubble keeps its outer corner in place.
@@ -62,16 +64,30 @@ export interface WebcamBubble {
   opacity: number
 }
 
-/** The bubble at its full size (no shrink, no fade): center and radius, output pixels. */
+/**
+ * The bubble's center and radius in output pixels, `scale` times its full size. In a corner
+ * it keeps the outer corner in place while scaled; at a free `anchor` it keeps its center,
+ * pulled in so the full-size bubble stays WEBCAM_MARGIN inside the frame in any format.
+ */
 export function webcamBubbleBase(
   position: WebcamPosition,
   size: WebcamSize,
   output: Size,
   scale = 1,
+  anchor?: { x: number; y: number },
 ): { x: number; y: number; radius: number } {
   const short = Math.min(output.width, output.height)
-  const radius = (WEBCAM_DIAMETER[size] * short * scale) / 2
+  const full = (WEBCAM_DIAMETER[size] * short) / 2
+  const radius = full * scale
   const margin = WEBCAM_MARGIN * short
+  if (anchor) {
+    const inset = margin + full
+    return {
+      x: clamp(anchor.x * output.width, inset, output.width - inset),
+      y: clamp(anchor.y * output.height, inset, output.height - inset),
+      radius,
+    }
+  }
   const left = position === 'top-left' || position === 'bottom-left'
   const top = position === 'top-left' || position === 'top-right'
   return {
@@ -80,6 +96,43 @@ export function webcamBubbleBase(
     radius,
   }
 }
+
+/**
+ * Where a bubble dropped with its center at `center` (output pixels) ends up: the nearest
+ * corner when the center lands within one radius of that corner's spot (snap), otherwise a
+ * free anchor.
+ */
+export function webcamPlacementAt(
+  center: { x: number; y: number },
+  size: WebcamSize,
+  output: Size,
+): { position: WebcamPosition; anchor?: { x: number; y: number } } {
+  let nearest: WebcamPosition = 'bottom-right'
+  let best = Infinity
+  for (const corner of WEBCAM_CORNERS) {
+    const spot = webcamBubbleBase(corner, size, output)
+    const distance = Math.hypot(spot.x - center.x, spot.y - center.y)
+    if (distance < best) {
+      best = distance
+      nearest = corner
+    }
+  }
+  const { radius } = webcamBubbleBase(nearest, size, output)
+  if (best <= radius) return { position: nearest }
+  // Stored already clamped, so the anchor is where the bubble is actually drawn.
+  const placed = webcamBubbleBase(nearest, size, output, 1, {
+    x: center.x / output.width,
+    y: center.y / output.height,
+  })
+  return { position: nearest, anchor: { x: placed.x / output.width, y: placed.y / output.height } }
+}
+
+const WEBCAM_CORNERS: readonly WebcamPosition[] = [
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]
 
 /**
  * Size factor for a camera scale (1 = not zoomed): 1 at rest, WEBCAM_SHRINK_MIN from
@@ -137,7 +190,13 @@ export function webcamBubbleAt(
   if (visibility <= 0) return null
   const shrink = settings.shrinkOnZoom ? webcamShrink(cameraScale) : 1
   const fade = WEBCAM_FADE_MIN_SCALE + (1 - WEBCAM_FADE_MIN_SCALE) * visibility
-  const base = webcamBubbleBase(settings.position, settings.size, output, shrink * fade)
+  const base = webcamBubbleBase(
+    settings.position,
+    settings.size,
+    output,
+    shrink * fade,
+    settings.anchor,
+  )
   return { ...base, opacity: visibility }
 }
 

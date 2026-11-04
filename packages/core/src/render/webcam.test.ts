@@ -11,6 +11,7 @@ import {
   webcamBubbleAt,
   webcamBubbleBase,
   webcamCoverCrop,
+  webcamPlacementAt,
   webcamShrink,
   webcamTimeMs,
   webcamVisibility,
@@ -213,5 +214,46 @@ describe('webcam helpers', () => {
       width: 480,
       height: 480,
     })
+  })
+})
+
+describe('free placement', () => {
+  it('keeps a free bubble centered on its anchor, inside the frame in any format', () => {
+    const mid = webcamBubbleBase('bottom-right', 'medium', OUT_16x9, 1, { x: 0.5, y: 0.5 })
+    expect(mid).toMatchObject({ x: 960, y: 540 })
+    const r = (WEBCAM_DIAMETER.large * 1080) / 2
+    const inset = WEBCAM_MARGIN * 1080 + r
+    const edge = webcamBubbleBase('top-left', 'large', OUT_16x9, 1, { x: 0, y: 1 })
+    expect(edge.x).toBeCloseTo(inset)
+    expect(edge.y).toBeCloseTo(1080 - inset)
+    const tall = outputSize('9:16', '1080p')
+    const inTall = webcamBubbleBase('top-left', 'large', tall, 1, { x: 1, y: 0.5 })
+    expect(inTall.x).toBeCloseTo(tall.width - inset)
+  })
+
+  it('shrinks a free bubble around its center', () => {
+    const anchor = { x: 0.4, y: 0.6 }
+    const full = webcamBubbleBase('top-left', 'medium', OUT_16x9, 1, anchor)
+    const small = webcamBubbleBase('top-left', 'medium', OUT_16x9, 0.6, anchor)
+    expect(small).toMatchObject({ x: full.x, y: full.y })
+    expect(small.radius).toBeCloseTo(full.radius * 0.6)
+  })
+
+  it('snaps to a corner when dropped near it, otherwise stays where it was dropped', () => {
+    const spot = webcamBubbleBase('top-right', 'medium', OUT_16x9)
+    expect(webcamPlacementAt({ x: spot.x - 20, y: spot.y + 30 }, 'medium', OUT_16x9)).toEqual({
+      position: 'top-right',
+    })
+    const free = webcamPlacementAt({ x: 960, y: 540 }, 'medium', OUT_16x9)
+    expect(free.anchor).toEqual({ x: 0.5, y: 0.5 })
+    // Dropped past the edge: stored where it is actually drawn.
+    const out = webcamPlacementAt({ x: 960, y: 5000 }, 'medium', OUT_16x9)
+    const drawn = webcamBubbleBase(out.position, 'medium', OUT_16x9, 1, out.anchor)
+    expect(drawn.y).toBeCloseTo(out.anchor!.y * 1080)
+  })
+
+  it('draws the bubble at its anchor at any time', () => {
+    const bubble = webcamBubbleAt(settings({ anchor: { x: 0.5, y: 0.5 } }), OUT_16x9, 0, 1)
+    expect(bubble).toMatchObject({ x: 960, y: 540 })
   })
 })

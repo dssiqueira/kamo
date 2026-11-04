@@ -92,6 +92,11 @@ export const WebcamSettings = z.object({
   /** Off hides the bubble in the whole video without deleting the recording. */
   visible: z.boolean(),
   position: WebcamPosition,
+  /**
+   * Free placement dragged in the preview: the bubble's center as a fraction of the output
+   * frame (0..1), so it holds in any format. Absent = sits in `position`'s corner.
+   */
+  anchor: z.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) }).optional(),
   size: WebcamSize,
   /** The bubble shrinks while the camera zooms in, and grows back after (A-03). */
   shrinkOnZoom: z.boolean(),

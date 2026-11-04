@@ -43,6 +43,19 @@ describe('setWebcam', () => {
     const none = project([], false)
     expect(setWebcam(none, { visible: false })).toBe(none)
   })
+
+  it('places the bubble freely, and a corner pick sends it back to that corner', () => {
+    const free = setWebcam(project(), { anchor: { x: 0.5, y: 0.3 } })
+    expect(free.webcam?.anchor).toEqual({ x: 0.5, y: 0.3 })
+    expect(valid(free)).toBe(true)
+    expect(setWebcam(free, { anchor: { x: 0.5, y: 0.3 } })).toBe(free)
+    const corner = setWebcam(free, { position: 'bottom-right' })
+    expect(corner.webcam?.anchor).toBeUndefined()
+    expect(corner.webcam?.position).toBe('bottom-right')
+    expect(setWebcam(free, { anchor: null }).webcam?.anchor).toBeUndefined()
+    // Other settings leave the free placement alone.
+    expect(setWebcam(free, { size: 'large' }).webcam?.anchor).toEqual({ x: 0.5, y: 0.3 })
+  })
 })
 
 describe('addWebcamHidden', () => {

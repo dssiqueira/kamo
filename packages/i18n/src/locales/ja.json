@@ -136,6 +136,7 @@
       "title": "Webカメラ",
       "show": "Webカメラを表示",
       "position": "位置",
+      "dragHint": "動画上のバブルをドラッグして好きな位置に置くこともできます",
       "topLeft": "左上",
       "topRight": "右上",
       "bottomLeft": "左下",

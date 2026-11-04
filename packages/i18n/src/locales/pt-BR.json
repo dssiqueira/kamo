@@ -136,6 +136,7 @@
       "title": "Webcam",
       "show": "Mostrar webcam",
       "position": "Posição",
+      "dragHint": "Ou arraste a bolha no vídeo para colocar onde quiser",
       "topLeft": "Canto superior esquerdo",
       "topRight": "Canto superior direito",
       "bottomLeft": "Canto inferior esquerdo",
