@@ -1,7 +1,7 @@
 # plan.md — Execution plan
 
 > How to get from the docs to a published app, step by step. The numbering is the same as in `AGENTS.md`. One step per session; a step only closes when the acceptance criteria of its features in `features.md` are checked and CI is green.
-> Written on 2026-11-03, from `AGENTS.md`, `DESIGN.md` and everything in `docs/`. Update the "Status" in `AGENTS.md` at the end of each step.
+> Written on 2026-11-03 (step status updated 2026-11-04), from `AGENTS.md`, `DESIGN.md` and everything in `docs/`. Update the "Status" in `AGENTS.md` at the end of each step.
 
 ## How each step is executed
 1. Read the step's section here + the features it cites + the decisions it cites
@@ -18,9 +18,9 @@
 | Item | Status on 2026-11-03 | What for |
 |---|---|---|
 | Node 24 | ✅ installed | everything |
-| pnpm | ❌ missing → `corepack enable` + `packageManager` in `package.json` | monorepo |
-| Visual Studio Build Tools (C++) + Python 3 | ❌ missing | native mouse module on Windows (step 3, `node-gyp`) |
-| Access to an Apple silicon Mac (macOS ≥ 13.3) | ? | capture on Mac (steps 2, 3, 10). Without a Mac, validation is only possible through the `macos-14` CI, and the manual checklist is impossible |
+| pnpm | ✅ installed (2026-11-04: `packageManager` pins pnpm 12) | monorepo |
+| Rust (rustup) + Visual Studio Build Tools (C++) | ✅ installed (2026-11-04; the Windows helper builds and records locally). Python 3 is no longer needed: the mouse hook lives in the helper (D-023), not in a `node-gyp` module | Windows capture helper (steps 2–3) |
+| Access to an Apple silicon Mac (macOS ≥ 13.3) | ❌ still none (2026-11-04) | capture on Mac (steps 2, 3, 10). Without a Mac, validation is only possible through the `macos-14` CI, and the manual checklist is impossible |
 
 ### Accounts and names (do in phase 0, before they are needed)
 - **`@kamo` org on npm:** the packages don't exist in the registry yet (404), but it wasn't possible to confirm whether the org is free. Create it now; if it's taken, decide on the alternative scope before step 1 (affects every `package.json` and `kamo-site`)
@@ -55,8 +55,8 @@
 ---
 
 ## Phase 0 — validate (part of `kamo`)
-- [ ] Publish `@kamo/design-tokens@0.0.x-next` (comes out of step 1a)
-- [ ] Publish `@kamo/core@0.0.x-next` (comes out of step 1b)
+- [ ] Publish `@kamo/design-tokens@0.0.x-next` (comes out of step 1a) — workflow ready; blocked on the `@kamo` npm org and the `NPM_TOKEN` secret
+- [ ] Publish `@kamo/core@0.0.x-next` (comes out of step 1b) — same blocker
 - The other phase 0 deliverables (landing, waitlist, W-01) belong to the `kamo-site` and `kamo-cloud` repositories
 
 ---
@@ -91,8 +91,8 @@
 
 **Done when:** the window opens on Windows (local) and on Mac (`macos-14` CI builds and runs a smoke test), and the project format tests pass.
 
-### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0) ⏳ (2026-11-04)
-> Done: Home with live display thumbnails, countdown, floating bar (excluded from capture), stop shortcut, on-disk store with recovery marker and disk check, local log, the stdio helper protocol with a fake helper and end-to-end tests, and the Swift Mac helper (builds on `macos-14`, ships in the dmg). Pending: the Rust Windows helper (needs Rust + Build Tools on the dev machine), a real recording test on a Mac, recovery UI for interrupted recordings, and the first-frame latency check (≤ 3.5s from Record).
+### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0) ⏳ (2026-11-04, Windows done, Mac untested)
+> Done: Home with live display thumbnails, countdown, floating bar (excluded from capture), stop shortcut, on-disk store with recovery marker and disk check, local log, the stdio helper protocol with a fake helper and end-to-end tests, and the Swift Mac helper (builds on `macos-14`, ships in the dmg). Since then: the Rust Windows helper (0a934bc: WGC with no cursor or border, hardware H.264 into a fragmented MP4, reference JPEGs; verified recording both monitors, pause, protected window excluded, a killed helper leaves a playable file), recovery of interrupted recordings from Home (b3470e2; the video and the mouse events, not yet the audio or the webcam), the Record button naming its screen, the bar opening on the monitor with Kamo's window and a recording tray icon (62f7ebb). Pending: a real recording test on a Mac, the first-frame latency check (≤ 3.5s from Record), and a 30-minute recording test.
 
 **Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (Rust on Windows, Swift on Mac). Requires Rust (rustup) and Visual Studio Build Tools (C++ workload, for the MSVC linker) on the Windows dev machine.
 - Home with displays and live thumbnails (≥ 1/s), primary pre-selected, choice remembered
@@ -104,7 +104,9 @@
 - **Reference frames:** 480px JPEG every 5s in `frames/` (written by the helper; JPEG because neither OS ships a WebP encoder), taken from the stream during recording
 - Rotating local logger in `app-data/logs/` (basis of F-17), no personal data
 
-### Step 3 — Mouse + microphone + system sound (F-03, F-04)
+### Step 3 — Mouse + microphone + system sound (F-03, F-04) ⏳ (2026-11-04, Windows done, Mac partial)
+> Done: mouse events inside each capture helper instead of a separate `@kamo/mouse-hook` module (D-023): `WH_MOUSE_LL` in the Rust helper (0a934bc) and a listen-only, mouse-only `CGEventTap` in the Swift helper (ba3ae78), ~60Hz, video pixels, pauses removed, "outside" moves; the CI keyboard guard (c7cf8da, `pnpm guard:keyboard`); microphone and computer sound through a hidden recorder page (bdf7d4c, D-024): `audio.m4a`/`system.m4a`, mic picker, level meters, per-track `offsetMs`, volume and mute in the editor and the export. Windows computer sound uses Chromium's loopback (`getDisplayMedia`) rather than a WASAPI module of our own. Pending: Mac computer sound (ScreenCaptureKit audio in the Swift helper), the Input Monitoring spike on a real Mac, and the sync measurements (≤ 33ms events, ≤ 40ms audio).
+
 **Spike:** Input Monitoring on Mac.
 - `@kamo/mouse-hook`: mouse-only native module; Windows `WH_MOUSE_LL` (N-API + prebuilds in CI), Mac via Swift helper with a mouse-only mask, listen-only
 - `events.jsonl` with move (~60Hz), down, up, scroll, button; coordinates in video pixels (scale factor); pauses discounted; "outside the display"
@@ -112,8 +114,8 @@
 - Microphone (`audio.m4a`) with device selection and level meter; system sound (`system.m4a`) via ScreenCaptureKit / WASAPI loopback
 - Sync ≤ 33ms (events) and ≤ 40ms (audio), measured with a test recording with an audible click
 
-### Step 4 — Editor, style and projects (F-08, F-10 partial, F-12) ⏳ (2026-11-04)
-> Done: Canvas 2D renderer in `core` (8 procedural wallpapers, padding, corners, cached shadow, camera crop, vector cursor and spring ripple; same code for export), editor page with live preview, side panel and autosave, Home project list (rename, trash, show in folder, damaged projects), `kamo-media://` with Range for the video, settings (remembered display, last style as default), and a sample project generator for development. Canvas 2D instead of WebGL for now: identical in preview and export and fast enough with the cached backdrop; WebGL only if profiling asks. Pending: visual regression in CI, the mascot in empty states, opening the raw video of a damaged project, auto-zoom toggle persistence.
+### Step 4 — Editor, style and projects (F-08, F-10 partial, F-12) ⏳ (2026-11-04, almost done)
+> Done: Canvas 2D renderer in `core` (8 procedural wallpapers, padding, corners, cached shadow, camera crop, vector cursor and spring ripple; same code for export), editor page with live preview, side panel and autosave, Home project list (rename, trash, show in folder, damaged projects), `kamo-media://` with Range for the video, settings (remembered display, last style as default), and a sample project generator for development. Canvas 2D instead of WebGL for now: identical in preview and export and fast enough with the cached backdrop; WebGL only if profiling asks. Since then: Kamo the mascot in the empty project list, the countdown, onboarding and export (2c4154c, c63340a, 5d6d4d4), and the paper-cut look in the editor (07daa07). Pending: visual regression in CI, opening the raw video of a damaged project (Home already lists it with the button), auto-zoom toggle persistence (it is editor state only), and audio playback in the preview (F-10).
 
 - `packages/ui`: shadcn/ui + Tailwind with the tokens preset; base components from `DESIGN.md` (button-primary, panel, chip, timecode, toasts, cloud-badge)
 - Editor: preview in the center using the `core` renderer, side panel (background, padding, corners, shadow), play/pause, space and arrows
@@ -122,42 +124,46 @@
 - Autosave of `project.json` with migration by `version`; corrupted project → open only the raw video
 - Visual regression: reference frames rendered by `core` compared in CI
 
-### Step 5 — Zoom generation (F-05) ⏳
-> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `generateZooms` and `visibleZooms` in `packages/core/src/zoom/`. Pending (needs the editor, step 4): the "Regenerate zooms" button, the auto-zoom toggle and the "no clicks" notice.
+### Step 5 — Zoom generation (F-05) ✅ (2026-11-04)
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `generateZooms` and `visibleZooms` in `packages/core/src/zoom/`. The editor now generates zooms on first open and has the "Regenerate zooms" button, the auto-zoom toggle and the "no clicks" notice. Left for step 4: remembering the auto-zoom toggle (today it resets when the editor reopens).
 
 - Grouping by time (~1.5s) and distance (~25%), `leadMs`, minimum 600ms, no overlap (the larger one absorbs), edge offset
 - "Regenerate zooms" preserves `manual`; auto-zoom toggle hides without deleting
 - Performance test: 10 min of events in < 1s; snapshots with the fixtures
 
-### Step 6 — Virtual camera with spring (F-06) ⏳
-> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCameraTrack`/`cameraAt`/`viewportAt` in `packages/core/src/camera/`, 240Hz exact-spring samples. Pending: applying it in the renderer (step 4) and the preview = export check.
+### Step 6 — Virtual camera with spring (F-06) ✅ (2026-11-04)
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCameraTrack`/`cameraAt`/`viewportAt` in `packages/core/src/camera/`, 240Hz exact-spring samples. Applied in the renderer through the shared scene (preview and export), and the smoke export checks the exported frames against the renderer (~50 dB PSNR, 6c8d9fa).
 
 - 170/26 spring (never easing curves); arrival at the target at the instant of the click (± 1 frame), resolving the start through `leadMs`
 - Framing clamped to the edges; cursor never leaves the frame with `follow`; adjacent zooms without returning to 1.0×
 - Deterministic per-frame tests (the same function feeds preview and export)
 
-### Step 7 — Smoothed cursor (F-07) ⏳
-> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCursorTrack`/`cursorAt` and the vector `CURSOR_ARROW` in `packages/core/src/cursor/`, exact at every click. Pending: drawing it in the renderer (the ripple `progress` is linear, so the renderer must drive its size/opacity with the spring, rule 10) and the Cursor side panel.
+### Step 7 — Smoothed cursor (F-07) ✅ (2026-11-04)
+> Engine part done on 2026-11-04, ahead of steps 3–4 while the native helpers were blocked (the plan already allowed 5–7 in parallel). `buildCursorTrack`/`cursorAt` and the vector `CURSOR_ARROW` in `packages/core/src/cursor/`, exact at every click. Drawn by the renderer with a spring-driven ripple (`render/ripple.ts`), with the cursor settings (size, hide, ripple) in the side panel.
 
 - Vector arrow, spring, zero error on the click frame, ripple, size 1–3×, hide, auto-hide after 3s
 - "Cursor" side panel
 
-### Step 8 — Timeline and trim (F-09, F-16) ⏳ (2026-11-04)
-> Done: pure edits and undo history in `core` (randomized tests), the timeline component and its integration in the editor (move/resize/scale/delete/create zooms, trim handles, scrub, mic/computer rows, undo/redo). Pending: the "Trim the last 2s?" suggestion in the UI (`suggestEndTrim` exists), a DOM test for drag interactions, and a check that every i18n key used in code exists in the locales (`i18n:check` only compares locales with each other).
+### Step 8 — Timeline and trim (F-09, F-16) ⏳ (2026-11-04, almost done)
+> Done: pure edits and undo history in `core` (randomized tests), the timeline component and its integration in the editor (move/resize/scale/delete/create zooms, trim handles, scrub, mic/computer rows, undo/redo). Since then: `pnpm i18n:usage` checks that every key used in code exists (13c73bf, part of `pnpm check` and CI), and a Webcam lane hides the bubble in stretches (A-03). Pending: the "Trim the last 2s?" suggestion in the UI (`suggestEndTrim` exists) and a DOM test for drag interactions.
 
 - Tracks: video (trim handles), audio (volume and mute per track), zooms (pink blocks)
 - Move, stretch, scale 1–4× (step 0.25), delete, double click creates 2s/2.0×, no overlap, scrub on the ruler
 - Undo/redo ≥ 50 steps; `project.trim`; suggestion "Trim the last 2s?"
 - Closes phase 2: **a milestone that can't slip** ("stopped recording and it's already edited")
 
-### Step 9 — WebCodecs export (F-11)
+### Step 9 — WebCodecs export (F-11) ⏳ (2026-11-04, almost done)
+> Done (6c8d9fa, D-025): `@kamo/core/export` decodes the raw video with mediabunny, renders every frame through the preview's scene and renderer, encodes H.264 (hardware first, software fallback with a warning) and AAC 48kHz mixed from the mic/system tracks with volume, mute, trim and offsets; the Formats sheet (live 16:9 and 1:1 previews, sequential exports with a progress bar each, cancel, retry); the desktop sink (`.partial` renamed on commit, " (2)" names, disk-full mapping, partial deleted on cancel/failure/close, `project.exports`, show in folder); and a smoke export that checks files, durations and pixels. mediabunny is an optional peer of `@kamo/core` (df5b754). On the dev machine 19s of 1080p export in ~3s (16:9). Pending: the `isConfigSupported` spike on other real machines and the CI benchmark.
+
 **Spike:** `isConfigSupported` on real machines.
 - Offline render through the same code as the preview; `VideoEncoder` H.264 + `AudioEncoder` AAC + MP4 muxer (mediabunny; justify in the dependency)
 - 16:9 and 1:1 with virtual camera, track mixing with volume, respecting the trim
 - `FileSink` on desktop; name `<project> <format> <resolution><fps>.mp4`, " (2)" on collision, Videos folder, cancel deletes the partial file, full disk
 - Goal: 1 min in < 1 min on an average machine; benchmark in CI with a short video
 
-### Step 10 — Onboarding, diagnostics, packaging and release (F-13, F-14, F-15, F-17)
+### Step 10 — Onboarding, diagnostics, packaging and release (F-13, F-14, F-15, F-17) ⏳ (2026-11-04, app side done)
+> Done (dc91eb0, 3b767b0, a178b3a): onboarding with one permission per screen and live detection, Settings (theme, language without restart, folders, editable stop shortcut, permissions, updates, help, about, close to tray, D-026), Copy diagnostics with "Open issue on GitHub", electron-updater (launch + daily, background download, never restarts while recording or exporting), single-instance lock. Pending: the release workflow on the `v*` tag with Mac signing and notarization (no `release.yml` yet; CI only builds unsigned installers and checks the 130MB budget), `docs/release-checklist.md`, the closed beta, the native review of the 5 languages, and every Mac check (needs a real Mac).
+
 - Permissions onboarding (Mac: Screen Recording, Microphone and, if step 3 confirms, Input Monitoring; Windows: Microphone), with automatic detection
 - Settings: theme, folders, shortcut, language without restart, permissions, packs (empty for now), help
 - Copy diagnostics + open a GitHub issue with the text
@@ -172,7 +178,7 @@ On the `kamo` side: ensure `@kamo/design-tokens` and `@kamo/core` are stable on 
 ---
 
 ## Extension v0.2
-### Step 12 — Popup + tab recording (E-01)
+### Step 12 — Popup + tab recording (E-01) ⏳ (started 2026-11-04)
 - Vite with multiple entry points: popup (≤ 150KB, no `core`), offscreen, service worker, editor, welcome
 - `tabCapture` → offscreen → chunked `MediaRecorder` into OPFS; tab audio returned to the user; microphone with permission requested on a visible page
 - Countdown overlaid and removed before the 1st frame; badge with the time; nothing injected during recording
@@ -221,27 +227,28 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 ---
 
 ## Transcription, local MCP and advanced v0.4
-### Step 23 — Optional packs + transcription (A-07, A-05)
+### Step 23 — Optional packs + transcription (A-07, A-05) (not started)
 - Pack manager: `packs-manifest.json` in the releases, download with progress/pause, SHA-256, `app-data/packs/`, Install/Remove/update with confirmation
 - Light and Accurate transcription packs (whisper.cpp + model) assembled in CI as release assets
 - Background transcription (utility process), `transcript.json`, resume after closing, one-time question about automatic mode
 
-### Step 24 — Captions (A-06)
+### Step 24 — Captions (A-06) (not started)
 - Editable caption track (fixes the transcript), 3 presets, export with none / burned-in / `.srt` adjusted to the trim
 
-### Step 25 — Local MCP (M-01)
+### Step 25 — Local MCP (M-01) ⏳ (2026-11-04, built ahead of order; publishing pending)
+> Done (082ded8): `apps/mcp` with the 6 tools, pagination, folder discovery (`--dir` → `settings.json` → `~/Kamo/projects`), corrupted projects skipped with a warning; a source scan plus a runtime trap prove no writes and no network; 500 recordings searched in under 1s, frames well under 500ms; tarball 17kB. Pending: publishing `@kamo/mcp` to npm (same blocker as phase 0) and a check with the MCP Inspector and Claude Code.
 - `apps/mcp`: MCP SDK, stdio, 6 tools, pagination, folder discovery (`--dir` → `settings.json` → `~/Kamo/projects`)
 - Tests: no writes, no network (block `net`/`fetch` in the test), 500 recordings in < 1s, `get_frame` < 500ms, package < 5MB
 - `@kamo/mcp` publishing; test with MCP Inspector
 
-### Step 26 — "Connect to an agent" panel
+### Step 26 — "Connect to an agent" panel (not started; `@kamo/mcp` already prints the command in its help)
 - Ready-made command with the current folder, Copy button, instructions for other clients
 
 ### Steps 27–30 — Advanced (A-01, A-02, A-03, A-04, A-08)
-- 27: 60fps recording on Home + 4K/60 export when the source allows
-- 28: 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
-- 29: webcam in a separate file, bubble (4 corners, 3 sizes), shrinks on zoom, hidden per segment; camera requested only here
-- 30: wallpaper with own image copied into the project; record a window and a region (`source.kind`)
+- 27 (not started; the Formats sheet shows 4K and 60fps as coming soon, never locked): 60fps recording on Home + 4K/60 export when the source allows
+- 28 ⏳ (2026-11-04: 9:16 in progress; GIF not started): 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
+- 29 ✅ (2026-11-04, built ahead of order: 48517e3, e1c5319, cf42d40, 57f94d0, 0c38467, 7d0fa3c): webcam in a separate file, bubble (4 corners, 3 sizes), shrinks on zoom, hidden per segment; camera requested only here. Also square, 16:9 and 9:16 shapes and free drag. Not yet tried by the user in a full real flow on a Mac
+- 30 (not started): wallpaper with own image copied into the project; record a window and a region (`source.kind`)
 
 ---
 

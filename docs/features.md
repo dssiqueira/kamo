@@ -1,7 +1,7 @@
 # features.md
 
 > Each feature with its expected behavior, acceptance criteria (what must be true for it to be done) and edge cases. Screens and states are in `flows.md`, fields and data rules in `data-model.md`.
-> Checked boxes = verified by automated tests or in the running app. Criteria that need real capture hardware (Windows helper, a Mac) or hands-on interaction stay open until tested that way.
+> Checked boxes = implemented and verified by automated tests or in the running app (on Windows, the dev machine). _Mac untested_ marks a checked criterion whose Mac half (Swift helper, permissions) has not run on a real Mac yet. Criteria that need a measurement nobody has taken yet (latency, sync, long recordings, average-machine speed) stay open. Status as of 2026-11-04.
 > IDs: `F-xx` = desktop v0.1 · `E-xx` = extension v0.2 · `C-xx` = Kamo Cloud v0.3 (subscription) · `A-xx` = advanced features v0.4 · `M-xx` = MCP (local v0.4, cloud v0.5).
 > **Everything that is F, E, A and the local MCP is free.** Only the cloud (C and the cloud MCP) has a paid plan.
 > The engine features (F-05 to F-11) live in `packages/core` and `packages/ui` and apply the same way to the extension. The `E-xx` items cover only what is specific to Chrome.
@@ -56,9 +56,9 @@
 **Acceptance criteria**
 - [x] Lists all displays, with the primary one preselected
 - [x] Thumbnails update at least once per second
-- [ ] The chosen display and the toggles are remembered for the next recording
-- [ ] Esc during the countdown cancels and returns to the Home without creating a project
-- [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s)
+- [x] The chosen display and the toggles are remembered for the next recording (display, microphone, computer sound and camera; there is no "show cursor" toggle on Home: cursor visibility lives in the editor, F-07)
+- [x] Esc during the countdown cancels and returns to the Home without creating a project
+- [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s) — not measured yet
 
 **Edge cases**
 - Display disconnected while the Home is open → disappears from the list; if it was the chosen one, selects the primary
@@ -71,16 +71,16 @@
 **Behavior:** records the chosen display **without the system cursor** (the cursor is redrawn later, see D-005), at 30fps in native resolution. A floating bar shows the timecode and the pause and stop buttons. When stopped, opens the Editor with the project ready.
 
 **Acceptance criteria**
-- [ ] The video comes out without the system cursor
-- [ ] The floating bar does not appear in the video
-- [ ] Pausing and resuming produces a continuous video, without the paused stretch
-- [ ] The global shortcut (⌘⇧2 / Ctrl+Shift+2) stops the recording even with another app in focus
-- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording
-- [ ] 30-minute recordings work without freezing or noticeably dropping frames
+- [x] The video comes out without the system cursor _(Mac untested)_
+- [x] The floating bar does not appear in the video _(Mac untested)_
+- [x] Pausing and resuming produces a continuous video, without the paused stretch _(Mac untested)_
+- [x] The global shortcut (⌘⇧2 / Ctrl+Shift+2) stops the recording even with another app in focus
+- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording — not measured yet
+- [ ] 30-minute recordings work without freezing or noticeably dropping frames — not tested yet (the helpers write a fragmented MP4 to disk as they go)
 
 **Edge cases**
 - Disk with less than 1GB free → warns before starting; if it runs out during recording, stops and saves what was already recorded
-- App closed or crashed midway → the recorded portion is recoverable on the next launch ("We found an interrupted recording")
+- App closed or crashed midway → the recorded portion is recoverable on the next launch ("We found an interrupted recording"); built, but the audio and webcam of an interrupted take are not recovered yet
 - Display disconnected during recording → stops and saves
 - Recording shorter than 1s → discards it and warns
 
@@ -90,10 +90,10 @@
 **Behavior:** during recording, logs the mouse movements, clicks and scroll to `events.jsonl` with the timestamp relative to the start of the video. **Never** logs the keyboard (D-003).
 
 **Acceptance criteria**
-- [ ] Logs move (sampled at ~60Hz), down, up and scroll, with left/right/middle button
-- [ ] Coordinates normalized to the recorded display, respecting the scale factor
-- [ ] Offset between event and video: at most 1 frame (33ms)
-- [ ] Pause events are not included (time stays aligned with the continuous video)
+- [x] Logs move (sampled at ~60Hz), down, up and scroll, with left/right/middle button _(Mac untested)_
+- [x] Coordinates normalized to the recorded display, respecting the scale factor _(Mac untested)_
+- [ ] Offset between event and video: at most 1 frame (33ms) — not measured yet
+- [x] Pause events are not included (time stays aligned with the continuous video) _(Mac untested)_
 - [x] No app code calls a keyboard API (verifiable by searching the code)
 
 **Edge cases**
@@ -106,12 +106,12 @@
 **Behavior:** two independent toggles on the Home: **microphone** (records to `audio.m4a`) and **computer sound** (records the system audio to `system.m4a`: the sound of the app being demonstrated, a playing video, notifications). Both stay in sync with the video.
 
 **Acceptance criteria**
-- [ ] Shows a level meter for each source on the Home before recording
-- [ ] Computer sound: ScreenCaptureKit on Mac (macOS 13+), WASAPI loopback on Windows
-- [ ] Kamo plays no sound of its own during recording, so computer sound never captures the app (Windows loopback records the whole system, including Kamo; excluding only its own process would require a native module and Windows 10 2004+, which is not worth it)
-- [ ] Offset between audio and video: at most 40ms in the exported video
-- [ ] Lets the user choose the microphone when there is more than one
-- [ ] In the Editor, volume and mute per track (microphone and computer), applied on export
+- [x] Shows a level meter for each source on the Home before recording
+- [ ] Computer sound: ScreenCaptureKit on Mac (macOS 13+), WASAPI loopback on Windows — Windows done (Chromium loopback through `getDisplayMedia`, D-024); Mac waits for the Swift helper (`capturesAudio` is still off)
+- [x] Kamo plays no sound of its own during recording, so computer sound never captures the app (Windows loopback records the whole system, including Kamo; excluding only its own process would require a native module and Windows 10 2004+, which is not worth it)
+- [ ] Offset between audio and video: at most 40ms in the exported video — offsets are recorded per track (`offsetMs`), not measured yet
+- [x] Lets the user choose the microphone when there is more than one
+- [x] In the Editor, volume and mute per track (microphone and computer), applied on export
 
 **Edge cases**
 - No microphone permission → records only the video and warns
@@ -146,7 +146,7 @@
 - [x] The camera reaches the target at the instant of the click (± 1 frame)
 - [x] Never shows an area outside the recorded video (framing is clamped to the edges)
 - [x] Inside a zoom, the cursor never leaves the frame
-- [ ] The preview and the export show exactly the same movement
+- [x] The preview and the export show exactly the same movement (same scene and renderer; the smoke export matches the renderer at ~50 dB PSNR)
 
 **Edge cases**
 - Two back-to-back zooms (one ends, the other starts) → the camera goes straight from one target to the other, without returning to 1.0×
@@ -177,7 +177,7 @@
 **Acceptance criteria**
 - [x] 8 ready-made wallpapers (in pastel, matching `DESIGN.md`), plus solid color
 - [x] Padding from 0 to 20%, corners from 0 to 32px, shadow on/off
-- [ ] Every change appears in the preview in under 100ms
+- [ ] Every change appears in the preview in under 100ms — not measured yet
 - [x] The last style used becomes the default for the next recordings
 - [x] The style applies to the whole video (it does not change per segment in the MVP)
 
@@ -187,15 +187,15 @@
 **Behavior:** each zoom is a pink block on the timeline that can be moved, stretched, rescaled, deleted or created from scratch.
 
 **Acceptance criteria**
-- [ ] Dragging the middle moves the block; pulling the edge changes the duration
-- [ ] Clicking the block opens the scale control (1.0× to 4.0×, steps of 0.25)
-- [ ] Delete or Backspace deletes the selected block
-- [ ] Double-clicking an empty space on the track creates a 2s zoom at 2.0× scale, centered on the cursor at that instant
+- [x] Dragging the middle moves the block; pulling the edge changes the duration
+- [x] Clicking the block opens the scale control (1.0× to 4.0×, steps of 0.25)
+- [x] Delete or Backspace deletes the selected block
+- [x] Double-clicking an empty space on the track creates a 2s zoom at 2.0× scale, centered on the cursor at that instant
 - [x] Any edited block becomes `origin: manual`
 - [x] Undo and redo (⌘Z / ⌘⇧Z, Ctrl+Z / Ctrl+Y) with at least 50 steps
 - [x] Blocks do not overlap: dragging a block against another stops at the limit
-- [ ] Clicking and dragging on the timeline ruler moves the playhead (scrub)
-- [ ] Everything is saved automatically to `project.json`
+- [x] Clicking and dragging on the timeline ruler moves the playhead (scrub)
+- [x] Everything is saved automatically to `project.json`
 
 **Edge cases**
 - Block stretched past the end of the video → clamped to the end
@@ -207,10 +207,10 @@
 **Behavior:** the Editor plays the video with style, camera and cursor applied, as it will look in the export.
 
 **Acceptance criteria**
-- [ ] Playback at 30fps without stuttering on an average machine (M1 / i5 with 8GB)
-- [ ] Space plays and pauses; arrows step 1 frame
-- [ ] What appears in the preview is identical to the export (same rendering code)
-- [ ] Audio in sync with the image
+- [ ] Playback at 30fps without stuttering on an average machine (M1 / i5 with 8GB) — not measured yet
+- [x] Space plays and pauses; arrows step 1 frame
+- [x] What appears in the preview is identical to the export (same rendering code)
+- [ ] Audio in sync with the image — the preview does not play the microphone and computer tracks yet (only the export mixes them)
 
 ---
 
@@ -218,15 +218,15 @@
 **Behavior:** on the Formats screen, the user checks the formats and exports. Each format comes out as an MP4 file.
 
 **Acceptance criteria**
-- [ ] MP4 H.264 + AAC, 1080p, 30fps, in 16:9 and 1:1
-- [ ] The checked formats export in sequence, with a progress bar per file
-- [ ] In 1:1, the framing follows the virtual camera (it is not just a fixed center crop)
-- [ ] File name: `<project name> <format> <resolution><fps>.mp4` (e.g. `Demo 16x9 1080p30.mp4`)
-- [ ] Saves to the system Videos folder by default, which can be changed
-- [ ] "Show in folder" button at the end
-- [ ] Can be canceled midway; the incomplete file is deleted
-- [ ] Exporting 1 minute at 1080p30 takes less than 1 minute on an average machine
-- [ ] No watermark, ever
+- [x] MP4 H.264 + AAC, 1080p, 30fps, in 16:9 and 1:1
+- [x] The checked formats export in sequence, with a progress bar per file
+- [x] In 1:1, the framing follows the virtual camera (it is not just a fixed center crop)
+- [x] File name: `<project name> <format> <resolution><fps>.mp4` (e.g. `Demo 16x9 1080p30.mp4`)
+- [x] Saves to the system Videos folder by default, which can be changed
+- [x] "Show in folder" button at the end
+- [x] Can be canceled midway; the incomplete file is deleted
+- [ ] Exporting 1 minute at 1080p30 takes less than 1 minute on an average machine — on the dev machine 19s export in ~3s; no average-machine run or CI benchmark yet
+- [x] No watermark, ever
 
 **Edge cases**
 - Disk full during export → stops, deletes the incomplete file and warns
@@ -240,14 +240,14 @@
 
 **Acceptance criteria**
 - [x] Lists projects with thumbnail, name, duration and date, newest to oldest
-- [ ] Rename (double-click the name) and delete (with confirmation; goes to the system trash)
-- [ ] "Show in folder" opens the project folder
-- [ ] Every edit is saved automatically, with no "Save" button
+- [x] Rename (double-click the name) and delete (with confirmation; goes to the system trash)
+- [x] "Show in folder" opens the project folder
+- [x] Every edit is saved automatically, with no "Save" button
 - [x] `project.json` with a `version` field, migrated automatically when the format changes
 
 **Edge cases**
 - Project folder deleted outside the app → disappears from the list without error
-- Corrupted `project.json` → offers to open only the raw video and recreate the edit
+- Corrupted `project.json` → offers to open only the raw video and recreate the edit (Home lists it with the button; opening the raw video in the editor is not built yet)
 
 ---
 
@@ -255,12 +255,12 @@
 **Behavior:** on first use, guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
 
 **Acceptance criteria**
-- [ ] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone
-- [ ] Camera is only requested when the user turns on the webcam for the first time (v0.4), never in onboarding
-- [ ] Automatically detects when the permission is granted, without the user having to restart the app (when the system allows it; otherwise, warns that it needs to be reopened)
-- [ ] On Mac, if Input Monitoring is required, makes it clear that it is only for the mouse and that the app never reads the keyboard
-- [ ] Screen Recording is mandatory; the rest can be skipped
-- [ ] The permissions also appear in Settings, with status and a shortcut to the system settings
+- [x] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone _(Mac untested; whether Input Monitoring is needed is still open, so it is off for now)_
+- [x] Camera is only requested when the user turns on the webcam for the first time (v0.4), never in onboarding
+- [x] Automatically detects when the permission is granted, without the user having to restart the app (when the system allows it; otherwise, warns that it needs to be reopened) _(Mac untested)_
+- [x] On Mac, if Input Monitoring is required, makes it clear that it is only for the mouse and that the app never reads the keyboard _(Mac untested)_
+- [x] Screen Recording is mandatory; the rest can be skipped
+- [x] The permissions also appear in Settings, with status and a shortcut to the system settings
 
 ---
 
@@ -268,24 +268,24 @@
 **Behavior:** the app checks GitHub Releases for new versions and updates without the user having to download again.
 
 **Acceptance criteria**
-- [ ] Checks on launch and every 24h
-- [ ] Downloads in the background and shows "New version ready, restart now?"
-- [ ] Never restarts on its own during a recording or an export
-- [ ] The app update neither includes nor deletes the optional packages
-- [ ] On Mac (signed), permissions persist after the update
+- [x] Checks on launch and every 24h (installed builds only; not yet run against a real GitHub release)
+- [x] Downloads in the background and shows "New version ready, restart now?"
+- [x] Never restarts on its own during a recording or an export
+- [ ] The app update neither includes nor deletes the optional packages — no packs exist yet (A-07)
+- [ ] On Mac (signed), permissions persist after the update — needs signing and a real Mac
 
 ---
 
 ## F-15 — Settings and theme
 **Acceptance criteria**
-- [ ] Theme: Light (default) / Dark / System
-- [ ] Projects folder and export folder
-- [ ] Global stop shortcut, editable
-- [ ] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
-- [ ] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), following the system language, with manual switching without restarting
-- [ ] Dates, durations, numbers and file sizes formatted to each language's standard (`Intl`)
-- [ ] No screen breaks with text 35% longer than English (German, French) or with Chinese and Japanese characters
-- [ ] Kamo Cloud account (see C-01 and C-09) and permissions (see F-13)
+- [x] Theme: Light (default) / Dark / System
+- [x] Projects folder and export folder
+- [x] Global stop shortcut, editable
+- [x] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
+- [x] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), following the system language, with manual switching without restarting
+- [x] Dates, durations, numbers and file sizes formatted to each language's standard (`Intl`)
+- [ ] No screen breaks with text 35% longer than English (German, French) or with Chinese and Japanese characters — not reviewed yet
+- [ ] Kamo Cloud account (see C-01 and C-09) and permissions (see F-13) — permissions done; the account waits for C-01 (step 17)
 
 ---
 
@@ -293,10 +293,10 @@
 **Behavior:** every recording has a few dead seconds at the start (clicking to start the countdown, getting settled) and at the end (looking for the stop button). Handles at the ends of the timeline trim those stretches, without altering the raw video.
 
 **Acceptance criteria**
-- [ ] Handles at the start and end of the video track; dragging trims
-- [ ] The preview, the zooms and the export respect the trim; zooms outside the trim disappear from the timeline (but are not deleted)
-- [ ] Trim saved in `project.trim`, undoable like any edit
-- [ ] Optional automatic suggestion: "Trim the last 2s?" when the last event is the click on Stop
+- [x] Handles at the start and end of the video track; dragging trims
+- [x] The preview, the zooms and the export respect the trim; zooms outside the trim disappear from the timeline (but are not deleted)
+- [x] Trim saved in `project.trim`, undoable like any edit
+- [ ] Optional automatic suggestion: "Trim the last 2s?" when the last event is the click on Stop — `suggestEndTrim` exists in `core`, not shown in the UI yet
 - [x] Cuts in the middle of the video remain out of scope (it is not a video editor)
 
 **Edge cases**
@@ -309,11 +309,11 @@
 **Behavior:** the app has no telemetry, so when something goes wrong the user needs an easy way to send context. Settings → Help → **Copy diagnostics** gathers technical information into text to paste into a GitHub issue or an email.
 
 **Acceptance criteria**
-- [ ] Includes: app and package versions, OS and version, architecture, GPU, status of each permission, whether the hardware encoder is available, and the last 200 lines of the local error log
-- [ ] Rotating local log (max 5MB) in `app-data/logs/`, with technical events only: never project name, transcript, path with the user name, or screen content
-- [ ] Shows the text before copying, so the person sees what they are about to send
-- [ ] "Open GitHub issue" button with the diagnostics already in the body
-- [ ] Nothing is sent automatically, ever
+- [x] Includes: app and package versions, OS and version, architecture, GPU, status of each permission, whether the hardware encoder is available, and the last 200 lines of the local error log (no optional packs exist yet to list)
+- [x] Rotating local log (max 5MB) in `app-data/logs/`, with technical events only: never project name, transcript, path with the user name, or screen content
+- [x] Shows the text before copying, so the person sees what they are about to send
+- [x] "Open GitHub issue" button with the diagnostics already in the body
+- [x] Nothing is sent automatically, ever
 - [ ] In the extension, the same button on the Settings page
 
 ---
@@ -474,10 +474,11 @@
 - [ ] GIF at up to 15fps and up to 1280px wide, with an estimated file size warning before exporting
 
 ## A-03 — Webcam bubble
-- [ ] Records the webcam along, in a separate file
-- [ ] Round bubble, with 4 corner positions and 3 sizes
-- [ ] Shrinks automatically when the camera zooms and returns to normal size afterward
-- [ ] The bubble can be hidden in specific stretches via the timeline
+> Built on 2026-11-04, ahead of the step order; not yet tried by the user in a full real flow on a Mac. Beyond the criteria: square, 16:9 and 9:16 shapes and free drag in the preview.
+- [x] Records the webcam along, in a separate file (`webcam.mp4`)
+- [x] Round bubble, with 4 corner positions and 3 sizes
+- [x] Shrinks automatically when the camera zooms and returns to normal size afterward
+- [x] The bubble can be hidden in specific stretches via the timeline
 
 ## A-04 — Wallpaper with your own image
 - [ ] Accepts PNG, JPG and WebP
@@ -555,7 +556,7 @@
 | `get_frame` | reference frame closest to the requested timestamp (saved every 5s by the app), so the agent can "see" the screen |
 
 **Acceptance criteria**
-- [ ] Installs and runs with one command, without configuring anything: finds the projects folder by reading the app's `settings.json` (local file, no network), falls back to `~/Kamo` if not found, or receives the path as an argument
+- [ ] Installs and runs with one command, without configuring anything: finds the projects folder by reading the app's `settings.json` (local file, no network), falls back to `~/Kamo` if not found, or receives the path as an argument — folder discovery done (`--dir`, then `settings.json`, then `~/Kamo/projects`, I-1); `@kamo/mcp` is not on npm yet
 - [ ] The command shown in the app panel already includes the current folder path as an argument
 - [ ] In the app, Settings → "Connect to an agent" shows the ready-to-copy command, already with the current folder (`claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`), and instructions for other MCP clients
 - [x] No tool modifies, deletes or creates files
@@ -564,7 +565,7 @@
 - [x] `get_frame` returns the image in under 500ms, reading `frames/` (no video decoder, no FFmpeg)
 - [x] The `@kamo/mcp` npm package is under 5MB, with no native binaries
 - [x] Paginated responses, so as not to blow up the agent's context
-- [ ] Works with the MCP Inspector and with Claude Code
+- [ ] Works with the MCP Inspector and with Claude Code — stdio tested end to end; not yet tried with the Inspector or Claude Code
 
 **Edge cases**
 - Empty or nonexistent folder → clear response ("no recordings found in ~/Kamo")

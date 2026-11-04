@@ -142,9 +142,9 @@ One feature per session. Don't skip steps. Numbering is global, the same across 
 34. **[kamo-cloud]** "Agent connections" in the account, with revocation
 
 ## Status
-- **Current step:** 2 (record the screen) — pending the Windows Rust helper and a real Mac test; engine math of steps 5–7 already done (see `docs/plan.md`)
-- **Last thing that worked:** 2026-11-04: the editor opens a project with a live preview (renderer + camera + cursor), side panel, timeline with undo/redo and autosave; Home lists projects. Recording flow up to the helper protocol, Swift Mac helper building in CI. `pnpm check` green
-- **Blockers:** Rust + Visual Studio Build Tools on the Windows dev machine (Windows helper); a real Mac to test capture; the `@kamo` npm org and `NPM_TOKEN` secret for prereleases
+- **Current step:** closing desktop v0.1 (steps 2–10) — on Windows the whole flow works: record (screen, mouse, mic, computer sound, webcam) → edit → export MP4. Steps 5–7 done; 2–4 and 8–10 have small leftovers, and every Mac check is pending (see `docs/plan.md`). Built ahead of order: local MCP (step 25, not published) and webcam bubble (step 29). In progress now: 9:16 (step 28) and the extension (step 12)
+- **Last thing that worked:** 2026-11-04: Windows Rust helper recording with no system cursor; mic and computer sound; WebCodecs export of 16:9 and 1:1 matching the preview; settings, onboarding, diagnostics, updater and close to tray; recovery of interrupted recordings; webcam recorded to `webcam.mp4` and drawn as a bubble (corners, sizes, shapes, drag, shrink on zoom, hidden stretches), not yet tried by the user in a full flow on a Mac; local MCP with its 6 tools
+- **Blockers:** a real Mac to test capture, permissions and Mac computer sound (still missing in the Swift helper); the `@kamo` npm org and `NPM_TOKEN` secret for prereleases and `@kamo/mcp`; Apple Developer ID for signing (release workflow not written yet)
 
 ## First prompt
 > Read AGENTS.md and everything it points to. Confirm for me what we are going to build, who will use it, what the product looks like and what the first feature is.
