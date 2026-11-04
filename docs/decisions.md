@@ -189,3 +189,9 @@
 - **Rejected:** mic and tab sound as two tracks of `screen.webm` (Chrome's `MediaRecorder` writes a single audio track) and `createWritable` streams (a browser crash loses everything not yet closed).
 - **Why:** per-track volume and mute (F-04) work the same as on desktop, and a crash keeps everything written so far.
 - **Open:** `minimum_chrome_version` is 129 (`Intl.DurationFormat`); the popup is ~118KB gzipped (~380KB raw) against a 150KB budget, to settle in step 15 (measure gzipped, or move to Preact).
+
+## D-028 — Local playlists in `<projects>/playlists.json`
+- **Date:** 2026-11-04 · **Status:** accepted
+- **Decision:** playlists are local and free on the desktop (rule 4: organizing recordings needs no account). They live in one versioned file at the root of the projects folder, `playlists.json`: per playlist a uuid, a name and the ordered project ids. The zod schema and the pure operations are in `core`; the desktop writes the file atomically, one change at a time. Unknown fields are kept on rewrite and a file from a newer version is never overwritten. The local MCP reads it (`list_playlists`, `get_playlist`).
+- **Rejected:** a `playlists: string[]` field in each `project.json` (one playlist's order spread across many files, N writes to reorder, a half-saved order after a crash, a project schema bump).
+- **Why:** a project can be in several playlists and the order belongs to the playlist; the file follows the projects folder chosen in Settings; stable uuids and preserved unknown fields let a later sync map a local playlist to a cloud one without a migration. Shareable cloud playlists stay in `kamo-cloud`.
