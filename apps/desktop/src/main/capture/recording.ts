@@ -37,6 +37,8 @@ export const SCREEN_FILE = 'screen.mp4'
 export const MIN_DURATION_MS = 1000
 
 export type RecordingErrorCode =
+  /** No helper binary for this build or OS (resolveHelperPath returned null). */
+  | 'helper_missing'
   /** Less than 1GB free before starting (F-02). */
   | 'low_disk'
   /** The helper exited unexpectedly; the folder is kept for recovery once recording began. */

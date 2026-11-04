@@ -137,6 +137,10 @@ export class RecordingController {
     await this.finish(result)
   }
 
+  isRecording(): boolean {
+    return this.state.name === 'recording'
+  }
+
   getClock(): RecordingClock | null {
     return this.state.name === 'recording' ? this.state.clock : null
   }

@@ -1,6 +1,9 @@
 import { app, BrowserWindow, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { tokens } from '@kamo/design-tokens'
+import { createI18n, resolveLocale } from '@kamo/i18n'
+import { createHelperBackend } from './capture/backend.ts'
+import { resolveHelperPath } from './capture/helper-path.ts'
 import { IpcChannel } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
@@ -25,13 +28,16 @@ if (isSmokeTest) {
 
 let mainWindow: BrowserWindow | undefined
 
-// Replaced by the native capture helper backend (D-023) once it lands.
-const unavailableBackend: RecordingBackend = {
-  start: () =>
-    Promise.reject(Object.assign(new Error('capture helper missing'), { code: 'helper_missing' })),
+// Set once the app is ready (project names need the locale). The Record button lives in a
+// window created after that, so nothing can start a recording before.
+let backend: RecordingBackend | undefined
+
+const delegatingBackend: RecordingBackend = {
+  start: (displayId) =>
+    backend ? backend.start(displayId) : Promise.reject(new Error('app not ready')),
 }
 
-const recording = new RecordingController(unavailableBackend, () => mainWindow, {
+const recording = new RecordingController(delegatingBackend, () => mainWindow, {
   info: (event, data) => getServices().log.info(event, data as Record<string, unknown>),
   error: (event, data) => getServices().log.error(event, data as Record<string, unknown>),
 })
@@ -119,7 +125,35 @@ handle(IpcChannel.pauseRecording, () => recording.pause())
 handle(IpcChannel.resumeRecording, () => recording.resume())
 handle(IpcChannel.stopRecording, () => recording.stop())
 
-void app.whenReady().then(() => {
+/** Native helper backend (D-023), with project names in the user's language. */
+async function createBackend(): Promise<RecordingBackend> {
+  const locale = resolveLocale([...app.getPreferredSystemLanguages(), app.getLocale()])
+  const i18n = await createI18n(locale)
+  const { store, log } = getServices()
+  return createHelperBackend({
+    store,
+    logger: log,
+    appVersion: app.getVersion(),
+    locale,
+    projectName: (date) => i18n.t('project.defaultName', { date }),
+    helperPath: () =>
+      resolveHelperPath({
+        packaged: app.isPackaged,
+        resourcesPath: process.resourcesPath,
+        appPath: app.getAppPath(),
+      }),
+  })
+}
+
+// Quitting mid-recording stops and saves it first (F-02: nothing recorded is lost).
+app.on('before-quit', (event) => {
+  if (!recording.isRecording()) return
+  event.preventDefault()
+  void recording.stop().finally(() => app.quit())
+})
+
+void app.whenReady().then(async () => {
+  backend = await createBackend()
   // Nothing needs renderer permissions: capture runs in the native helper (D-023).
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
     callback(false),
