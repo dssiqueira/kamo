@@ -25,6 +25,18 @@ export interface LayoutInput {
   aspect: Aspect
   /** camera viewport in source pixels (viewportAt); null/undefined = the whole source */
   viewport?: Box | null
+  /**
+   * Crop formats only: the box the frame fills instead of the padded output (the screen
+   * card of the split layout, splitRegions).
+   */
+  region?: Box | null
+  /** Preferred crop center in source pixels (framingAt); null/undefined = viewport center. */
+  focus?: Point | null
+  /**
+   * A source point the crop keeps inside, CROP_KEEP_MARGIN away from its edges, whenever the
+   * viewport allows it: the cursor, so it never leaves a crop format (A-02).
+   */
+  keep?: Point | null
 }
 
 export interface Layout {
@@ -41,6 +53,9 @@ export interface Layout {
 
 const ASPECT_EPSILON = 1e-9
 
+/** How far inside the crop edges the kept point (the cursor) stays, as a fraction of it. */
+export const CROP_KEEP_MARGIN = 0.06
+
 /**
  * Layout of one frame.
  *
@@ -49,12 +64,12 @@ const ASPECT_EPSILON = 1e-9
  * - 16:9 is the full format: the frame takes the source's aspect, fitted and centered in the
  *   padded area, so nothing of the recording is cut (a 16:9 source fills it exactly; a 16:10
  *   Mac display gets thin side bands of wallpaper).
- * - 1:1 and 9:16 are crop formats: the frame is the whole padded area and the crop follows
- *   the camera (F-11), never a fixed crop.
+ * - 1:1 and 9:16 are crop formats: the frame is the whole padded area (or `region`, the
+ *   split layout's screen card) and the crop follows the camera (F-11), never a fixed crop.
  *
- * Crop: the largest rect with the frame's aspect inside the camera viewport, centered on the
- * viewport's center and clamped inside the source. When the aspects match (16:9) it is the
- * viewport itself.
+ * Crop: the largest rect with the frame's aspect inside the camera viewport, centered on
+ * `focus` (else the viewport's center), moved to keep `keep` inside, then held inside the
+ * viewport and the source (cropFor). When the aspects match (16:9) it is the viewport itself.
  *
  * Radius: `style.radius` is pixels at 1080p, scaled by the output's short side / 1080, and
  * never more than half the frame's short side.
@@ -65,15 +80,13 @@ export function computeLayout({
   style,
   aspect,
   viewport,
+  region,
+  focus,
+  keep,
 }: LayoutInput): Layout {
-  const pad = clamp(style.padding, 0, 20) / 100
-  const area: Box = {
-    x: output.width * pad,
-    y: output.height * pad,
-    width: output.width * (1 - 2 * pad),
-    height: output.height * (1 - 2 * pad),
-  }
-  const frame = aspect === '16:9' ? fitInside(area, sourceSize.width / sourceSize.height) : area
+  const area = paddedArea(output, style.padding)
+  const frame =
+    aspect === '16:9' ? fitInside(area, sourceSize.width / sourceSize.height) : (region ?? area)
 
   const scaleToOutput = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
   const radius = clamp(
@@ -82,15 +95,29 @@ export function computeLayout({
     Math.min(frame.width, frame.height) / 2,
   )
 
-  const crop = cropFor(viewport ?? fullSource(sourceSize), sourceSize, frame.width / frame.height)
+  const crop = cropFor(
+    viewport ?? fullSource(sourceSize),
+    sourceSize,
+    frame.width / frame.height,
+    focus,
+    keep,
+  )
   return { output, frame, radius, crop, scale: frame.width / crop.width }
 }
 
 /**
- * Largest rect of `aspect` (width / height) inside `viewport`, centered on it, then clamped
- * inside the source.
+ * Largest rect of `aspect` (width / height) inside `viewport`. Centered on `focus` (default:
+ * the viewport's center), then moved the least needed so `keep` sits at least
+ * CROP_KEEP_MARGIN inside it, then held inside the viewport (the viewport wins over `keep`)
+ * and the source. All clamps, so a continuous focus and keep give a continuous crop.
  */
-export function cropFor(viewport: Box, sourceSize: Size, aspect: number): Box {
+export function cropFor(
+  viewport: Box,
+  sourceSize: Size,
+  aspect: number,
+  focus?: Point | null,
+  keep?: Point | null,
+): Box {
   const view = clampBox(viewport, sourceSize)
   const viewAspect = view.width / view.height
   if (Math.abs(viewAspect - aspect) <= ASPECT_EPSILON * aspect) return view
@@ -104,8 +131,16 @@ export function cropFor(viewport: Box, sourceSize: Size, aspect: number): Box {
     width = view.width
     height = width / aspect
   }
-  const cx = view.x + view.width / 2
-  const cy = view.y + view.height / 2
+  let cx = focus?.x ?? view.x + view.width / 2
+  let cy = focus?.y ?? view.y + view.height / 2
+  if (keep) {
+    const mx = width * CROP_KEEP_MARGIN
+    const my = height * CROP_KEEP_MARGIN
+    cx = clamp(cx, keep.x - width / 2 + mx, keep.x + width / 2 - mx)
+    cy = clamp(cy, keep.y - height / 2 + my, keep.y + height / 2 - my)
+  }
+  cx = clamp(cx, view.x + width / 2, view.x + view.width - width / 2)
+  cy = clamp(cy, view.y + height / 2, view.y + view.height - height / 2)
   return clampBox({ x: cx - width / 2, y: cy - height / 2, width, height }, sourceSize)
 }
 
@@ -136,6 +171,17 @@ export function isInCrop(point: Point, layout: Layout): boolean {
     point.y >= crop.y &&
     point.y <= crop.y + crop.height
   )
+}
+
+/** The output minus `padding`% of its width on the sides and of its height top and bottom. */
+export function paddedArea(output: Size, padding: number): Box {
+  const pad = clamp(padding, 0, 20) / 100
+  return {
+    x: output.width * pad,
+    y: output.height * pad,
+    width: output.width * (1 - 2 * pad),
+    height: output.height * (1 - 2 * pad),
+  }
 }
 
 function fullSource(size: Size): Box {

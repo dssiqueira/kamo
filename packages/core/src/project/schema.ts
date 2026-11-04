@@ -92,6 +92,21 @@ export type WebcamShape = z.infer<typeof WebcamShape>
  * Webcam bubble (A-03). The camera is recorded to `webcam.mp4`; this is how it shows. Null on a
  * project recorded without the camera.
  */
+/** How the camera shows: a bubble over the video, or its own card (split, 9:16 only). */
+export const WebcamLayout = z.enum(['bubble', 'split'])
+export type WebcamLayout = z.infer<typeof WebcamLayout>
+
+/**
+ * Split layout (A-02 + A-03): in the vertical 9:16 format the screen and the camera are
+ * stacked as two cards. `ratio` is the screen's share of the height (clamped to
+ * SPLIT_RATIO_MIN..MAX when drawn); `cameraFirst` puts the camera on top.
+ */
+export const WebcamSplit = z.object({
+  ratio: z.number().min(0).max(1),
+  cameraFirst: z.boolean().optional(),
+})
+export type WebcamSplit = z.infer<typeof WebcamSplit>
+
 export const WebcamSettings = z.object({
   /** Off hides the bubble in the whole video without deleting the recording. */
   visible: z.boolean(),
@@ -106,6 +121,10 @@ export const WebcamSettings = z.object({
   shape: WebcamShape.optional(),
   /** The bubble shrinks while the camera zooms in, and grows back after (A-03). */
   shrinkOnZoom: z.boolean(),
+  /** Absent = bubble. Split only applies to the 9:16 format; 16:9 and 1:1 keep the bubble. */
+  layout: WebcamLayout.optional(),
+  /** Split settings; absent = screen on top, half the height each. */
+  split: WebcamSplit.optional(),
   /** Stretches of video time where the bubble is hidden (set on the timeline), sorted. */
   hidden: z.array(z.object({ startMs: nonNegative, endMs: nonNegative })),
   /** Same meaning as AudioTrack.offsetMs: where the webcam's first frame sits on video time. */
@@ -119,6 +138,11 @@ export const DEFAULT_WEBCAM: WebcamSettings = {
   size: 'medium',
   shrinkOnZoom: true,
   hidden: [],
+}
+
+/** The editor's format (`project.aspect`), 16:9 when missing. */
+export function projectAspect(project: { aspect?: Aspect | undefined }): Aspect {
+  return project.aspect ?? '16:9'
 }
 
 /** The track's offset on the video timeline (`offsetMs`, 0 when missing). */
@@ -171,6 +195,11 @@ export const Project = z
     style: Style,
     zooms: z.array(Zoom),
     cursor: CursorSettings,
+    /**
+     * Format the editor previews in, pre-checked in the export (A-02). Absent = 16:9, so
+     * older files stay valid.
+     */
+    aspect: Aspect.optional(),
     webcam: WebcamSettings.nullable(),
     // Captions arrive in v0.4 (A-06); until then always null.
     captions: z.null(),

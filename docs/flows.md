@@ -58,10 +58,11 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 
 ### 5. Editor
 - **Hierarchy:** preview (largest area on screen) → timeline at the bottom → side panel → Export in the top right corner
-- **Preview:** video with style applied, play/pause, timecode
+- **Preview:** video with style applied, play/pause, timecode, and the format switch (16:9 · 1:1 · 9:16, A-02): the preview shows that format and the export comes with it checked
 - **Timeline:** video track (with handles at the ends to trim the start and end) · audio tracks (microphone and computer, with volume and mute) · zoom track (blocks with the scale, e.g. "2.0×") · captions track (v0.4)
 - **Zoom block:** dragging moves it; pulling the edge stretches it; clicking opens the scale control (1.0×–4.0×); Delete removes it
 - **Side panel:** Background · Padding · Corners · Shadow · Cursor · Webcam (v0.4) · Captions (v0.4)
+- **Webcam layout:** Bubble or Split. Split (9:16 only; picking it switches the preview to 9:16) stacks the screen and the camera as two cards; drag the line between them in the preview to resize (one undo step), "Camera on top" swaps them. While split shows, the bubble controls hide; in 16:9 and 1:1 the camera stays a bubble
 - **Actions:** "auto-zoom" toggle and "Regenerate zooms" button (keeps the ones the user edited)
 - **Transcribe** (discreet, in the side panel): without the pack, opens a popover "Transcription is an optional ~150MB pack that runs on your computer" with Download / Not now; with the pack, transcribes right away. Never appears as a popup on its own after recording
 - **States:** loading (processing events) · ready · no clicks (notice: "no clicks, nothing to zoom")

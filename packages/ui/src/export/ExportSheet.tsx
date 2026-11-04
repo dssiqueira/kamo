@@ -1,4 +1,11 @@
-import { buildScene, type Aspect, type MouseEventRecord, type Project, type Zoom } from '@kamo/core'
+import {
+  buildScene,
+  projectAspect,
+  type Aspect,
+  type MouseEventRecord,
+  type Project,
+  type Zoom,
+} from '@kamo/core'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
 import { DecorPiece } from '../decor/Decor.tsx'
@@ -28,8 +35,8 @@ export interface ExportSheetProps {
   onClose(): void
 }
 
-/** v0.1 formats (F-11); 9:16 arrives in v0.4 (A-02). */
-const ASPECTS: readonly Aspect[] = ['16:9', '1:1']
+/** F-11 formats plus the vertical 9:16 (A-02). */
+const ASPECTS: readonly Aspect[] = ['16:9', '1:1', '9:16']
 const PREVIEW_HEIGHT = 144
 const PREVIEW_SIZE: Record<Aspect, { width: number; height: number }> = {
   '16:9': { width: Math.round((PREVIEW_HEIGHT * 16) / 9), height: PREVIEW_HEIGHT },
@@ -64,11 +71,13 @@ export function ExportSheet({
 }: ExportSheetProps) {
   const t = useT()
   const titleId = useId()
-  const [checked, setChecked] = useState<Record<Aspect, boolean>>({
-    '16:9': true,
+  // The editor's format comes pre-checked (A-02).
+  const [checked, setChecked] = useState<Record<Aspect, boolean>>(() => ({
+    '16:9': false,
     '1:1': false,
     '9:16': false,
-  })
+    [projectAspect(project)]: true,
+  }))
   const [folder, setFolder] = useState<string | null>(null)
   const { state, start, retry, cancel, reset } = useExportRun({
     project,
@@ -156,21 +165,6 @@ export function ExportSheet({
                     </span>
                   </label>
                 ))}
-                {/* 9:16 arrives in v0.4: shown, not offered, no paywall look. */}
-                <div
-                  aria-disabled="true"
-                  className="flex flex-col gap-sm rounded-md border-2 border-dashed border-border p-sm text-on-surface-muted"
-                >
-                  <div
-                    className="flex items-center justify-center rounded-sm bg-surface-raised px-xs text-center text-label"
-                    style={PREVIEW_SIZE['9:16']}
-                  >
-                    {t('export.soon')}
-                  </div>
-                  <span className="text-body" style={{ maxWidth: PREVIEW_SIZE['9:16'].width }}>
-                    9:16 <span>{t(ASPECT_LABEL['9:16'])}</span>
-                  </span>
-                </div>
               </div>
             </fieldset>
 

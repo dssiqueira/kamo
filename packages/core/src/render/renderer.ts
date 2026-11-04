@@ -3,8 +3,10 @@
 // layout.ts, wallpapers.ts and ripple.ts.
 //
 // Per frame: backdrop (cached) → frame clipped to a rounded rect → source crop → ripple →
-// cursor → webcam bubble (A-03, an overlay outside the frame clip). The backdrop (wallpaper + shadow) only changes with the style or the output size,
-// so it is painted once into an offscreen canvas and then costs one drawImage per frame.
+// cursor → webcam (A-03: the bubble, an overlay outside the frame clip, or the split
+// layout's camera card). The backdrop (wallpaper + frame shadow) only changes with the
+// style, the output size or the frame box, so it is painted once into an offscreen canvas
+// and then costs one drawImage per frame.
 import { CURSOR_ARROW, type CursorFrame } from '../cursor/cursor.ts'
 import type { Aspect, Style } from '../project/schema.ts'
 import {
@@ -15,7 +17,7 @@ import {
   type Layout,
 } from './layout.ts'
 import { rippleLook } from './ripple.ts'
-import type { Box, Context2D, ImageSourceLike, Size } from './types.ts'
+import type { Box, Context2D, ImageSourceLike, Point, Size } from './types.ts'
 import { drawWallpaper } from './wallpapers.ts'
 import { WEBCAM_RING, WEBCAM_SHADOW, webcamCoverCrop, type WebcamBubble } from './webcam.ts'
 
@@ -42,6 +44,12 @@ export interface RenderInput {
   output: Size
   /** camera viewport in source pixels (viewportAt); null = whole source */
   viewport: Box | null
+  /** crop formats: the box the frame fills instead of the padded output (split layout) */
+  region?: Box | null
+  /** crop formats: preferred crop center in source pixels (framingAt) */
+  focus?: Point | null
+  /** crop formats: a source point the crop keeps inside (the cursor) */
+  keep?: Point | null
   cursor: CursorFrame | null
   /** cursor scale (CursorSettings.size, 1.0–3.0) */
   cursorSize: number
@@ -49,13 +57,21 @@ export interface RenderInput {
   webcam?: WebcamLayer | null
 }
 
-/** One webcam frame and where its bubble goes (webcamBubbleAt). */
+/** One webcam frame and where it goes: a bubble (webcamBubbleAt) or a split card. */
 export interface WebcamLayer {
   /** current webcam frame: HTMLVideoElement, VideoFrame… */
   source: ImageSourceLike
   /** webcam video size in pixels */
   sourceSize: Size
-  bubble: WebcamBubble
+  bubble?: WebcamBubble
+  /** the split layout's camera card (splitRegions), drawn like the frame */
+  card?: WebcamCard
+}
+
+/** The camera card of the split layout, output pixels. */
+export interface WebcamCard extends Box {
+  /** 0..1 (hidden stretches fade it) */
+  opacity: number
 }
 
 /** An offscreen surface for the cached backdrop. */
@@ -108,6 +124,9 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         style: input.style,
         aspect: input.aspect,
         viewport: input.viewport,
+        region: input.region ?? null,
+        focus: input.focus ?? null,
+        keep: input.keep ?? null,
       })
       ctx.drawImage(backdropFor(input.style, layout).canvas, 0, 0)
 
@@ -137,7 +156,10 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         }
       }
       ctx.restore()
-      if (input.webcam) drawWebcam(ctx, input.webcam, layout.output)
+      if (input.webcam?.card)
+        drawWebcamCard(ctx, input.webcam, input.webcam.card, layout, input.style)
+      else if (input.webcam?.bubble)
+        drawWebcam(ctx, input.webcam, input.webcam.bubble, layout.output)
       return layout
     },
     invalidate() {
@@ -187,8 +209,8 @@ function paintBackdrop(ctx: Context2D, style: Style, layout: Layout): void {
  * shape and mirrored inside it. Sizes scale with the output's short side, like the frame
  * shadow. The circle is a rounded box with half-side corners, so every shape takes one path.
  */
-function drawWebcam(ctx: Context2D, webcam: WebcamLayer, output: Size): void {
-  const { bubble, sourceSize } = webcam
+function drawWebcam(ctx: Context2D, webcam: WebcamLayer, bubble: WebcamBubble, output: Size): void {
+  const { sourceSize } = webcam
   if (!(bubble.opacity > 0) || !(bubble.width > 0 && bubble.height > 0)) return
   if (!(sourceSize.width > 0 && sourceSize.height > 0)) return
   const k = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
@@ -235,6 +257,59 @@ function drawWebcam(ctx: Context2D, webcam: WebcamLayer, output: Size): void {
     -inner.height / 2,
     inner.width,
     inner.height,
+  )
+  ctx.restore()
+}
+
+/**
+ * Split layout's camera card: the same rounded corners and shadow as the screen frame (two
+ * matching cards), the camera cover-fitted and mirrored like the bubble. No ring: the ring
+ * sets the floating bubble apart from the video, the card sits on the wallpaper like it.
+ */
+function drawWebcamCard(
+  ctx: Context2D,
+  webcam: WebcamLayer,
+  card: WebcamCard,
+  layout: Layout,
+  style: Style,
+): void {
+  const { sourceSize } = webcam
+  if (!(card.opacity > 0) || !(card.width > 0.5 && card.height > 0.5)) return
+  if (!(sourceSize.width > 0 && sourceSize.height > 0)) return
+  const { output } = layout
+  const k = Math.min(output.width, output.height) / REFERENCE_SHORT_SIDE
+  const radius = Math.min(layout.radius, card.width / 2, card.height / 2)
+  const crop = webcamCoverCrop(sourceSize, card.width / card.height)
+  ctx.save()
+  ctx.globalAlpha = Math.min(1, card.opacity)
+  if (style.shadow) {
+    ctx.shadowColor = FRAME_SHADOW.color
+    ctx.shadowBlur = FRAME_SHADOW.blur * k
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = FRAME_SHADOW.offsetY * k
+  }
+  roundRectPath(ctx, card, radius)
+  ctx.fillStyle = FRAME_FILL
+  ctx.fill()
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
+  roundRectPath(ctx, card, radius)
+  ctx.clip()
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.translate(card.x + card.width / 2, card.y + card.height / 2)
+  ctx.scale(-1, 1)
+  ctx.drawImage(
+    webcam.source,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+    -card.width / 2,
+    -card.height / 2,
+    card.width,
+    card.height,
   )
   ctx.restore()
 }

@@ -470,7 +470,7 @@
 - [ ] 60fps requires recording at 60fps: the 60fps recording option appears on the Home
 
 ## A-02 — Vertical 9:16 crop and GIF
-- [ ] 9:16 with framing that follows the virtual camera and the cursor (the important content never leaves the frame)
+- [x] 9:16 with framing that follows the virtual camera and the cursor (the important content never leaves the frame)
 - [ ] GIF at up to 15fps and up to 1280px wide, with an estimated file size warning before exporting
 
 ## A-03 — Webcam bubble

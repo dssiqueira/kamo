@@ -145,3 +145,22 @@ describe('webcamGapAt', () => {
     expect(webcamGapAt(hidden, trim, 10_000, 1500)).toBeNull()
   })
 })
+
+describe('setWebcam: layout and split', () => {
+  it('switches the layout and merges the split settings, clamped and rounded', () => {
+    const split = setWebcam(project(), { layout: 'split' })
+    expect(split.webcam?.layout).toBe('split')
+    const ratio = setWebcam(split, { split: { ratio: 0.6234 } })
+    expect(ratio.webcam?.split).toEqual({ ratio: 0.62 })
+    const swapped = setWebcam(ratio, { split: { cameraFirst: true } })
+    expect(swapped.webcam?.split).toEqual({ ratio: 0.62, cameraFirst: true })
+    expect(setWebcam(swapped, { split: { ratio: 5 } }).webcam?.split?.ratio).toBe(0.7)
+    expect(valid(swapped)).toBe(true)
+  })
+
+  it('returns the same project when the split does not change', () => {
+    const p = setWebcam(project(), { split: { ratio: 0.4 } })
+    expect(setWebcam(p, { split: { ratio: 0.4 } })).toBe(p)
+    expect(setWebcam(p, { split: {} })).toBe(p)
+  })
+})

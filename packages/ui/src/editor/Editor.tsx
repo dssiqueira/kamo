@@ -7,12 +7,15 @@ import {
   generateZooms,
   moveWebcamHidden,
   moveZoom,
+  projectAspect,
   resizeWebcamHidden,
   resizeZoom,
+  setAspect,
   setTrim,
   setWebcam,
   setZoomScale,
   visibleZooms,
+  type Aspect,
   type MouseEventRecord,
   type Project,
 } from '@kamo/core'
@@ -197,6 +200,10 @@ export function Editor({
                 fromBase((p) => setWebcam(p, { ...placement, anchor: placement.anchor ?? null }))
               }
               onWebcamDragEnd={() => history.commit()}
+              onSplitDragStart={() => history.begin()}
+              onSplitDrag={(ratio) => fromBase((p) => setWebcam(p, { split: { ratio } }))}
+              onSplitDragEnd={() => history.commit()}
+              splitHandleLabel={t('editor.webcam.dividerHint')}
             />
           </div>
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
@@ -216,6 +223,10 @@ export function Editor({
                 {formatTimecode(project.trim.endMs - project.trim.startMs, fps)}
               </span>
             </span>
+            <FormatSwitch
+              value={projectAspect(project)}
+              onChange={(aspect) => edit((p) => setAspect(p, aspect))}
+            />
           </div>
           <Timeline
             durationMs={project.durationMs}
@@ -271,6 +282,12 @@ export function Editor({
           onRegenerate={regenerate}
           webcam={webcamUrl ? project.webcam : null}
           onWebcam={(patch) => edit((p) => setWebcam(p, patch))}
+          aspect={projectAspect(project)}
+          onSplitLayout={() =>
+            // Split only shows in 9:16, so picking it also switches the preview there: one
+            // undo step for both.
+            edit((p) => setAspect(setWebcam(p, { layout: 'split' }), '9:16'))
+          }
         />
       </div>
       {exportOpen && exportPlatform && (
@@ -286,6 +303,61 @@ export function Editor({
           onClose={() => setExportOpen(false)}
         />
       )}
+    </div>
+  )
+}
+
+const FORMATS: readonly Aspect[] = ['16:9', '1:1', '9:16']
+const FORMAT_LABEL: Record<Aspect, string> = {
+  '16:9': 'export.aspect.landscape',
+  '1:1': 'export.aspect.square',
+  '9:16': 'export.aspect.vertical',
+}
+/** Outline of each format's icon, in px (a 16px-tall box at most). */
+const FORMAT_ICON: Record<Aspect, { width: number; height: number }> = {
+  '16:9': { width: 18, height: 10 },
+  '1:1': { width: 12, height: 12 },
+  '9:16': { width: 9, height: 15 },
+}
+
+/**
+ * Edit format (A-02): what the preview shows and what the export pre-checks. A compact
+ * segmented control next to the timecode; changing it is one undo step like any edit.
+ */
+function FormatSwitch({ value, onChange }: { value: Aspect; onChange(aspect: Aspect): void }) {
+  const t = useT()
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t('editor.format')}
+      className="ms-auto flex items-center gap-[2px] rounded-full bg-surface-raised p-[3px]"
+    >
+      {FORMATS.map((aspect) => {
+        const selected = aspect === value
+        return (
+          <button
+            key={aspect}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            title={t(FORMAT_LABEL[aspect])}
+            data-testid={`editor-format-${aspect}`}
+            onClick={() => onChange(aspect)}
+            className={`flex h-[30px] items-center gap-xs rounded-full px-[12px] text-label transition-colors duration-[120ms] ${FOCUS_RING} ${
+              selected
+                ? 'bg-tertiary-container text-on-surface'
+                : 'text-on-surface-muted hover:bg-border'
+            }`}
+          >
+            <span
+              aria-hidden
+              className={`rounded-[2px] border-[1.5px] ${selected ? 'border-tertiary' : 'border-current'}`}
+              style={FORMAT_ICON[aspect]}
+            />
+            <span className="font-medium tabular-nums">{aspect}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }

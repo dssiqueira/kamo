@@ -4,7 +4,8 @@
 //
 // Stretches are kept sorted and never overlap, so a stretch is addressed by its index and
 // a drag never reorders them.
-import type { Project, WebcamSettings } from '../project/schema.ts'
+import type { Project, WebcamSettings, WebcamSplit } from '../project/schema.ts'
+import { SPLIT_RATIO_MAX, SPLIT_RATIO_MIN, splitRatio } from '../render/split.ts'
 import type { Range, ZoomEdge } from './zooms.ts'
 
 /** Length of a stretch added at the playhead. */
@@ -17,20 +18,36 @@ function withHidden(project: Project, webcam: WebcamSettings, hidden: Range[]): 
 }
 
 /** What the side panel and the preview can change on the bubble. */
-export type WebcamPatch = Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs' | 'anchor'>> & {
+export type WebcamPatch = Partial<
+  Omit<WebcamSettings, 'hidden' | 'offsetMs' | 'anchor' | 'split'>
+> & {
   /** null drops the free placement (back to `position`'s corner) */
   anchor?: { x: number; y: number } | null
+  /** merged into the split settings; the ratio is clamped and rounded to 0.01 */
+  split?: Partial<WebcamSplit>
 }
 
 /**
- * Updates the bubble's settings (visible, position, anchor, size, shrinkOnZoom). Picking a
- * corner without an anchor sends the bubble back to that corner.
+ * Updates the webcam's settings (visible, position, anchor, size, shape, shrinkOnZoom,
+ * layout, split). Picking a corner without an anchor sends the bubble back to that corner.
  */
 export function setWebcam(project: Project, patch: WebcamPatch): Project {
   const webcam = project.webcam
   if (!webcam) return project
-  const { anchor, ...rest } = patch
+  const { anchor, split, ...rest } = patch
   const next: WebcamSettings = { ...webcam }
+  if (split) {
+    const merged: WebcamSplit = { ratio: splitRatio(webcam.split) }
+    if (webcam.split?.cameraFirst !== undefined) merged.cameraFirst = webcam.split.cameraFirst
+    if (split.ratio !== undefined && Number.isFinite(split.ratio)) {
+      const ratio = Math.min(SPLIT_RATIO_MAX, Math.max(SPLIT_RATIO_MIN, split.ratio))
+      merged.ratio = Math.round(ratio * 100) / 100
+    }
+    if (split.cameraFirst !== undefined) merged.cameraFirst = split.cameraFirst
+    if (merged.ratio !== webcam.split?.ratio || merged.cameraFirst !== webcam.split?.cameraFirst) {
+      next.split = merged
+    }
+  }
   for (const key of Object.keys(rest) as (keyof typeof rest)[]) {
     if (rest[key] !== undefined) Object.assign(next, { [key]: rest[key] })
   }
@@ -40,8 +57,9 @@ export function setWebcam(project: Project, patch: WebcamPatch): Project {
   }
   const changed =
     (Object.keys(next) as (keyof WebcamSettings)[]).some(
-      (key) => key !== 'anchor' && next[key] !== webcam[key],
+      (key) => key !== 'anchor' && key !== 'split' && next[key] !== webcam[key],
     ) ||
+    next.split !== webcam.split ||
     ('anchor' in webcam && !('anchor' in next)) ||
     (next.anchor !== undefined &&
       (next.anchor.x !== webcam.anchor?.x || next.anchor.y !== webcam.anchor?.y))

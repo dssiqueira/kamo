@@ -1,10 +1,12 @@
 import {
   WALLPAPERS,
   drawWallpaper,
+  type Aspect,
   type CursorSettings,
   type Style,
   type WebcamPatch,
   type WebcamPosition,
+  type WebcamLayout,
   type WebcamShape,
   type WebcamSettings,
   type WebcamSize,
@@ -25,6 +27,10 @@ export interface StylePanelProps {
   /** null when recorded without the camera: the Webcam section is not shown (A-03) */
   webcam?: WebcamSettings | null
   onWebcam?(patch: WebcamPatch): void
+  /** the editor's format: the split layout only shows in 9:16 */
+  aspect?: Aspect
+  /** picks the split layout (and the 9:16 format, where it shows) */
+  onSplitLayout?(): void
 }
 
 /** Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam. */
@@ -140,7 +146,12 @@ export function StylePanel(props: StylePanelProps) {
       </Section>
 
       {props.webcam && props.onWebcam && (
-        <WebcamSection webcam={props.webcam} onWebcam={props.onWebcam} />
+        <WebcamSection
+          webcam={props.webcam}
+          onWebcam={props.onWebcam}
+          aspect={props.aspect ?? '16:9'}
+          onSplitLayout={props.onSplitLayout}
+        />
       )}
     </aside>
   )
@@ -180,21 +191,36 @@ const POSITION_KEY: Record<WebcamPosition, string> = {
   'bottom-left': 'editor.webcam.bottomLeft',
   'bottom-right': 'editor.webcam.bottomRight',
 }
+const WEBCAM_LAYOUTS: readonly WebcamLayout[] = ['bubble', 'split']
+const LAYOUT_KEY: Record<WebcamLayout, string> = {
+  bubble: 'editor.webcam.layoutBubble',
+  split: 'editor.webcam.layoutSplit',
+}
 const SIZE_KEY: Record<WebcamSize, string> = {
   small: 'editor.webcam.small',
   medium: 'editor.webcam.medium',
   large: 'editor.webcam.large',
 }
 
-/** Webcam bubble (A-03): on/off, corner, size and shrink on zoom. */
+/**
+ * Webcam (A-03): on/off, layout (bubble or the 9:16 split), then the bubble's corner, shape,
+ * size and shrink on zoom, or the split's order. The bubble controls hide while the split is
+ * what the preview shows; in 16:9 and 1:1 a split webcam still shows as the bubble.
+ */
 function WebcamSection({
   webcam,
   onWebcam,
+  aspect,
+  onSplitLayout,
 }: {
   webcam: WebcamSettings
   onWebcam(patch: WebcamPatch): void
+  aspect: Aspect
+  onSplitLayout?: (() => void) | undefined
 }) {
   const t = useT()
+  const layout = webcam.layout ?? 'bubble'
+  const splitShown = layout === 'split' && aspect === '9:16'
   const option = (selected: boolean) =>
     `rounded-md border text-label transition-colors duration-[120ms] disabled:opacity-50 ${FOCUS_RING} ${
       selected
@@ -210,97 +236,178 @@ function WebcamSection({
       />
       <div
         role="radiogroup"
-        aria-label={t('editor.webcam.position')}
+        aria-label={t('editor.webcam.layout')}
         className="flex flex-col gap-xs"
       >
-        <span className="text-body">{t('editor.webcam.position')}</span>
-        <div className="grid w-[132px] grid-cols-2 gap-xs">
-          {WEBCAM_POSITIONS.map((position) => {
-            const selected = !webcam.anchor && webcam.position === position
-            const [vertical, horizontal] = position.split('-')
+        <span className="text-body">{t('editor.webcam.layout')}</span>
+        <div className="grid grid-cols-2 gap-xs">
+          {WEBCAM_LAYOUTS.map((choice) => {
+            const selected = layout === choice
             return (
               <button
-                key={position}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={t(POSITION_KEY[position])}
-                title={t(POSITION_KEY[position])}
-                disabled={!webcam.visible}
-                data-testid={`webcam-position-${position}`}
-                onClick={() => onWebcam({ position })}
-                className={`relative h-[40px] ${option(selected)}`}
-              >
-                <span
-                  aria-hidden
-                  className={`absolute size-[12px] rounded-full ${
-                    selected ? 'bg-tertiary' : 'bg-border'
-                  } ${vertical === 'top' ? 'top-[5px]' : 'bottom-[5px]'} ${
-                    horizontal === 'left' ? 'left-[5px]' : 'right-[5px]'
-                  }`}
-                />
-              </button>
-            )
-          })}
-        </div>
-        <span className="text-label text-on-surface-muted">{t('editor.webcam.dragHint')}</span>
-      </div>
-      <div role="radiogroup" aria-label={t('editor.webcam.shape')} className="flex flex-col gap-xs">
-        <span className="text-body">{t('editor.webcam.shape')}</span>
-        <div className="grid grid-cols-4 gap-xs">
-          {WEBCAM_SHAPES.map((shape) => {
-            const selected = (webcam.shape ?? 'circle') === shape
-            return (
-              <button
-                key={shape}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={t(SHAPE_KEY[shape])}
-                title={t(SHAPE_KEY[shape])}
-                disabled={!webcam.visible}
-                data-testid={`webcam-shape-${shape}`}
-                onClick={() => onWebcam({ shape })}
-                className={`flex h-[48px] flex-col items-center justify-center gap-[4px] ${option(selected)}`}
-              >
-                <span
-                  aria-hidden
-                  className={`border-[1.5px] ${selected ? 'border-tertiary bg-tertiary/25' : 'border-current'} ${SHAPE_ICON[shape]}`}
-                />
-                <span className="text-[11px] leading-none">{t(SHAPE_LABEL_KEY[shape])}</span>
-              </button>
-            )
-          })}
-        </div>
-      </div>
-      <div role="radiogroup" aria-label={t('editor.webcam.size')} className="flex flex-col gap-xs">
-        <span className="text-body">{t('editor.webcam.size')}</span>
-        <div className="grid grid-cols-3 gap-xs">
-          {WEBCAM_SIZES.map((size) => {
-            const selected = webcam.size === size
-            return (
-              <button
-                key={size}
+                key={choice}
                 type="button"
                 role="radio"
                 aria-checked={selected}
                 disabled={!webcam.visible}
-                data-testid={`webcam-size-${size}`}
-                onClick={() => onWebcam({ size })}
-                className={`px-sm py-xs ${option(selected)}`}
+                data-testid={`webcam-layout-${choice}`}
+                onClick={() =>
+                  choice === 'split' && onSplitLayout
+                    ? onSplitLayout()
+                    : onWebcam({ layout: choice })
+                }
+                className={`flex h-[48px] items-center justify-center gap-sm ${option(selected)}`}
               >
-                {t(SIZE_KEY[size])}
+                <LayoutIcon layout={choice} selected={selected} />
+                <span>{t(LAYOUT_KEY[choice])}</span>
               </button>
             )
           })}
         </div>
+        <span className="text-label text-on-surface-muted">
+          {t(
+            splitShown
+              ? 'editor.webcam.splitHint'
+              : layout === 'split'
+                ? 'editor.webcam.splitOtherFormats'
+                : 'editor.webcam.layoutHint',
+          )}
+        </span>
       </div>
-      <Switch
-        label={t('editor.webcam.shrinkOnZoom')}
-        checked={webcam.shrinkOnZoom}
-        onChange={(shrinkOnZoom) => onWebcam({ shrinkOnZoom })}
-      />
+      {splitShown && (
+        <Switch
+          label={t('editor.webcam.cameraFirst')}
+          checked={webcam.split?.cameraFirst === true}
+          onChange={(cameraFirst) => onWebcam({ split: { cameraFirst } })}
+        />
+      )}
+      {!splitShown && (
+        <>
+          <div
+            role="radiogroup"
+            aria-label={t('editor.webcam.position')}
+            className="flex flex-col gap-xs"
+          >
+            <span className="text-body">{t('editor.webcam.position')}</span>
+            <div className="grid w-[132px] grid-cols-2 gap-xs">
+              {WEBCAM_POSITIONS.map((position) => {
+                const selected = !webcam.anchor && webcam.position === position
+                const [vertical, horizontal] = position.split('-')
+                return (
+                  <button
+                    key={position}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={t(POSITION_KEY[position])}
+                    title={t(POSITION_KEY[position])}
+                    disabled={!webcam.visible}
+                    data-testid={`webcam-position-${position}`}
+                    onClick={() => onWebcam({ position })}
+                    className={`relative h-[40px] ${option(selected)}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`absolute size-[12px] rounded-full ${
+                        selected ? 'bg-tertiary' : 'bg-border'
+                      } ${vertical === 'top' ? 'top-[5px]' : 'bottom-[5px]'} ${
+                        horizontal === 'left' ? 'left-[5px]' : 'right-[5px]'
+                      }`}
+                    />
+                  </button>
+                )
+              })}
+            </div>
+            <span className="text-label text-on-surface-muted">{t('editor.webcam.dragHint')}</span>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label={t('editor.webcam.shape')}
+            className="flex flex-col gap-xs"
+          >
+            <span className="text-body">{t('editor.webcam.shape')}</span>
+            <div className="grid grid-cols-4 gap-xs">
+              {WEBCAM_SHAPES.map((shape) => {
+                const selected = (webcam.shape ?? 'circle') === shape
+                return (
+                  <button
+                    key={shape}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-label={t(SHAPE_KEY[shape])}
+                    title={t(SHAPE_KEY[shape])}
+                    disabled={!webcam.visible}
+                    data-testid={`webcam-shape-${shape}`}
+                    onClick={() => onWebcam({ shape })}
+                    className={`flex h-[48px] flex-col items-center justify-center gap-[4px] ${option(selected)}`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`border-[1.5px] ${selected ? 'border-tertiary bg-tertiary/25' : 'border-current'} ${SHAPE_ICON[shape]}`}
+                    />
+                    <span className="text-[11px] leading-none">{t(SHAPE_LABEL_KEY[shape])}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div
+            role="radiogroup"
+            aria-label={t('editor.webcam.size')}
+            className="flex flex-col gap-xs"
+          >
+            <span className="text-body">{t('editor.webcam.size')}</span>
+            <div className="grid grid-cols-3 gap-xs">
+              {WEBCAM_SIZES.map((size) => {
+                const selected = webcam.size === size
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    disabled={!webcam.visible}
+                    data-testid={`webcam-size-${size}`}
+                    onClick={() => onWebcam({ size })}
+                    className={`px-sm py-xs ${option(selected)}`}
+                  >
+                    {t(SIZE_KEY[size])}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <Switch
+            label={t('editor.webcam.shrinkOnZoom')}
+            checked={webcam.shrinkOnZoom}
+            onChange={(shrinkOnZoom) => onWebcam({ shrinkOnZoom })}
+          />
+        </>
+      )}
     </Section>
+  )
+}
+
+/** A tiny 9:16 frame: a dot over the video (bubble) or two stacked cards (split). */
+function LayoutIcon({ layout, selected }: { layout: WebcamLayout; selected: boolean }) {
+  const tone = selected ? 'border-tertiary' : 'border-current'
+  const fill = selected ? 'bg-tertiary' : 'bg-current'
+  if (layout === 'bubble') {
+    return (
+      <span
+        aria-hidden
+        className={`relative h-[22px] w-[13px] rounded-[3px] border-[1.5px] ${tone}`}
+      >
+        <span className={`absolute bottom-[2px] right-[2px] size-[5px] rounded-full ${fill}`} />
+      </span>
+    )
+  }
+  return (
+    <span aria-hidden className="flex h-[22px] w-[13px] flex-col gap-[2px]">
+      <span className={`flex-1 rounded-[2px] border-[1.5px] ${tone}`} />
+      <span className={`flex-1 rounded-[2px] ${fill} opacity-60`} />
+    </span>
   )
 }
 
