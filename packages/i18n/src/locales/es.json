@@ -21,5 +21,26 @@
     "record": "Grabar",
     "noDisplays": "No se encontró ninguna pantalla. ¿Hay un monitor conectado?",
     "needsPermission": "Kamo necesita permiso para grabar la pantalla. Actívalo en Ajustes del Sistema."
+  },
+  "countdown": {
+    "cancelHint": "Esc para cancelar"
+  },
+  "recording": {
+    "rec": "REC",
+    "paused": "En pausa",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "stop": "Detener",
+    "errors": {
+      "helperMissing": "La grabación aún no está disponible en esta versión: falta el asistente de captura.",
+      "lowDisk": "Queda menos de 1 GB libre en este disco. Libera espacio e inténtalo de nuevo.",
+      "displayNotFound": "Esa pantalla ya no está conectada. Elige otra.",
+      "permissionDenied": "Kamo necesita permiso para grabar la pantalla.",
+      "tooShort": "Duró menos de un segundo, así que no se guardó nada.",
+      "displayLost": "La pantalla se desconectó. Kamo guardó lo que grabó.",
+      "diskFull": "El disco se llenó. Kamo guardó lo que grabó.",
+      "failed": "La grabación se detuvo de repente. Kamo intentará recuperarla la próxima vez."
+    },
+    "saved": "Guardado. El editor llega en la próxima versión."
   }
 }

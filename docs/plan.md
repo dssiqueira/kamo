@@ -106,7 +106,7 @@
 **Spike:** Input Monitoring on Mac.
 - `@kamo/mouse-hook`: mouse-only native module; Windows `WH_MOUSE_LL` (N-API + prebuilds in CI), Mac via Swift helper with a mouse-only mask, listen-only
 - `events.jsonl` with move (~60Hz), down, up, scroll, button; coordinates in video pixels (scale factor); pauses discounted; "outside the display"
-- CI test that searches the code for keyboard APIs (`WH_KEYBOARD`, `keyDown`, `keydown`, `uiohook`…) and fails if it finds any (D-003)
+- CI test that searches the code for system-wide keyboard capture (`WH_KEYBOARD`, keyboard event masks in `CGEventTap`, `uiohook`, `globalShortcut` other than the stop shortcut…) and fails if it finds any (D-003). Key handling inside Kamo's own focused windows (Esc on the countdown, Space in the editor) is UI, not capture, and is allowed
 - Microphone (`audio.m4a`) with device selection and level meter; system sound (`system.m4a`) via ScreenCaptureKit / WASAPI loopback
 - Sync ≤ 33ms (events) and ≤ 40ms (audio), measured with a test recording with an audible click
 

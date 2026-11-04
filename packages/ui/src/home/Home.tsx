@@ -8,10 +8,19 @@ export interface HomeProps {
   onRecord(): void
   /** Mac without screen recording permission: Record stays disabled (F-01). */
   needsPermission?: boolean
+  /** How the last recording ended, already translated. */
+  notice?: { tone: 'error' | 'warning' | 'success'; text: string } | null
 }
 
 /** Home (flows.md §2): displays → Record. Toggles and recent projects arrive in steps 3–4. */
-export function Home({ displays, selectedId, onSelect, onRecord, needsPermission }: HomeProps) {
+export function Home({
+  displays,
+  selectedId,
+  onSelect,
+  onRecord,
+  needsPermission,
+  notice,
+}: HomeProps) {
   const t = useT()
   const canRecord = selectedId !== null && !needsPermission
 
@@ -25,6 +34,12 @@ export function Home({ displays, selectedId, onSelect, onRecord, needsPermission
       {needsPermission && (
         <p role="alert" className="rounded-md bg-surface-raised px-md py-sm text-body text-warning">
           {t('home.needsPermission')}
+        </p>
+      )}
+
+      {notice && (
+        <p role="status" className={`rounded-md px-md py-sm text-body ${NOTICE_TONE[notice.tone]}`}>
+          {notice.text}
         </p>
       )}
 
@@ -62,6 +77,13 @@ export function Home({ displays, selectedId, onSelect, onRecord, needsPermission
     </main>
   )
 }
+
+// DESIGN.md toasts: success on primary-container, warning and error on surface-raised.
+const NOTICE_TONE = {
+  success: 'bg-primary-container text-success',
+  warning: 'bg-surface-raised text-warning',
+  error: 'bg-surface-raised text-error',
+} as const
 
 interface DisplayCardProps {
   display: DisplayOption

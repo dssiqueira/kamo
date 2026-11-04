@@ -21,5 +21,26 @@
     "record": "录制",
     "noDisplays": "未找到显示器。显示器已连接吗？",
     "needsPermission": "Kamo 需要屏幕录制权限。请在系统设置中允许。"
+  },
+  "countdown": {
+    "cancelHint": "按 Esc 取消"
+  },
+  "recording": {
+    "rec": "REC",
+    "paused": "已暂停",
+    "pause": "暂停",
+    "resume": "继续",
+    "stop": "停止",
+    "errors": {
+      "helperMissing": "此版本暂不支持录制：缺少屏幕捕获助手。",
+      "lowDisk": "此磁盘可用空间不足 1 GB。请释放空间后重试。",
+      "displayNotFound": "该显示器已断开连接。请选择其他显示器。",
+      "permissionDenied": "Kamo 需要屏幕录制权限。",
+      "tooShort": "录制不到一秒，因此没有保存。",
+      "displayLost": "显示器已断开连接。Kamo 已保存录制的内容。",
+      "diskFull": "磁盘已满。Kamo 已保存录制的内容。",
+      "failed": "录制意外停止。Kamo 会在下次启动时尝试恢复。"
+    },
+    "saved": "已保存。编辑器将在下个版本推出。"
   }
 }

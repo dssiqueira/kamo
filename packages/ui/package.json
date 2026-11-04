@@ -6,7 +6,8 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./styles.css": "./src/styles.css"
   },
   "sideEffects": false,
   "scripts": {
@@ -14,7 +15,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@kamo/i18n": "workspace:*"
+    "@kamo/i18n": "workspace:*",
+    "@kamo/core": "workspace:*"
   },
   "peerDependencies": {
     "react": "^19.0.0",

@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite'
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'electron-vite'
 import type { Plugin } from 'vite'
@@ -73,5 +74,15 @@ export default defineConfig({
   },
   renderer: {
     plugins: [react(), tailwindcss(), contentSecurityPolicy(), stripJsonImportAttributes()],
+    build: {
+      rolldownOptions: {
+        // One page per window kind (src/main/windows.ts).
+        input: {
+          index: resolve(import.meta.dirname, 'src/renderer/index.html'),
+          countdown: resolve(import.meta.dirname, 'src/renderer/countdown.html'),
+          'recording-bar': resolve(import.meta.dirname, 'src/renderer/recording-bar.html'),
+        },
+      },
+    },
   },
 })

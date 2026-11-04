@@ -1,0 +1,9 @@
+/* Keyframes used by packages/ui components. Import once in each app's CSS entry. */
+@keyframes kamo-rec-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.4;
+  }
+}

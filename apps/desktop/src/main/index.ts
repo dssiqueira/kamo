@@ -1,11 +1,11 @@
 import { app, BrowserWindow, ipcMain, session, type IpcMainInvokeEvent } from 'electron'
 import { writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
-import { pathToFileURL } from 'node:url'
 import { tokens } from '@kamo/design-tokens'
 import { IpcChannel } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
+import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import { getServices, startServices } from './services.ts'
+import { createAppWindow, isAppUrl, isDev } from './windows.ts'
 
 // DESIGN.md layout: minimum window 1024×680.
 const MIN_WIDTH = 1024
@@ -14,7 +14,6 @@ const MIN_HEIGHT = 680
 const SMOKE_TEST_TIMEOUT_MS = 60_000
 const SMOKE_SCREENSHOT_DELAY_MS = 2000
 
-const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
 const isSmokeTest = process.argv.includes('--smoke-test')
 
 if (isSmokeTest) {
@@ -23,17 +22,31 @@ if (isSmokeTest) {
     app.exit(1)
   }, SMOKE_TEST_TIMEOUT_MS).unref()
 }
-const rendererFile = join(import.meta.dirname, '../renderer/index.html')
 
-/** True only for the app's own renderer page (dev server or bundled file). */
-function isAppUrl(url: string): boolean {
-  if (devServerUrl) return new URL(url).origin === new URL(devServerUrl).origin
-  return url.split(/[?#]/)[0] === pathToFileURL(rendererFile).href
+let mainWindow: BrowserWindow | undefined
+
+// Replaced by the native capture helper backend (D-023) once it lands.
+const unavailableBackend: RecordingBackend = {
+  start: () =>
+    Promise.reject(Object.assign(new Error('capture helper missing'), { code: 'helper_missing' })),
 }
+
+const recording = new RecordingController(unavailableBackend, () => mainWindow, {
+  info: (event, data) => getServices().log.info(event, data as Record<string, unknown>),
+  error: (event, data) => getServices().log.error(event, data as Record<string, unknown>),
+})
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
   const url = event.senderFrame?.url
   return url !== undefined && isAppUrl(url)
+}
+
+/** Registers an IPC handler that only answers the app's own pages. */
+function handle(channel: string, listener: (...args: unknown[]) => unknown): void {
+  ipcMain.handle(channel, (event, ...args) => {
+    if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
+    return listener(...args)
+  })
 }
 
 /**
@@ -51,8 +64,8 @@ async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   app.exit(0)
 }
 
-function createWindow(): void {
-  const window = new BrowserWindow({
+function createMainWindow(): void {
+  const window = createAppWindow('index', {
     width: 1280,
     height: 800,
     minWidth: MIN_WIDTH,
@@ -60,24 +73,16 @@ function createWindow(): void {
     show: false,
     // Same cream as the page, so there is no white flash before the first paint.
     backgroundColor: tokens.colors.light.background,
-    webPreferences: {
-      preload: join(import.meta.dirname, '../preload/index.cjs'),
-      contextIsolation: true,
-      sandbox: true,
-      nodeIntegration: false,
-      webSecurity: true,
-      spellcheck: false,
-    },
   })
-
   window.once('ready-to-show', () => {
     window.show()
     // CI opens the packaged app with this flag and expects a clean exit once it renders.
     if (isSmokeTest) void finishSmokeTest(window)
   })
-
-  if (devServerUrl) void window.loadURL(devServerUrl)
-  else void window.loadFile(rendererFile)
+  window.on('closed', () => {
+    if (mainWindow === window) mainWindow = undefined
+  })
+  mainWindow = window
 }
 
 // Every renderer is sandboxed, including any created later.
@@ -94,36 +99,34 @@ app.on('web-contents-created', (_event, contents) => {
   contents.on('will-attach-webview', (event) => event.preventDefault())
   contents.setWindowOpenHandler(() => ({ action: 'deny' }))
   // In dev, mirror the renderer console in the terminal.
-  if (devServerUrl) {
+  if (isDev) {
     contents.on('console-message', (event) => {
       console.log(`[renderer:${event.level}] ${event.message}`)
     })
   }
 })
 
-ipcMain.handle(IpcChannel.getLocale, (event) => {
-  if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
-  return [...app.getPreferredSystemLanguages(), app.getLocale()]
+handle(IpcChannel.getLocale, () => [...app.getPreferredSystemLanguages(), app.getLocale()])
+handle(IpcChannel.listDisplays, () => listDisplays())
+handle(IpcChannel.getScreenAccess, () => getScreenAccess())
+handle(IpcChannel.startRecording, (displayId) => {
+  if (typeof displayId !== 'string') throw new Error('displayId must be a string')
+  recording.start(displayId)
 })
-
-ipcMain.handle(IpcChannel.listDisplays, (event) => {
-  if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
-  return listDisplays()
-})
-
-ipcMain.handle(IpcChannel.getScreenAccess, (event) => {
-  if (!isTrustedSender(event)) throw new Error('Untrusted IPC sender')
-  return getScreenAccess()
-})
+handle(IpcChannel.cancelCountdown, () => recording.cancelCountdown())
+handle(IpcChannel.countdownDone, () => recording.countdownDone())
+handle(IpcChannel.pauseRecording, () => recording.pause())
+handle(IpcChannel.resumeRecording, () => recording.resume())
+handle(IpcChannel.stopRecording, () => recording.stop())
 
 void app.whenReady().then(() => {
-  // Nothing needs permissions yet; capture (step 2) will allow only what it uses.
+  // Nothing needs renderer permissions: capture runs in the native helper (D-023).
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
     callback(false),
   )
   session.defaultSession.setPermissionCheckHandler(() => false)
 
-  createWindow()
+  createMainWindow()
   void startServices().catch((error: unknown) =>
     getServices().log.error('app.start.failed', { error }),
   )
@@ -133,7 +136,7 @@ void app.whenReady().then(() => {
     }
   })
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (!mainWindow) createMainWindow()
   })
 })
 

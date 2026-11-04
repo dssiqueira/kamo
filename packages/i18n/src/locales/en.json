@@ -21,5 +21,26 @@
     "record": "Record",
     "noDisplays": "No display found. Is a monitor connected?",
     "needsPermission": "Kamo needs permission to record the screen. Allow it in System Settings."
+  },
+  "countdown": {
+    "cancelHint": "Esc to cancel"
+  },
+  "recording": {
+    "rec": "REC",
+    "paused": "Paused",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "errors": {
+      "helperMissing": "Recording isn't available in this build yet: the capture helper is missing.",
+      "lowDisk": "Less than 1 GB free on this disk. Free up some space and try again.",
+      "displayNotFound": "That display isn't connected anymore. Pick another one.",
+      "permissionDenied": "Kamo needs permission to record the screen.",
+      "tooShort": "That was less than a second, so nothing was saved.",
+      "displayLost": "The display was disconnected. Kamo saved what it recorded.",
+      "diskFull": "The disk filled up. Kamo saved what it recorded.",
+      "failed": "Recording stopped unexpectedly. Kamo will try to recover it next time."
+    },
+    "saved": "Saved. The editor arrives in the next version."
   }
 }

@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@kamo/design-tokens/tailwind.css';
 @import '@kamo/design-tokens/fonts.css';
+@import '@kamo/ui/styles.css';
 
 /* Tailwind only scans this app by default; the components live in packages/ui. */
 @source '../../../../../packages/ui/src';
@@ -13,4 +14,9 @@ body,
 
 body {
   background-color: var(--kamo-color-background);
+}
+
+/* Countdown and recording bar float over the desktop. */
+body.transparent {
+  background-color: transparent;
 }
