@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
+import { SettingsButton } from '../settings/SettingsButton.tsx'
+import { AudioSources, type AudioSourcesProps } from './AudioSources.tsx'
 import type { DisplayOption } from './pickDisplay.ts'
 import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
 
@@ -14,9 +17,17 @@ export interface HomeProps {
   notice?: { tone: 'error' | 'warning' | 'success'; text: string } | null
   /** Recent projects below the Record button (F-12). Omitted: no list at all. */
   projects?: ProjectListProps
+  /** Microphone and computer sound toggles with level meters (F-04). Omitted: none. */
+  audio?: AudioSourcesProps
+  /** Gear in the header (F-15). Omitted: no button. */
+  onOpenSettings?(): void
+  /** Missing permission: the warning links here (onboarding, F-13). */
+  onFixPermission?(): void
+  /** Above everything else, e.g. "new version ready" (F-14). */
+  banner?: ReactNode
 }
 
-/** Home (flows.md §2): displays → Record → recent projects. Toggles arrive with step 3. */
+/** Home (flows.md §2): displays → toggles → Record → recent projects. */
 export function Home({
   displays,
   selectedId,
@@ -25,6 +36,10 @@ export function Home({
   needsPermission,
   notice,
   projects,
+  audio,
+  onOpenSettings,
+  onFixPermission,
+  banner,
 }: HomeProps) {
   const t = useT()
   const canRecord = selectedId !== null && !needsPermission
@@ -38,8 +53,13 @@ export function Home({
             <Mascot pose="icon" size={44} />
             <h1 className="font-serif text-headline">{t('app.name')}</h1>
           </div>
-          <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
+          <div className="flex items-center gap-md">
+            <p className="text-body text-on-surface-muted">{t('app.tagline')}</p>
+            {onOpenSettings && <SettingsButton onClick={onOpenSettings} />}
+          </div>
         </header>
+
+        {banner}
 
         {needsPermission && (
           <p
@@ -47,6 +67,18 @@ export function Home({
             className="rounded-md bg-surface-raised px-md py-sm text-body text-warning"
           >
             {t('home.needsPermission')}
+            {onFixPermission && (
+              <>
+                {' '}
+                <button
+                  type="button"
+                  onClick={onFixPermission}
+                  className="font-semibold text-tertiary-strong underline underline-offset-2"
+                >
+                  {t('home.fixPermission')}
+                </button>
+              </>
+            )}
           </p>
         )}
 
@@ -85,6 +117,8 @@ export function Home({
             </div>
           )}
         </section>
+
+        {audio && <AudioSources {...audio} />}
 
         <div>
           <button

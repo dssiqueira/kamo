@@ -83,6 +83,11 @@ export default defineConfig({
           countdown: resolve(import.meta.dirname, 'src/renderer/countdown.html'),
           'recording-bar': resolve(import.meta.dirname, 'src/renderer/recording-bar.html'),
           editor: resolve(import.meta.dirname, 'src/renderer/editor.html'),
+          // Hidden window that records the microphone and computer sound (F-04).
+          'audio-recorder': resolve(import.meta.dirname, 'src/renderer/audio-recorder.html'),
+          // Settings window (F-15) and first-run permissions onboarding (F-13).
+          settings: resolve(import.meta.dirname, 'src/renderer/settings.html'),
+          onboarding: resolve(import.meta.dirname, 'src/renderer/onboarding.html'),
         },
       },
     },

@@ -11,6 +11,13 @@ import {
   type RecordingStatus,
   type ScreenAccess,
 } from '../shared/api.ts'
+import type {
+  AudioLevels,
+  AudioStatus,
+  AudioSupport,
+  MicrophoneAccess,
+  RecorderCommand,
+} from '../shared/audio.ts'
 
 /** Subscribes to one fixed channel; the renderer never receives the IPC event object. */
 function subscribe<T>(channel: string, listener: (value: T) => void): () => void {
@@ -47,8 +54,53 @@ const api: KamoApi = {
   loadEvents: (projectId) => invoke(IpcChannel.loadEvents, projectId) as Promise<string>,
   openHome: () => invoke(IpcChannel.openHome) as Promise<void>,
   onProjectsChanged: (listener) => subscribe(IpcChannel.projectsChanged, () => listener()),
+  // Export (F-11): typed by KamoApi, so `invoke`'s results are cast only here.
+  getMediaSize: (projectId, file) =>
+    invoke(IpcChannel.getMediaSize, projectId, file) as Promise<number | null>,
+  readMedia: (projectId, file, start, end) =>
+    invoke(IpcChannel.readMedia, projectId, file, start, end) as Promise<Uint8Array>,
+  openExportFile: (fileName) =>
+    invoke(IpcChannel.openExportFile, fileName) as Promise<{ id: string; name: string }>,
+  writeExportFile: (id, position, data) =>
+    invoke(IpcChannel.writeExportFile, id, position, data) as Promise<void>,
+  commitExportFile: (id) => invoke(IpcChannel.commitExportFile, id) as Promise<string>,
+  abortExportFile: (id) => invoke(IpcChannel.abortExportFile, id) as Promise<void>,
+  showExportedFile: (path) => invoke(IpcChannel.showExportedFile, path) as Promise<void>,
   getSettings: () => invoke(IpcChannel.getSettings) as Promise<AppSettings>,
   updateSettings: (update) => invoke(IpcChannel.updateSettings, update) as Promise<AppSettings>,
+  onSettingsChanged: (listener) => subscribe<AppSettings>(IpcChannel.settingsChanged, listener),
+  // Settings window, onboarding, help and updates (F-13, F-14, F-15, F-17). `invoke` returns
+  // Promise<any>; KamoApi types each one.
+  openSettings: () => invoke(IpcChannel.openSettings),
+  getAppInfo: () => invoke(IpcChannel.getAppInfo),
+  getFolders: () => invoke(IpcChannel.getFolders),
+  chooseFolder: (kind) => invoke(IpcChannel.chooseFolder, kind),
+  showFolder: (kind) => invoke(IpcChannel.showFolder, kind),
+  setStopShortcut: (accelerator) => invoke(IpcChannel.setStopShortcut, accelerator),
+  getPermissions: () => invoke(IpcChannel.getPermissions),
+  requestPermission: (kind) => invoke(IpcChannel.requestPermission, kind),
+  openPermissionSettings: (kind) => invoke(IpcChannel.openPermissionSettings, kind),
+  openOnboarding: () => invoke(IpcChannel.openOnboarding),
+  relaunch: () => invoke(IpcChannel.relaunch),
+  getDiagnostics: (probe) => invoke(IpcChannel.getDiagnostics, probe),
+  copyText: (text) => invoke(IpcChannel.copyText, text),
+  openIssue: (diagnostics) => invoke(IpcChannel.openIssue, diagnostics),
+  getThirdPartyNotices: () => invoke(IpcChannel.getThirdPartyNotices),
+  getUpdateStatus: () => invoke(IpcChannel.getUpdateStatus),
+  checkForUpdates: () => invoke(IpcChannel.checkForUpdates),
+  restartToUpdate: () => invoke(IpcChannel.restartToUpdate),
+  onUpdateStatus: (listener) => subscribe(IpcChannel.updateStatus, listener),
+  setExportInProgress: (active) => invoke(IpcChannel.setExportInProgress, active),
+  // Audio (F-04)
+  getAudioSupport: () => invoke(IpcChannel.getAudioSupport) as Promise<AudioSupport>,
+  setAudioMonitor: (sources) => invoke(IpcChannel.setAudioMonitor, sources) as Promise<void>,
+  onAudioStatus: (listener) => subscribe<AudioStatus>(IpcChannel.audioStatus, listener),
+  onAudioLevels: (listener) => subscribe<AudioLevels>(IpcChannel.audioLevels, listener),
+  requestMicrophoneAccess: () =>
+    invoke(IpcChannel.requestMicrophoneAccess) as Promise<MicrophoneAccess>,
+  onAudioCommand: (listener) => subscribe<RecorderCommand>(IpcChannel.audioCommand, listener),
+  reportAudio: (report) => invoke(IpcChannel.audioReport, report) as Promise<void>,
+  writeAudioChunk: (track, bytes) => invoke(IpcChannel.audioChunk, track, bytes) as Promise<void>,
 }
 
 contextBridge.exposeInMainWorld('kamo', api)

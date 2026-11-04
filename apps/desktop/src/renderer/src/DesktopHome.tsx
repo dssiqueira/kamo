@@ -13,6 +13,9 @@ import {
   type RecordingStatus,
   type ScreenAccess,
 } from '../../shared/api.ts'
+import type { AudioWarning } from '../../shared/audio.ts'
+import { DesktopUpdateBanner } from './preferences/DesktopUpdateBanner.tsx'
+import { useHomeAudio } from './useHomeAudio.ts'
 
 // Error codes from main (recording controller and capture helper) → i18n keys.
 const ERROR_KEYS: Record<string, string> = {
@@ -26,6 +29,13 @@ const WARNING_KEYS = {
   display_lost: 'recording.errors.displayLost',
   disk_full: 'recording.errors.diskFull',
 } as const
+// F-04: audio problems of a saved recording.
+const AUDIO_WARNING_KEYS: Record<AudioWarning, string> = {
+  mic_unavailable: 'recording.audio.micUnavailable',
+  mic_lost: 'recording.audio.micLost',
+  system_unavailable: 'recording.audio.systemUnavailable',
+  audio_failed: 'recording.audio.failed',
+}
 
 // Project actions (F-12): IPC error codes → i18n keys.
 const PROJECT_ERROR_KEYS: Record<string, string> = {
@@ -49,6 +59,8 @@ export function DesktopHome() {
   // F-01: the display picked last time, from settings.json.
   const remembered = useRef<string | null>(null)
   const t = useT()
+  // F-04: microphone and computer sound toggles, meters and devices.
+  const audio = useHomeAudio()
 
   useEffect(() => window.kamo.onRecordingStatus(setStatus), [])
 
@@ -148,6 +160,9 @@ export function DesktopHome() {
 
   return (
     <Home
+      onOpenSettings={() => void window.kamo.openSettings()}
+      onFixPermission={() => void window.kamo.openOnboarding()}
+      banner={<DesktopUpdateBanner />}
       displays={displays}
       selectedId={selectedId}
       onSelect={selectDisplay}
@@ -160,6 +175,7 @@ export function DesktopHome() {
       notice={actionError ?? notice(status, t)}
       needsPermission={screenAccess !== 'granted'}
       projects={projects}
+      {...(audio ? { audio } : {})}
     />
   )
 }
@@ -170,8 +186,12 @@ function notice(status: RecordingStatus | null, t: (key: string) => string): Not
     const tone = status.code === 'too_short' ? 'warning' : 'error'
     return { tone, text: t(ERROR_KEYS[status.code] ?? 'recording.errors.failed') }
   }
+  // F-04: the video is saved, but some audio is missing or cut short.
+  const audioTexts = (status.audioWarnings ?? []).map((warning) => t(AUDIO_WARNING_KEYS[warning]))
+  if (status.warning || audioTexts.length) {
+    const texts = [...(status.warning ? [t(WARNING_KEYS[status.warning])] : []), ...audioTexts]
+    return { tone: 'warning', text: texts.join(' ') }
+  }
   // The editor opens here once it exists; until then, Home confirms the save.
-  return status.warning
-    ? { tone: 'warning', text: t(WARNING_KEYS[status.warning]) }
-    : { tone: 'success', text: t('recording.saved') }
+  return { tone: 'success', text: t('recording.saved') }
 }

@@ -42,7 +42,21 @@
     "primary": "メイン",
     "record": "録画",
     "noDisplays": "ディスプレイが見つかりません。モニターは接続されていますか？",
-    "needsPermission": "Kamo には画面収録の許可が必要です。システム設定で許可してください。"
+    "needsPermission": "Kamo には画面収録の許可が必要です。システム設定で許可してください。",
+    "audio": {
+      "title": "サウンド",
+      "microphone": "マイク",
+      "system": "パソコンの音",
+      "chooseMicrophone": "録音するマイク",
+      "defaultMicrophone": "既定のマイク",
+      "microphoneName": "マイク {index}",
+      "level": "{source} のレベル",
+      "micDenied": "Kamo はマイクを使えません。システム設定で許可してください。それまでは録画に声は入りません。",
+      "micUnavailable": "マイクが見つかりません。録画に声は入りません。",
+      "systemUnavailable": "Kamo は今パソコンの音を取り込めません。録画にパソコンの音は入りません。",
+      "systemSoon": "Mac には近日対応予定です。"
+    },
+    "fixPermission": "設定する"
   },
   "countdown": {
     "cancelHint": "Esc でキャンセル"
@@ -63,12 +77,17 @@
       "diskFull": "ディスクがいっぱいになりました。録画済みの部分は保存されています。",
       "failed": "録画が予期せず停止しました。次回起動時に復元を試みます。"
     },
-    "saved": "保存しました。エディタは次のバージョンで登場します。"
+    "saved": "保存しました。エディタは次のバージョンで登場します。",
+    "audio": {
+      "micUnavailable": "保存しましたが、声は入っていません。Kamo がマイクを使えませんでした。",
+      "micLost": "録画中にマイクが外れました。その時点から音声は無音です。",
+      "systemUnavailable": "保存しましたが、パソコンの音は入っていません。Kamo が取り込めませんでした。",
+      "failed": "保存しましたが、音声の一部を残せませんでした。"
+    }
   },
   "editor": {
     "back": "プロジェクト",
     "export": "書き出し",
-    "exportSoon": "書き出しは次のバージョンで登場します。",
     "play": "再生",
     "pause": "一時停止",
     "scrub": "再生位置",
@@ -126,5 +145,198 @@
     "scale": "ズーム倍率",
     "scaleDown": "倍率を下げる",
     "scaleUp": "倍率を上げる"
+  },
+  "settings": {
+    "title": "設定",
+    "open": "設定",
+    "appearance": {
+      "title": "外観",
+      "theme": "テーマ",
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム"
+    },
+    "language": {
+      "title": "言語",
+      "label": "アプリの言語",
+      "system": "システムと同じ"
+    },
+    "folders": {
+      "title": "フォルダ",
+      "projects": "プロジェクトフォルダ",
+      "projectsHint": "新しい録画はここに保存されます。既存のプロジェクトは今の場所に残ります。",
+      "export": "書き出しフォルダ",
+      "exportHint": "書き出した動画はここに保存されます。",
+      "change": "変更…",
+      "show": "表示",
+      "errors": {
+        "busy": "プロジェクトフォルダを変更する前に録画を終了してください。",
+        "notWritable": "Kamo はそのフォルダに保存できません。別のフォルダを選んでください。",
+        "failed": "フォルダを変更できませんでした。もう一度お試しください。"
+      }
+    },
+    "shortcuts": {
+      "title": "ショートカット",
+      "stop": "録画を停止",
+      "stopHint": "Kamo の録画中はどのアプリからでも使えます。Kamo が入力内容を読むことはありません。",
+      "change": "変更",
+      "reset": "リセット",
+      "recording": "新しいショートカットを押してください…",
+      "recordingHint": "Esc でキャンセルします。",
+      "saved": "保存しました。次の録画から有効です。",
+      "errors": {
+        "needsModifier": "キーに Ctrl、Alt または ⌘ を組み合わせてください。Shift だけでは入力の邪魔になります。",
+        "unsupported": "そのキーはショートカットに使えません。",
+        "taken": "{shortcut} は別のアプリが使用中です。別の組み合わせを試してください。",
+        "invalid": "そのショートカットは使えません。別の組み合わせを試してください。"
+      }
+    },
+    "permissions": {
+      "title": "アクセス許可",
+      "none": "このコンピュータでは、Kamo にシステムのアクセス許可は必要ありません。",
+      "openSystemSettings": "システム設定を開く",
+      "screen": "画面収録",
+      "screenHint": "画面の録画に必要です。",
+      "microphone": "マイク",
+      "microphoneHint": "声を録音するため。任意です。",
+      "inputMonitoring": "入力監視",
+      "inputMonitoringHint": "macOS は「キー」と表示しますが、Kamo が読むのはマウスだけで、入力内容を見ることはありません。",
+      "status": {
+        "granted": "許可済み",
+        "denied": "ブロック中",
+        "pending": "未許可",
+        "unknown": "不明"
+      }
+    },
+    "updates": {
+      "title": "アップデート",
+      "version": "バージョン {version}",
+      "check": "今すぐ確認",
+      "status": {
+        "idle": "Kamo は起動時と 1 日 1 回アップデートを確認します。",
+        "checking": "確認中…",
+        "upToDate": "最新バージョンです（{time} に確認）。",
+        "downloading": "バージョン {version} をダウンロード中… {progress, number, percent}",
+        "ready": "バージョン {version} の準備ができました。Kamo を再起動すると完了します。",
+        "error": "アップデートを確認できませんでした。オンラインか確認してください。",
+        "unsupported": "アップデートはインストール版のアプリでのみ利用できます。"
+      }
+    },
+    "help": {
+      "title": "ヘルプ",
+      "description": "問題が起きましたか？Kamo にはテレメトリがないため、詳細はあなたが送ったときだけ外に出ます。",
+      "copyDiagnostics": "診断情報をコピー",
+      "openIssue": "GitHub で Issue を作成"
+    },
+    "about": {
+      "title": "Kamo について",
+      "version": "Kamo {version}",
+      "license": "MIT ライセンスの無料オープンソースソフトウェアです。",
+      "notices": "サードパーティの通知"
+    }
+  },
+  "diagnostics": {
+    "title": "診断情報",
+    "intro": "コピーされるのはここに表示された内容そのままです。自動で送信されることはありません。どこに貼り付けるかはあなたが決めます。",
+    "label": "診断情報のテキスト",
+    "loading": "情報を集めています…",
+    "failed": "診断情報を作成できませんでした。もう一度お試しください。",
+    "copy": "コピー",
+    "copied": "クリップボードにコピーしました。",
+    "copyFailed": "コピーできませんでした。テキストを選択して手動でコピーしてください。",
+    "openIssue": "GitHub で Issue を作成",
+    "openIssueHint": "このテキストを入力した状態で GitHub をブラウザで開きます。そこで送信するまで何も公開されません。",
+    "openIssueFailed": "ブラウザを開けませんでした。テキストをコピーして GitHub の Issue に貼り付けてください。"
+  },
+  "updates": {
+    "ready": "Kamo {version} の準備ができました。今すぐ再起動しますか？",
+    "restart": "今すぐ再起動",
+    "later": "あとで",
+    "busy": "Kamo は録画中または書き出し中です。終わってから再起動してください。"
+  },
+  "onboarding": {
+    "progress": "ステップ {current}/{total}",
+    "welcome": {
+      "title": "こんにちは、Kamo です。",
+      "body": "最初の録画の前に、録画に必要な許可を確認しましょう。1 分ほどで終わります。",
+      "start": "はじめる"
+    },
+    "screen": {
+      "title": "Kamo に画面を見せてください",
+      "why": "macOS はアプリが画面を録画する前に必ず確認します。この許可がないと Kamo は何も録画できないため、これだけはスキップできません。"
+    },
+    "microphone": {
+      "title": "動画にあなたの声を入れますか？",
+      "why": "マイクを許可すると、Kamo は画面と一緒にナレーションを録音します。スキップして後で許可することもできます。"
+    },
+    "inputMonitoring": {
+      "title": "Kamo にクリックを追わせてください",
+      "why": "Kamo はクリックした場所をズームするので、マウスを見る必要があります。",
+      "keyboardNote": "macOS は「キー」と呼びますが、Kamo が読むのはマウスだけで、入力内容を見ることはありません。"
+    },
+    "allow": "許可",
+    "continue": "続ける",
+    "skip": "今はスキップ",
+    "detecting": "許可すると Kamo が自動で気づきます。",
+    "deniedHelp": {
+      "mac": "システム設定 → プライバシーとセキュリティ で Kamo をオンにしてから、ここに戻ってください。",
+      "windows": "設定 → プライバシーとセキュリティ → マイク で、マイクへのアクセスと「デスクトップ アプリがマイクにアクセスできるようにする」をオンにしてください。"
+    },
+    "reopenHint": "もう許可しましたか？macOS は Kamo を開き直すまで反映しないことがあります。",
+    "reopen": "Kamo を開き直す",
+    "reopenFailed": "今は開き直せませんでした。Kamo を終了して、もう一度開いてください。",
+    "done": {
+      "title": "準備完了。",
+      "body": "画面を選んで録画を押し、あとは自由にクリック。ズームは Kamo におまかせ。",
+      "start": "録画をはじめる"
+    }
+  },
+  "export": {
+    "title": "書き出し",
+    "formats": "形式",
+    "aspect": {
+      "landscape": "横長",
+      "square": "正方形",
+      "vertical": "縦長"
+    },
+    "soon": "近日公開",
+    "resolution": "解像度",
+    "frameRate": "フレームレート",
+    "fileFormat": "ファイル形式",
+    "fps": "{fps} fps",
+    "laterNote": "4K、60 fps、GIF、縦長 9:16 は今後のバージョンで追加されます。ほかの機能と同じく無料です。",
+    "folder": "保存先",
+    "changeFolder": "変更",
+    "pickOne": "形式を1つ以上選んでください。",
+    "cancel": "キャンセル",
+    "start": "{count, plural, other {# 件を書き出す}}",
+    "waiting": "待機中",
+    "cancelExport": "書き出しを中止",
+    "done": {
+      "title": "{count, plural, other {# 件のファイルを保存しました}}",
+      "subtitle": "完成。もう編集済みです。"
+    },
+    "showInFolder": "フォルダで表示",
+    "close": "閉じる",
+    "retry": "もう一度試す",
+    "errors": {
+      "title": "書き出しが止まりました",
+      "disk_full": "ディスクがいっぱいです。未完成のファイルは削除しました。空き容量を作ってもう一度お試しください。",
+      "write_failed": "Kamo はファイルを書き込めませんでした。未完成のファイルは削除しました。",
+      "source_unreadable": "Kamo はこの録画の映像を読み込めませんでした。",
+      "encoder_unavailable": "このコンピュータには Kamo が使える H.264 エンコーダーがありません。",
+      "failed": "書き出し中に問題が起きました。未完成のファイルは削除しました。"
+    },
+    "warnings": {
+      "software_encoder": "このコンピュータにはハードウェアの動画エンコーダーがないため、より遅いソフトウェアのエンコーダーで書き出しました。",
+      "audio_unreadable": "読み込めない音声トラックがあったため、除外しました。",
+      "audio_encoder_unavailable": "このコンピュータは AAC 音声をエンコードできないため、動画に音声はありません。"
+    },
+    "closeDialog": {
+      "title": "書き出し中です",
+      "message": "今閉じると書き出しを中止し、未完成のファイルを削除します。",
+      "stop": "書き出しを中止して閉じる",
+      "keep": "書き出しを続ける"
+    }
   }
 }

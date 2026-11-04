@@ -42,7 +42,21 @@
     "primary": "Main",
     "record": "Record",
     "noDisplays": "No display found. Is a monitor connected?",
-    "needsPermission": "Kamo needs permission to record the screen. Allow it in System Settings."
+    "needsPermission": "Kamo needs permission to record the screen. Allow it in System Settings.",
+    "audio": {
+      "title": "Sound",
+      "microphone": "Microphone",
+      "system": "Computer sound",
+      "chooseMicrophone": "Microphone to record",
+      "defaultMicrophone": "Default microphone",
+      "microphoneName": "Microphone {index}",
+      "level": "{source} level",
+      "micDenied": "Kamo can't use the microphone. Allow it in your system settings; until then, recordings have no voice.",
+      "micUnavailable": "No microphone found. Recordings will have no voice.",
+      "systemUnavailable": "Kamo can't capture the computer sound right now. Recordings will have no computer sound.",
+      "systemSoon": "Coming soon on Mac."
+    },
+    "fixPermission": "Set it up"
   },
   "countdown": {
     "cancelHint": "Esc to cancel"
@@ -63,12 +77,17 @@
       "diskFull": "The disk filled up. Kamo saved what it recorded.",
       "failed": "Recording stopped unexpectedly. Kamo will try to recover it next time."
     },
-    "saved": "Saved. The editor arrives in the next version."
+    "saved": "Saved. The editor arrives in the next version.",
+    "audio": {
+      "micUnavailable": "Saved without your voice: Kamo couldn't use the microphone.",
+      "micLost": "The microphone was disconnected while recording. The audio is silent from that point on.",
+      "systemUnavailable": "Saved without computer sound: Kamo couldn't capture it.",
+      "failed": "Saved, but some of the audio couldn't be kept."
+    }
   },
   "editor": {
     "back": "Projects",
     "export": "Export",
-    "exportSoon": "Export arrives in the next version.",
     "play": "Play",
     "pause": "Pause",
     "scrub": "Playhead",
@@ -126,5 +145,198 @@
     "scale": "Zoom scale",
     "scaleDown": "Decrease scale",
     "scaleUp": "Increase scale"
+  },
+  "settings": {
+    "title": "Settings",
+    "open": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System"
+    },
+    "language": {
+      "title": "Language",
+      "label": "App language",
+      "system": "Same as the system"
+    },
+    "folders": {
+      "title": "Folders",
+      "projects": "Projects folder",
+      "projectsHint": "New recordings are saved here. Projects you already have stay where they are.",
+      "export": "Export folder",
+      "exportHint": "Exported videos land here.",
+      "change": "Change…",
+      "show": "Show",
+      "errors": {
+        "busy": "Finish the recording before changing the projects folder.",
+        "notWritable": "Kamo can't save in that folder. Pick another one.",
+        "failed": "Couldn't change the folder. Try again."
+      }
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "stop": "Stop recording",
+      "stopHint": "Works from any app while Kamo is recording. Kamo never reads what you type.",
+      "change": "Change",
+      "reset": "Reset",
+      "recording": "Press the new shortcut…",
+      "recordingHint": "Press Esc to cancel.",
+      "saved": "Saved. It works from the next recording.",
+      "errors": {
+        "needsModifier": "Add Ctrl, Alt or ⌘ to the key. Shift alone would get in the way of typing.",
+        "unsupported": "That key can't be part of a shortcut.",
+        "taken": "Another app is already using {shortcut}. Try a different one.",
+        "invalid": "That shortcut doesn't work. Try a different one."
+      }
+    },
+    "permissions": {
+      "title": "Permissions",
+      "none": "Kamo doesn't need any system permission on this computer.",
+      "openSystemSettings": "Open System Settings",
+      "screen": "Screen Recording",
+      "screenHint": "Required to record your screen.",
+      "microphone": "Microphone",
+      "microphoneHint": "To record your voice. Optional.",
+      "inputMonitoring": "Input Monitoring",
+      "inputMonitoringHint": "macOS says “keys”, but Kamo only reads the mouse and never sees what you type.",
+      "status": {
+        "granted": "Allowed",
+        "denied": "Blocked",
+        "pending": "Not allowed yet",
+        "unknown": "Unknown"
+      }
+    },
+    "updates": {
+      "title": "Updates",
+      "version": "Version {version}",
+      "check": "Check now",
+      "status": {
+        "idle": "Kamo checks for updates when it opens and once a day.",
+        "checking": "Checking…",
+        "upToDate": "You're on the latest version (checked at {time}).",
+        "downloading": "Downloading version {version}… {progress, number, percent}",
+        "ready": "Version {version} is ready. Restart Kamo to finish.",
+        "error": "Couldn't check for updates. Are you online?",
+        "unsupported": "Updates only work in the installed app."
+      }
+    },
+    "help": {
+      "title": "Help",
+      "description": "Something went wrong? Kamo has no telemetry, so the details only travel if you send them.",
+      "copyDiagnostics": "Copy diagnostics",
+      "openIssue": "Open issue on GitHub"
+    },
+    "about": {
+      "title": "About",
+      "version": "Kamo {version}",
+      "license": "Free and open source, under the MIT License.",
+      "notices": "Third-party notices"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnostics",
+    "intro": "This is exactly what will be copied. Nothing is sent automatically: you decide where to paste it.",
+    "label": "Diagnostics text",
+    "loading": "Gathering the details…",
+    "failed": "Couldn't gather the diagnostics. Try again.",
+    "copy": "Copy",
+    "copied": "Copied to the clipboard.",
+    "copyFailed": "Couldn't copy. Select the text and copy it by hand.",
+    "openIssue": "Open issue on GitHub",
+    "openIssueHint": "Opens GitHub in your browser with this text filled in. Nothing is posted until you submit it there.",
+    "openIssueFailed": "Couldn't open the browser. Copy the text and paste it into a GitHub issue."
+  },
+  "updates": {
+    "ready": "Kamo {version} is ready. Restart now?",
+    "restart": "Restart now",
+    "later": "Later",
+    "busy": "Kamo is recording or exporting. Restart when it's done."
+  },
+  "onboarding": {
+    "progress": "Step {current} of {total}",
+    "welcome": {
+      "title": "Hi, I'm Kamo.",
+      "body": "Before your first take, let's check what your computer needs to let me record. It takes about a minute.",
+      "start": "Let's go"
+    },
+    "screen": {
+      "title": "Let Kamo see your screen",
+      "why": "macOS asks before any app records the screen. Without this one Kamo can't record anything, so it's the only one you can't skip."
+    },
+    "microphone": {
+      "title": "Want your voice in the videos?",
+      "why": "With the microphone, Kamo records your narration together with the screen. You can skip this and allow it later."
+    },
+    "inputMonitoring": {
+      "title": "Let Kamo follow your clicks",
+      "why": "Kamo zooms in where you click, so it needs to see the mouse.",
+      "keyboardNote": "macOS calls this “keys”, but Kamo only reads the mouse and never sees what you type."
+    },
+    "allow": "Allow",
+    "continue": "Continue",
+    "skip": "Skip for now",
+    "detecting": "Kamo notices on its own when you allow it.",
+    "deniedHelp": {
+      "mac": "Turn Kamo on in System Settings → Privacy & Security, then come back here.",
+      "windows": "In Settings → Privacy & security → Microphone, turn on microphone access and “Let desktop apps access your microphone”."
+    },
+    "reopenHint": "Already allowed it? macOS sometimes only notices after Kamo reopens.",
+    "reopen": "Reopen Kamo",
+    "reopenFailed": "Couldn't reopen now. Close Kamo and open it again.",
+    "done": {
+      "title": "All set.",
+      "body": "Pick a screen, hit Record and click around. Kamo takes care of the zooms.",
+      "start": "Start recording"
+    }
+  },
+  "export": {
+    "title": "Export",
+    "formats": "Formats",
+    "aspect": {
+      "landscape": "Landscape",
+      "square": "Square",
+      "vertical": "Vertical"
+    },
+    "soon": "Coming soon",
+    "resolution": "Resolution",
+    "frameRate": "Frame rate",
+    "fileFormat": "Format",
+    "fps": "{fps} fps",
+    "laterNote": "4K, 60 fps, GIF and vertical 9:16 arrive in a coming version, free like everything else.",
+    "folder": "Saves to",
+    "changeFolder": "Change",
+    "pickOne": "Pick at least one format.",
+    "cancel": "Cancel",
+    "start": "{count, plural, one {Export # file} other {Export # files}}",
+    "waiting": "Waiting",
+    "cancelExport": "Cancel export",
+    "done": {
+      "title": "{count, plural, one {# file saved} other {# files saved}}",
+      "subtitle": "Done. It's already edited."
+    },
+    "showInFolder": "Show in folder",
+    "close": "Close",
+    "retry": "Try again",
+    "errors": {
+      "title": "The export stopped",
+      "disk_full": "The disk is full. The incomplete file was deleted; free up some space and try again.",
+      "write_failed": "Kamo could not write the file. The incomplete file was deleted.",
+      "source_unreadable": "Kamo could not read this recording's video.",
+      "encoder_unavailable": "This computer has no H.264 encoder Kamo can use.",
+      "failed": "Something went wrong while exporting. The incomplete file was deleted."
+    },
+    "warnings": {
+      "software_encoder": "This computer has no hardware video encoder, so the export used the slower software one.",
+      "audio_unreadable": "A sound track could not be read, so it was left out.",
+      "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound."
+    },
+    "closeDialog": {
+      "title": "Export in progress",
+      "message": "Closing now cancels the export and deletes the unfinished file.",
+      "stop": "Cancel export and close",
+      "keep": "Keep exporting"
+    }
   }
 }

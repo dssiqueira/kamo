@@ -1,4 +1,15 @@
 import type { CursorSettings, Project, Style } from '@kamo/core'
+import type {
+  AudioLevels,
+  AudioSources,
+  AudioStatus,
+  AudioSupport,
+  AudioTrackName,
+  AudioWarning,
+  MicrophoneAccess,
+  RecorderCommand,
+  RecorderReport,
+} from './audio.ts'
 
 /**
  * The only API the renderer gets from the preload (`window.kamo`). Keep it small and typed:
@@ -46,9 +57,86 @@ export interface KamoApi {
   /** A project was saved, renamed, deleted or recorded. Returns unsubscribe. */
   onProjectsChanged(listener: () => void): () => void
 
+  // Export (F-11). The renderer decodes, renders and encodes; main only reads the raw files
+  // and writes the output. Errors reject with a code (`disk_full`, `write_failed`…).
+  /** Size of screen.mp4 / audio.m4a / system.m4a, or null when the project has none. */
+  getMediaSize(projectId: string, file: ExportMediaName): Promise<number | null>
+  /** Bytes [start, end) of one of those files. */
+  readMedia(
+    projectId: string,
+    file: ExportMediaName,
+    start: number,
+    end: number,
+  ): Promise<Uint8Array>
+  /** Creates `<name>.partial` in the export folder; the name gets " (2)" when taken. */
+  openExportFile(fileName: string): Promise<{ id: string; name: string }>
+  writeExportFile(id: string, position: number, data: Uint8Array): Promise<void>
+  /** Renames to the final name; returns the final path. */
+  commitExportFile(id: string): Promise<string>
+  /** Deletes the incomplete file. */
+  abortExportFile(id: string): Promise<void>
+  /** Reveals a file exported in this session. */
+  showExportedFile(path: string): Promise<void>
+
   // Settings (F-01 remembered display, F-08 last style as the default).
   getSettings(): Promise<AppSettings>
   updateSettings(update: SettingsUpdate): Promise<AppSettings>
+  /** Any saved settings change, from any window (theme and language apply live). */
+  onSettingsChanged(listener: (settings: AppSettings) => void): () => void
+
+  // Settings window (F-15). Errors reject with a code (`ipcErrorCode`).
+  /** Opens the Settings window, or focuses it when already open. */
+  openSettings(): Promise<void>
+  getAppInfo(): Promise<AppInfo>
+  /** The folders in use (defaults when never changed). */
+  getFolders(): Promise<Folders>
+  /** Native folder picker; null when cancelled. `busy` while recording, `folder_not_writable`. */
+  chooseFolder(kind: FolderKind): Promise<Folders | null>
+  showFolder(kind: FolderKind): Promise<void>
+  /** Checks it with the OS and saves it; null resets the default (`invalid_shortcut`, `shortcut_taken`). */
+  setStopShortcut(accelerator: string | null): Promise<AppSettings>
+
+  // Permissions (F-13 onboarding, F-15 Settings).
+  getPermissions(): Promise<PermissionInfo[]>
+  /** Mac, not decided yet: shows the OS prompt. Returns the fresh statuses. */
+  requestPermission(kind: PermissionKind): Promise<PermissionInfo[]>
+  openPermissionSettings(kind: PermissionKind): Promise<void>
+  /** Shows the onboarding in the main window (e.g. from Home's missing-permission notice). */
+  openOnboarding(): Promise<void>
+  /** Restarts Kamo (macOS may need it after Screen Recording is granted). `busy` while recording. */
+  relaunch(): Promise<void>
+
+  // Help (F-17). Nothing is sent anywhere: the user sees the text first and decides.
+  /** Plain-text report; the renderer passes its hardware encoder probe. */
+  getDiagnostics(probe: { hardwareH264: boolean | null }): Promise<string>
+  copyText(text: string): Promise<void>
+  /** Opens the browser on a new GitHub issue with this text in the body (truncated if long). */
+  openIssue(diagnostics: string): Promise<void>
+  /** The THIRD_PARTY_NOTICES bundled with the app. */
+  getThirdPartyNotices(): Promise<string>
+
+  // Updates (F-14).
+  getUpdateStatus(): Promise<UpdateStatus>
+  checkForUpdates(): Promise<UpdateStatus>
+  /** Installs the downloaded update and restarts. `busy` during a recording or an export. */
+  restartToUpdate(): Promise<void>
+  onUpdateStatus(listener: (status: UpdateStatus) => void): () => void
+  /** The export tells main it is running, so an update never restarts in the middle of it. */
+  setExportInProgress(active: boolean): Promise<void>
+
+  // Audio (F-04). Home: meters, devices and permission. Main records with the toggles saved
+  // in settings (micEnabled, micDeviceId, systemAudioEnabled).
+  getAudioSupport(): Promise<AudioSupport>
+  /** Opens these sources for the Home meters; null closes them. */
+  setAudioMonitor(sources: AudioSources | null): Promise<void>
+  onAudioStatus(listener: (status: AudioStatus) => void): () => void
+  onAudioLevels(listener: (levels: AudioLevels) => void): () => void
+  /** Mac asks the OS (once); elsewhere returns the current status. */
+  requestMicrophoneAccess(): Promise<MicrophoneAccess>
+  // Hidden audio recorder page only (main refuses any other sender).
+  onAudioCommand(listener: (command: RecorderCommand) => void): () => void
+  reportAudio(report: RecorderReport): Promise<void>
+  writeAudioChunk(track: AudioTrackName, bytes: Uint8Array): Promise<void>
 }
 
 export interface ProjectSummary {
@@ -86,14 +174,77 @@ export interface AppSettings {
   /** Style and cursor used last: defaults for new recordings (F-08). */
   lastStyle?: Style
   lastCursor?: CursorSettings
+  /** Home audio toggles and microphone (F-01 toggles remembered, F-04). */
+  micEnabled?: boolean
+  /** Absent or '': the system default microphone. */
+  micDeviceId?: string
+  systemAudioEnabled?: boolean
+  /** F-15. Absent: light (DESIGN.md). */
+  theme?: Theme
+  /** F-15. Absent or 'system': the OS language. */
+  language?: LanguageSetting
+  /** F-15. Absent: the defaults (`~/Kamo/projects`, the Videos folder). Set by main only. */
+  projectsDir?: string
+  exportDir?: string
+  /** F-15. Electron accelerator; absent: DEFAULT_STOP_SHORTCUT. Set by main only. */
+  stopShortcut?: string
+  /** F-13. Set when the permissions onboarding was finished. */
+  onboardingDone?: boolean
 }
 
-export type SettingsUpdate = Partial<Omit<AppSettings, 'version'>>
+export type Theme = 'light' | 'dark' | 'system'
+export type LanguageSetting = 'system' | 'en' | 'pt-BR' | 'es' | 'zh-CN' | 'ja'
+
+/** What the renderer may change with `updateSettings` (folders and shortcut have their own calls). */
+export type SettingsUpdate = Partial<
+  Omit<AppSettings, 'version' | 'projectsDir' | 'exportDir' | 'stopShortcut'>
+>
+
+/** Main-side writes; `null` resets a field to its default. */
+export type StoredSettingsUpdate = {
+  [K in Exclude<keyof AppSettings, 'version'>]?: AppSettings[K] | null
+}
+
+// Settings window (F-15), onboarding (F-13), diagnostics (F-17), updates (F-14).
+export type FolderKind = 'projects' | 'export'
+
+export interface Folders {
+  projectsDir: string
+  exportDir: string
+}
+
+export interface AppInfo {
+  version: string
+  platform: 'mac' | 'windows' | 'linux'
+  defaultStopShortcut: string
+}
+
+export type PermissionKind = 'screen' | 'microphone' | 'inputMonitoring'
+export type PermissionStatus = 'granted' | 'denied' | 'pending' | 'unknown'
+
+export interface PermissionInfo {
+  kind: PermissionKind
+  status: PermissionStatus
+  /** Screen Recording: onboarding cannot be skipped without it. */
+  required: boolean
+}
+
+export type UpdateStatus =
+  | { state: 'unsupported' }
+  | { state: 'idle' }
+  | { state: 'checking' }
+  | { state: 'up-to-date'; checkedAt: number }
+  | { state: 'downloading'; version: string; percent: number }
+  | { state: 'ready'; version: string }
+  | { state: 'error' }
 
 /**
  * Main rejects IPC calls with `Error('kamo-error:<code>')`; Electron wraps the message, so
  * the renderer finds the code with `ipcErrorCode`.
  */
+/** Raw files the export reads (data-model.md). */
+export type ExportMediaName = 'screen.mp4' | 'audio.m4a' | 'system.m4a'
+
 export const IPC_ERROR_PREFIX = 'kamo-error:'
 
 export function ipcErrorCode(error: unknown): string | null {
@@ -111,7 +262,13 @@ export interface RecordingClock {
 }
 
 export type RecordingStatus =
-  | { kind: 'saved'; projectId: string; warning?: 'display_lost' | 'disk_full' }
+  | {
+      kind: 'saved'
+      projectId: string
+      warning?: 'display_lost' | 'disk_full'
+      /** The video was saved but some audio is missing or cut short (F-04). */
+      audioWarnings?: AudioWarning[]
+    }
   | { kind: 'error'; code: string }
 
 export interface DisplayInfo {
@@ -153,6 +310,42 @@ export const IpcChannel = {
   loadEvents: 'kamo:project-events',
   openHome: 'kamo:home-open',
   projectsChanged: 'kamo:projects-changed',
+  getMediaSize: 'kamo:media-size',
+  readMedia: 'kamo:media-read',
+  openExportFile: 'kamo:export-file-open',
+  writeExportFile: 'kamo:export-file-write',
+  commitExportFile: 'kamo:export-file-commit',
+  abortExportFile: 'kamo:export-file-abort',
+  showExportedFile: 'kamo:export-file-show',
   getSettings: 'kamo:settings-get',
   updateSettings: 'kamo:settings-update',
+  settingsChanged: 'kamo:settings-changed',
+  openSettings: 'kamo:settings-open',
+  getAppInfo: 'kamo:app-info',
+  getFolders: 'kamo:folders-get',
+  chooseFolder: 'kamo:folders-choose',
+  showFolder: 'kamo:folders-show',
+  setStopShortcut: 'kamo:shortcut-set',
+  getPermissions: 'kamo:permissions-get',
+  requestPermission: 'kamo:permissions-request',
+  openPermissionSettings: 'kamo:permissions-open-settings',
+  openOnboarding: 'kamo:onboarding-open',
+  relaunch: 'kamo:app-relaunch',
+  getDiagnostics: 'kamo:diagnostics-get',
+  copyText: 'kamo:clipboard-copy',
+  openIssue: 'kamo:diagnostics-open-issue',
+  getThirdPartyNotices: 'kamo:third-party-notices',
+  getUpdateStatus: 'kamo:update-status-get',
+  checkForUpdates: 'kamo:update-check',
+  restartToUpdate: 'kamo:update-restart',
+  updateStatus: 'kamo:update-status',
+  setExportInProgress: 'kamo:export-in-progress',
+  getAudioSupport: 'kamo:audio-support',
+  setAudioMonitor: 'kamo:audio-monitor',
+  audioStatus: 'kamo:audio-status',
+  audioLevels: 'kamo:audio-levels',
+  requestMicrophoneAccess: 'kamo:audio-mic-access',
+  audioCommand: 'kamo:audio-command',
+  audioReport: 'kamo:audio-report',
+  audioChunk: 'kamo:audio-chunk',
 } as const

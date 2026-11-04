@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  nativeTheme,
   protocol,
   session,
   shell,
@@ -11,8 +12,7 @@ import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { isDeepStrictEqual } from 'node:util'
 import { PROJECT_FILES, ProjectError } from '@kamo/core'
-import { tokens } from '@kamo/design-tokens'
-import { createI18n, resolveLocale } from '@kamo/i18n'
+import { createI18n } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
 import { resolveHelperPath } from './capture/helper-path.ts'
 import { IPC_ERROR_PREFIX, IpcChannel } from '../shared/api.ts'
@@ -25,11 +25,22 @@ import {
   renameProject,
   saveProjectData,
 } from './projects.ts'
+import { PreferenceError } from './preference-error.ts'
+import {
+  currentStopShortcut,
+  registerPreferences,
+  uiLocale,
+  windowBackground,
+} from './preferences.ts'
+import { installAudioPermissions, recordingAudio, setupAudio } from './audio/index.ts'
+import { runAudioSelfTest } from './audio/self-test.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
 import { getServices, startServices } from './services.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
+import { registerExport } from './export-ipc.ts'
+import { runExportSmoke } from './export-smoke.ts'
 
 // Must happen before `ready`: a standard, secure scheme that streams (video seeking) and
 // works with fetch, but still obeys the page CSP (src/main/media.ts).
@@ -57,12 +68,12 @@ const SMOKE_SCREENSHOT_DELAY_MS = 2000
 
 const isSmokeTest = process.argv.includes('--smoke-test')
 
-if (isSmokeTest) {
-  setTimeout(() => {
-    console.error('kamo: smoke test timed out before the window rendered')
-    app.exit(1)
-  }, SMOKE_TEST_TIMEOUT_MS).unref()
-}
+const smokeTimeout = isSmokeTest
+  ? setTimeout(() => {
+      console.error('kamo: smoke test timed out before the window rendered')
+      app.exit(1)
+    }, SMOKE_TEST_TIMEOUT_MS).unref()
+  : undefined
 
 let mainWindow: BrowserWindow | undefined
 
@@ -90,6 +101,10 @@ const recording = new RecordingController(
     error: (event, data) => getServices().log.error(event, data as Record<string, unknown>),
   },
   () => notifyProjectsChanged(),
+  // F-15: the stop shortcut chosen in Settings.
+  currentStopShortcut,
+  // F-04: microphone and computer sound, recorded in Electron (src/main/audio, D-024).
+  recordingAudio,
 )
 
 function isTrustedSender(event: IpcMainInvokeEvent): boolean {
@@ -102,7 +117,8 @@ function ipcErrorCodeOf(error: unknown): string | null {
   if (
     error instanceof ProjectError ||
     error instanceof ProjectActionError ||
-    error instanceof SettingsError
+    error instanceof SettingsError ||
+    error instanceof PreferenceError
   ) {
     return error.code
   }
@@ -134,7 +150,55 @@ async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   // Visual checks: KAMO_SMOKE_PAGE=countdown, or the editor with KAMO_SMOKE_PROJECT=<id>
   // [KAMO_SMOKE_SEEK_MS=<ms>].
   const page = process.env['KAMO_SMOKE_PAGE']
-  if (page === 'countdown') await loadPage(window, page)
+  if (page === 'countdown' || page === 'onboarding') await loadPage(window, page)
+  // KAMO_SMOKE_PAGE=settings captures the Settings window; KAMO_SMOKE_THEME=dark|light
+  // overrides the saved theme for this run only (nothing is written to settings.json).
+  if (page === 'settings') {
+    const settingsWindow = await preferences.openSettings()
+    await new Promise<void>((resolve) =>
+      settingsWindow.webContents.once('did-finish-load', () => resolve()),
+    )
+    window = settingsWindow
+  }
+  const theme = process.env['KAMO_SMOKE_THEME']
+  if (theme === 'dark' || theme === 'light') {
+    nativeTheme.themeSource = theme
+    await window.webContents.executeJavaScript(
+      `document.documentElement.dataset.theme = ${JSON.stringify(theme)}`,
+    )
+  }
+  // KAMO_SMOKE_SCROLL=<px>: capture further down a long page (Settings).
+  const scroll = Number(process.env['KAMO_SMOKE_SCROLL'] ?? 0)
+  if (scroll > 0) {
+    // After the first render, which happens after the page loads.
+    await window.webContents.executeJavaScript(
+      `setTimeout(() => window.scrollTo(0, ${scroll}), ${SMOKE_SCREENSHOT_DELAY_MS / 2})`,
+    )
+  }
+  // KAMO_SMOKE_CLICK=<css selector> [KAMO_SMOKE_CLICK_TIMES=<n>]: click it once rendered (open
+  // a dialog, step through the onboarding).
+  const click = process.env['KAMO_SMOKE_CLICK']
+  if (click) {
+    const times = Math.max(1, Number(process.env['KAMO_SMOKE_CLICK_TIMES'] ?? 1))
+    for (let i = 0; i < times; i++) {
+      await new Promise((resolve) => setTimeout(resolve, SMOKE_SCREENSHOT_DELAY_MS / 2))
+      await window.webContents.executeJavaScript(
+        `document.querySelector(${JSON.stringify(click)})?.click()`,
+      )
+    }
+  }
+  // F-11: KAMO_SMOKE_EXPORT=<projectId> exports it for real and verifies the files (it
+  // takes longer than the render timeout, which no longer applies once the window is up).
+  const exportProject = process.env['KAMO_SMOKE_EXPORT']
+  if (exportProject) {
+    clearTimeout(smokeTimeout)
+    const ok = await runExportSmoke(window, exporter, exportProject).catch((error: unknown) => {
+      console.error('kamo: export smoke failed', error)
+      return false
+    })
+    app.exit(ok ? 0 : 1)
+    return
+  }
   const project = process.env['KAMO_SMOKE_PROJECT']
   if (project) {
     await loadPage(window, 'editor', { project })
@@ -155,15 +219,15 @@ async function finishSmokeTest(window: BrowserWindow): Promise<void> {
   app.exit(0)
 }
 
-function createMainWindow(): void {
-  const window = createAppWindow('index', {
+function createMainWindow(page: 'index' | 'onboarding' = 'index'): void {
+  const window = createAppWindow(page, {
     width: 1280,
     height: 800,
     minWidth: MIN_WIDTH,
     minHeight: MIN_HEIGHT,
     show: false,
-    // Same cream as the page, so there is no white flash before the first paint.
-    backgroundColor: tokens.colors.light.background,
+    // Same color as the page (cream, or the dark background), so there is no flash.
+    backgroundColor: windowBackground(),
     // Packaged builds take the icon from the executable; dev shows Kamo too.
     ...(isDev ? { icon: DEV_ICON } : {}),
   })
@@ -176,6 +240,7 @@ function createMainWindow(): void {
     if (mainWindow === window) mainWindow = undefined
   })
   mainWindow = window
+  exporter.guardWindow(window)
 }
 
 // Every renderer is sandboxed, including any created later.
@@ -277,6 +342,20 @@ handle(IpcChannel.getSettings, () => getServices().settings.get())
 handle(IpcChannel.updateSettings, (update) =>
   getServices().settings.update(parseSettingsUpdate(update)),
 )
+
+// Settings window, onboarding, diagnostics and updates (F-13, F-14, F-15, F-17).
+const preferences = registerPreferences({
+  handle,
+  mainWindow: () => mainWindow,
+  recording,
+  rebuildBackend: async () => {
+    backend = await createBackend()
+  },
+  notifyProjectsChanged,
+  smokeTest: isSmokeTest,
+})
+// Export (F-11): media reads, the output files and the close-during-export question.
+const exporter = registerExport()
 handle(IpcChannel.cancelCountdown, () => recording.cancelCountdown())
 handle(IpcChannel.countdownDone, () => recording.countdownDone())
 handle(IpcChannel.pauseRecording, () => recording.pause())
@@ -285,7 +364,7 @@ handle(IpcChannel.stopRecording, () => recording.stop())
 
 /** Native helper backend (D-023), with project names in the user's language. */
 async function createBackend(): Promise<RecordingBackend> {
-  const locale = resolveLocale([...app.getPreferredSystemLanguages(), app.getLocale()])
+  const locale = await uiLocale()
   const i18n = await createI18n(locale)
   const { store, log, settings } = getServices()
   return createHelperBackend({
@@ -318,16 +397,29 @@ app.on('before-quit', (event) => {
 })
 
 void app.whenReady().then(async () => {
+  // Theme, stop shortcut and projects folder from settings.json, before anything uses them.
+  await preferences
+    .init()
+    .catch((error: unknown) => getServices().log.warn('preferences.init.failed', { error }))
   backend = await createBackend()
-  // Nothing needs renderer permissions: capture runs in the native helper (D-023).
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) =>
-    callback(false),
-  )
-  session.defaultSession.setPermissionCheckHandler(() => false)
+  // Screen capture runs in the native helper (D-023), so every renderer permission is denied
+  // except audio for the hidden audio recorder page (F-04, D-024; src/main/audio).
+  installAudioPermissions(session.defaultSession)
+  setupAudio(() => mainWindow)
+  if (process.env['KAMO_AUDIO_SELF_TEST'])
+    void runAudioSelfTest(process.env['KAMO_AUDIO_SELF_TEST'])
   protocol.handle(MEDIA_SCHEME, (request) => serveMedia(request, getServices().projectsDir))
 
   if (isDev && process.platform === 'darwin') app.dock?.setIcon(DEV_ICON)
-  createMainWindow()
+  // First launch shows the permissions onboarding (F-13); smoke tests keep Home unless asked.
+  createMainWindow(
+    isSmokeTest
+      ? process.env['KAMO_SMOKE_PAGE'] === 'onboarding'
+        ? 'onboarding'
+        : 'index'
+      : await preferences.firstPage(),
+  )
+  preferences.startUpdates()
   void startServices().catch((error: unknown) =>
     getServices().log.error('app.start.failed', { error }),
   )

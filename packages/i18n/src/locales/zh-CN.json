@@ -42,7 +42,21 @@
     "primary": "主显示器",
     "record": "录制",
     "noDisplays": "未找到显示器。显示器已连接吗？",
-    "needsPermission": "Kamo 需要屏幕录制权限。请在系统设置中允许。"
+    "needsPermission": "Kamo 需要屏幕录制权限。请在系统设置中允许。",
+    "audio": {
+      "title": "声音",
+      "microphone": "麦克风",
+      "system": "电脑声音",
+      "chooseMicrophone": "要录制的麦克风",
+      "defaultMicrophone": "默认麦克风",
+      "microphoneName": "麦克风 {index}",
+      "level": "{source} 音量",
+      "micDenied": "Kamo 无法使用麦克风。请在系统设置中允许；在此之前，录制将没有人声。",
+      "micUnavailable": "未找到麦克风。录制将没有人声。",
+      "systemUnavailable": "Kamo 目前无法捕获电脑声音。录制将不包含电脑声音。",
+      "systemSoon": "Mac 版即将推出。"
+    },
+    "fixPermission": "去设置"
   },
   "countdown": {
     "cancelHint": "按 Esc 取消"
@@ -63,12 +77,17 @@
       "diskFull": "磁盘已满。Kamo 已保存录制的内容。",
       "failed": "录制意外停止。Kamo 会在下次启动时尝试恢复。"
     },
-    "saved": "已保存。编辑器将在下个版本推出。"
+    "saved": "已保存。编辑器将在下个版本推出。",
+    "audio": {
+      "micUnavailable": "已保存，但没有你的声音：Kamo 无法使用麦克风。",
+      "micLost": "录制时麦克风断开了连接。从那一刻起音频为静音。",
+      "systemUnavailable": "已保存，但没有电脑声音：Kamo 无法捕获。",
+      "failed": "已保存，但部分音频未能保留。"
+    }
   },
   "editor": {
     "back": "项目",
     "export": "导出",
-    "exportSoon": "导出功能将在下个版本推出。",
     "play": "播放",
     "pause": "暂停",
     "scrub": "播放位置",
@@ -126,5 +145,198 @@
     "scale": "缩放倍数",
     "scaleDown": "减小倍数",
     "scaleUp": "增大倍数"
+  },
+  "settings": {
+    "title": "设置",
+    "open": "设置",
+    "appearance": {
+      "title": "外观",
+      "theme": "主题",
+      "light": "浅色",
+      "dark": "深色",
+      "system": "跟随系统"
+    },
+    "language": {
+      "title": "语言",
+      "label": "应用语言",
+      "system": "与系统相同"
+    },
+    "folders": {
+      "title": "文件夹",
+      "projects": "项目文件夹",
+      "projectsHint": "新的录制会保存在这里。已有的项目保留在原位置。",
+      "export": "导出文件夹",
+      "exportHint": "导出的视频会放在这里。",
+      "change": "更改…",
+      "show": "显示",
+      "errors": {
+        "busy": "请先结束录制，再更改项目文件夹。",
+        "notWritable": "Kamo 无法保存到该文件夹，请换一个。",
+        "failed": "无法更改文件夹，请重试。"
+      }
+    },
+    "shortcuts": {
+      "title": "快捷键",
+      "stop": "停止录制",
+      "stopHint": "Kamo 录制时在任何应用中都可用。Kamo 从不读取你输入的内容。",
+      "change": "更改",
+      "reset": "恢复默认",
+      "recording": "请按下新的快捷键…",
+      "recordingHint": "按 Esc 取消。",
+      "saved": "已保存，从下一次录制开始生效。",
+      "errors": {
+        "needsModifier": "请为按键加上 Ctrl、Alt 或 ⌘。只用 Shift 会妨碍打字。",
+        "unsupported": "该按键不能用作快捷键。",
+        "taken": "{shortcut} 已被其他应用占用，请换一个。",
+        "invalid": "该快捷键无法使用，请换一个。"
+      }
+    },
+    "permissions": {
+      "title": "权限",
+      "none": "在这台电脑上，Kamo 不需要任何系统权限。",
+      "openSystemSettings": "打开系统设置",
+      "screen": "屏幕录制",
+      "screenHint": "录制屏幕所必需。",
+      "microphone": "麦克风",
+      "microphoneHint": "用于录制你的声音。可选。",
+      "inputMonitoring": "输入监控",
+      "inputMonitoringHint": "macOS 提到的是“按键”，但 Kamo 只读取鼠标，从不查看你输入的内容。",
+      "status": {
+        "granted": "已允许",
+        "denied": "已阻止",
+        "pending": "尚未允许",
+        "unknown": "未知"
+      }
+    },
+    "updates": {
+      "title": "更新",
+      "version": "版本 {version}",
+      "check": "立即检查",
+      "status": {
+        "idle": "Kamo 会在启动时以及每天检查一次更新。",
+        "checking": "正在检查…",
+        "upToDate": "已是最新版本（{time} 检查）。",
+        "downloading": "正在下载版本 {version}… {progress, number, percent}",
+        "ready": "版本 {version} 已就绪。重启 Kamo 即可完成更新。",
+        "error": "无法检查更新。请确认网络已连接。",
+        "unsupported": "仅安装版应用支持更新。"
+      }
+    },
+    "help": {
+      "title": "帮助",
+      "description": "遇到问题？Kamo 没有遥测，只有你主动发送，详细信息才会离开这台电脑。",
+      "copyDiagnostics": "复制诊断信息",
+      "openIssue": "在 GitHub 上提交问题"
+    },
+    "about": {
+      "title": "关于",
+      "version": "Kamo {version}",
+      "license": "免费开源，采用 MIT 许可证。",
+      "notices": "第三方声明"
+    }
+  },
+  "diagnostics": {
+    "title": "诊断信息",
+    "intro": "以下就是将要复制的全部内容。不会自动发送任何信息：粘贴到哪里由你决定。",
+    "label": "诊断文本",
+    "loading": "正在收集信息…",
+    "failed": "无法生成诊断信息，请重试。",
+    "copy": "复制",
+    "copied": "已复制到剪贴板。",
+    "copyFailed": "无法复制。请选中文本后手动复制。",
+    "openIssue": "在 GitHub 上提交问题",
+    "openIssueHint": "将在浏览器中打开 GitHub 并填好这段文本。在你提交之前不会发布任何内容。",
+    "openIssueFailed": "无法打开浏览器。请复制文本并粘贴到 GitHub 问题中。"
+  },
+  "updates": {
+    "ready": "Kamo {version} 已就绪。现在重启吗？",
+    "restart": "立即重启",
+    "later": "稍后",
+    "busy": "Kamo 正在录制或导出，请完成后再重启。"
+  },
+  "onboarding": {
+    "progress": "第 {current} 步，共 {total} 步",
+    "welcome": {
+      "title": "你好，我是 Kamo。",
+      "body": "第一次录制之前，先看看你的电脑需要开放哪些权限让我录制。大约只需一分钟。",
+      "start": "开始吧"
+    },
+    "screen": {
+      "title": "允许 Kamo 查看你的屏幕",
+      "why": "任何应用录制屏幕前，macOS 都会先询问。没有这项权限 Kamo 什么也录不了，所以这是唯一不能跳过的一项。"
+    },
+    "microphone": {
+      "title": "想让视频里有你的声音吗？",
+      "why": "有了麦克风，Kamo 会把你的讲解和屏幕一起录下来。可以先跳过，以后再允许。"
+    },
+    "inputMonitoring": {
+      "title": "让 Kamo 跟上你的点击",
+      "why": "Kamo 会在你点击的位置放大，所以需要看到鼠标。",
+      "keyboardNote": "macOS 称之为“按键”，但 Kamo 只读取鼠标，从不查看你输入的内容。"
+    },
+    "allow": "允许",
+    "continue": "继续",
+    "skip": "暂时跳过",
+    "detecting": "你允许后，Kamo 会自动发现。",
+    "deniedHelp": {
+      "mac": "请在“系统设置 → 隐私与安全性”中打开 Kamo，然后回到这里。",
+      "windows": "请在“设置 → 隐私和安全性 → 麦克风”中打开麦克风访问权限，以及“允许桌面应用访问你的麦克风”。"
+    },
+    "reopenHint": "已经允许了？有时 macOS 要等 Kamo 重新打开后才能识别。",
+    "reopen": "重新打开 Kamo",
+    "reopenFailed": "现在无法重新打开。请关闭 Kamo 后再打开。",
+    "done": {
+      "title": "一切就绪。",
+      "body": "选择一个屏幕，按下录制，随意点击。缩放交给 Kamo。",
+      "start": "开始录制"
+    }
+  },
+  "export": {
+    "title": "导出",
+    "formats": "格式",
+    "aspect": {
+      "landscape": "横屏",
+      "square": "方形",
+      "vertical": "竖屏"
+    },
+    "soon": "即将推出",
+    "resolution": "分辨率",
+    "frameRate": "帧率",
+    "fileFormat": "文件格式",
+    "fps": "{fps} fps",
+    "laterNote": "4K、60 fps、GIF 和 9:16 竖屏将在后续版本推出，和其他功能一样免费。",
+    "folder": "保存到",
+    "changeFolder": "更改",
+    "pickOne": "请至少选择一种格式。",
+    "cancel": "取消",
+    "start": "{count, plural, other {导出 # 个文件}}",
+    "waiting": "等待中",
+    "cancelExport": "取消导出",
+    "done": {
+      "title": "{count, plural, other {已保存 # 个文件}}",
+      "subtitle": "完成。已经剪辑好了。"
+    },
+    "showInFolder": "在文件夹中显示",
+    "close": "关闭",
+    "retry": "重试",
+    "errors": {
+      "title": "导出已停止",
+      "disk_full": "磁盘已满。未完成的文件已删除；请释放空间后重试。",
+      "write_failed": "Kamo 无法写入文件。未完成的文件已删除。",
+      "source_unreadable": "Kamo 无法读取此录制的视频。",
+      "encoder_unavailable": "这台电脑没有 Kamo 可用的 H.264 编码器。",
+      "failed": "导出时出了问题。未完成的文件已删除。"
+    },
+    "warnings": {
+      "software_encoder": "这台电脑没有硬件视频编码器，因此导出使用了较慢的软件编码器。",
+      "audio_unreadable": "有一条音轨无法读取，已被略过。",
+      "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。"
+    },
+    "closeDialog": {
+      "title": "正在导出",
+      "message": "现在关闭将取消导出并删除未完成的文件。",
+      "stop": "取消导出并关闭",
+      "keep": "继续导出"
+    }
   }
 }

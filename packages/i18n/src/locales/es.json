@@ -42,7 +42,21 @@
     "primary": "Principal",
     "record": "Grabar",
     "noDisplays": "No se encontró ninguna pantalla. ¿Hay un monitor conectado?",
-    "needsPermission": "Kamo necesita permiso para grabar la pantalla. Actívalo en Ajustes del Sistema."
+    "needsPermission": "Kamo necesita permiso para grabar la pantalla. Actívalo en Ajustes del Sistema.",
+    "audio": {
+      "title": "Sonido",
+      "microphone": "Micrófono",
+      "system": "Sonido del equipo",
+      "chooseMicrophone": "Micrófono para grabar",
+      "defaultMicrophone": "Micrófono predeterminado",
+      "microphoneName": "Micrófono {index}",
+      "level": "Nivel: {source}",
+      "micDenied": "Kamo no puede usar el micrófono. Permítelo en la configuración del sistema; mientras tanto, las grabaciones no tendrán voz.",
+      "micUnavailable": "No se encontró ningún micrófono. Las grabaciones no tendrán voz.",
+      "systemUnavailable": "Kamo no puede capturar el sonido del equipo ahora. Las grabaciones no lo tendrán.",
+      "systemSoon": "Pronto en Mac."
+    },
+    "fixPermission": "Configurar"
   },
   "countdown": {
     "cancelHint": "Esc para cancelar"
@@ -63,12 +77,17 @@
       "diskFull": "El disco se llenó. Kamo guardó lo que grabó.",
       "failed": "La grabación se detuvo de repente. Kamo intentará recuperarla la próxima vez."
     },
-    "saved": "Guardado. El editor llega en la próxima versión."
+    "saved": "Guardado. El editor llega en la próxima versión.",
+    "audio": {
+      "micUnavailable": "Guardado sin tu voz: Kamo no pudo usar el micrófono.",
+      "micLost": "El micrófono se desconectó durante la grabación. El audio queda en silencio desde ese momento.",
+      "systemUnavailable": "Guardado sin el sonido del equipo: Kamo no pudo capturarlo.",
+      "failed": "Guardado, pero no se pudo conservar parte del audio."
+    }
   },
   "editor": {
     "back": "Proyectos",
     "export": "Exportar",
-    "exportSoon": "La exportación llega en la próxima versión.",
     "play": "Reproducir",
     "pause": "Pausar",
     "scrub": "Posición",
@@ -126,5 +145,198 @@
     "scale": "Escala del zoom",
     "scaleDown": "Reducir escala",
     "scaleUp": "Aumentar escala"
+  },
+  "settings": {
+    "title": "Ajustes",
+    "open": "Ajustes",
+    "appearance": {
+      "title": "Apariencia",
+      "theme": "Tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "language": {
+      "title": "Idioma",
+      "label": "Idioma de la app",
+      "system": "El mismo que el sistema"
+    },
+    "folders": {
+      "title": "Carpetas",
+      "projects": "Carpeta de proyectos",
+      "projectsHint": "Las grabaciones nuevas se guardan aquí. Los proyectos que ya tienes se quedan donde están.",
+      "export": "Carpeta de exportación",
+      "exportHint": "Los videos exportados llegan aquí.",
+      "change": "Cambiar…",
+      "show": "Mostrar",
+      "errors": {
+        "busy": "Termina la grabación antes de cambiar la carpeta de proyectos.",
+        "notWritable": "Kamo no puede guardar en esa carpeta. Elige otra.",
+        "failed": "No se pudo cambiar la carpeta. Inténtalo de nuevo."
+      }
+    },
+    "shortcuts": {
+      "title": "Atajos",
+      "stop": "Detener la grabación",
+      "stopHint": "Funciona desde cualquier app mientras Kamo graba. Kamo nunca lee lo que escribes.",
+      "change": "Cambiar",
+      "reset": "Restablecer",
+      "recording": "Pulsa el nuevo atajo…",
+      "recordingHint": "Pulsa Esc para cancelar.",
+      "saved": "Guardado. Funciona desde la próxima grabación.",
+      "errors": {
+        "needsModifier": "Añade Ctrl, Alt o ⌘ a la tecla. Shift solo estorbaría al escribir.",
+        "unsupported": "Esa tecla no puede formar parte de un atajo.",
+        "taken": "Otra app ya usa {shortcut}. Prueba con otro.",
+        "invalid": "Ese atajo no funciona. Prueba con otro."
+      }
+    },
+    "permissions": {
+      "title": "Permisos",
+      "none": "Kamo no necesita ningún permiso del sistema en este equipo.",
+      "openSystemSettings": "Abrir Ajustes del Sistema",
+      "screen": "Grabación de pantalla",
+      "screenHint": "Necesario para grabar la pantalla.",
+      "microphone": "Micrófono",
+      "microphoneHint": "Para grabar tu voz. Opcional.",
+      "inputMonitoring": "Monitorización de entrada",
+      "inputMonitoringHint": "macOS habla de “teclas”, pero Kamo solo lee el ratón y nunca ve lo que escribes.",
+      "status": {
+        "granted": "Permitido",
+        "denied": "Bloqueado",
+        "pending": "Aún no permitido",
+        "unknown": "Desconocido"
+      }
+    },
+    "updates": {
+      "title": "Actualizaciones",
+      "version": "Versión {version}",
+      "check": "Buscar ahora",
+      "status": {
+        "idle": "Kamo busca actualizaciones al abrirse y una vez al día.",
+        "checking": "Buscando…",
+        "upToDate": "Tienes la última versión (comprobado a las {time}).",
+        "downloading": "Descargando la versión {version}… {progress, number, percent}",
+        "ready": "La versión {version} está lista. Reinicia Kamo para terminar.",
+        "error": "No se pudo buscar actualizaciones. ¿Tienes conexión?",
+        "unsupported": "Las actualizaciones solo funcionan en la app instalada."
+      }
+    },
+    "help": {
+      "title": "Ayuda",
+      "description": "¿Algo salió mal? Kamo no tiene telemetría, así que los detalles solo salen de aquí si tú los envías.",
+      "copyDiagnostics": "Copiar diagnóstico",
+      "openIssue": "Abrir issue en GitHub"
+    },
+    "about": {
+      "title": "Acerca de",
+      "version": "Kamo {version}",
+      "license": "Gratis y de código abierto, bajo la licencia MIT.",
+      "notices": "Avisos de terceros"
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnóstico",
+    "intro": "Esto es exactamente lo que se copiará. No se envía nada automáticamente: tú decides dónde pegarlo.",
+    "label": "Texto del diagnóstico",
+    "loading": "Reuniendo los detalles…",
+    "failed": "No se pudo generar el diagnóstico. Inténtalo de nuevo.",
+    "copy": "Copiar",
+    "copied": "Copiado al portapapeles.",
+    "copyFailed": "No se pudo copiar. Selecciona el texto y cópialo a mano.",
+    "openIssue": "Abrir issue en GitHub",
+    "openIssueHint": "Abre GitHub en tu navegador con este texto ya escrito. No se publica nada hasta que lo envíes allí.",
+    "openIssueFailed": "No se pudo abrir el navegador. Copia el texto y pégalo en un issue de GitHub."
+  },
+  "updates": {
+    "ready": "Kamo {version} está listo. ¿Reiniciar ahora?",
+    "restart": "Reiniciar ahora",
+    "later": "Más tarde",
+    "busy": "Kamo está grabando o exportando. Reinicia cuando termine."
+  },
+  "onboarding": {
+    "progress": "Paso {current} de {total}",
+    "welcome": {
+      "title": "Hola, soy Kamo.",
+      "body": "Antes de la primera toma, veamos qué necesita permitir tu equipo para que yo grabe. Tarda más o menos un minuto.",
+      "start": "Vamos"
+    },
+    "screen": {
+      "title": "Deja que Kamo vea tu pantalla",
+      "why": "macOS pregunta antes de que cualquier app grabe la pantalla. Sin este permiso Kamo no puede grabar nada, por eso es el único que no se puede saltar."
+    },
+    "microphone": {
+      "title": "¿Quieres tu voz en los videos?",
+      "why": "Con el micrófono, Kamo graba tu narración junto con la pantalla. Puedes saltarlo y permitirlo después."
+    },
+    "inputMonitoring": {
+      "title": "Deja que Kamo siga tus clics",
+      "why": "Kamo hace zoom donde haces clic, así que necesita ver el ratón.",
+      "keyboardNote": "macOS lo llama “teclas”, pero Kamo solo lee el ratón y nunca ve lo que escribes."
+    },
+    "allow": "Permitir",
+    "continue": "Continuar",
+    "skip": "Saltar por ahora",
+    "detecting": "Kamo se da cuenta solo cuando lo permitas.",
+    "deniedHelp": {
+      "mac": "Activa Kamo en Ajustes del Sistema → Privacidad y seguridad y vuelve aquí.",
+      "windows": "En Configuración → Privacidad y seguridad → Micrófono, activa el acceso al micrófono y “Permitir que las aplicaciones de escritorio accedan al micrófono”."
+    },
+    "reopenHint": "¿Ya lo permitiste? A veces macOS solo se entera cuando Kamo se vuelve a abrir.",
+    "reopen": "Reabrir Kamo",
+    "reopenFailed": "No se pudo reabrir ahora. Cierra Kamo y ábrelo de nuevo.",
+    "done": {
+      "title": "Todo listo.",
+      "body": "Elige una pantalla, pulsa Grabar y haz clic por ahí. Kamo se encarga de los zooms.",
+      "start": "Empezar a grabar"
+    }
+  },
+  "export": {
+    "title": "Exportar",
+    "formats": "Formatos",
+    "aspect": {
+      "landscape": "Horizontal",
+      "square": "Cuadrado",
+      "vertical": "Vertical"
+    },
+    "soon": "Muy pronto",
+    "resolution": "Resolución",
+    "frameRate": "Fotogramas por segundo",
+    "fileFormat": "Formato",
+    "fps": "{fps} fps",
+    "laterNote": "4K, 60 fps, GIF y el vertical 9:16 llegan en una próxima versión, gratis como todo lo demás.",
+    "folder": "Se guarda en",
+    "changeFolder": "Cambiar",
+    "pickOne": "Elige al menos un formato.",
+    "cancel": "Cancelar",
+    "start": "{count, plural, one {Exportar # archivo} other {Exportar # archivos}}",
+    "waiting": "En espera",
+    "cancelExport": "Cancelar exportación",
+    "done": {
+      "title": "{count, plural, one {# archivo guardado} other {# archivos guardados}}",
+      "subtitle": "Listo. Ya sale editado."
+    },
+    "showInFolder": "Mostrar en la carpeta",
+    "close": "Cerrar",
+    "retry": "Intentar de nuevo",
+    "errors": {
+      "title": "La exportación se detuvo",
+      "disk_full": "El disco está lleno. Se borró el archivo incompleto; libera espacio e inténtalo de nuevo.",
+      "write_failed": "Kamo no pudo escribir el archivo. Se borró el archivo incompleto.",
+      "source_unreadable": "Kamo no pudo leer el video de esta grabación.",
+      "encoder_unavailable": "Este ordenador no tiene un codificador H.264 que Kamo pueda usar.",
+      "failed": "Algo salió mal al exportar. Se borró el archivo incompleto."
+    },
+    "warnings": {
+      "software_encoder": "Este ordenador no tiene codificador de video por hardware, así que la exportación usó el de software, más lento.",
+      "audio_unreadable": "No se pudo leer una pista de sonido, así que quedó fuera.",
+      "audio_encoder_unavailable": "Este ordenador no puede codificar sonido AAC, así que el video no tiene sonido."
+    },
+    "closeDialog": {
+      "title": "Exportación en curso",
+      "message": "Cerrar ahora cancela la exportación y borra el archivo sin terminar.",
+      "stop": "Cancelar exportación y cerrar",
+      "keep": "Seguir exportando"
+    }
   }
 }

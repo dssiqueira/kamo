@@ -20,6 +20,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm i18n:check
+      # Every i18n key the code uses exists in the locales (rule 14).
+      - run: pnpm i18n:usage
       # Rule 2: no system-wide keyboard capture anywhere in the app or the native helpers.
       - run: pnpm guard:keyboard
       - run: pnpm build

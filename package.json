@@ -14,7 +14,7 @@
     "format": "prettier --write .",
     "typecheck": "pnpm -r typecheck",
     "i18n:check": "pnpm --filter @kamo/i18n check-keys",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm i18n:check && pnpm guard:keyboard",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm i18n:check && pnpm i18n:usage && pnpm guard:keyboard",
     "guard:keyboard": "node scripts/check-no-keyboard.ts",
     "i18n:usage": "node scripts/check-i18n-usage.ts"
   },

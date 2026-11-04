@@ -4,8 +4,17 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 /** Renderer pages, one per window kind (`src/renderer/<page>.html`). */
-export type Page = 'index' | 'countdown' | 'recording-bar' | 'editor'
-const PAGES: readonly Page[] = ['index', 'countdown', 'recording-bar', 'editor']
+export type Page =
+  'index' | 'countdown' | 'recording-bar' | 'editor' | 'audio-recorder' | 'settings' | 'onboarding'
+const PAGES: readonly Page[] = [
+  'index',
+  'countdown',
+  'recording-bar',
+  'editor',
+  'audio-recorder',
+  'settings',
+  'onboarding',
+]
 
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
 const rendererDir = join(import.meta.dirname, '../renderer')
@@ -17,6 +26,13 @@ export function isAppUrl(url: string): boolean {
   if (devServerUrl) return new URL(url).origin === new URL(devServerUrl).origin
   const path = url.split(/[?#]/)[0]
   return PAGES.some((page) => path === pathToFileURL(join(rendererDir, `${page}.html`)).href)
+}
+
+/** True only for one of the app's pages, e.g. the audio recorder (its own permissions). */
+export function isPageUrl(url: string, page: Page): boolean {
+  if (!isAppUrl(url)) return false
+  if (devServerUrl) return new URL(url).pathname === `/${page}.html`
+  return url.split(/[?#]/)[0] === pathToFileURL(join(rendererDir, `${page}.html`)).href
 }
 
 /**

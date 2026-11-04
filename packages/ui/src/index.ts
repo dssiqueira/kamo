@@ -8,6 +8,14 @@ export { ProjectList, MAX_PROJECT_NAME_LENGTH } from './home/ProjectList.tsx'
 export type { BrokenProjectData, ProjectCardData, ProjectListProps } from './home/ProjectList.tsx'
 export { pickDisplay } from './home/pickDisplay.ts'
 export type { DisplayOption } from './home/pickDisplay.ts'
+export { AudioSources } from './home/AudioSources.tsx'
+export type {
+  AudioLevelsView,
+  AudioSourcesProps,
+  AudioSourceView,
+  MicrophoneOption,
+} from './home/AudioSources.tsx'
+export { levelFromRms, rmsOf, smoothLevel, METER_FLOOR_DB } from './home/audioLevel.ts'
 export { Countdown } from './recording/Countdown.tsx'
 export type { CountdownProps } from './recording/Countdown.tsx'
 export { RecordingBar } from './recording/RecordingBar.tsx'
@@ -18,3 +26,17 @@ export type { EditorProps } from './editor/Editor.tsx'
 export * from './timeline/index.ts'
 export { Mascot } from './mascot/Mascot.tsx'
 export type { MascotPose, MascotProps } from './mascot/Mascot.tsx'
+export { ExportSheet } from './export/ExportSheet.tsx'
+export type { ExportSheetProps } from './export/ExportSheet.tsx'
+export type { ExportMedia, ExportPlatform } from './export/useExportRun.ts'
+// Settings (F-15), help (F-17), updates (F-14) and the permissions onboarding (F-13).
+export { Settings, localeName } from './settings/Settings.tsx'
+export type { SettingsProps } from './settings/Settings.tsx'
+export { SettingsButton } from './settings/SettingsButton.tsx'
+export { UpdateBanner } from './settings/UpdateBanner.tsx'
+export type { UpdateBannerProps } from './settings/UpdateBanner.tsx'
+export { Onboarding } from './onboarding/Onboarding.tsx'
+export type { OnboardingProps } from './onboarding/Onboarding.tsx'
+export { acceleratorFromKeyPress, formatAccelerator } from './settings/shortcut.ts'
+export type { KeyPress, KeyPressResult, ShortcutPlatform } from './settings/shortcut.ts'
+export type * from './settings/types.ts'
