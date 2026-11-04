@@ -1,6 +1,7 @@
 # features.md
 
 > Each feature with its expected behavior, acceptance criteria (what must be true for it to be done) and edge cases. Screens and states are in `flows.md`, fields and data rules in `data-model.md`.
+> Checked boxes = verified by automated tests or in the running app. Criteria that need real capture hardware (Windows helper, a Mac) or hands-on interaction stay open until tested that way.
 > IDs: `F-xx` = desktop v0.1 · `E-xx` = extension v0.2 · `C-xx` = Kamo Cloud v0.3 (subscription) · `A-xx` = advanced features v0.4 · `M-xx` = MCP (local v0.4, cloud v0.5).
 > **Everything that is F, E, A and the local MCP is free.** Only the cloud (C and the cloud MCP) has a paid plan.
 > The engine features (F-05 to F-11) live in `packages/core` and `packages/ui` and apply the same way to the extension. The `E-xx` items cover only what is specific to Chrome.
@@ -53,8 +54,8 @@
 **Behavior:** the Home lists all connected displays with a live thumbnail. The user picks one, adjusts the toggles (microphone, show cursor) and clicks Record. A 3-2-1 countdown appears full screen on the chosen display and recording starts when it ends.
 
 **Acceptance criteria**
-- [ ] Lists all displays, with the primary one preselected
-- [ ] Thumbnails update at least once per second
+- [x] Lists all displays, with the primary one preselected
+- [x] Thumbnails update at least once per second
 - [ ] The chosen display and the toggles are remembered for the next recording
 - [ ] Esc during the countdown cancels and returns to the Home without creating a project
 - [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s)
@@ -93,7 +94,7 @@
 - [ ] Coordinates normalized to the recorded display, respecting the scale factor
 - [ ] Offset between event and video: at most 1 frame (33ms)
 - [ ] Pause events are not included (time stays aligned with the continuous video)
-- [ ] No app code calls a keyboard API (verifiable by searching the code)
+- [x] No app code calls a keyboard API (verifiable by searching the code)
 
 **Edge cases**
 - Mouse outside the recorded display (on another monitor) → logged as "outside", and the camera ignores those stretches
@@ -123,12 +124,12 @@
 **Behavior:** when the Editor opens, turns the clicks into zoom blocks following the rules in `data-model.md` (grouping by time and distance, `leadMs`, no overlap).
 
 **Acceptance criteria**
-- [ ] Each left click generates or joins a zoom
-- [ ] Clicks less than ~1.5s apart and within ~25% of the screen distance become a single zoom
-- [ ] No zoom is shorter than 600ms
-- [ ] "Regenerate zooms" redoes only the `auto` zooms and keeps the `manual` ones
-- [ ] Turning off "auto-zoom" hides the automatic zooms without deleting them
-- [ ] Generates the zooms for a 10-minute recording in under 1s
+- [x] Each left click generates or joins a zoom
+- [x] Clicks less than ~1.5s apart and within ~25% of the screen distance become a single zoom
+- [x] No zoom is shorter than 600ms
+- [x] "Regenerate zooms" redoes only the `auto` zooms and keeps the `manual` ones
+- [x] Turning off "auto-zoom" hides the automatic zooms without deleting them
+- [x] Generates the zooms for a 10-minute recording in under 1s
 
 **Edge cases**
 - Recording with no clicks → no zoom, with the notice "no clicks, nothing to zoom into"
@@ -141,10 +142,10 @@
 **Behavior:** applies the zooms as a camera that moves with spring physics. It starts moving `leadMs` before the click, to arrive at the point exactly at the time of the click, and inside a zoom with `follow` on it smoothly follows the cursor.
 
 **Acceptance criteria**
-- [ ] Zoom in and out with a spring (stiffness 170, damping 26), never linear
-- [ ] The camera reaches the target at the instant of the click (± 1 frame)
-- [ ] Never shows an area outside the recorded video (framing is clamped to the edges)
-- [ ] Inside a zoom, the cursor never leaves the frame
+- [x] Zoom in and out with a spring (stiffness 170, damping 26), never linear
+- [x] The camera reaches the target at the instant of the click (± 1 frame)
+- [x] Never shows an area outside the recorded video (framing is clamped to the edges)
+- [x] Inside a zoom, the cursor never leaves the frame
 - [ ] The preview and the export show exactly the same movement
 
 **Edge cases**
@@ -157,12 +158,12 @@
 **Behavior:** draws its own cursor on top of the video from the events. The shaky mouse path becomes a smooth glide between the clicked points, and the cursor always lands exactly on each click.
 
 **Acceptance criteria**
-- [ ] Path smoothed with a spring, with no visible jitter
-- [ ] At each click, the cursor is exactly at the logged position (zero error on the click frame)
-- [ ] Click "ripple" effect, which can be turned off
-- [ ] Adjustable size from 1.0× to 3.0×
-- [ ] Option to hide the cursor completely
-- [ ] Sharp cursor at any zoom level (drawn as a vector, not scaled from a bitmap)
+- [x] Path smoothed with a spring, with no visible jitter
+- [x] At each click, the cursor is exactly at the logged position (zero error on the click frame)
+- [x] Click "ripple" effect, which can be turned off
+- [x] Adjustable size from 1.0× to 3.0×
+- [x] Option to hide the cursor completely
+- [x] Sharp cursor at any zoom level (drawn as a vector, not scaled from a bitmap)
 
 **Edge cases**
 - Cursor still for more than 3s → fades out gradually and comes back when the mouse moves (option, on by default)
@@ -174,11 +175,11 @@
 **Behavior:** the video appears over a wallpaper, with padding, rounded corners and shadow, applied by default to every new recording.
 
 **Acceptance criteria**
-- [ ] 8 ready-made wallpapers (in pastel, matching `DESIGN.md`), plus solid color
-- [ ] Padding from 0 to 20%, corners from 0 to 32px, shadow on/off
+- [x] 8 ready-made wallpapers (in pastel, matching `DESIGN.md`), plus solid color
+- [x] Padding from 0 to 20%, corners from 0 to 32px, shadow on/off
 - [ ] Every change appears in the preview in under 100ms
-- [ ] The last style used becomes the default for the next recordings
-- [ ] The style applies to the whole video (it does not change per segment in the MVP)
+- [x] The last style used becomes the default for the next recordings
+- [x] The style applies to the whole video (it does not change per segment in the MVP)
 
 ---
 
@@ -190,9 +191,9 @@
 - [ ] Clicking the block opens the scale control (1.0× to 4.0×, steps of 0.25)
 - [ ] Delete or Backspace deletes the selected block
 - [ ] Double-clicking an empty space on the track creates a 2s zoom at 2.0× scale, centered on the cursor at that instant
-- [ ] Any edited block becomes `origin: manual`
-- [ ] Undo and redo (⌘Z / ⌘⇧Z, Ctrl+Z / Ctrl+Y) with at least 50 steps
-- [ ] Blocks do not overlap: dragging a block against another stops at the limit
+- [x] Any edited block becomes `origin: manual`
+- [x] Undo and redo (⌘Z / ⌘⇧Z, Ctrl+Z / Ctrl+Y) with at least 50 steps
+- [x] Blocks do not overlap: dragging a block against another stops at the limit
 - [ ] Clicking and dragging on the timeline ruler moves the playhead (scrub)
 - [ ] Everything is saved automatically to `project.json`
 
@@ -238,11 +239,11 @@
 **Behavior:** each recording becomes a project in a local folder (see `data-model.md`). The Home lists the recent ones.
 
 **Acceptance criteria**
-- [ ] Lists projects with thumbnail, name, duration and date, newest to oldest
+- [x] Lists projects with thumbnail, name, duration and date, newest to oldest
 - [ ] Rename (double-click the name) and delete (with confirmation; goes to the system trash)
 - [ ] "Show in folder" opens the project folder
 - [ ] Every edit is saved automatically, with no "Save" button
-- [ ] `project.json` with a `version` field, migrated automatically when the format changes
+- [x] `project.json` with a `version` field, migrated automatically when the format changes
 
 **Edge cases**
 - Project folder deleted outside the app → disappears from the list without error
@@ -295,7 +296,7 @@
 - [ ] The preview, the zooms and the export respect the trim; zooms outside the trim disappear from the timeline (but are not deleted)
 - [ ] Trim saved in `project.trim`, undoable like any edit
 - [ ] Optional automatic suggestion: "Trim the last 2s?" when the last event is the click on Stop
-- [ ] Cuts in the middle of the video remain out of scope (it is not a video editor)
+- [x] Cuts in the middle of the video remain out of scope (it is not a video editor)
 
 **Edge cases**
 - Trim that leaves less than 1s of video → prevented, with a warning
