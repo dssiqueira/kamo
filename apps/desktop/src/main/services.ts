@@ -1,6 +1,6 @@
 // Main-process singletons. Created after `app.whenReady()`, when Electron paths are available.
 import { app, shell } from 'electron'
-import { Logger } from './log/index.ts'
+import { Logger, logsDir } from './log/index.ts'
 import { SettingsStore } from './settings.ts'
 import { FileProjectStore, defaultProjectsDir, findInterruptedRecordings } from './storage/index.ts'
 
@@ -28,7 +28,7 @@ export function getServices(): Services {
   if (!services) {
     const projectsDir = defaultProjectsDir()
     services = {
-      log: new Logger(app.getPath('logs')),
+      log: new Logger(logsDir(app.getPath('userData'))),
       store: new FileProjectStore(projectsDir, { trash: (path) => shell.trashItem(path) }),
       projectsDir,
       settings: new SettingsStore(app.getPath('userData')),
@@ -40,6 +40,8 @@ export function getServices(): Services {
 /** Startup bookkeeping: version line for diagnostics and interrupted recordings (F-02). */
 export async function startServices(): Promise<{ interrupted: string[] }> {
   const { log, store } = getServices()
+  // Dev runs say where they log, so the terminal and the file can be matched up.
+  if (!app.isPackaged) console.info(`kamo: logging to ${log.file}`)
   log.info('app.start', {
     version: app.getVersion(),
     electron: process.versions.electron,

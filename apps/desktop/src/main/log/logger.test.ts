@@ -1,8 +1,8 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Logger, redact } from './logger.ts'
+import { Logger, logsDir, redact } from './logger.ts'
 
 let dir: string
 
@@ -94,7 +94,61 @@ describe('Logger', () => {
 
   it('never throws when the log cannot be written', async () => {
     await writeFile(join(dir, 'blocker'), 'a file where the folder should be')
-    const log = new Logger(join(dir, 'blocker', 'logs'), { now })
+    const log = new Logger(join(dir, 'blocker', 'logs'), { now, onWriteFailure: () => {} })
     expect(() => log.info('x')).not.toThrow()
+  })
+
+  // Regression: a rename that failed once (Windows: the file held open elsewhere) left the
+  // cached size over the limit, so every later line retried it and was silently dropped.
+  it('keeps logging when the rotation cannot move the file aside', async () => {
+    await mkdir(join(dir, 'kamo.1.log'))
+    await writeFile(join(dir, 'kamo.1.log', 'keep'), 'a folder in the way of the rename')
+    const log = new Logger(dir, { maxBytes: 300, now })
+    for (let i = 0; i < 20; i++) log.info('tick', { i })
+    const lines = (await readFile(join(dir, 'kamo.log'), 'utf8')).trim().split('\n')
+    expect(lines.map((line) => JSON.parse(line).i)).toEqual([...Array(20).keys()])
+    expect(log.writeFailures).toBe(0)
+  })
+
+  it('rotates on the real file size when another process appends too', async () => {
+    const devRun = new Logger(dir, { maxBytes: 1000, now })
+    const smokeRun = new Logger(dir, { maxBytes: 1000, now })
+    for (let i = 0; i < 40; i++) (i % 2 ? devRun : smokeRun).info('tick', { i })
+    expect((await stat(join(dir, 'kamo.log'))).size).toBeLessThanOrEqual(1000)
+    const tail = await devRun.tail(1000)
+    expect(JSON.parse(tail.at(-1)!).i).toBe(39)
+  })
+
+  it('reports the first failed write, keeps the lines and writes them once it can', async () => {
+    const logs = join(dir, 'logs')
+    await writeFile(logs, 'a file where the folder should be')
+    const failures: string[] = []
+    const log = new Logger(logs, { now, onWriteFailure: (code) => failures.push(code) })
+    log.info('app.start')
+    log.info('recording.started')
+    expect(failures).toHaveLength(1)
+    expect(log.writeFailures).toBe(2)
+    const tail = (await log.tail()).map((line) => JSON.parse(line))
+    expect(tail.map((entry) => entry.event)).toEqual([
+      'app.start',
+      'recording.started',
+      'log.write_failed',
+    ])
+    expect(tail[2]).toMatchObject({ level: 'error', count: 2 })
+
+    await rm(logs)
+    log.info('recording.finished')
+    const written = (await readFile(join(logs, 'kamo.log'), 'utf8')).trim().split('\n')
+    expect(written.map((line) => JSON.parse(line).event)).toEqual([
+      'app.start',
+      'recording.started',
+      'recording.finished',
+    ])
+  })
+})
+
+describe('logsDir', () => {
+  it('is the logs folder inside app-data on every OS', () => {
+    expect(logsDir(join('app-data', 'Kamo'))).toBe(join('app-data', 'Kamo', 'logs'))
   })
 })

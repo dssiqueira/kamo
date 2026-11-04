@@ -64,11 +64,33 @@ function sanitize(value: unknown, home: string, depth = 0): unknown {
   )
 }
 
+/** Lines kept in memory while the file cannot be written, so "Copy diagnostics" still has them. */
+export const MAX_PENDING_LINES = 500
+
+/**
+ * The documented place (docs/data-model.md: `app-data/logs/`): `logs` inside Electron's userData
+ * folder, on every OS. `app.getPath('logs')` is not used: on Mac it points to ~/Library/Logs.
+ */
+export function logsDir(userData: string): string {
+  return join(userData, 'logs')
+}
+
+function errorCode(error: unknown): string {
+  return typeof error === 'object' && error !== null && 'code' in error
+    ? String(error.code)
+    : 'unknown'
+}
+
 export interface LoggerOptions {
   maxBytes?: number
   /** Home folder to redact; defaults to os.homedir(). */
   home?: string
   now?: () => Date
+  /**
+   * Called once, on the first line that cannot be written (default: one line on stderr, which
+   * the dev terminal shows). Later failures are only counted.
+   */
+  onWriteFailure?: (code: string, file: string) => void
 }
 
 export class Logger {
@@ -77,9 +99,15 @@ export class Logger {
   private readonly maxBytes: number
   private readonly home: string
   private readonly now: () => Date
+  private readonly onWriteFailure: (code: string, file: string) => void
+  /** Bytes in the file, as last seen by this process (other Kamo processes may append too). */
   private size: number | undefined
+  /** Lines that could not be written yet, oldest first. */
+  private readonly pending: string[] = []
+  private failures = 0
+  private lastFailureCode: string | undefined
 
-  /** `dir` is the logs folder; main passes `app.getPath('logs')`. */
+  /** `dir` is the logs folder; main passes `logsDir(app.getPath('userData'))`. */
   constructor(
     readonly dir: string,
     options: LoggerOptions = {},
@@ -89,6 +117,15 @@ export class Logger {
     this.maxBytes = options.maxBytes ?? MAX_LOG_BYTES
     this.home = options.home ?? homedir()
     this.now = options.now ?? (() => new Date())
+    this.onWriteFailure =
+      options.onWriteFailure ??
+      ((code, file) =>
+        console.error(`kamo: cannot write the log ${redact(file, this.home)}: ${code}`))
+  }
+
+  /** Lines that could not be written since the process started (0 when all is well). */
+  get writeFailures(): number {
+    return this.failures
   }
 
   info(event: string, data?: Record<string, unknown>): void {
@@ -114,44 +151,97 @@ export class Logger {
       }
     }
     const current = await read(this.file)
-    const previous = current.length >= lines ? [] : await read(this.previousFile)
-    return [...previous, ...current].slice(-lines)
+    // Lines this process could not write still belong in a problem report, with a note why.
+    const unwritten = this.failures
+      ? [
+          ...this.pending.map((line) => line.trimEnd()),
+          JSON.stringify({
+            t: this.now().toISOString(),
+            level: 'error',
+            event: 'log.write_failed',
+            code: this.lastFailureCode,
+            count: this.failures,
+          }),
+        ]
+      : []
+    const own = [...current, ...unwritten]
+    const previous = own.length >= lines ? [] : await read(this.previousFile)
+    return [...previous, ...own].slice(-lines)
   }
 
-  /** Logging must never break the app: any failure here is swallowed. */
-  private write(level: LogLevel, event: string, data?: Record<string, unknown>): void {
+  private currentSize(): number {
     try {
-      // `t`, `level` and `event` are reserved: data cannot overwrite them.
-      const {
-        t: _t,
-        level: _level,
-        event: _event,
-        ...fields
-      } = data ? (sanitize(data, this.home) as Record<string, unknown>) : {}
-      const entry = {
-        t: this.now().toISOString(),
-        level,
-        event: sanitize(event, this.home),
-        ...fields,
-      }
-      const line = `${JSON.stringify(entry)}\n`
-      const bytes = Buffer.byteLength(line)
+      return statSync(this.file).size
+    } catch {
+      return 0
+    }
+  }
+
+  /**
+   * Moves a full file aside. The cached size is checked against the disk first, because other
+   * Kamo processes (a dev run, a smoke test) append to the same file. A failed rename (Windows:
+   * the file is held open elsewhere) never stops logging: the file grows a little past the limit
+   * and the next line tries again.
+   */
+  private rotateIfFull(bytes: number): void {
+    if (this.size === undefined || this.size + bytes > this.maxBytes) this.size = this.currentSize()
+    if (this.size === 0 || this.size + bytes <= this.maxBytes) return
+    try {
+      renameSync(this.file, this.previousFile)
+      this.size = 0
+    } catch {
+      // keep appending to the current file
+    }
+  }
+
+  private format(level: LogLevel, event: string, data?: Record<string, unknown>): string {
+    // `t`, `level` and `event` are reserved: data cannot overwrite them.
+    const {
+      t: _t,
+      level: _level,
+      event: _event,
+      ...fields
+    } = data ? (sanitize(data, this.home) as Record<string, unknown>) : {}
+    const entry = {
+      t: this.now().toISOString(),
+      level,
+      event: sanitize(event, this.home),
+      ...fields,
+    }
+    return `${JSON.stringify(entry)}\n`
+  }
+
+  /**
+   * Logging must never break the app, so nothing here throws. A line that cannot be written is
+   * kept in memory (written later, and shown by tail()) and the first failure is reported.
+   */
+  private write(level: LogLevel, event: string, data?: Record<string, unknown>): void {
+    let line: string
+    try {
+      line = this.format(level, event, data)
+    } catch {
+      return
+    }
+    const text = this.pending.length ? `${this.pending.join('')}${line}` : line
+    try {
+      const bytes = Buffer.byteLength(text)
       mkdirSync(this.dir, { recursive: true })
-      if (this.size === undefined) {
+      this.rotateIfFull(bytes)
+      appendFileSync(this.file, text)
+      this.size = (this.size ?? 0) + bytes
+      this.pending.length = 0
+    } catch (error) {
+      this.pending.push(line)
+      if (this.pending.length > MAX_PENDING_LINES) this.pending.shift()
+      this.failures += 1
+      this.lastFailureCode = errorCode(error)
+      if (this.failures === 1) {
         try {
-          this.size = statSync(this.file).size
+          this.onWriteFailure(this.lastFailureCode, this.file)
         } catch {
-          this.size = 0
+          // nowhere safer to report it
         }
       }
-      if (this.size > 0 && this.size + bytes > this.maxBytes) {
-        renameSync(this.file, this.previousFile)
-        this.size = 0
-      }
-      appendFileSync(this.file, line)
-      this.size += bytes
-    } catch {
-      // nowhere safer to report it
     }
   }
 }

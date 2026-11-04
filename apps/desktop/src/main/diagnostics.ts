@@ -31,6 +31,8 @@ export interface DiagnosticsInfo {
   helperPresent: boolean
   /** Last lines of the local log (already redacted by the Logger). */
   logLines: string[]
+  /** Where those lines come from (the Logger's file), so a reader knows which file to check. */
+  logFile?: string
 }
 
 function yesNo(value: boolean | null): string {
@@ -51,6 +53,7 @@ function header(info: DiagnosticsInfo): string[] {
     }`,
     `Hardware H.264 encoder (1080p30): ${yesNo(info.hardwareH264)}`,
     `Capture helper: ${info.helperPresent ? 'present' : 'missing'}`,
+    ...(info.logFile ? [`Log file: ${info.logFile}`] : []),
   ]
 }
 

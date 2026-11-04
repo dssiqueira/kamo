@@ -70,6 +70,8 @@ export async function collectDiagnostics(hardwareH264: boolean | null): Promise<
     permissions: listPermissions(),
     hardwareH264,
     helperPresent: helper !== null,
+    // The same Logger (and so the same file) that every main-process line goes through.
     logLines: await log.tail(LOG_LINES),
+    logFile: log.file,
   })
 }
