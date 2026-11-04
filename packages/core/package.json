@@ -29,6 +29,7 @@
     "fixtures": "node fixtures/write.ts"
   },
   "dependencies": {
+    "mediabunny": "^1.65.0",
     "zod": "^4.6.7"
   }
 }
