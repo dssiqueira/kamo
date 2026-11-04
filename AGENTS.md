@@ -142,9 +142,9 @@ One feature per session. Don't skip steps. Numbering is global, the same across 
 34. **[kamo-cloud]** "Agent connections" in the account, with revocation
 
 ## Status
-- **Current step:** 1b (project format, platform interfaces + Electron window; see `docs/plan.md`)
-- **Last thing that worked:** step 1a (2026-11-03): pnpm monorepo, `@kamo/design-tokens` generated from DESIGN.md, `@kamo/i18n` in the 5 languages with `check-keys`, rule 1 lint, CI and prerelease. `pnpm lint`, `typecheck`, `test` and `i18n:check` green
-- **Blockers:** the npm prerelease depends on the `@kamo` org and the `NPM_TOKEN` secret on GitHub
+- **Current step:** 2 (list displays and record the screen; see `docs/plan.md`)
+- **Last thing that worked:** step 1b (2026-11-03): project format, events.jsonl + fixtures, platform interfaces, Electron window and Windows installer (113.8MB) with smoke test. `pnpm check` green; Mac packaging is verified by the `desktop-package` CI job
+- **Blockers:** the npm prerelease depends on the `@kamo` org and the `NPM_TOKEN` secret on GitHub; step 2 needs a Mac (or CI) to build the ScreenCaptureKit helper
 
 ## First prompt
 > Read AGENTS.md and everything it points to. Confirm for me what we are going to build, who will use it, what the product looks like and what the first feature is.

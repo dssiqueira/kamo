@@ -77,7 +77,9 @@
 
 **Done when:** `pnpm install && pnpm lint && pnpm typecheck && pnpm test` pass from scratch, and `kamo-site` can install `@kamo/design-tokens@next`.
 
-### Step 1b — Project format, platform interfaces + Electron window
+### Step 1b — Project format, platform interfaces + Electron window ✅ (2026-11-03, Mac pending CI)
+> Done locally on Windows: project format with migrations, events.jsonl reader/writer with six fixtures, platform interfaces + in-memory store, hardened Electron window (electron-vite, React 19, Tailwind v4, i18n), NSIS installer at 113.8MB (16MB of headroom under the 130MB budget, with no features yet: watch it from step 2 on) and a packaged smoke test. The Mac half of "done when" is the `desktop-package` CI job on `macos-14`. Notes for later: `appId` is `app.kamo.desktop` (change before the first signed release if the domain differs); the desktop Vite config strips JSON import attributes in dev (`@kamo/i18n` locales), and the extension will need the same; default cursor size is 1.5× (not set in the docs).
+
 **Deliverables** (all written from scratch, D-020)
 - Project format in `core`: types for every entity in `data-model.md` (`Project`, `MouseEvent`, `Zoom`, `Style`, `CursorSettings`, `ExportJob`, `Transcript`, `CloudLink`), runtime validation, defaults and `version`-based migrations
 - Platform interfaces in `core`: `CaptureSource`, `EventSource`, `ProjectStore`, `FileSink`, plus an in-memory `ProjectStore` for tests
