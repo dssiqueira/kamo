@@ -148,27 +148,35 @@ export function ExportSheet({
                         : 'border-border hover:bg-surface-raised'
                     }`}
                   >
-                    <FormatPreview
-                      scene={scene}
-                      aspect={aspect}
-                      video={video}
-                      webcamVideo={webcamVideo}
-                      timeMs={timeMs}
-                      {...PREVIEW_SIZE[aspect]}
-                    />
-                    <span
-                      className="flex flex-wrap items-center gap-x-sm text-body"
-                      style={{ maxWidth: PREVIEW_SIZE[aspect].width }}
-                    >
+                    <span className="flex self-center">
+                      <FormatPreview
+                        scene={scene}
+                        aspect={aspect}
+                        video={video}
+                        webcamVideo={webcamVideo}
+                        timeMs={timeMs}
+                        {...PREVIEW_SIZE[aspect]}
+                      />
+                    </span>
+                    {/* Ratio and name on one line each, never wrapped: the tile grows to the
+                        longest one (the 9:16 preview is only 81px wide) and centers the preview. */}
+                    <span className="flex items-start gap-sm text-body">
                       <input
                         type="checkbox"
                         data-testid={`export-format-${aspect}`}
                         checked={checked[aspect]}
                         onChange={(e) => setChecked({ ...checked, [aspect]: e.target.checked })}
-                        className={`size-[16px] accent-tertiary ${FOCUS_RING}`}
+                        className={`mt-[3px] size-[16px] shrink-0 accent-tertiary ${FOCUS_RING}`}
                       />
-                      <span className="font-medium">{aspect}</span>
-                      <span className="text-on-surface-muted">{t(ASPECT_LABEL[aspect])}</span>
+                      <span className="flex flex-col whitespace-nowrap">
+                        <span className="font-medium tabular-nums">{aspect}</span>
+                        <span
+                          className="text-label text-on-surface-muted"
+                          data-testid={`export-format-label-${aspect}`}
+                        >
+                          {t(ASPECT_LABEL[aspect])}
+                        </span>
+                      </span>
                     </span>
                   </label>
                 ))}

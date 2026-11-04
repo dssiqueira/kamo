@@ -122,6 +122,11 @@
     "pause": "Pausar",
     "scrub": "Posição",
     "loading": "Abrindo o projeto…",
+    "endTrim": {
+      "question": "Cortar {seconds, plural, one {o último # segundo} other {os últimos # segundos}}?",
+      "apply": "Cortar",
+      "dismiss": "Dispensar"
+    },
     "errors": {
       "load": "Não deu pra abrir este projeto."
     },

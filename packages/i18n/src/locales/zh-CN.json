@@ -122,6 +122,11 @@
     "pause": "暂停",
     "scrub": "播放位置",
     "loading": "正在打开项目…",
+    "endTrim": {
+      "question": "剪掉最后 {seconds, number} 秒？",
+      "apply": "剪掉",
+      "dismiss": "忽略"
+    },
     "errors": {
       "load": "无法打开此项目。"
     },

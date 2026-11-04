@@ -150,6 +150,11 @@ export function projectAspect(project: { aspect?: Aspect | undefined }): Aspect 
   return project.aspect ?? '16:9'
 }
 
+/** The editor's auto-zoom toggle (`project.autoZoom`), on when missing. */
+export function projectAutoZoom(project: { autoZoom?: boolean | undefined }): boolean {
+  return project.autoZoom ?? true
+}
+
 /** The track's offset on the video timeline (`offsetMs`, 0 when missing). */
 export function audioOffsetMs(track: AudioTrack): number {
   return track.offsetMs ?? 0
@@ -205,6 +210,16 @@ export const Project = z
      * older files stay valid.
      */
     aspect: Aspect.optional(),
+    /**
+     * The editor's "Auto-zoom" toggle (F-05): off hides the `auto` zooms in the preview and
+     * the export without deleting them. Absent = on, so older files stay valid.
+     */
+    autoZoom: z.boolean().optional(),
+    /**
+     * The "Trim the last 2s?" suggestion (F-16) was answered: `applied` or `dismissed`. Once
+     * set it is never shown again for this project. Absent = not answered yet.
+     */
+    endTrimSuggestion: z.enum(['applied', 'dismissed']).optional(),
     webcam: WebcamSettings.nullable(),
     // Captions arrive in v0.4 (A-06); until then always null.
     captions: z.null(),

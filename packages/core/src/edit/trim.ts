@@ -65,3 +65,20 @@ export function suggestEndTrim(
   if (!last || last.type !== 'down' || last.button !== 'left') return null
   return last.t >= endMs && last.t <= durationMs ? endMs : null
 }
+
+/**
+ * The "Trim the last 2s?" suggestion the editor shows for this project (F-16): the trim end
+ * it would set, or null when there is nothing to suggest. Never again once the user applied
+ * or dismissed it (`project.endTrimSuggestion`), nor when the trim already ends there or
+ * earlier, nor when it would leave less than the minimum.
+ */
+export function endTrimSuggestionFor(
+  project: Pick<Project, 'durationMs' | 'trim' | 'endTrimSuggestion'>,
+  events: readonly MouseEventRecord[],
+): number | null {
+  if (project.endTrimSuggestion) return null
+  const endMs = suggestEndTrim(events, project.durationMs)
+  if (endMs === null || project.trim.endMs <= endMs) return null
+  if (endMs - project.trim.startMs < minTrimmedMs(project.durationMs)) return null
+  return endMs
+}

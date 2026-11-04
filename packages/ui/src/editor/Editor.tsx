@@ -5,10 +5,12 @@ import {
   deleteWebcamHidden,
   createZoomAt,
   deleteZoom,
+  endTrimSuggestionFor,
   generateZooms,
   moveWebcamHidden,
   moveZoom,
   projectAspect,
+  projectAutoZoom,
   resizeWebcamHidden,
   resizeZoom,
   setAspect,
@@ -24,7 +26,7 @@ import { formatTimecode } from '@kamo/i18n'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
-import { ArrowBackIcon, PauseIcon, PlayIcon } from '../primitives/icons.tsx'
+import { ArrowBackIcon, CloseIcon, PauseIcon, PlayIcon } from '../primitives/icons.tsx'
 import { Timeline, type TimelineAudioTrack } from '../timeline/Timeline.tsx'
 import { useHistoryShortcuts } from '../timeline/useHistoryShortcuts.ts'
 import { ExportSheet } from '../export/ExportSheet.tsx'
@@ -37,6 +39,7 @@ import {
   type BackgroundImagePlatform,
 } from './background-image.ts'
 import { Preview } from './Preview.tsx'
+import { PreviewAudio, type PreviewAudioTrack } from './PreviewAudio.tsx'
 import { PreviewDecor } from './PreviewDecor.tsx'
 import { StylePanel } from './StylePanel.tsx'
 import { usePlayback } from './usePlayback.ts'
@@ -48,6 +51,11 @@ export interface EditorProps {
   videoUrl: string
   /** webcam.mp4 (A-03), when the project has one; the app resolves it like videoUrl */
   webcamUrl?: string | undefined
+  /**
+   * audio.m4a and system.m4a (F-04), resolved like videoUrl, for the preview's sound (F-10).
+   * Only the recorded tracks (project.audio.<track>.enabled) are played.
+   */
+  audioUrls?: { mic?: string | undefined; system?: string | undefined } | undefined
   /** Every edit, undo and redo; the app autosaves it (F-12: no Save button). */
   onChange(project: Project): void
   onBack(): void
@@ -66,6 +74,7 @@ export function Editor({
   events,
   videoUrl,
   webcamUrl,
+  audioUrls,
   onChange,
   onBack,
   exportPlatform,
@@ -75,7 +84,6 @@ export function Editor({
   const video = useRef<HTMLVideoElement | null>(null)
   const webcamVideo = useRef<HTMLVideoElement | null>(null)
   const draw = useRef<((timeMs: number) => void) | null>(null)
-  const [autoZoom, setAutoZoom] = useState(true)
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
   const [selectedHidden, setSelectedHidden] = useState<number | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
@@ -87,11 +95,22 @@ export function Editor({
   const [project, setProject] = useState(initial)
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  // F-16: the answer to "Trim the last 2s?" is kept outside the undo history, so undoing an
+  // applied trim brings the old end back but never the question; every save carries it.
+  const [endTrimAnswer, setEndTrimAnswer] = useState(initial.endTrimSuggestion)
+  const endTrimAnswerRef = useRef(endTrimAnswer)
+  const withAnswer = (p: Project): Project => {
+    const answer = endTrimAnswerRef.current
+    return answer && p.endTrimSuggestion !== answer ? { ...p, endTrimSuggestion: answer } : p
+  }
+  const withAnswerRef = useRef(withAnswer)
+  withAnswerRef.current = withAnswer
   useEffect(
     () =>
       history.subscribe(() => {
-        setProject(history.present)
-        onChangeRef.current(history.present)
+        const next = withAnswerRef.current(history.present)
+        setProject(next)
+        onChangeRef.current(next)
       }),
     [history],
   )
@@ -139,7 +158,30 @@ export function Editor({
   const fps = project.source.fps
   const playback = usePlayback(video, project.trim, fps, (ms) => draw.current?.(ms))
 
+  // F-05: the toggle lives in the project (autoZoom, absent = on), so it is saved and undoable.
+  const autoZoom = projectAutoZoom(project)
   const zooms = useMemo(() => visibleZooms(project.zooms, { autoZoom }), [project.zooms, autoZoom])
+  const endTrimEnd = useMemo(
+    () =>
+      endTrimSuggestionFor(
+        { durationMs: project.durationMs, trim: project.trim, endTrimSuggestion: endTrimAnswer },
+        events,
+      ),
+    [project.durationMs, project.trim, endTrimAnswer, events],
+  )
+  const answerEndTrim = (answer: 'applied' | 'dismissed') => {
+    endTrimAnswerRef.current = answer
+    setEndTrimAnswer(answer)
+    if (answer === 'applied' && endTrimEnd !== null) {
+      const before = history.present
+      edit((p) => setTrim(p, p.trim.startMs, endTrimEnd))
+      // setTrim changed nothing: no history step, so save the answer on its own.
+      if (history.present !== before) return
+    }
+    const next = withAnswer(history.present)
+    setProject(next)
+    onChangeRef.current(next)
+  }
   const noClicks = useMemo(
     () => !events.some((e) => e.type === 'down' && e.button === 'left'),
     [events],
@@ -200,6 +242,15 @@ export function Editor({
   const setVolume = (track: 'mic' | 'system', volume: number) =>
     edit((p) => ({ ...p, audio: { ...p.audio, [track]: { ...p.audio[track], volume } } }))
 
+  // F-10: the preview plays the recorded tracks with the export's offset and volume rules.
+  const previewAudio = (['mic', 'system'] as const).flatMap((id): PreviewAudioTrack[] => {
+    const url = audioUrls?.[id]
+    const track = project.audio[id]
+    return url && track.enabled
+      ? [{ id, url, offsetMs: track.offsetMs ?? 0, volume: track.volume }]
+      : []
+  })
+
   return (
     <div className="flex h-screen flex-col bg-background font-sans text-on-surface">
       <header className="flex items-center gap-md border-b border-border px-md py-sm">
@@ -255,6 +306,7 @@ export function Editor({
               onSplitDragEnd={() => history.commit()}
               splitHandleLabel={t('editor.webcam.dividerHint')}
             />
+            <PreviewAudio video={video} tracks={previewAudio} />
           </div>
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
             <button
@@ -273,6 +325,13 @@ export function Editor({
                 {formatTimecode(project.trim.endMs - project.trim.startMs, fps)}
               </span>
             </span>
+            {endTrimEnd !== null && (
+              <EndTrimSuggestion
+                seconds={(project.durationMs - endTrimEnd) / 1000}
+                onApply={() => answerEndTrim('applied')}
+                onDismiss={() => answerEndTrim('dismissed')}
+              />
+            )}
             <FormatSwitch
               value={projectAspect(project)}
               onChange={(aspect) => edit((p) => setAspect(p, aspect))}
@@ -346,7 +405,7 @@ export function Editor({
               : undefined
           }
           onCursor={(cursor) => edit((p) => ({ ...p, cursor }))}
-          onAutoZoom={setAutoZoom}
+          onAutoZoom={(on) => edit((p) => ({ ...p, autoZoom: on }))}
           onRegenerate={regenerate}
           webcam={webcamUrl ? project.webcam : null}
           onWebcam={(patch) => edit((p) => setWebcam(p, patch))}
@@ -372,6 +431,51 @@ export function Editor({
           onClose={() => setExportOpen(false)}
         />
       )}
+    </div>
+  )
+}
+
+/**
+ * "Trim the last 2s?" (F-16): a discreet chip next to the timecode when the recording ends on
+ * the click on Stop. One click trims (undoable); the × dismisses it for good.
+ */
+function EndTrimSuggestion({
+  seconds,
+  onApply,
+  onDismiss,
+}: {
+  seconds: number
+  onApply(): void
+  onDismiss(): void
+}) {
+  const t = useT()
+  return (
+    <div
+      role="status"
+      data-testid="end-trim-suggestion"
+      className="flex min-w-0 items-center gap-xs rounded-full bg-surface-raised py-[3px] ps-[12px] pe-[3px] text-label"
+    >
+      <span className="min-w-0 truncate text-on-surface-muted">
+        {t('editor.endTrim.question', { seconds })}
+      </span>
+      <button
+        type="button"
+        data-testid="end-trim-apply"
+        onClick={onApply}
+        className={`shrink-0 rounded-full bg-tertiary-container px-[10px] py-[3px] font-medium text-on-surface transition-colors duration-[120ms] hover:bg-border ${FOCUS_RING}`}
+      >
+        {t('editor.endTrim.apply')}
+      </button>
+      <button
+        type="button"
+        data-testid="end-trim-dismiss"
+        onClick={onDismiss}
+        aria-label={t('editor.endTrim.dismiss')}
+        title={t('editor.endTrim.dismiss')}
+        className={`flex size-[24px] shrink-0 items-center justify-center rounded-full text-on-surface-muted transition-colors duration-[120ms] hover:bg-border ${FOCUS_RING}`}
+      >
+        <CloseIcon />
+      </button>
     </div>
   )
 }

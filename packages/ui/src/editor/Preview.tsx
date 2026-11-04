@@ -181,6 +181,17 @@ export function Preview({
     )
   }, [hasWebcam, webcamUrl, video, webcamVideo, drawRef])
 
+  // Leaving the editor stops the hidden elements: a detached <video> that was playing keeps
+  // decoding (and firing frame callbacks) until it is collected.
+  useEffect(() => {
+    const screen = video.current
+    const cam = webcamVideo.current
+    return () => {
+      screen?.pause()
+      cam?.pause()
+    }
+  }, [video, webcamVideo, hasWebcam])
+
   // Drag the bubble anywhere (A-03): the grab offset keeps it from jumping under the
   // pointer; near a corner it snaps there (webcamPlacementAt). In the split layout there is
   // no bubble: the divider between the two cards is dragged instead (splitRatioAt).

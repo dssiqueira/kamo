@@ -3,7 +3,7 @@ import type { MouseEventRecord } from '../events/events.ts'
 import { createProject } from '../project/project.ts'
 import { Project, type Zoom } from '../project/schema.ts'
 import { createHistory } from './history.ts'
-import { setTrim, suggestEndTrim, zoomsInTrim } from './trim.ts'
+import { endTrimSuggestionFor, setTrim, suggestEndTrim, zoomsInTrim } from './trim.ts'
 import {
   createZoomAt,
   deleteZoom,
@@ -312,6 +312,29 @@ describe('suggestEndTrim', () => {
       suggestEndTrim([down(9500), { t: 9600, x: 0, y: 0, type: 'scroll', dx: 0, dy: 1 }], 10_000),
     ).toBeNull()
     expect(suggestEndTrim([down(2500)], 2900)).toBeNull()
+  })
+})
+
+describe('endTrimSuggestionFor', () => {
+  const stop: MouseEventRecord[] = [{ t: 19_500, x: 0, y: 0, type: 'down', button: 'left' }]
+
+  it('suggests the end trim until the user answers it', () => {
+    expect(endTrimSuggestionFor(project(), stop)).toBe(18_000)
+    expect(endTrimSuggestionFor({ ...project(), endTrimSuggestion: 'dismissed' }, stop)).toBeNull()
+    expect(endTrimSuggestionFor({ ...project(), endTrimSuggestion: 'applied' }, stop)).toBeNull()
+  })
+
+  it('stays quiet when the trim already cuts there, or would leave too little', () => {
+    expect(endTrimSuggestionFor(project([], 20_000, [0, 18_000]), stop)).toBeNull()
+    expect(endTrimSuggestionFor(project([], 20_000, [0, 17_000]), stop)).toBeNull()
+    expect(endTrimSuggestionFor(project([], 20_000, [17_500, 20_000]), stop)).toBeNull()
+    expect(endTrimSuggestionFor(project([], 20_000, [1000, 19_000]), stop)).toBe(18_000)
+    expect(endTrimSuggestionFor(project(), [])).toBeNull()
+  })
+
+  it('keeps the answer and the auto-zoom toggle valid in project.json', () => {
+    expect(valid({ ...project(), endTrimSuggestion: 'applied', autoZoom: false })).toBe(true)
+    expect(Project.safeParse({ ...project(), endTrimSuggestion: 'later' }).success).toBe(false)
   })
 })
 

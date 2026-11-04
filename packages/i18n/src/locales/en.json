@@ -122,6 +122,11 @@
     "pause": "Pause",
     "scrub": "Playhead",
     "loading": "Opening the project…",
+    "endTrim": {
+      "question": "Trim the last {seconds, plural, one {# second} other {# seconds}}?",
+      "apply": "Trim",
+      "dismiss": "Dismiss"
+    },
     "errors": {
       "load": "This project couldn't be opened."
     },

@@ -28,7 +28,7 @@ import {
 import type { MouseEventRecord } from '../events/events.ts'
 import type { SinkFile } from '../platform/sink.ts'
 import { MAX_BACKGROUND_IMAGE_BYTES } from '../project/background-image.ts'
-import type { Aspect, Fps, Project } from '../project/schema.ts'
+import { projectAutoZoom, type Aspect, type Fps, type Project } from '../project/schema.ts'
 import { outputSize, type Resolution } from '../render/layout.ts'
 import { createRenderer, type Renderer } from '../render/renderer.ts'
 import { buildScene, sceneFrame } from '../render/scene.ts'
@@ -92,7 +92,7 @@ export interface ExportVideoOptions {
   aspect: Aspect
   resolution: Resolution
   fps: Fps
-  /** the editor's auto-zoom toggle (F-05); default on */
+  /** the editor's auto-zoom toggle (F-05); default: `project.autoZoom` (on when absent) */
   autoZoom?: boolean
   /** an opened output file; exportVideo commits it on success and aborts it otherwise */
   sink: SinkFile
@@ -190,7 +190,9 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) throw new ExportError('failed')
     const renderer: Renderer = createRenderer(ctx as unknown as Context2D)
-    const zooms = visibleZooms(project.zooms, { autoZoom: options.autoZoom ?? true })
+    const zooms = visibleZooms(project.zooms, {
+      autoZoom: options.autoZoom ?? projectAutoZoom(project),
+    })
     const scene = buildScene({ project, events: options.events, zooms })
     if (project.style.background.kind === 'image') {
       background = options.backgroundImage ? await decodeImage(options.backgroundImage) : null

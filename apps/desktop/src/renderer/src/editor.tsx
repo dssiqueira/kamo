@@ -152,6 +152,10 @@ function DesktopEditor({ projectId }: { projectId: string }) {
           ? `kamo-media://project/${encodeURIComponent(projectId)}/webcam.mp4`
           : undefined
       }
+      audioUrls={{
+        mic: micEnabled ? mediaUrl(projectId, 'audio.m4a') : undefined,
+        system: systemEnabled ? mediaUrl(projectId, 'system.m4a') : undefined,
+      }}
       exportPlatform={exportPlatform}
       backgroundImage={backgroundImagePlatform}
       onChange={(project) => {

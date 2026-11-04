@@ -122,6 +122,11 @@
     "pause": "一時停止",
     "scrub": "再生位置",
     "loading": "プロジェクトを開いています…",
+    "endTrim": {
+      "question": "最後の{seconds, number}秒をカットしますか？",
+      "apply": "カット",
+      "dismiss": "閉じる"
+    },
     "errors": {
       "load": "このプロジェクトを開けませんでした。"
     },
