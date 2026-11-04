@@ -56,6 +56,16 @@
       "systemUnavailable": "O Kamo não consegue captar o som do computador agora. As gravações vão sair sem ele.",
       "systemSoon": "Em breve no Mac."
     },
+    "camera": {
+      "sectionTitle": "Som e câmera",
+      "title": "Câmera",
+      "choose": "Câmera para gravar",
+      "default": "Câmera padrão",
+      "name": "Câmera {index}",
+      "preview": "Prévia da câmera",
+      "denied": "O Kamo não consegue usar a câmera. Permita nas configurações do sistema; até lá, as gravações ficam sem câmera.",
+      "unavailable": "Nenhuma câmera encontrada, ou outro app está usando a câmera. As gravações ficarão sem câmera."
+    },
     "fixPermission": "Configurar",
     "recordDisplay": "Gravar · {display}"
   },
@@ -85,6 +95,11 @@
       "micLost": "O microfone foi desconectado durante a gravação. O áudio fica mudo a partir dali.",
       "systemUnavailable": "Salvo sem o som do computador: o Kamo não conseguiu captar.",
       "failed": "Salvo, mas parte do áudio não pôde ser mantida."
+    },
+    "camera": {
+      "unavailable": "Salvo sem a câmera: o Kamo não conseguiu usá-la.",
+      "lost": "A câmera foi desconectada durante a gravação. A câmera para nesse ponto.",
+      "failed": "Salvo, mas não foi possível manter a gravação da câmera."
     },
     "tray": {
       "recording": "Gravando {elapsed}",
@@ -116,6 +131,25 @@
       "autoZoom": "Zoom automático",
       "regenerate": "Regenerar zooms",
       "noClicks": "Nenhum clique, nada pra dar zoom."
+    },
+    "webcam": {
+      "title": "Webcam",
+      "show": "Mostrar webcam",
+      "position": "Posição",
+      "topLeft": "Canto superior esquerdo",
+      "topRight": "Canto superior direito",
+      "bottomLeft": "Canto inferior esquerdo",
+      "bottomRight": "Canto inferior direito",
+      "size": "Tamanho",
+      "small": "Pequena",
+      "medium": "Média",
+      "large": "Grande",
+      "shrinkOnZoom": "Diminuir durante o zoom",
+      "track": "Webcam",
+      "hideAtPlayhead": "Esconder a webcam no cursor de reprodução",
+      "hidden": "Escondida",
+      "hiddenBlock": "Webcam escondida de {start} a {end}",
+      "hiddenHint": "Arraste para mover, puxe uma borda para redimensionar. As setas ajustam, Delete mostra a webcam de novo."
     }
   },
   "style": {
@@ -336,7 +370,8 @@
     "warnings": {
       "software_encoder": "Este computador não tem codificador de vídeo por hardware, então a exportação usou o de software, mais lento.",
       "audio_unreadable": "Uma faixa de som não pôde ser lida e ficou de fora.",
-      "audio_encoder_unavailable": "Este computador não consegue codificar som AAC, então o vídeo saiu sem som."
+      "audio_encoder_unavailable": "Este computador não consegue codificar som AAC, então o vídeo saiu sem som.",
+      "webcam_unreadable": "Não deu pra ler a gravação da webcam, então o vídeo saiu sem a bolha da webcam."
     },
     "closeDialog": {
       "title": "Exportação em andamento",

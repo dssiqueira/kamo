@@ -16,6 +16,8 @@ export interface ExportMedia {
   /** audio.m4a / system.m4a; null when the project has none */
   mic: MediaFile | null
   system: MediaFile | null
+  /** webcam.mp4 (A-03); null/missing when the project has no webcam */
+  webcam?: MediaFile | null
 }
 
 /** What the app gives the export screen; packages/ui never knows where files go (rule 1). */
@@ -124,6 +126,7 @@ export function useExportRun({ project, events, autoZoom, platform }: ExportRunI
           project,
           events,
           video: platform.media.video,
+          webcam: project.webcam ? (platform.media.webcam ?? null) : null,
           audio,
           aspect: job.aspect,
           resolution: EXPORT_RESOLUTION,

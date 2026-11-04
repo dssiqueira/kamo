@@ -56,6 +56,16 @@
       "systemUnavailable": "Kamo no puede capturar el sonido del equipo ahora. Las grabaciones no lo tendrán.",
       "systemSoon": "Pronto en Mac."
     },
+    "camera": {
+      "sectionTitle": "Sonido y cámara",
+      "title": "Cámara",
+      "choose": "Cámara para grabar",
+      "default": "Cámara predeterminada",
+      "name": "Cámara {index}",
+      "preview": "Vista previa de la cámara",
+      "denied": "Kamo no puede usar la cámara. Permítelo en la configuración del sistema; mientras tanto, las grabaciones no tendrán cámara.",
+      "unavailable": "No se encontró ninguna cámara, u otra app la está usando. Las grabaciones no tendrán cámara."
+    },
     "fixPermission": "Configurar",
     "recordDisplay": "Grabar · {display}"
   },
@@ -85,6 +95,11 @@
       "micLost": "El micrófono se desconectó durante la grabación. El audio queda en silencio desde ese momento.",
       "systemUnavailable": "Guardado sin el sonido del equipo: Kamo no pudo capturarlo.",
       "failed": "Guardado, pero no se pudo conservar parte del audio."
+    },
+    "camera": {
+      "unavailable": "Guardado sin la cámara: Kamo no pudo usarla.",
+      "lost": "La cámara se desconectó durante la grabación. La cámara se detiene en ese punto.",
+      "failed": "Guardado, pero no se pudo conservar la grabación de la cámara."
     },
     "tray": {
       "recording": "Grabando {elapsed}",
@@ -116,6 +131,25 @@
       "autoZoom": "Zoom automático",
       "regenerate": "Regenerar zooms",
       "noClicks": "Sin clics, nada que ampliar."
+    },
+    "webcam": {
+      "title": "Cámara web",
+      "show": "Mostrar cámara web",
+      "position": "Posición",
+      "topLeft": "Arriba a la izquierda",
+      "topRight": "Arriba a la derecha",
+      "bottomLeft": "Abajo a la izquierda",
+      "bottomRight": "Abajo a la derecha",
+      "size": "Tamaño",
+      "small": "Pequeña",
+      "medium": "Mediana",
+      "large": "Grande",
+      "shrinkOnZoom": "Reducir durante el zoom",
+      "track": "Cámara web",
+      "hideAtPlayhead": "Ocultar la cámara web en el cabezal",
+      "hidden": "Oculta",
+      "hiddenBlock": "Cámara web oculta de {start} a {end}",
+      "hiddenHint": "Arrastra para mover, tira de un borde para cambiar el tamaño. Las flechas lo ajustan, Supr vuelve a mostrar la cámara web."
     }
   },
   "style": {
@@ -336,7 +370,8 @@
     "warnings": {
       "software_encoder": "Este ordenador no tiene codificador de video por hardware, así que la exportación usó el de software, más lento.",
       "audio_unreadable": "No se pudo leer una pista de sonido, así que quedó fuera.",
-      "audio_encoder_unavailable": "Este ordenador no puede codificar sonido AAC, así que el video no tiene sonido."
+      "audio_encoder_unavailable": "Este ordenador no puede codificar sonido AAC, así que el video no tiene sonido.",
+      "webcam_unreadable": "No se pudo leer la grabación de la cámara web, así que el video no tiene la burbuja de la cámara."
     },
     "closeDialog": {
       "title": "Exportación en curso",

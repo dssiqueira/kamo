@@ -57,6 +57,8 @@ export interface DesktopExportOptions {
   projectId: string
   micEnabled: boolean
   systemEnabled: boolean
+  /** the project has a webcam recording (project.webcam set, A-03) */
+  webcamEnabled?: boolean
   onExported(record: ExportRecord): void
   onBusyChange(busy: boolean): void
 }
@@ -70,6 +72,7 @@ export function desktopExportPlatform(options: DesktopExportOptions): ExportPlat
       // A track that is on but whose file is missing is reported as unreadable (warning).
       mic: options.micEnabled ? projectMedia(projectId, 'audio.m4a') : null,
       system: options.systemEnabled ? projectMedia(projectId, 'system.m4a') : null,
+      webcam: options.webcamEnabled ? projectMedia(projectId, 'webcam.mp4') : null,
     },
     getFolder: async () => (await window.kamo.getFolders()).exportDir,
     chooseFolder: async () => (await window.kamo.chooseFolder('export'))?.exportDir ?? null,

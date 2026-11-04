@@ -1,11 +1,16 @@
 import {
+  addWebcamHidden,
   createHistory,
+  deleteWebcamHidden,
   createZoomAt,
   deleteZoom,
   generateZooms,
+  moveWebcamHidden,
   moveZoom,
+  resizeWebcamHidden,
   resizeZoom,
   setTrim,
+  setWebcam,
   setZoomScale,
   visibleZooms,
   type MouseEventRecord,
@@ -29,6 +34,8 @@ export interface EditorProps {
   project: Project
   events: readonly MouseEventRecord[]
   videoUrl: string
+  /** webcam.mp4 (A-03), when the project has one; the app resolves it like videoUrl */
+  webcamUrl?: string | undefined
   /** Every edit, undo and redo; the app autosaves it (F-12: no Save button). */
   onChange(project: Project): void
   onBack(): void
@@ -41,15 +48,18 @@ export function Editor({
   project: initial,
   events,
   videoUrl,
+  webcamUrl,
   onChange,
   onBack,
   exportPlatform,
 }: EditorProps) {
   const t = useT()
   const video = useRef<HTMLVideoElement | null>(null)
+  const webcamVideo = useRef<HTMLVideoElement | null>(null)
   const draw = useRef<((timeMs: number) => void) | null>(null)
   const [autoZoom, setAutoZoom] = useState(true)
   const [selectedZoomId, setSelectedZoomId] = useState<string | null>(null)
+  const [selectedHidden, setSelectedHidden] = useState<number | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
 
   // Every edit (timeline and side panel) goes through one history: Ctrl/⌘+Z undoes any of
@@ -170,6 +180,8 @@ export function Editor({
             zooms={zooms}
             videoUrl={videoUrl}
             video={video}
+            webcamUrl={webcamUrl}
+            webcamVideo={webcamVideo}
             drawRef={draw}
           />
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
@@ -198,6 +210,24 @@ export function Editor({
             playheadMs={playback.timeMs}
             selectedZoomId={selectedZoomId}
             tracks={{ ...(mic ? { mic } : {}), ...(system ? { system } : {}) }}
+            webcam={
+              project.webcam && webcamUrl
+                ? {
+                    hidden: project.webcam.hidden,
+                    off: !project.webcam.visible,
+                    selectedIndex: selectedHidden,
+                    onSelectHidden: setSelectedHidden,
+                    onMoveHidden: (i, d) => fromBase((p) => moveWebcamHidden(p, i, d)),
+                    onResizeHidden: (i, edge, d) =>
+                      fromBase((p) => resizeWebcamHidden(p, i, edge, d)),
+                    onDeleteHidden: (i) => {
+                      edit((p) => deleteWebcamHidden(p, i))
+                      setSelectedHidden(null)
+                    },
+                    onAddHidden: (tMs) => edit((p) => addWebcamHidden(p, tMs)),
+                  }
+                : undefined
+            }
             onScrub={playback.seek}
             onSelectZoom={setSelectedZoomId}
             onMoveZoom={(id, d) => fromBase((p) => moveZoom(p, id, d))}
@@ -224,6 +254,8 @@ export function Editor({
           onCursor={(cursor) => edit((p) => ({ ...p, cursor }))}
           onAutoZoom={setAutoZoom}
           onRegenerate={regenerate}
+          webcam={webcamUrl ? project.webcam : null}
+          onWebcam={(patch) => edit((p) => setWebcam(p, patch))}
         />
       </div>
       {exportOpen && exportPlatform && (
@@ -233,6 +265,7 @@ export function Editor({
           zooms={zooms}
           autoZoom={autoZoom}
           video={video.current}
+          webcamVideo={webcamUrl ? webcamVideo.current : null}
           timeMs={playback.timeMs}
           platform={exportPlatform}
           onClose={() => setExportOpen(false)}

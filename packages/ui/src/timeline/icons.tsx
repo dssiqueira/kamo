@@ -47,3 +47,14 @@ export function SpeakerIcon({ muted }: { muted: boolean }) {
     </Icon>
   )
 }
+
+/** Crossed eye: hide the webcam bubble in a stretch (A-03). */
+export function EyeOffIcon() {
+  return (
+    <Icon>
+      <path d="M2 8s2.25-4 6-4 6 4 6 4-2.25 4-6 4-6-4-6-4z" />
+      <circle cx="8" cy="8" r="1.75" />
+      <path d="M3 13L13 3" />
+    </Icon>
+  )
+}

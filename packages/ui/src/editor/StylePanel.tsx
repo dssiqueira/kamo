@@ -1,7 +1,15 @@
-import { WALLPAPERS, drawWallpaper, type CursorSettings, type Style } from '@kamo/core'
+import {
+  WALLPAPERS,
+  drawWallpaper,
+  type CursorSettings,
+  type Style,
+  type WebcamPosition,
+  type WebcamSettings,
+  type WebcamSize,
+} from '@kamo/core'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
-import { Switch } from '../primitives/controls.tsx'
+import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
 
 export interface StylePanelProps {
   style: Style
@@ -12,9 +20,12 @@ export interface StylePanelProps {
   onCursor(cursor: CursorSettings): void
   onAutoZoom(on: boolean): void
   onRegenerate(): void
+  /** null when recorded without the camera: the Webcam section is not shown (A-03) */
+  webcam?: WebcamSettings | null
+  onWebcam?(patch: Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs'>>): void
 }
 
-/** Side panel (flows.md §5): background, padding, corners, shadow, cursor and zooms. */
+/** Side panel (flows.md §5): background, padding, corners, shadow, cursor, zooms, webcam. */
 export function StylePanel(props: StylePanelProps) {
   const { style, cursor, onStyle, onCursor } = props
   const t = useT()
@@ -125,7 +136,119 @@ export function StylePanel(props: StylePanelProps) {
           <p className="text-label text-on-surface-muted">{t('editor.panel.noClicks')}</p>
         )}
       </Section>
+
+      {props.webcam && props.onWebcam && (
+        <WebcamSection webcam={props.webcam} onWebcam={props.onWebcam} />
+      )}
     </aside>
+  )
+}
+
+const WEBCAM_POSITIONS: readonly WebcamPosition[] = [
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]
+const WEBCAM_SIZES: readonly WebcamSize[] = ['small', 'medium', 'large']
+const POSITION_KEY: Record<WebcamPosition, string> = {
+  'top-left': 'editor.webcam.topLeft',
+  'top-right': 'editor.webcam.topRight',
+  'bottom-left': 'editor.webcam.bottomLeft',
+  'bottom-right': 'editor.webcam.bottomRight',
+}
+const SIZE_KEY: Record<WebcamSize, string> = {
+  small: 'editor.webcam.small',
+  medium: 'editor.webcam.medium',
+  large: 'editor.webcam.large',
+}
+
+/** Webcam bubble (A-03): on/off, corner, size and shrink on zoom. */
+function WebcamSection({
+  webcam,
+  onWebcam,
+}: {
+  webcam: WebcamSettings
+  onWebcam(patch: Partial<Omit<WebcamSettings, 'hidden' | 'offsetMs'>>): void
+}) {
+  const t = useT()
+  const option = (selected: boolean) =>
+    `rounded-md border text-label transition-colors duration-[120ms] disabled:opacity-50 ${FOCUS_RING} ${
+      selected
+        ? 'border-tertiary bg-tertiary-container text-on-surface'
+        : 'border-border bg-surface text-on-surface-muted hover:bg-surface-raised'
+    }`
+  return (
+    <Section title={t('editor.webcam.title')}>
+      <Switch
+        label={t('editor.webcam.show')}
+        checked={webcam.visible}
+        onChange={(visible) => onWebcam({ visible })}
+      />
+      <div
+        role="radiogroup"
+        aria-label={t('editor.webcam.position')}
+        className="flex flex-col gap-xs"
+      >
+        <span className="text-body">{t('editor.webcam.position')}</span>
+        <div className="grid w-[132px] grid-cols-2 gap-xs">
+          {WEBCAM_POSITIONS.map((position) => {
+            const selected = webcam.position === position
+            const [vertical, horizontal] = position.split('-')
+            return (
+              <button
+                key={position}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                aria-label={t(POSITION_KEY[position])}
+                title={t(POSITION_KEY[position])}
+                disabled={!webcam.visible}
+                data-testid={`webcam-position-${position}`}
+                onClick={() => onWebcam({ position })}
+                className={`relative h-[40px] ${option(selected)}`}
+              >
+                <span
+                  aria-hidden
+                  className={`absolute size-[12px] rounded-full ${
+                    selected ? 'bg-tertiary' : 'bg-border'
+                  } ${vertical === 'top' ? 'top-[5px]' : 'bottom-[5px]'} ${
+                    horizontal === 'left' ? 'left-[5px]' : 'right-[5px]'
+                  }`}
+                />
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <div role="radiogroup" aria-label={t('editor.webcam.size')} className="flex flex-col gap-xs">
+        <span className="text-body">{t('editor.webcam.size')}</span>
+        <div className="grid grid-cols-3 gap-xs">
+          {WEBCAM_SIZES.map((size) => {
+            const selected = webcam.size === size
+            return (
+              <button
+                key={size}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                disabled={!webcam.visible}
+                data-testid={`webcam-size-${size}`}
+                onClick={() => onWebcam({ size })}
+                className={`px-sm py-xs ${option(selected)}`}
+              >
+                {t(SIZE_KEY[size])}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+      <Switch
+        label={t('editor.webcam.shrinkOnZoom')}
+        checked={webcam.shrinkOnZoom}
+        onChange={(shrinkOnZoom) => onWebcam({ shrinkOnZoom })}
+      />
+    </Section>
   )
 }
 

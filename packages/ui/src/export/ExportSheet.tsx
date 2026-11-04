@@ -21,6 +21,8 @@ export interface ExportSheetProps {
   autoZoom: boolean
   /** the editor's video element, parked on the current frame */
   video: HTMLVideoElement | null
+  /** the editor's webcam element, parked on the matching frame (A-03) */
+  webcamVideo?: HTMLVideoElement | null
   timeMs: number
   platform: ExportPlatform
   onClose(): void
@@ -55,6 +57,7 @@ export function ExportSheet({
   zooms,
   autoZoom,
   video,
+  webcamVideo = null,
   timeMs,
   platform,
   onClose,
@@ -133,6 +136,7 @@ export function ExportSheet({
                       scene={scene}
                       aspect={aspect}
                       video={video}
+                      webcamVideo={webcamVideo}
                       timeMs={timeMs}
                       {...PREVIEW_SIZE[aspect]}
                     />

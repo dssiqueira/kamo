@@ -6,7 +6,7 @@ import { isAbsolute, relative } from 'node:path'
 import { resolveInProject } from './storage/paths.ts'
 
 /** What the export reads: the screen and the two audio tracks (data-model.md). */
-export const EXPORT_MEDIA_FILES = ['screen.mp4', 'audio.m4a', 'system.m4a'] as const
+export const EXPORT_MEDIA_FILES = ['screen.mp4', 'audio.m4a', 'system.m4a', 'webcam.mp4'] as const
 export type ExportMediaFile = (typeof EXPORT_MEDIA_FILES)[number]
 
 /** Biggest single read; mediabunny asks for far less. */

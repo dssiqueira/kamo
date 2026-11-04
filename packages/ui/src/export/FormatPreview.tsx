@@ -1,11 +1,14 @@
 import { createRenderer, sceneFrame, type Aspect, type Renderer, type Scene } from '@kamo/core'
 import { useEffect, useRef } from 'react'
+import { webcamSourceOf } from '../editor/webcam-sync.ts'
 
 export interface FormatPreviewProps {
   scene: Scene
   aspect: Aspect
   /** the editor's video element, parked on the current frame */
   video: HTMLVideoElement | null
+  /** the editor's webcam element (A-03), parked on the matching frame */
+  webcamVideo?: HTMLVideoElement | null
   /** raw video time of that frame */
   timeMs: number
   /** CSS size of the preview box */
@@ -18,7 +21,15 @@ export interface FormatPreviewProps {
  * same scene as the preview and the export (rule 11): 1:1 shows the camera crop it will
  * really export.
  */
-export function FormatPreview({ scene, aspect, video, timeMs, width, height }: FormatPreviewProps) {
+export function FormatPreview({
+  scene,
+  aspect,
+  video,
+  webcamVideo = null,
+  timeMs,
+  width,
+  height,
+}: FormatPreviewProps) {
   const canvas = useRef<HTMLCanvasElement | null>(null)
   const renderer = useRef<Renderer | null>(null)
   const ratio = typeof window === 'undefined' ? 1 : Math.min(2, window.devicePixelRatio || 1)
@@ -32,7 +43,14 @@ export function FormatPreview({ scene, aspect, video, timeMs, width, height }: F
       if (!ctx || video.readyState < 2) return
       renderer.current ??= createRenderer(ctx)
       renderer.current.render(
-        sceneFrame(scene, video, aspect, { width: pixelWidth, height: pixelHeight }, timeMs),
+        sceneFrame(
+          scene,
+          video,
+          aspect,
+          { width: pixelWidth, height: pixelHeight },
+          timeMs,
+          webcamSourceOf(webcamVideo),
+        ),
       )
     }
     draw()
@@ -42,7 +60,7 @@ export function FormatPreview({ scene, aspect, video, timeMs, width, height }: F
       video.removeEventListener('loadeddata', draw)
       video.removeEventListener('seeked', draw)
     }
-  }, [scene, aspect, video, timeMs, pixelWidth, pixelHeight])
+  }, [scene, aspect, video, webcamVideo, timeMs, pixelWidth, pixelHeight])
 
   return (
     <canvas

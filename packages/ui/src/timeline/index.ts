@@ -1,5 +1,10 @@
 export { Timeline } from './Timeline.tsx'
-export type { AudioTrackId, TimelineAudioTrack, TimelineProps } from './Timeline.tsx'
+export type {
+  AudioTrackId,
+  TimelineAudioTrack,
+  TimelineProps,
+  TimelineWebcam,
+} from './Timeline.tsx'
 export { useScaleLabel } from './ZoomTrack.tsx'
 export { useHistoryShortcuts } from './useHistoryShortcuts.ts'
 export type { HistoryLike } from './useHistoryShortcuts.ts'

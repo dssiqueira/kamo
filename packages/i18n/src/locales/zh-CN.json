@@ -56,6 +56,16 @@
       "systemUnavailable": "Kamo 目前无法捕获电脑声音。录制将不包含电脑声音。",
       "systemSoon": "Mac 版即将推出。"
     },
+    "camera": {
+      "sectionTitle": "声音和摄像头",
+      "title": "摄像头",
+      "choose": "要录制的摄像头",
+      "default": "默认摄像头",
+      "name": "摄像头 {index}",
+      "preview": "摄像头预览",
+      "denied": "Kamo 无法使用摄像头。请在系统设置中允许；在此之前，录制内容将不包含摄像头画面。",
+      "unavailable": "未找到摄像头，或其他应用正在使用它。录制内容将不包含摄像头画面。"
+    },
     "fixPermission": "去设置",
     "recordDisplay": "录制 · {display}"
   },
@@ -85,6 +95,11 @@
       "micLost": "录制时麦克风断开了连接。从那一刻起音频为静音。",
       "systemUnavailable": "已保存，但没有电脑声音：Kamo 无法捕获。",
       "failed": "已保存，但部分音频未能保留。"
+    },
+    "camera": {
+      "unavailable": "已保存，但没有摄像头画面：Kamo 无法使用摄像头。",
+      "lost": "录制时摄像头已断开。摄像头画面在该处停止。",
+      "failed": "已保存，但无法保留摄像头录制内容。"
     },
     "tray": {
       "recording": "正在录制 {elapsed}",
@@ -116,6 +131,25 @@
       "autoZoom": "自动缩放",
       "regenerate": "重新生成缩放",
       "noClicks": "没有点击，无需缩放。"
+    },
+    "webcam": {
+      "title": "摄像头",
+      "show": "显示摄像头",
+      "position": "位置",
+      "topLeft": "左上角",
+      "topRight": "右上角",
+      "bottomLeft": "左下角",
+      "bottomRight": "右下角",
+      "size": "大小",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "shrinkOnZoom": "缩放时缩小",
+      "track": "摄像头",
+      "hideAtPlayhead": "在播放头处隐藏摄像头",
+      "hidden": "已隐藏",
+      "hiddenBlock": "摄像头从 {start} 到 {end} 隐藏",
+      "hiddenHint": "拖动以移动，拖拽边缘以调整长度。方向键微调，Delete 键重新显示摄像头。"
     }
   },
   "style": {
@@ -336,7 +370,8 @@
     "warnings": {
       "software_encoder": "这台电脑没有硬件视频编码器，因此导出使用了较慢的软件编码器。",
       "audio_unreadable": "有一条音轨无法读取，已被略过。",
-      "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。"
+      "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。",
+      "webcam_unreadable": "无法读取摄像头录像，因此视频中没有摄像头气泡。"
     },
     "closeDialog": {
       "title": "正在导出",

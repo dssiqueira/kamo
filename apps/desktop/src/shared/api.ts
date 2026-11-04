@@ -10,6 +10,7 @@ import type {
   RecorderCommand,
   RecorderReport,
 } from './audio.ts'
+import type { CameraAccess, CameraCommand, CameraReport, CameraWarning } from './camera.ts'
 
 /**
  * The only API the renderer gets from the preload (`window.kamo`). Keep it small and typed:
@@ -148,6 +149,15 @@ export interface KamoApi {
   onAudioCommand(listener: (command: RecorderCommand) => void): () => void
   reportAudio(report: RecorderReport): Promise<void>
   writeAudioChunk(track: AudioTrackName, bytes: Uint8Array): Promise<void>
+
+  // Webcam (A-03). Home shows its own preview (getUserMedia) and saves the toggle in settings
+  // (cameraEnabled, cameraDeviceId); main records with them.
+  /** Mac asks the OS (once); elsewhere returns the current status. */
+  requestCameraAccess(): Promise<CameraAccess>
+  // Hidden camera recorder page only (main refuses any other sender).
+  onCameraCommand(listener: (command: CameraCommand) => void): () => void
+  reportCamera(report: CameraReport): Promise<void>
+  writeCameraChunk(bytes: Uint8Array): Promise<void>
 }
 
 export interface ProjectSummary {
@@ -199,6 +209,10 @@ export interface AppSettings {
   /** Absent or '': the system default microphone. */
   micDeviceId?: string
   systemAudioEnabled?: boolean
+  /** Home webcam toggle (A-03). Off by default. */
+  cameraEnabled?: boolean
+  /** Absent or '': the system default camera. */
+  cameraDeviceId?: string
   /** F-15. Absent: light (DESIGN.md). */
   theme?: Theme
   /** F-15. Absent or 'system': the OS language. */
@@ -263,7 +277,7 @@ export type UpdateStatus =
  * the renderer finds the code with `ipcErrorCode`.
  */
 /** Raw files the export reads (data-model.md). */
-export type ExportMediaName = 'screen.mp4' | 'audio.m4a' | 'system.m4a'
+export type ExportMediaName = 'screen.mp4' | 'audio.m4a' | 'system.m4a' | 'webcam.mp4'
 
 export const IPC_ERROR_PREFIX = 'kamo-error:'
 
@@ -288,6 +302,8 @@ export type RecordingStatus =
       warning?: 'display_lost' | 'disk_full'
       /** The video was saved but some audio is missing or cut short (F-04). */
       audioWarnings?: AudioWarning[]
+      /** The video was saved but the camera is missing or cut short (A-03). */
+      cameraWarnings?: CameraWarning[]
     }
   | { kind: 'error'; code: string }
 
@@ -372,4 +388,8 @@ export const IpcChannel = {
   audioCommand: 'kamo:audio-command',
   audioReport: 'kamo:audio-report',
   audioChunk: 'kamo:audio-chunk',
+  requestCameraAccess: 'kamo:camera-access',
+  cameraCommand: 'kamo:camera-command',
+  cameraReport: 'kamo:camera-report',
+  cameraChunk: 'kamo:camera-chunk',
 } as const

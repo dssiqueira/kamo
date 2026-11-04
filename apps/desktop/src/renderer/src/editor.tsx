@@ -85,12 +85,14 @@ function DesktopEditor({ projectId }: { projectId: string }) {
   const ready = state.kind === 'ready'
   const micEnabled = ready && state.project.audio.mic.enabled
   const systemEnabled = ready && state.project.audio.system.enabled
+  const webcamEnabled = ready && state.project.webcam !== null
   const exportPlatform = useMemo(
     () =>
       desktopExportPlatform({
         projectId,
         micEnabled,
         systemEnabled,
+        webcamEnabled,
         onExported: (record) => {
           const project = latest.current
           if (!project) return
@@ -104,7 +106,7 @@ function DesktopEditor({ projectId }: { projectId: string }) {
         },
       }),
     // flush only reads refs, so the platform is rebuilt only when the media changes.
-    [projectId, micEnabled, systemEnabled],
+    [projectId, micEnabled, systemEnabled, webcamEnabled],
   )
 
   if (state.kind !== 'ready') {
@@ -131,6 +133,11 @@ function DesktopEditor({ projectId }: { projectId: string }) {
       project={state.project}
       events={state.events}
       videoUrl={`kamo-media://project/${encodeURIComponent(projectId)}/screen.mp4`}
+      webcamUrl={
+        webcamEnabled
+          ? `kamo-media://project/${encodeURIComponent(projectId)}/webcam.mp4`
+          : undefined
+      }
       exportPlatform={exportPlatform}
       onChange={(project) => {
         latest.current = project

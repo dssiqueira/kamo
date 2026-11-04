@@ -56,6 +56,16 @@
       "systemUnavailable": "Kamo は今パソコンの音を取り込めません。録画にパソコンの音は入りません。",
       "systemSoon": "Mac には近日対応予定です。"
     },
+    "camera": {
+      "sectionTitle": "サウンドとカメラ",
+      "title": "カメラ",
+      "choose": "録画するカメラ",
+      "default": "デフォルトのカメラ",
+      "name": "カメラ {index}",
+      "preview": "カメラのプレビュー",
+      "denied": "Kamo はカメラを使用できません。システム設定で許可してください。許可されるまで、録画にカメラは含まれません。",
+      "unavailable": "カメラが見つからないか、別のアプリが使用中です。録画にカメラは含まれません。"
+    },
     "fixPermission": "設定する",
     "recordDisplay": "録画 · {display}"
   },
@@ -85,6 +95,11 @@
       "micLost": "録画中にマイクが外れました。その時点から音声は無音です。",
       "systemUnavailable": "保存しましたが、パソコンの音は入っていません。Kamo が取り込めませんでした。",
       "failed": "保存しましたが、音声の一部を残せませんでした。"
+    },
+    "camera": {
+      "unavailable": "カメラなしで保存しました：Kamo はカメラを使用できませんでした。",
+      "lost": "録画中にカメラが切断されました。カメラはその時点で止まります。",
+      "failed": "保存しましたが、カメラの録画を残せませんでした。"
     },
     "tray": {
       "recording": "録画中 {elapsed}",
@@ -116,6 +131,25 @@
       "autoZoom": "自動ズーム",
       "regenerate": "ズームを再生成",
       "noClicks": "クリックがないので、ズームはありません。"
+    },
+    "webcam": {
+      "title": "Webカメラ",
+      "show": "Webカメラを表示",
+      "position": "位置",
+      "topLeft": "左上",
+      "topRight": "右上",
+      "bottomLeft": "左下",
+      "bottomRight": "右下",
+      "size": "サイズ",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "shrinkOnZoom": "ズーム中は小さくする",
+      "track": "Webカメラ",
+      "hideAtPlayhead": "再生ヘッドの位置でWebカメラを隠す",
+      "hidden": "非表示",
+      "hiddenBlock": "{start} から {end} まで Webカメラを非表示",
+      "hiddenHint": "ドラッグで移動、端を引いて長さを変更。矢印キーで微調整、Delete で Webカメラを再表示します。"
     }
   },
   "style": {
@@ -336,7 +370,8 @@
     "warnings": {
       "software_encoder": "このコンピュータにはハードウェアの動画エンコーダーがないため、より遅いソフトウェアのエンコーダーで書き出しました。",
       "audio_unreadable": "読み込めない音声トラックがあったため、除外しました。",
-      "audio_encoder_unavailable": "このコンピュータは AAC 音声をエンコードできないため、動画に音声はありません。"
+      "audio_encoder_unavailable": "このコンピュータは AAC 音声をエンコードできないため、動画に音声はありません。",
+      "webcam_unreadable": "Webカメラの録画を読み込めなかったため、動画に Webカメラのバブルはありません。"
     },
     "closeDialog": {
       "title": "書き出し中です",

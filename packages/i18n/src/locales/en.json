@@ -56,6 +56,16 @@
       "systemUnavailable": "Kamo can't capture the computer sound right now. Recordings will have no computer sound.",
       "systemSoon": "Coming soon on Mac."
     },
+    "camera": {
+      "sectionTitle": "Sound and camera",
+      "title": "Camera",
+      "choose": "Camera to record",
+      "default": "Default camera",
+      "name": "Camera {index}",
+      "preview": "Camera preview",
+      "denied": "Kamo can't use the camera. Allow it in your system settings; until then, recordings have no camera.",
+      "unavailable": "No camera found, or another app is using it. Recordings will have no camera."
+    },
     "fixPermission": "Set it up",
     "recordDisplay": "Record · {display}"
   },
@@ -85,6 +95,11 @@
       "micLost": "The microphone was disconnected while recording. The audio is silent from that point on.",
       "systemUnavailable": "Saved without computer sound: Kamo couldn't capture it.",
       "failed": "Saved, but some of the audio couldn't be kept."
+    },
+    "camera": {
+      "unavailable": "Saved without the camera: Kamo couldn't use it.",
+      "lost": "The camera was disconnected while recording. The camera stops at that point.",
+      "failed": "Saved, but the camera recording couldn't be kept."
     },
     "tray": {
       "recording": "Recording {elapsed}",
@@ -116,6 +131,25 @@
       "autoZoom": "Auto-zoom",
       "regenerate": "Regenerate zooms",
       "noClicks": "No clicks, nothing to zoom."
+    },
+    "webcam": {
+      "title": "Webcam",
+      "show": "Show webcam",
+      "position": "Position",
+      "topLeft": "Top left",
+      "topRight": "Top right",
+      "bottomLeft": "Bottom left",
+      "bottomRight": "Bottom right",
+      "size": "Size",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "shrinkOnZoom": "Shrink while zoomed",
+      "track": "Webcam",
+      "hideAtPlayhead": "Hide webcam at playhead",
+      "hidden": "Hidden",
+      "hiddenBlock": "Webcam hidden from {start} to {end}",
+      "hiddenHint": "Drag to move, pull an edge to resize. Arrows nudge it, Delete shows the webcam again."
     }
   },
   "style": {
@@ -336,7 +370,8 @@
     "warnings": {
       "software_encoder": "This computer has no hardware video encoder, so the export used the slower software one.",
       "audio_unreadable": "A sound track could not be read, so it was left out.",
-      "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound."
+      "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound.",
+      "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble."
     },
     "closeDialog": {
       "title": "Export in progress",
