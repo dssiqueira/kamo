@@ -262,7 +262,7 @@ export interface AppInfo {
   closeToTrayDefault: boolean
 }
 
-export type PermissionKind = 'screen' | 'microphone' | 'inputMonitoring'
+export type PermissionKind = 'screen' | 'microphone' | 'camera' | 'inputMonitoring'
 export type PermissionStatus = 'granted' | 'denied' | 'pending' | 'unknown'
 
 export interface PermissionInfo {

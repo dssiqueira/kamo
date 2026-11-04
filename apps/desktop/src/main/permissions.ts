@@ -1,6 +1,8 @@
 // OS permissions for the onboarding (F-13) and Settings → Permissions (F-15).
-// Mac: Screen Recording (mandatory), Microphone and, if the mouse tap still needs it, Input
-// Monitoring. Windows: Microphone only. Camera is never asked here (only with the webcam, v0.4).
+// Mac: Screen Recording (mandatory), Microphone, Camera and, if the mouse tap still needs it,
+// Input Monitoring. Windows: Microphone and Camera. The camera is listed (status and a shortcut
+// to the system settings) but never asked for in the onboarding: only the webcam toggle asks
+// for it (A-03).
 import { desktopCapturer, shell, systemPreferences } from 'electron'
 import type { PermissionInfo, PermissionKind, PermissionStatus } from '../shared/api.ts'
 
@@ -16,19 +18,26 @@ const SETTINGS_URLS: Record<'darwin' | 'win32', Partial<Record<PermissionKind, s
   darwin: {
     screen: 'x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture',
     microphone: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone',
+    camera: 'x-apple.systempreferences:com.apple.preference.security?Privacy_Camera',
     inputMonitoring: 'x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent',
   },
   win32: {
     microphone: 'ms-settings:privacy-microphone',
+    camera: 'ms-settings:privacy-webcam',
   },
 }
 
-/** Which permissions this OS asks for, in onboarding order. */
+/** Which permissions this OS asks for, in onboarding order (the camera comes last). */
 export function permissionKinds(platform: NodeJS.Platform = process.platform): PermissionKind[] {
   if (platform === 'darwin') {
-    return ['screen', 'microphone', ...(needsInputMonitoring ? ['inputMonitoring' as const] : [])]
+    return [
+      'screen',
+      'microphone',
+      ...(needsInputMonitoring ? ['inputMonitoring' as const] : []),
+      'camera',
+    ]
   }
-  if (platform === 'win32') return ['microphone']
+  if (platform === 'win32') return ['microphone', 'camera']
   return []
 }
 
@@ -58,7 +67,12 @@ export function listPermissions(): PermissionInfo[] {
 }
 
 export function isPermissionKind(value: unknown): value is PermissionKind {
-  return value === 'screen' || value === 'microphone' || value === 'inputMonitoring'
+  return (
+    value === 'screen' ||
+    value === 'microphone' ||
+    value === 'camera' ||
+    value === 'inputMonitoring'
+  )
 }
 
 /**
@@ -68,7 +82,7 @@ export function isPermissionKind(value: unknown): value is PermissionKind {
  */
 export async function requestPermission(kind: PermissionKind): Promise<void> {
   if (process.platform !== 'darwin' || statusOf(kind) !== 'pending') return
-  if (kind === 'microphone') await systemPreferences.askForMediaAccess('microphone')
+  if (kind === 'microphone' || kind === 'camera') await systemPreferences.askForMediaAccess(kind)
   if (kind === 'screen') {
     await desktopCapturer
       .getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } })

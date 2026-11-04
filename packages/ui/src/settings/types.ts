@@ -6,7 +6,13 @@ export type ThemeChoice = 'light' | 'dark' | 'system'
 export type LanguageChoice = 'system' | Locale
 export type FolderKind = 'projects' | 'export'
 
-export type PermissionKind = 'screen' | 'microphone' | 'inputMonitoring'
+export type PermissionKind = 'screen' | 'microphone' | 'camera' | 'inputMonitoring'
+
+/**
+ * Listed in Settings but never a first-run onboarding step: the camera is only asked for when
+ * the user turns the webcam on (A-03).
+ */
+export const ONBOARDING_SKIPS: readonly PermissionKind[] = ['camera']
 export type PermissionStatus = 'granted' | 'denied' | 'pending' | 'unknown'
 
 export interface PermissionItem {

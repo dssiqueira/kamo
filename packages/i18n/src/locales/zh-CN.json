@@ -263,6 +263,8 @@
       "screenHint": "录制屏幕所必需。",
       "microphone": "麦克风",
       "microphoneHint": "用于录制你的声音。可选。",
+      "camera": "摄像头",
+      "cameraHint": "用于在录制中显示你的摄像头画面。可选。",
       "inputMonitoring": "输入监控",
       "inputMonitoringHint": "macOS 提到的是“按键”，但 Kamo 只读取鼠标，从不查看你输入的内容。",
       "status": {

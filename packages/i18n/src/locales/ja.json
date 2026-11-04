@@ -263,6 +263,8 @@
       "screenHint": "画面の録画に必要です。",
       "microphone": "マイク",
       "microphoneHint": "声を録音するため。任意です。",
+      "camera": "カメラ",
+      "cameraHint": "録画にウェブカメラを表示するため。任意です。",
       "inputMonitoring": "入力監視",
       "inputMonitoringHint": "macOS は「キー」と表示しますが、Kamo が読むのはマウスだけで、入力内容を見ることはありません。",
       "status": {

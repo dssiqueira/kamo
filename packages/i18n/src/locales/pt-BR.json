@@ -263,6 +263,8 @@
       "screenHint": "Obrigatória para gravar a tela.",
       "microphone": "Microfone",
       "microphoneHint": "Para gravar a sua voz. Opcional.",
+      "camera": "Câmera",
+      "cameraHint": "Para mostrar a sua webcam na gravação. Opcional.",
       "inputMonitoring": "Monitoramento de Entrada",
       "inputMonitoringHint": "O macOS fala em “teclas”, mas o Kamo só lê o mouse e nunca vê o que você digita.",
       "status": {

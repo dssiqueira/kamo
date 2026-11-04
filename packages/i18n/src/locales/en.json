@@ -263,6 +263,8 @@
       "screenHint": "Required to record your screen.",
       "microphone": "Microphone",
       "microphoneHint": "To record your voice. Optional.",
+      "camera": "Camera",
+      "cameraHint": "To show your webcam in the recording. Optional.",
       "inputMonitoring": "Input Monitoring",
       "inputMonitoringHint": "macOS says “keys”, but Kamo only reads the mouse and never sees what you type.",
       "status": {

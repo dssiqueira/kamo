@@ -15,7 +15,12 @@ import {
   StatusPill,
 } from '../settings/parts.tsx'
 import type { ShortcutPlatform } from '../settings/shortcut.ts'
-import type { ActionResult, PermissionItem, PermissionKind } from '../settings/types.ts'
+import {
+  ONBOARDING_SKIPS,
+  type ActionResult,
+  type PermissionItem,
+  type PermissionKind,
+} from '../settings/types.ts'
 
 export interface OnboardingProps {
   platform: ShortcutPlatform
@@ -45,7 +50,9 @@ export function Onboarding({
   const [index, setIndex] = useState(0)
   // The list of screens is fixed by the first answer, so statuses changing never reshuffle it.
   const [kinds, setKinds] = useState<PermissionKind[] | null>(null)
-  if (kinds === null && permissions !== null) setKinds(permissions.map((p) => p.kind))
+  if (kinds === null && permissions !== null) {
+    setKinds(permissions.map((p) => p.kind).filter((kind) => !ONBOARDING_SKIPS.includes(kind)))
+  }
 
   const steps: Step[] = [
     { kind: 'welcome' },
