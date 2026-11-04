@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
+import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { SettingsButton } from '../settings/SettingsButton.tsx'
 import { AudioSources, type AudioSourcesProps } from './AudioSources.tsx'
@@ -45,8 +46,10 @@ export function Home({
   const canRecord = selectedId !== null && !needsPermission
 
   return (
-    <main className="min-h-screen bg-background font-sans text-on-surface">
-      <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-lg p-xl">
+    <main className="relative min-h-screen bg-background font-sans text-on-surface">
+      {/* Small leaves in the bottom corners: Home is a rest screen, not a working one. */}
+      <CornerDecor scale={0.55} butterfly={false} />
+      <div className="relative mx-auto flex w-full max-w-[1040px] flex-col gap-lg p-xl pb-[120px]">
         <header className="flex items-center justify-between gap-md">
           {/* Brand: the app icon next to the name (DESIGN.md → Mascot). */}
           <div className="flex items-center gap-sm">

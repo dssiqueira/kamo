@@ -1,6 +1,7 @@
 import { formatDate, formatDuration, resolveLocale } from '@kamo/i18n'
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
+import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { IconButton } from '../primitives/controls.tsx'
 import { FolderIcon, PencilIcon, TrashIcon } from '../primitives/icons.tsx'
@@ -61,7 +62,11 @@ export function ProjectList({
     // DESIGN.md: Kamo shows up in empty states.
     return (
       <div className="flex items-center gap-lg py-md">
-        <Mascot pose="front" size={140} />
+        <div className="flex items-end">
+          <DecorPiece art="sprig" height={130} className="-me-[18px]" />
+          <Mascot pose="front" size={140} backdrop />
+          <DecorPiece art="flower" height={58} className="-ms-[14px]" />
+        </div>
         <p className="max-w-[360px] font-serif text-headline text-on-surface-muted">
           {t('projects.empty')}
         </p>

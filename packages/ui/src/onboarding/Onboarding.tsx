@@ -3,6 +3,7 @@
 // Screen Recording is mandatory; the others can be skipped. Kamo greets and says goodbye.
 import { useState } from 'react'
 import { useT } from '../i18n.tsx'
+import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { useSpring } from '../motion/useSpring.ts'
 import { ExternalIcon } from '../primitives/icons.tsx'
@@ -58,9 +59,10 @@ export function Onboarding({
   const progress = useSpring(1, 0, index)
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-xl font-sans text-on-surface">
+    <main className="relative flex min-h-screen items-center justify-center bg-background p-xl font-sans text-on-surface">
+      <CornerDecor />
       <div
-        className="flex w-full max-w-[560px] flex-col items-center gap-lg text-center"
+        className="relative flex w-full max-w-[560px] flex-col items-center gap-lg text-center"
         style={{ opacity: progress, transform: `translateY(${(1 - progress) * 12}px)` }}
       >
         {step.kind === 'permission' && kinds && (
@@ -74,7 +76,7 @@ export function Onboarding({
 
         {step.kind === 'welcome' && (
           <>
-            <Mascot pose="front" size={168} />
+            <Mascot pose="front" size={168} backdrop />
             <h1 className="font-serif text-display">{t('onboarding.welcome.title')}</h1>
             <p className="max-w-[440px] text-title font-normal text-on-surface-muted">
               {t('onboarding.welcome.body')}
@@ -105,7 +107,7 @@ export function Onboarding({
 
         {step.kind === 'done' && (
           <>
-            <Mascot pose="head-happy" size={148} />
+            <Mascot pose="head-happy" size={148} backdrop />
             <h1 className="font-serif text-display">{t('onboarding.done.title')}</h1>
             <p className="max-w-[440px] text-title font-normal text-on-surface-muted">
               {t('onboarding.done.body')}

@@ -1,6 +1,7 @@
 import { buildScene, type Aspect, type MouseEventRecord, type Project, type Zoom } from '@kamo/core'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
+import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
 import { FormatPreview } from './FormatPreview.tsx'
@@ -231,7 +232,10 @@ export function ExportSheet({
             {state.phase === 'done' && (
               <div className="flex items-center gap-md" role="status">
                 {/* DESIGN.md → Mascot: the export-complete screen shows Kamo smiling. */}
-                <Mascot pose="head-happy" size={72} />
+                <div className="flex items-end">
+                  <Mascot pose="head-happy" size={72} />
+                  <DecorPiece art="flower" height={40} className="-ms-[10px]" />
+                </div>
                 <div className="flex flex-col gap-xs">
                   <p className="text-title" data-testid="export-done">
                     {t('export.done.title', {

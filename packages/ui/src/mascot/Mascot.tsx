@@ -35,6 +35,11 @@ export interface MascotProps {
   size: number
   /** Mirrors the artwork so Kamo faces left (the drawings face right). */
   flip?: boolean
+  /**
+   * Sits Kamo on a disc of the paper it was cut from, like the hero circle on the site. Use it
+   * for the big poses: it also hides any trace of the original paper on dark backgrounds.
+   */
+  backdrop?: boolean
   className?: string
 }
 
@@ -42,7 +47,18 @@ export interface MascotProps {
  * Kamo, the chameleon (DESIGN.md → Mascot). Decorative: it never carries information, so it
  * is hidden from assistive tech. Never inside the exported video or the editor chrome.
  */
-export function Mascot({ pose, size, flip, className }: MascotProps) {
+export function Mascot({ pose, size, flip, backdrop, className }: MascotProps) {
+  if (backdrop) {
+    return (
+      <div
+        aria-hidden
+        className={`flex items-end justify-center rounded-full bg-[#F3EEE6] ${className ?? ''}`}
+        style={{ width: size * 1.15, height: size * 1.15 }}
+      >
+        <Mascot pose={pose} size={size * 0.92} {...(flip ? { flip } : {})} />
+      </div>
+    )
+  }
   return (
     <img
       src={POSES[pose]}
