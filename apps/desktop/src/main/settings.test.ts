@@ -45,8 +45,8 @@ describe('parseSettings', () => {
   })
 
   it('keeps unknown fields from other versions, but never shows them to the renderer', () => {
-    const settings = parseSettings(JSON.stringify({ version: 1, projectsDir: '/x', beta: true }))
-    expect(settings).toMatchObject({ projectsDir: '/x', beta: true })
+    const settings = parseSettings(JSON.stringify({ version: 1, cloudSync: '/x', beta: true }))
+    expect(settings).toMatchObject({ cloudSync: '/x', beta: true })
     expect(publicSettings(settings)).toEqual({ version: 1 })
   })
 })

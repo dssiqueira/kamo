@@ -67,3 +67,47 @@ export function ArrowBackIcon() {
     </Icon>
   )
 }
+
+// Settings, onboarding and help (F-13, F-15, F-17).
+export function GearIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 1.75v1.5M8 12.75v1.5M14.25 8h-1.5M3.25 8h-1.5M12.42 3.58l-1.06 1.06M4.64 11.36l-1.06 1.06M12.42 12.42l-1.06-1.06M4.64 4.64L3.58 3.58" />
+      <circle cx="8" cy="8" r="4.25" />
+    </Icon>
+  )
+}
+
+export function CheckIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <path d="M3.5 8.5l3 3 6-7" />
+    </Icon>
+  )
+}
+
+export function AlertIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <circle cx="8" cy="8" r="6" />
+      <path d="M8 5v3.5M8 11h.01" />
+    </Icon>
+  )
+}
+
+export function ExternalIcon() {
+  return (
+    <Icon>
+      <path d="M9.5 2.5h4v4M13.5 2.5L7.5 8.5M11.5 9.5v3a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3" />
+    </Icon>
+  )
+}
+
+export function CloseIcon() {
+  return (
+    <Icon>
+      <path d="M4 4l8 8M12 4l-8 8" />
+    </Icon>
+  )
+}

@@ -43,7 +43,9 @@ const RULES: Rule[] = [
     name: 'Global shortcuts other than the stop shortcut',
     files: SCRIPT,
     pattern: /globalShortcut\.register(All)?\s*\(/,
-    allow: /globalShortcut\.register\(\s*STOP_SHORTCUT\s*,/,
+    // The stop shortcut is editable in Settings (F-15): the constant, or a `stopShortcut`
+    // variable holding the user's choice (validated in apps/desktop/src/main/accelerator.ts).
+    allow: /globalShortcut\.register\(\s*(STOP_SHORTCUT|stopShortcut)\s*,/,
   },
   {
     name: 'Key listeners in the extension content script (it runs inside the recorded page)',

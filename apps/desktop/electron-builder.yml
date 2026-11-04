@@ -20,6 +20,9 @@ mac:
   target:
     - target: dmg
       arch: arm64
+    # electron-updater installs from the zip on Mac, not the dmg (F-14).
+    - target: zip
+      arch: arm64
   category: public.app-category.video
   hardenedRuntime: true
   # Capture helper (D-023), built by `swift build` before packaging (native/mac/README.md).
@@ -27,6 +30,9 @@ mac:
   extraResources:
     - from: native/mac/build/release/kamo-capture
       to: helpers/mac/kamo-capture
+    # Settings → About → Third-party notices.
+    - from: ../../THIRD_PARTY_NOTICES
+      to: THIRD_PARTY_NOTICES
   # Signing and notarization arrive with the release workflow (step 10).
   identity: null
 
@@ -42,6 +48,9 @@ win:
   extraResources:
     - from: native/win/build/release/kamo-capture.exe
       to: helpers/win/kamo-capture.exe
+    # Settings → About → Third-party notices.
+    - from: ../../THIRD_PARTY_NOTICES
+      to: THIRD_PARTY_NOTICES
 
 nsis:
   oneClick: false
@@ -49,4 +58,9 @@ nsis:
   allowToChangeInstallationDirectory: true
   artifactName: Kamo-${version}-win-${arch}-setup.${ext}
 
-publish: null
+# Automatic updates read the GitHub Releases feed (F-14). The package script still passes
+# --publish never; the release workflow publishes.
+publish:
+  provider: github
+  owner: dssiqueira
+  repo: kamo

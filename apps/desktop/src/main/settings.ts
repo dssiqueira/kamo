@@ -2,29 +2,70 @@
 // The file lives on the user's disk and may come from an older or newer Kamo: every field is
 // validated on its own, a bad field falls back to its default, and unknown fields are kept.
 import { CursorSettings, Style } from '@kamo/core'
+import { LOCALES } from '@kamo/i18n'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { isAbsolute, join } from 'node:path'
 import { z } from 'zod'
-import type { AppSettings, SettingsUpdate } from '../shared/api.ts'
+import type { AppSettings, SettingsUpdate, StoredSettingsUpdate } from '../shared/api.ts'
+import { isValidAccelerator } from './accelerator.ts'
 import { writeFileAtomic } from './storage/atomic.ts'
 
 export const SETTINGS_VERSION = 1
 export const SETTINGS_FILE = 'settings.json'
 
 const DisplayId = z.string().min(1).max(256)
+// F-15. Light is the default (DESIGN.md), so a missing theme means light.
+const Theme = z.enum(['light', 'dark', 'system'])
+// 'system' follows the OS language (D-021); a locale pins the UI language.
+const Language = z.union([z.literal('system'), z.enum(LOCALES)])
+// Folders are only ever set by main from a native folder dialog, never by the renderer.
+const FolderPath = z
+  .string()
+  .min(1)
+  .max(1024)
+  .refine((path) => isAbsolute(path))
+const Accelerator = z.string().refine(isValidAccelerator)
+// MediaDeviceInfo.deviceId (an opaque hash); '' means the system default microphone.
+const MicDeviceId = z.string().max(512)
 
 // `.catch(undefined)`: one broken field never resets the others.
 const StoredSettings = z.looseObject({
   lastDisplayId: DisplayId.optional().catch(undefined),
   lastStyle: Style.optional().catch(undefined),
   lastCursor: CursorSettings.optional().catch(undefined),
+  theme: Theme.optional().catch(undefined),
+  language: Language.optional().catch(undefined),
+  projectsDir: FolderPath.optional().catch(undefined),
+  exportDir: FolderPath.optional().catch(undefined),
+  stopShortcut: Accelerator.optional().catch(undefined),
+  onboardingDone: z.boolean().optional().catch(undefined),
+  // F-04 audio toggles and the chosen microphone (F-01: toggles are remembered).
+  micEnabled: z.boolean().optional().catch(undefined),
+  micDeviceId: MicDeviceId.optional().catch(undefined),
+  systemAudioEnabled: z.boolean().optional().catch(undefined),
 })
 
-/** What the renderer may change. Strict: anything else is a programming error. */
+/**
+ * What the renderer may change. Strict: anything else is a programming error. Folders and the
+ * stop shortcut have their own IPC calls (native folder dialog; OS registration check).
+ */
 export const SettingsUpdateSchema = z.strictObject({
   lastDisplayId: DisplayId.optional(),
   lastStyle: Style.optional(),
   lastCursor: CursorSettings.optional(),
+  theme: Theme.optional(),
+  language: Language.optional(),
+  onboardingDone: z.boolean().optional(),
+  micEnabled: z.boolean().optional(),
+  micDeviceId: MicDeviceId.optional(),
+  systemAudioEnabled: z.boolean().optional(),
+})
+
+/** Every field main may write: the renderer's plus folders and the shortcut. */
+const StoredSettingsUpdateSchema = SettingsUpdateSchema.extend({
+  projectsDir: FolderPath.optional(),
+  exportDir: FolderPath.optional(),
+  stopShortcut: Accelerator.optional(),
 })
 
 /** Stored settings plus whatever unknown fields the file had (kept on write). */
@@ -59,22 +100,54 @@ export function parseSettingsUpdate(update: unknown): SettingsUpdate {
   return result.data as SettingsUpdate
 }
 
-export function mergeSettings(current: StoredSettings, update: SettingsUpdate): StoredSettings {
+/** Validates a main-side update; `null` values (reset to default) pass through. */
+export function parseStoredSettingsUpdate(update: StoredSettingsUpdate): StoredSettingsUpdate {
+  const entries = Object.entries(update)
+  const values = Object.fromEntries(entries.filter(([, value]) => value !== null))
+  const resets = Object.fromEntries(entries.filter(([, value]) => value === null))
+  const result = StoredSettingsUpdateSchema.safeParse(values)
+  if (!result.success) throw new SettingsError('invalid_settings')
+  return { ...(result.data as StoredSettingsUpdate), ...resets }
+}
+
+/**
+ * Applies an update. `null` removes a field (back to its default, e.g. resetting the
+ * shortcut); `undefined` leaves it as it is.
+ */
+export function mergeSettings(
+  current: StoredSettings,
+  update: StoredSettingsUpdate,
+): StoredSettings {
   const next: StoredSettings = { ...current, version: SETTINGS_VERSION }
   for (const [key, value] of Object.entries(update)) {
-    if (value !== undefined) next[key] = structuredClone(value)
+    if (value === null) delete next[key]
+    else if (value !== undefined) next[key] = structuredClone(value)
   }
   return next
 }
 
+const PUBLIC_KEYS = [
+  'lastDisplayId',
+  'lastStyle',
+  'lastCursor',
+  'theme',
+  'language',
+  'projectsDir',
+  'exportDir',
+  'stopShortcut',
+  'onboardingDone',
+  'micEnabled',
+  'micDeviceId',
+  'systemAudioEnabled',
+] as const satisfies readonly (keyof AppSettings)[]
+
 /** Only the known fields go to the renderer. */
 export function publicSettings(settings: StoredSettings): AppSettings {
-  return {
-    version: SETTINGS_VERSION,
-    ...(settings.lastDisplayId !== undefined ? { lastDisplayId: settings.lastDisplayId } : {}),
-    ...(settings.lastStyle !== undefined ? { lastStyle: settings.lastStyle } : {}),
-    ...(settings.lastCursor !== undefined ? { lastCursor: settings.lastCursor } : {}),
+  const result: Record<string, unknown> = { version: SETTINGS_VERSION }
+  for (const key of PUBLIC_KEYS) {
+    if (settings[key] !== undefined) result[key] = settings[key]
   }
+  return result as unknown as AppSettings
 }
 
 export class SettingsError extends Error {
@@ -89,6 +162,7 @@ export class SettingsStore {
   readonly file: string
   private current: Promise<StoredSettings> | undefined
   private queue: Promise<unknown> = Promise.resolve()
+  private readonly listeners = new Set<(settings: AppSettings) => void>()
 
   constructor(dir: string) {
     this.file = join(dir, SETTINGS_FILE)
@@ -98,15 +172,30 @@ export class SettingsStore {
     return publicSettings(await this.load())
   }
 
-  async update(update: SettingsUpdate): Promise<AppSettings> {
+  /** Validated here too, so a bug in main cannot write a broken file. */
+  async update(update: StoredSettingsUpdate): Promise<AppSettings> {
     const run = this.queue.then(async () => {
-      const next = mergeSettings(await this.load(), update)
+      const next = mergeSettings(await this.load(), parseStoredSettingsUpdate(update))
       await writeFileAtomic(this.file, `${JSON.stringify(next, null, 2)}\n`)
       this.current = Promise.resolve(next)
-      return publicSettings(next)
+      const settings = publicSettings(next)
+      for (const listener of this.listeners) {
+        try {
+          listener(settings)
+        } catch {
+          // A listener (window broadcast) must never fail a saved update.
+        }
+      }
+      return settings
     })
     this.queue = run.catch(() => {})
     return run
+  }
+
+  /** Called after every saved update (main broadcasts it to the windows). */
+  onChange(listener: (settings: AppSettings) => void): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
   }
 
   private load(): Promise<StoredSettings> {

@@ -14,6 +14,16 @@ export interface Services {
 
 let services: Services | undefined
 
+/**
+ * Points the project store at another folder (Settings → Folders, F-15). Callers re-create
+ * anything that captured the old store (main re-creates the recording backend).
+ */
+export function setProjectsDir(projectsDir: string): void {
+  const current = getServices()
+  current.projectsDir = projectsDir
+  current.store = new FileProjectStore(projectsDir, { trash: (path) => shell.trashItem(path) })
+}
+
 export function getServices(): Services {
   if (!services) {
     const projectsDir = defaultProjectsDir()

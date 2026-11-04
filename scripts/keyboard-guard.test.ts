@@ -16,6 +16,8 @@ describe('keyboard guard', () => {
     ],
     ['apps/desktop/src/main/hook.ts', "import { uIOhook } from 'uiohook-napi'"],
     ['apps/desktop/src/main/index.ts', "globalShortcut.register('CommandOrControl+K', fn)"],
+    ['apps/desktop/src/main/index.ts', 'globalShortcut.register(shortcut, fn)'],
+    ['apps/desktop/src/main/index.ts', 'globalShortcut.registerAll(stopShortcuts, fn)'],
     ['apps/extension/src/content/clicks.ts', "document.addEventListener('keydown', onKey)"],
   ])('flags %s', (file, text) => {
     expect(rules(file, text)).toHaveLength(1)
@@ -25,6 +27,10 @@ describe('keyboard guard', () => {
     [
       'apps/desktop/src/main/recording-controller.ts',
       'globalShortcut.register(STOP_SHORTCUT, () => stop())',
+    ],
+    [
+      'apps/desktop/src/main/recording-controller.ts',
+      'if (globalShortcut.register(stopShortcut, () => void this.stop())) {',
     ],
     ['apps/desktop/src/renderer/src/countdown.tsx', "window.addEventListener('keydown', onKey)"],
     [
