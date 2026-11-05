@@ -38,4 +38,6 @@ export interface WindowInfo {
   height: number
   /** JPEG data URL, or null when the OS gave none. */
   thumbnail: string | null
+  /** The app's icon as a PNG data URL (32px), or null when the OS gave none. */
+  icon: string | null
 }

@@ -12,6 +12,8 @@ export interface WindowOption {
   app: string
   /** JPEG data URL, or null when the OS gave none. */
   thumbnail: string | null
+  /** The app's icon (PNG data URL), or null when the OS gave none. */
+  icon?: string | null
 }
 
 /** The region chosen on a display, with its size in pixels of the recording. */

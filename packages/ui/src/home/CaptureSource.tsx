@@ -118,13 +118,18 @@ function WindowCard({
       <div className="flex aspect-video items-center justify-center overflow-hidden rounded-md bg-surface-raised">
         {window.thumbnail ? (
           <img src={window.thumbnail} alt="" className="h-full w-full object-contain" />
+        ) : window.icon ? (
+          <img src={window.icon} alt="" className="size-[32px]" />
         ) : (
           <span className="truncate px-sm text-label text-on-surface-muted">{window.app}</span>
         )}
       </div>
       <span className="line-clamp-2 text-body font-medium break-words">{window.title}</span>
-      {window.app && (
-        <span className="truncate font-mono text-label text-on-surface-muted">{window.app}</span>
+      {(window.app || window.icon) && (
+        <span className="flex min-w-0 items-center gap-xs">
+          {window.icon && <img src={window.icon} alt="" className="size-[16px] shrink-0" />}
+          <span className="truncate font-mono text-label text-on-surface-muted">{window.app}</span>
+        </span>
       )}
     </button>
   )

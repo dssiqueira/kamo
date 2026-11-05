@@ -86,6 +86,7 @@ export function joinWindows(
   windows: readonly HelperWindow[],
   toDip: (bounds: HelperWindow) => { width: number; height: number; displayId: string | null },
   thumbnails: ReadonlyMap<string, string>,
+  icons: ReadonlyMap<string, string> = new Map(),
 ): WindowInfo[] {
   return windows.map((window) => {
     const placed = toDip(window)
@@ -97,6 +98,7 @@ export function joinWindows(
       width: Math.round(placed.width),
       height: Math.round(placed.height),
       thumbnail: thumbnails.get(window.id) ?? null,
+      icon: icons.get(window.id) ?? null,
     }
   })
 }

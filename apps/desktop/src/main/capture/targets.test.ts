@@ -72,7 +72,7 @@ describe('window list', () => {
     expect(capturerWindowId('screen:0:0')).toBeNull()
   })
 
-  it('joins the helper list with displays and thumbnails', () => {
+  it('joins the helper list with displays, thumbnails and app icons', () => {
     const joined = joinWindows(
       [
         { id: '1', title: 'Notes', app: 'notepad', x: 150, y: 150, width: 1200, height: 900 },
@@ -80,6 +80,7 @@ describe('window list', () => {
       ],
       (w) => ({ width: w.width / 1.5, height: w.height / 1.5, displayId: w.x < 0 ? 'b' : 'a' }),
       new Map([['1', 'data:image/jpeg;base64,AA']]),
+      new Map([['2', 'data:image/png;base64,BB']]),
     )
     expect(joined).toEqual([
       {
@@ -90,6 +91,7 @@ describe('window list', () => {
         width: 800,
         height: 600,
         thumbnail: 'data:image/jpeg;base64,AA',
+        icon: null,
       },
       {
         id: '2',
@@ -99,6 +101,7 @@ describe('window list', () => {
         width: 667,
         height: 533,
         thumbnail: null,
+        icon: 'data:image/png;base64,BB',
       },
     ])
   })

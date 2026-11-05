@@ -96,7 +96,8 @@ export function useHomeCapture(
     kind,
     onKindChange,
     windows:
-      windows && windows.map(({ id, title, app, thumbnail }) => ({ id, title, app, thumbnail })),
+      windows &&
+      windows.map(({ id, title, app, thumbnail, icon }) => ({ id, title, app, thumbnail, icon })),
     selectedWindowId,
     onSelectWindow,
     region:
