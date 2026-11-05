@@ -444,7 +444,9 @@
       "node": "Necesita Node.js 20 o posterior.",
       "docs": "Instrucciones para otros clientes MCP",
       "devTitle": "¿Usas una versión de desarrollo?",
-      "devHint": "Ejecuta el servidor compilado en este repositorio (pnpm --filter @kamo/mcp build) en lugar del paquete de npm."
+      "devHint": "Ejecuta el servidor compilado en este repositorio (pnpm --filter @kamo/mcp build) en lugar del paquete de npm.",
+      "notPublished": "El paquete npm @kamo/mcp todavía no está publicado. Hasta entonces, conecta un agente a una versión de desarrollo de Kamo (consulta las instrucciones).",
+      "unsafeFolder": "El nombre de tu carpeta de proyectos tiene un carácter (% & | < > ^) que la línea de comandos de Windows puede cambiar. Cambia la carpeta de proyectos a una sin esos caracteres antes de conectar un agente."
     }
   },
   "diagnostics": {

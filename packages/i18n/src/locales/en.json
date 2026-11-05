@@ -444,7 +444,9 @@
       "node": "Needs Node.js 20 or newer.",
       "docs": "Instructions for other MCP clients",
       "devTitle": "Using a development build?",
-      "devHint": "Runs the server built in this repository (pnpm --filter @kamo/mcp build) instead of the npm package."
+      "devHint": "Runs the server built in this repository (pnpm --filter @kamo/mcp build) instead of the npm package.",
+      "notPublished": "The @kamo/mcp npm package is not published yet. Until it is, connect an agent to a development build of Kamo (see the instructions).",
+      "unsafeFolder": "Your projects folder's name has a character (% & | < > ^) that Windows command lines can change. Move the projects folder to one without them before connecting an agent."
     }
   },
   "diagnostics": {

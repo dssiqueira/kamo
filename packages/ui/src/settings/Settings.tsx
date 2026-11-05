@@ -73,7 +73,7 @@ export interface SettingsProps {
    * Connect to an agent (M-01, step 26): the local MCP command. Omitted where there is no
    * projects folder an MCP server could read (the extension).
    */
-  agent?: { devServerPath: string | null; onOpenDocs(): void }
+  agent?: { devServerPath: string | null; mcpVersion?: string | null; onOpenDocs(): void }
 
   /** Replays the welcome tour (F-13). Omitted where there is none (the extension). */
   onShowTour?(): void
@@ -154,6 +154,7 @@ export function Settings(props: SettingsProps) {
             platform={props.platform}
             projectsDir={props.folders?.projectsDir ?? null}
             devServerPath={props.agent.devServerPath}
+            mcpVersion={props.agent.mcpVersion ?? null}
             onCopy={props.onCopy}
             onOpenDocs={props.agent.onOpenDocs}
           />

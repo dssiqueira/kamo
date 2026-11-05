@@ -9,6 +9,7 @@ import { acceptRecorderSender } from '../recorder-sender.ts'
 import { createAppWindow, isAppUrl, isPageUrl } from '../windows.ts'
 import { parseCameraReport } from './model.ts'
 import { CameraService, type CameraLogger } from './service.ts'
+import { assertChunk } from '../ipc-limits.ts'
 
 export interface DesktopCameraOptions {
   log(): CameraLogger
@@ -77,7 +78,7 @@ export function registerCameraIpc(service: CameraService): void {
   })
   ipcMain.handle(IpcChannel.cameraChunk, (event, bytes: unknown) => {
     if (!fromRecorder(event)) return
-    if (!(bytes instanceof Uint8Array)) throw new Error('camera chunk must be bytes')
+    assertChunk(bytes, 'camera chunk')
     return service.writeChunk(bytes)
   })
 }

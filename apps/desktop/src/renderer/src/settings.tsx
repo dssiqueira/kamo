@@ -14,7 +14,10 @@ function DesktopSettings() {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [folders, setFolders] = useState<Folders | null>(null)
-  const [agentDevServer, setAgentDevServer] = useState<string | null>(null)
+  const [agentSetup, setAgentSetup] = useState<{
+    devServerPath: string | null
+    mcpVersion: string | null
+  }>({ devServerPath: null, mcpVersion: null })
   const [permissions] = usePermissions()
   const update = useUpdateStatus()
   // A-07: the list of packs loads when the Packs section comes into view.
@@ -26,7 +29,7 @@ function DesktopSettings() {
     void window.kamo.getFolders().then(setFolders)
     void window.kamo
       .getAgentSetup()
-      .then((setup) => setAgentDevServer(setup.devServerPath))
+      .then(setAgentSetup)
       .catch(() => {})
     // Changes from this window or any other (e.g. the theme set elsewhere).
     return window.kamo.onSettingsChanged(setSettings)
@@ -86,7 +89,8 @@ function DesktopSettings() {
       onOpenIssue={(text) => attempt(() => window.kamo.openIssue(text))}
       onLoadNotices={() => window.kamo.getThirdPartyNotices()}
       agent={{
-        devServerPath: agentDevServer,
+        devServerPath: agentSetup.devServerPath,
+        mcpVersion: agentSetup.mcpVersion,
         onOpenDocs: () => void window.kamo.openAgentDocs().catch(() => {}),
       }}
       onShowTour={() => void window.kamo.openOnboarding({ tour: true }).catch(() => {})}

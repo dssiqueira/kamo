@@ -75,6 +75,9 @@ export function createAppWindow(
       nodeIntegration: false,
       webSecurity: true,
       spellcheck: false,
+      // No DevTools in a release (no shortcut, no menu, no openDevTools()): nobody can poke at
+      // a renderer that sees the recordings. Development keeps them.
+      devTools: !app.isPackaged,
     },
   })
   void loadPage(window, page, query)

@@ -6,6 +6,7 @@ import { app, BrowserWindow, net } from 'electron'
 import { cpus } from 'node:os'
 import { join } from 'node:path'
 import { IpcChannel } from '../../shared/api.ts'
+import { debugHooksAllowed } from '../build-flags.ts'
 import { isPackId, PackError, PackManager } from '../packs/manager.ts'
 import { manifestUrl, platformKey } from '../packs/config.ts'
 import { setTranscriptState } from '../projects.ts'
@@ -43,7 +44,10 @@ export function registerTranscription(options: {
     info: (event: string, data?: Record<string, unknown>) => getServices().log.info(event, data),
     warn: (event: string, data?: Record<string, unknown>) => getServices().log.warn(event, data),
   }
-  const url = manifestUrl(process.env, { packaged: app.isPackaged })
+  // KAMO_PACKS_MANIFEST_URL is a development hook: a release always uses the default manifest.
+  const url = manifestUrl(debugHooksAllowed(app.isPackaged) ? process.env : {}, {
+    packaged: app.isPackaged,
+  })
   if (!app.isPackaged && url !== manifestUrl({}, { packaged: false })) {
     console.info(`kamo: packs manifest from ${url}`)
   }

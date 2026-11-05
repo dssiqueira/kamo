@@ -2,7 +2,9 @@
 import { app } from 'electron'
 import { resolveHelperPath } from './capture/helper-path.ts'
 import { buildDiagnostics } from './diagnostics.ts'
+import { redactFolders } from './log/index.ts'
 import { listPermissions } from './permissions.ts'
+import { getExportDir } from './preferences.ts'
 import { getServices } from './services.ts'
 
 const LOG_LINES = 200
@@ -51,6 +53,19 @@ async function gpuLines(): Promise<string[]> {
   return lines
 }
 
+/**
+ * Hides the folders the user chose outside the home folder (projects, exports) and app-data,
+ * besides the home folder itself (L9). For the diagnostics text and the issue link.
+ */
+export async function redactUserFolders(text: string): Promise<string> {
+  const exportDir = await getExportDir().catch(() => null)
+  return redactFolders(text, [
+    [getServices().projectsDir, '<projects>'],
+    ...(exportDir ? [[exportDir, '<exports>'] as const] : []),
+    [app.getPath('userData'), '<app-data>'],
+  ])
+}
+
 export async function collectDiagnostics(hardwareH264: boolean | null): Promise<string> {
   const { log } = getServices()
   const helper = resolveHelperPath({
@@ -58,7 +73,7 @@ export async function collectDiagnostics(hardwareH264: boolean | null): Promise<
     resourcesPath: process.resourcesPath,
     appPath: app.getAppPath(),
   })
-  return buildDiagnostics({
+  const text = buildDiagnostics({
     appVersion: app.getVersion(),
     electron: process.versions.electron,
     chrome: process.versions.chrome,
@@ -74,4 +89,5 @@ export async function collectDiagnostics(hardwareH264: boolean | null): Promise<
     logLines: await log.tail(LOG_LINES),
     logFile: log.file,
   })
+  return redactUserFolders(text)
 }

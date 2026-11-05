@@ -55,6 +55,7 @@ import { RecoveryError } from './interrupted.ts'
 import { registerRecovery } from './recovery-ipc.ts'
 import { newProjectDefaults } from './new-project-defaults.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
+import { ensurePrivateDir } from './storage/atomic.ts'
 import { UnsafePathError } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
@@ -63,6 +64,7 @@ import { registerTranscription } from './transcription/index.ts'
 import { TranscriptionError } from './transcription/service.ts'
 import { runExportSmoke } from './export-smoke.ts'
 import { BackgroundImageError } from './background-image.ts'
+import { debugHooksAllowed } from './build-flags.ts'
 
 // Must happen before `ready`: a standard, secure scheme that streams (video seeking) and
 // works with fetch, but still obeys the page CSP (src/main/media.ts).
@@ -92,7 +94,11 @@ const TRAY_ICON = trayIconFile(
 const SMOKE_TEST_TIMEOUT_MS = 60_000
 const SMOKE_SCREENSHOT_DELAY_MS = 2000
 
-const isSmokeTest = process.argv.includes('--smoke-test')
+// Test and debug hooks (--smoke-test, KAMO_SMOKE_*, KAMO_AUDIO_SELF_TEST): development runs and
+// CI's packaged smoke builds only (src/main/build-flags.ts). In a release they do nothing, so no
+// other program can start Kamo to record or screenshot without the user seeing it.
+const debugHooks = debugHooksAllowed(app.isPackaged)
+const isSmokeTest = debugHooks && process.argv.includes('--smoke-test')
 
 const smokeTimeout = isSmokeTest
   ? setTimeout(() => {
@@ -484,6 +490,23 @@ handle(IpcChannel.resumeRecording, () => recording.resume())
 handle(IpcChannel.stopRecording, () => recording.stop())
 handle(IpcChannel.getRecordingClock, () => recording.getClock() ?? smokeRecordingClock())
 
+/**
+ * Kamo's own app menu: standard roles, Reload and DevTools only in development (Electron's
+ * default menu has both). Set at `ready` in English, before any window, then again in the UI
+ * language by createBackend.
+ */
+function setAppMenu(t: (key: string) => string): void {
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate(
+      appMenuTemplate(appMenuLabels(t), {
+        platform: process.platform,
+        dev: isDev,
+        openSettings: () => void preferences.openSettings(),
+      }),
+    ),
+  )
+}
+
 /** Native helper backend (D-023), with project names in the user's language. */
 async function createBackend(): Promise<RecordingBackend> {
   const locale = await uiLocale()
@@ -497,17 +520,7 @@ async function createBackend(): Promise<RecordingBackend> {
   }
   appTray.refresh()
   // The app menu follows the UI language too (Electron's default is English only).
-  void app.whenReady().then(() =>
-    Menu.setApplicationMenu(
-      Menu.buildFromTemplate(
-        appMenuTemplate(appMenuLabels(i18n.t.bind(i18n)), {
-          platform: process.platform,
-          dev: isDev,
-          openSettings: () => void preferences.openSettings(),
-        }),
-      ),
-    ),
-  )
+  void app.whenReady().then(() => setAppMenu(i18n.t.bind(i18n)))
   trayLabels = {
     recording: (elapsed) => i18n.t('recording.tray.recording', { elapsed }),
     paused: (elapsed) => i18n.t('recording.tray.paused', { elapsed }),
@@ -544,6 +557,13 @@ app.on('before-quit', (event) => {
 })
 
 void app.whenReady().then(async () => {
+  // L4: never Electron's default menu (Reload, Toggle DevTools), even if what follows fails.
+  const english = await createI18n('en')
+  setAppMenu(english.t.bind(english))
+  // M5: app-data (settings, logs, packs, transcription work files) is private on Mac and Linux.
+  await ensurePrivateDir(app.getPath('userData')).catch((error: unknown) =>
+    getServices().log.warn('app_data.private_failed', { error }),
+  )
   // Theme, stop shortcut and projects folder from settings.json, before anything uses them.
   await preferences
     .init()
@@ -563,8 +583,8 @@ void app.whenReady().then(async () => {
   installAudioPermissions(session.defaultSession)
   setupAudio(() => mainWindow)
   setupCamera()
-  if (process.env['KAMO_AUDIO_SELF_TEST'])
-    void runAudioSelfTest(process.env['KAMO_AUDIO_SELF_TEST'])
+  const audioSelfTest = debugHooks ? process.env['KAMO_AUDIO_SELF_TEST'] : undefined
+  if (audioSelfTest) void runAudioSelfTest(audioSelfTest)
   protocol.handle(MEDIA_SCHEME, (request) => serveMedia(request, getServices().projectsDir))
 
   if (isDev && process.platform === 'darwin') app.dock?.setIcon(DEV_ICON)

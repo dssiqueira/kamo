@@ -2,6 +2,7 @@
 // image picker (A-04) and the transcript the captions read (A-06). Ids and data come from the
 // renderer: the store and the schema check them.
 import { app, dialog, shell, type BrowserWindow } from 'electron'
+import { lstat } from 'node:fs/promises'
 import { isDeepStrictEqual } from 'node:util'
 import { PROJECT_FILES, backgroundImageFile } from '@kamo/core'
 import { createI18n } from '@kamo/i18n'
@@ -11,6 +12,7 @@ import {
   importBackgroundImage,
   pruneBackgroundImages,
 } from './background-image.ts'
+import { debugHooksAllowed } from './build-flags.ts'
 import { styleForNewProjects } from './new-project-defaults.ts'
 import { notifyPlaylistsChanged } from './playlists-ipc.ts'
 import type { PlaylistStore } from './playlists.ts'
@@ -83,7 +85,15 @@ export function registerProjects(handle: Handle, options: ProjectsIpcOptions): v
     }
   })
   handle(IpcChannel.showProjectInFolder, async (projectId) => {
-    const dir = getServices().store.projectDir(projectId as string)
+    assertProjectId(projectId as string)
+    const { store } = getServices()
+    // Only a real project folder: openPath on a file (or a link) would open it with its
+    // default app, which for an extensionless executable on a Mac means running it.
+    const ids = await store.listProjectIds()
+    if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
+    const dir = store.projectDir(projectId as string)
+    const info = await lstat(dir).catch(() => null)
+    if (!info?.isDirectory()) throw new ProjectActionError('project_not_found')
     const error = await shell.openPath(dir)
     if (error) {
       getServices().log.warn('project.show.failed', { error })
@@ -144,10 +154,10 @@ export function registerProjects(handle: Handle, options: ProjectsIpcOptions): v
 async function chooseBackgroundImage(
   mainWindowOf: () => BrowserWindow | undefined,
 ): Promise<string | null> {
-  // Dev builds only: KAMO_SMOKE_BACKGROUND_IMAGE=<file> stands in for the native dialog, which
+  // Dev builds (and CI smoke builds) only: KAMO_SMOKE_BACKGROUND_IMAGE=<file> stands in for the native dialog, which
   // automated checks cannot drive. A packaged app always shows the dialog.
   const smoke = process.env['KAMO_SMOKE_BACKGROUND_IMAGE']
-  if (smoke && !app.isPackaged) return smoke
+  if (smoke && debugHooksAllowed(app.isPackaged)) return smoke
   const i18n = await createI18n(await uiLocale())
   const options = {
     title: i18n.t('editor.panel.imagePickTitle'),

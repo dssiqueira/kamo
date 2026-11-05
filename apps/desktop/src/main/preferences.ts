@@ -25,10 +25,11 @@ import type {
 } from '../shared/api.ts'
 import { IpcChannel } from '../shared/api.ts'
 import { findDevMcpServer, MCP_DOCS_URL } from './agent-setup.ts'
+import { publishedMcpVersion } from './build-flags.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import { isBusy, registerBusyCheck } from './busy.ts'
 import { closeToTrayDefault } from './close-to-tray.ts'
-import { collectDiagnostics } from './diagnostics-collect.ts'
+import { collectDiagnostics, redactUserFolders } from './diagnostics-collect.ts'
 import { buildIssueUrl, isIssueUrl } from './diagnostics.ts'
 import {
   isPermissionKind,
@@ -325,13 +326,15 @@ export function registerPreferences(deps: PreferencesDeps): Preferences {
   })
   handle(IpcChannel.openIssue, async (text) => {
     assertText(text)
-    const url = buildIssueUrl(text)
+    // Redacted again here: the text comes from the renderer and ends up in a URL (L9).
+    const url = buildIssueUrl(await redactUserFolders(text))
     if (!isIssueUrl(url)) throw new PreferenceError('invalid_argument')
     await shell.openExternal(url)
   })
   // Connect to an agent (M-01): a fixed docs URL, never one from the renderer.
   handle(IpcChannel.getAgentSetup, () => ({
     devServerPath: findDevMcpServer(app.getAppPath(), app.isPackaged),
+    mcpVersion: publishedMcpVersion(app.isPackaged, app.getVersion()),
   }))
   handle(IpcChannel.openAgentDocs, async () => {
     await shell.openExternal(MCP_DOCS_URL)

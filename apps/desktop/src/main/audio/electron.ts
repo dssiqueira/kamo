@@ -26,6 +26,7 @@ import {
   parseTrack,
 } from './model.ts'
 import { AudioService, type AudioLogger } from './service.ts'
+import { assertChunk } from '../ipc-limits.ts'
 
 /** Mac 13+: ScreenCaptureKit records the computer sound, in the capture helper (D-024). */
 const macHelperAudio =
@@ -169,7 +170,7 @@ export function registerAudioIpc(service: AudioService): void {
   })
   ipcMain.handle(IpcChannel.audioChunk, (event, track: unknown, bytes: unknown) => {
     if (!fromRecorder(event)) return
-    if (!(bytes instanceof Uint8Array)) throw new Error('audio chunk must be bytes')
+    assertChunk(bytes, 'audio chunk')
     return service.writeChunk(parseTrack(track), bytes)
   })
 }

@@ -5,7 +5,13 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n.tsx'
 import { CheckIcon, ExternalIcon } from '../primitives/icons.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
-import { claudeCommand, mcpClientJson, type AgentSetupInput } from './agent.ts'
+import {
+  canUseNpx,
+  claudeCommand,
+  mcpClientJson,
+  unsafeForCmd,
+  type AgentSetupInput,
+} from './agent.ts'
 import { LinkButton, Section, SecondaryButton } from './parts.tsx'
 import type { ShortcutPlatform } from './shortcut.ts'
 import type { ActionResult } from './types.ts'
@@ -16,6 +22,8 @@ export interface AgentSectionProps {
   projectsDir: string | null
   /** apps/mcp/dist/cli.js in an unpackaged (development) build; null in a release */
   devServerPath?: string | null
+  /** The @kamo/mcp version on npm that matches this app; null while it is not published. */
+  mcpVersion?: string | null
   onCopy(text: string): ActionResult
   /** Opens the setup instructions for other MCP clients (apps/mcp/README.md). */
   onOpenDocs(): void
@@ -25,29 +33,51 @@ export function AgentSection({
   platform,
   projectsDir,
   devServerPath = null,
+  mcpVersion = null,
   onCopy,
   onOpenDocs,
 }: AgentSectionProps) {
   const t = useT()
   if (!projectsDir) return null
-  const input: AgentSetupInput = { platform, projectsDir, devServerPath }
+  const input: AgentSetupInput = { platform, projectsDir, devServerPath, mcpVersion }
+  // Without the package on npm, only the development build can be offered (never an npx
+  // command that would run whatever owns the name).
+  const npx = canUseNpx(input)
 
   return (
     <Section id="settings-agent" title={t('settings.agent.title')}>
       <p className="text-body text-on-surface-muted">{t('settings.agent.description')}</p>
 
-      <Snippet
-        id="agent-claude"
-        label={t('settings.agent.claudeCode')}
-        text={claudeCommand(input)}
-        onCopy={onCopy}
-      />
-      <Snippet
-        id="agent-json"
-        label={t('settings.agent.otherClients')}
-        text={mcpClientJson(input)}
-        onCopy={onCopy}
-      />
+      {!npx && (
+        <p className="text-body text-on-surface-muted" data-testid="agent-not-published">
+          {t('settings.agent.notPublished')}
+        </p>
+      )}
+      {!npx && devServerPath && (
+        <p className="text-label text-on-surface-muted">{t('settings.agent.devHint')}</p>
+      )}
+      {npx && unsafeForCmd(projectsDir, platform) && (
+        <p className="text-body text-on-surface-muted" data-testid="agent-unsafe-folder">
+          {t('settings.agent.unsafeFolder')}
+        </p>
+      )}
+
+      {(npx || devServerPath) && (
+        <>
+          <Snippet
+            id="agent-claude"
+            label={t('settings.agent.claudeCode')}
+            text={claudeCommand(input)}
+            onCopy={onCopy}
+          />
+          <Snippet
+            id="agent-json"
+            label={t('settings.agent.otherClients')}
+            text={mcpClientJson(input)}
+            onCopy={onCopy}
+          />
+        </>
+      )}
 
       <ul className="flex list-disc flex-col gap-xs ps-[20px] text-label text-on-surface-muted">
         <li>{t('settings.agent.readOnly')}</li>
@@ -61,7 +91,7 @@ export function AgentSection({
         </LinkButton>
       </div>
 
-      {devServerPath && (
+      {npx && devServerPath && (
         <details className="flex flex-col gap-sm" data-testid="agent-dev">
           <summary
             className={`cursor-pointer rounded-sm text-body text-tertiary-strong ${FOCUS_RING}`}

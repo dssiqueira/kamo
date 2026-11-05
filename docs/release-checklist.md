@@ -15,6 +15,8 @@ list into the release's tracking issue and tick it there.
 ## 1. Install
 - [ ] Mac: the dmg opens, Kamo drags into Applications and opens **without** a Gatekeeper warning (signed and notarized). `spctl --assess --type execute -vv /Applications/Kamo.app` says `Notarized Developer ID`
 - [ ] Windows: the installer runs; SmartScreen shows "More info → Run anyway" while unsigned (the README explains it); the app opens from the Start menu
+- [ ] Hardening (D-038): `ELECTRON_RUN_AS_NODE=1 <Kamo binary> -e "console.log(1)"` opens Kamo instead of printing `1`; `<Kamo binary> --smoke-test` opens Kamo normally (no smoke run); Ctrl+Shift+I / Cmd+Option+I opens no DevTools
+- [ ] Mac (first release with the trimmed entitlements: only `allow-jit`, microphone and camera): the signed app starts, records the screen with the microphone, the webcam bubble and computer sound, and transcribes with the pack. If not, Console.app shows the library-validation or code-signing error
 - [ ] Installer sizes ≤ 130MB (CI checks it; glance at the draft)
 
 ## 2. Permissions (F-13)
@@ -51,7 +53,7 @@ list into the release's tracking issue and tick it there.
 
 ## 6. Local MCP with Claude Code (M-01)
 - [ ] `npx -y @kamo/mcp@<v> --dir "<projects folder>"` starts and waits on stdio (when npm was published; before that, `node apps/mcp/dist/cli.js`)
-- [ ] The app's "Connect to an agent" panel shows the command; paste it: `claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`
+- [ ] The app's "Connect to an agent" panel shows the command pinned to this version (only when npm was published; otherwise the "not published yet" note); paste it: `claude mcp add kamo -- npx -y @kamo/mcp@<v> --dir "<projects folder>"`
 - [ ] In Claude Code: list recordings, search a transcript, read the click timeline, get a reference frame
 - [ ] MCP Inspector (`pnpm --filter mcp inspect`) lists the tools with no errors
 - [ ] The MCP makes no network request (it has no network code; check that nothing new was added)

@@ -16,6 +16,22 @@ compression: maximum
 # Only the languages Kamo supports; Electron ships ~50 locale packs otherwise.
 electronLanguages: [en, en-US, pt-BR, es, es-419, zh-CN, ja]
 
+# Electron fuses, flipped in the binary before signing. Kamo holds the Screen Recording,
+# Microphone and Camera grants on Mac, so no other process may run its own code as Kamo:
+# no ELECTRON_RUN_AS_NODE, no NODE_OPTIONS / NODE_EXTRA_CA_CERTS, no --inspect, and only the
+# app.asar that was packaged (its hash is embedded and checked on load). Dev runs
+# (`electron-vite dev`, node_modules/.bin/electron) use the stock binary and are not affected.
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  # Still on: the pages load from file:// inside app.asar (src/main/windows.ts), and with it
+  # off they fail with ERR_FILE_NOT_FOUND. Turn it off once they move to a custom scheme.
+  grantFileProtocolExtraPrivileges: true
+
 mac:
   target:
     - target: dmg

@@ -5,6 +5,7 @@
 import { mkdir, open, rename, rm, stat, type FileHandle } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import { numberedFileName, sanitizeFileName } from '@kamo/core'
+import { MAX_EXPORT_POSITION, MAX_IPC_CHUNK_BYTES } from './ipc-limits.ts'
 
 export type ExportFileErrorCode =
   | 'disk_full'
@@ -115,10 +116,16 @@ export class ExportFiles {
 
   async write(id: unknown, position: unknown, data: unknown): Promise<void> {
     const file = this.get(id)
-    if (typeof position !== 'number' || !Number.isSafeInteger(position) || position < 0) {
-      throw new TypeError('position must be a non-negative integer')
+    if (
+      typeof position !== 'number' ||
+      !Number.isSafeInteger(position) ||
+      position < 0 ||
+      position > MAX_EXPORT_POSITION
+    ) {
+      throw new TypeError('position must be a non-negative integer within the export size limit')
     }
     if (!(data instanceof Uint8Array)) throw new TypeError('data must be bytes')
+    if (data.byteLength > MAX_IPC_CHUNK_BYTES) throw new TypeError('data is too big')
     try {
       let written = 0
       while (written < data.byteLength) {

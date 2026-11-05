@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { Logger, logsDir, redact } from './logger.ts'
+import { Logger, logsDir, redact, redactFolders } from './logger.ts'
 
 let dir: string
 
@@ -35,6 +35,36 @@ describe('redact', () => {
 
   it('leaves text alone when the home folder is unusable', () => {
     expect(redact('/x/y', '/')).toBe('/x/y')
+  })
+})
+
+describe('redactFolders', () => {
+  it('hides chosen folders outside the home folder, then the home folder', () => {
+    const home = String.raw`C:\Users\ana`
+    const text = [
+      String.raw`open D:\Users\Maria Silva\Kamo\p1\project.json`,
+      String.raw`json "D:\\Users\\Maria Silva\\Kamo"`,
+      'export to d:/users/maria silva/Exports/a.mp4',
+      String.raw`log C:\Users\ana\AppData\Kamo\logs`,
+    ].join('\n')
+    expect(
+      redactFolders(
+        text,
+        [
+          [String.raw`D:\Users\Maria Silva\Kamo`, '<projects>'],
+          [String.raw`D:\Users\Maria Silva\Exports`, '<exports>'],
+          [String.raw`C:\Users\ana\AppData\Kamo`, '<app-data>'],
+        ],
+        home,
+      ),
+    ).toBe(
+      [
+        String.raw`open <projects>\p1\project.json`,
+        'json "<projects>"',
+        'export to <exports>/a.mp4',
+        String.raw`log ~\AppData\Kamo\logs`,
+      ].join('\n'),
+    )
   })
 })
 

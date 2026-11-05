@@ -444,7 +444,9 @@
       "node": "需要 Node.js 20 或更高版本。",
       "docs": "其他 MCP 客户端的设置说明",
       "devTitle": "使用开发版本？",
-      "devHint": "运行在此仓库中构建的服务器（pnpm --filter @kamo/mcp build），而不是 npm 包。"
+      "devHint": "运行在此仓库中构建的服务器（pnpm --filter @kamo/mcp build），而不是 npm 包。",
+      "notPublished": "npm 包 @kamo/mcp 尚未发布。在此之前，请将智能体连接到 Kamo 的开发版本（请参阅说明）。",
+      "unsafeFolder": "项目文件夹的名称包含 Windows 命令行可能会改变的字符（% & | < > ^）。连接智能体之前，请将项目文件夹换成不含这些字符的文件夹。"
     }
   },
   "diagnostics": {

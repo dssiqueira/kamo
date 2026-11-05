@@ -59,6 +59,11 @@ function stripJsonImportAttributes(): Plugin {
 
 export default defineConfig({
   main: {
+    // Build-time flags (src/main/build-flags.ts): set by CI and the release workflow only.
+    define: {
+      __KAMO_CI_SMOKE__: JSON.stringify(process.env['KAMO_BUILD_CI_SMOKE'] === '1'),
+      __KAMO_MCP_ON_NPM__: JSON.stringify(process.env['KAMO_BUILD_MCP_ON_NPM'] === '1'),
+    },
     build: {
       // Everything is bundled: the packaged app ships no node_modules.
       externalizeDeps: false,

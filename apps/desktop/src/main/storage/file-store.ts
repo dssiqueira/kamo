@@ -5,7 +5,15 @@ import { openAsBlob } from 'node:fs'
 import { mkdir, open, readFile, readdir, rm, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { errorCode, renameWithRetry, syncDirectory, writeFileAtomic } from './atomic.ts'
+import {
+  ensurePrivateDir,
+  errorCode,
+  PRIVATE_DIR_MODE,
+  PRIVATE_FILE_MODE,
+  renameWithRetry,
+  syncDirectory,
+  writeFileAtomic,
+} from './atomic.ts'
 import { assertProjectId, isValidProjectId, resolveInProject } from './paths.ts'
 
 /** Suffix of a file being streamed by openWritable; renamed away on close. */
@@ -42,10 +50,24 @@ function isMissing(error: unknown): boolean {
 export class FileProjectStore implements ProjectStore {
   readonly root: string
   private readonly trash: TrashFn
+  /** The projects folder made private (M5), once, before the first write. */
+  private rootReady: Promise<void> | null = null
 
   constructor(root: string, options: FileProjectStoreOptions = {}) {
     this.root = resolve(root)
     this.trash = options.trash ?? deleteForever
+  }
+
+  /**
+   * Creates the projects folder as 0700 on Mac and Linux (and tightens it when this user owns
+   * it), so other accounts cannot list or open any recording. A failure is retried next time.
+   */
+  private ensureRoot(): Promise<void> {
+    this.rootReady ??= ensurePrivateDir(this.root).catch((error: unknown) => {
+      this.rootReady = null
+      throw error
+    })
+    return this.rootReady
   }
 
   /** Absolute folder of a project, e.g. for "Show in folder" (F-12). */
@@ -83,6 +105,7 @@ export class FileProjectStore implements ProjectStore {
    * the old file or the new one, never half of it.
    */
   async writeText(projectId: string, path: string, text: string): Promise<void> {
+    await this.ensureRoot()
     await writeFileAtomic(resolveInProject(this.root, projectId, path), text)
   }
 
@@ -107,8 +130,9 @@ export class FileProjectStore implements ProjectStore {
   async openWritable(projectId: string, path: string): Promise<WritableStream<Uint8Array>> {
     const file = resolveInProject(this.root, projectId, path)
     const partial = file + PARTIAL_SUFFIX
-    await mkdir(dirname(file), { recursive: true })
-    const handle = await open(partial, 'w')
+    await this.ensureRoot()
+    await mkdir(dirname(file), { recursive: true, mode: PRIVATE_DIR_MODE })
+    const handle = await open(partial, 'w', PRIVATE_FILE_MODE)
     let closed = false
     const closeHandle = async () => {
       if (closed) return

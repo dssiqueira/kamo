@@ -28,7 +28,32 @@ function escapeRegExp(text: string): string {
  * (native separators, forward slashes, JSON-escaped backslashes; case-insensitive on Windows).
  */
 export function redact(text: string, home: string = homedir()): string {
-  const trimmed = home.replace(/[\\/]+$/, '')
+  return replaceFolder(text, home, '~')
+}
+
+/**
+ * Also hides folders the user chose outside the home folder (a projects folder on another
+ * drive, `D:\Users\Maria Silva\Videos`), in "Copy diagnostics" and the issue link. Each one
+ * becomes its label, e.g. `<projects>`; then the home folder becomes `~`.
+ */
+export function redactFolders(
+  text: string,
+  folders: ReadonlyArray<readonly [path: string, label: string]>,
+  home: string = homedir(),
+): string {
+  // Folders inside the home folder already read `~/…`, with no name in them: left as they are.
+  const homeRedacted = (path: string) => redact(path, home) !== path
+  // Longest first, so a folder inside another one keeps its own label.
+  const sorted = folders
+    .filter(([path]) => !homeRedacted(path))
+    .sort((a, b) => b[0].length - a[0].length)
+  let clean = text
+  for (const [path, label] of sorted) clean = replaceFolder(clean, path, label)
+  return redact(clean, home)
+}
+
+function replaceFolder(text: string, folder: string, replacement: string): string {
+  const trimmed = folder.replace(/[\\/]+$/, '')
   if (trimmed.length < 2) return text
   const forward = trimmed.replace(/\\/g, '/')
   const variants = new Set([
@@ -45,7 +70,7 @@ export function redact(text: string, home: string = homedir()): string {
       .join('|'),
     windowsLike ? 'gi' : 'g',
   )
-  return text.replace(pattern, '~')
+  return text.replace(pattern, replacement)
 }
 
 function sanitize(value: unknown, home: string, depth = 0): unknown {

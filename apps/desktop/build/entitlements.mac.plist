@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Hardened runtime entitlements (electron-builder.yml → mac.entitlements). The first three are
-  electron-builder's defaults, which Electron needs. Screen Recording has no entitlement: macOS
-  asks through its own TCC prompt (docs/integrations.md).
+  Hardened runtime entitlements (electron-builder.yml → mac.entitlements and entitlementsInherit).
+  Kept to the minimum, as in @electron/osx-sign's defaults for the app and its helpers: V8 needs
+  allow-jit. No allow-unsigned-executable-memory and no disable-library-validation: Kamo loads no
+  third-party native modules or plugins, and dropping them stops other code from being loaded
+  into a process that holds the camera, microphone and Screen Recording grants.
+  Screen Recording has no entitlement: macOS asks through its own TCC prompt
+  (docs/integrations.md). Not yet tested on a real Mac: if a signed build fails to start or to
+  load a helper, check Console.app for a library-validation or code-signing error first.
 -->
 <plist version="1.0">
   <dict>
     <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
     <true/>
     <!-- Microphone (F-04): without it the hardened runtime blocks the input silently. -->
     <key>com.apple.security.device.audio-input</key>

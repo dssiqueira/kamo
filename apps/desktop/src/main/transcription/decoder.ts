@@ -9,6 +9,7 @@ import { IpcChannel } from '../../shared/api.ts'
 import type { TranscribeAudioJob, TranscribeAudioResult } from '../../shared/packs.ts'
 import { createAppWindow } from '../windows.ts'
 import type { DecodeRequest } from './service.ts'
+import { assertChunk } from '../ipc-limits.ts'
 
 interface PendingDecode {
   request: DecodeRequest
@@ -63,7 +64,8 @@ export function createAudioDecoder() {
   })
   ipcMain.handle(IpcChannel.writeTranscribeAudio, (event, bytes: unknown, progress: unknown) => {
     const job = owned(event)
-    if (!(bytes instanceof Uint8Array) || bytes.byteLength % 2 !== 0) {
+    assertChunk(bytes, 'PCM chunk')
+    if (bytes.byteLength % 2 !== 0) {
       throw new Error('PCM chunk must be 16-bit bytes')
     }
     const at = HEADER_BYTES + job.dataBytes
