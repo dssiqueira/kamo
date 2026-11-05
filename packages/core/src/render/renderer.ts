@@ -13,6 +13,7 @@ import {
   CAPTION_LIFT_EM,
   CAPTION_LOOKS,
   captionFontPx,
+  captionLineText,
   captionPlacement,
   type CaptionLayer,
   type CaptionObstacle,
@@ -190,7 +191,8 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
       else if (input.webcam?.bubble)
         drawWebcam(ctx, input.webcam, input.webcam.bubble, layout.output)
       // Captions move clear of the bubble (captionDodge); the split layout's card is outside the frame.
-      if (input.captions) drawCaption(ctx, input.captions, layout, input.webcam?.bubble ?? null)
+      if (input.captions)
+        paintCaption(ctx, input.captions, layout.frame, layout.output, input.webcam?.bubble)
       return layout
     },
     invalidate() {
@@ -356,26 +358,45 @@ function drawWebcamCard(
 }
 
 /**
- * A caption (A-06): the preset's box, then the lines centered, with an outline for the
- * outline preset. Measured at the nominal size; captionPlacement shrinks lines too wide for
- * the frame. While fading in, the lines rise CAPTION_LIFT_EM into place.
+ * A caption (A-06), drawn from its preset's CaptionLook: the box (the cue's, one per line or a
+ * band across the frame, with an optional offset backing), then the lines centered, each with
+ * its text shadow or glow, outline and fill. Measured at the nominal size; captionPlacement
+ * shrinks lines too wide for the frame (capitals and letter spacing included), never rewraps.
+ * While fading in, the lines rise CAPTION_LIFT_EM into place. `frame` is the screen frame and
+ * `output` the canvas size the sizes are relative to; the style gallery's thumbnails call it
+ * too, so they show exactly what the preview and the export draw.
  */
-function drawCaption(
+export function paintCaption(
   ctx: Context2D,
   layer: CaptionLayer,
-  layout: Layout,
-  bubble: CaptionObstacle | null,
+  frame: Box,
+  output: Size,
+  bubble: CaptionObstacle | null = null,
 ): void {
   if (!(layer.opacity > 0) || layer.lines.length === 0) return
   const look = CAPTION_LOOKS[layer.preset]
   const font = (px: number) => `${look.weight} ${px}px ${layer.fontFamily}`
-  const nominal = captionFontPx(layout.output, layer)
+  const nominal = captionFontPx(output, layer)
+  const lines = look.uppercase
+    ? layer.lines.map((line) => captionLineText(layer.preset, line, layer.language))
+    : layer.lines
+  // Letter spacing where the engine has it (Chromium); measureText then counts it after the
+  // last letter too, which is taken off the width and half of it off the center.
+  const tracked = !!look.tracking && 'letterSpacing' in ctx
+  const tracking = (px: number) => {
+    if (!tracked) return 0
+    const spacing = (look.tracking ?? 0) * px
+    ctx.letterSpacing = `${spacing}px`
+    return spacing
+  }
   ctx.save()
   ctx.font = font(nominal)
-  const widths = layer.lines.map(
-    (line) => ctx.measureText(line)?.width ?? line.length * nominal * 0.5,
+  const nominalSpacing = tracking(nominal)
+  const widths = lines.map(
+    (line) =>
+      (ctx.measureText(line)?.width ?? line.length * nominal * 0.5) - (line ? nominalSpacing : 0),
   )
-  const place = captionPlacement(layout.frame, layout.output, layer, widths, bubble)
+  const place = captionPlacement(frame, output, layer, widths, bubble)
   const opacity = Math.min(1, layer.opacity)
   ctx.globalAlpha = opacity
   if (layer.rising) ctx.translate(0, (1 - opacity) * CAPTION_LIFT_EM * place.fontPx)
@@ -386,28 +407,54 @@ function drawCaption(
     ctx.shadowOffsetY = on && look.shadow ? look.shadow.offsetY * place.fontPx : 0
   }
   if (look.box) {
+    const perLine = look.boxFit === 'line'
+    const boxes = perLine ? place.lineBoxes : [place.box]
+    const radius = perLine ? place.lineRadius : place.radius
+    if (look.backing) {
+      ctx.fillStyle = look.backing.color
+      for (const box of boxes) {
+        const dx = look.backing.x * place.fontPx
+        const dy = look.backing.y * place.fontPx
+        roundRectPath(ctx, { ...box, x: box.x + dx, y: box.y + dy }, radius)
+        ctx.fill()
+      }
+    }
     shadow(true)
     ctx.fillStyle = look.box
-    roundRectPath(ctx, place.box, place.radius)
-    ctx.fill()
+    for (const box of boxes) {
+      roundRectPath(ctx, box, radius)
+      ctx.fill()
+    }
     shadow(false)
   }
   ctx.font = font(place.fontPx)
+  const spacing = tracking(place.fontPx)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  layer.lines.forEach((line, i) => {
+  const glow = look.textShadow
+  lines.forEach((line, i) => {
     const at = place.lines[i]
     if (!at) return
+    const x = at.x + spacing / 2
+    if (glow) {
+      ctx.shadowColor = glow.color
+      ctx.shadowBlur = glow.blur * place.fontPx
+      ctx.shadowOffsetX = 0
+      ctx.shadowOffsetY = glow.offsetY * place.fontPx
+      ctx.fillStyle = look.color
+      for (let pass = 0; pass < glow.passes; pass++) ctx.fillText(line, x, at.y)
+      shadow(false)
+    }
     if (look.stroke) {
       shadow(true)
       ctx.lineJoin = 'round'
       ctx.lineWidth = look.stroke.width * place.fontPx
       ctx.strokeStyle = look.stroke.color
-      ctx.strokeText(line, at.x, at.y)
+      ctx.strokeText(line, x, at.y)
       shadow(false)
     }
     ctx.fillStyle = look.color
-    ctx.fillText(line, at.x, at.y)
+    ctx.fillText(line, x, at.y)
   })
   ctx.restore()
 }

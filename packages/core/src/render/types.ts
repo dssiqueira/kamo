@@ -28,6 +28,8 @@ export interface Context2D {
   shadowOffsetY: number
   /** captions (A-06) */
   font: string
+  /** letter spacing of tracked caption presets (`"2px"`); missing on older engines */
+  letterSpacing?: string
   textAlign: string
   textBaseline: string
   fillText(text: string, x: number, y: number): void
