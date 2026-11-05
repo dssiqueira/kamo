@@ -10,7 +10,9 @@ list into the release's tracking issue and tick it there.
 - [ ] `docs/plan.md` and `AGENTS.md` → Status say what this release contains
 - [ ] Tag and push: `git tag v0.1.0 && git push origin v0.1.0` (a `-beta.N` suffix makes a GitHub prerelease, npm `next`, and skips the Chrome Web Store). The version comes from the tag; package.json versions stay `0.0.0` in git
 - [ ] The workflow finished. Warnings in its summary say what was skipped (unsigned Mac, no notarization, no npm, no Chrome Web Store)
-- [ ] The draft has: `Kamo-<v>-mac-arm64.dmg`, `Kamo-<v>-mac-arm64.zip` (the updater uses it), `Kamo-<v>-win-x64-setup.exe`, their `.blockmap`s, `latest.yml`, `latest-mac.yml`, `kamo-extension-<v>.zip`
+- [ ] Platforms: Windows is always built. The Mac app is built only when the repository variable `RELEASE_MAC` is `true` (Settings → Secrets and variables → Actions → Variables); leave it unset while the Mac is "coming soon" in the README
+- [ ] Release tags have no suffix (`v0.1.0`): the app's updater ignores GitHub prereleases, so a `-beta.N` build never reaches people who installed a stable one
+- [ ] The draft has: `Kamo-<v>-win-x64-setup.exe`, its `.blockmap`, `latest.yml`, `kamo-extension-<v>.zip`; with `RELEASE_MAC` also `Kamo-<v>-mac-arm64.dmg`, `Kamo-<v>-mac-arm64.zip` (the updater uses it), their `.blockmap`s and `latest-mac.yml`. While the extension is "coming soon", remove its zip from the draft before publishing if you don't want it downloadable
 
 ## 1. Install
 - [ ] Mac: the dmg opens, Kamo drags into Applications and opens **without** a Gatekeeper warning (signed and notarized). `spctl --assess --type execute -vv /Applications/Kamo.app` says `Notarized Developer ID`

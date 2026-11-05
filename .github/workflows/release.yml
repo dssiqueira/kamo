@@ -7,6 +7,9 @@ name: Release
 # and the Chrome Web Store go out from here too, each only when its secrets exist.
 # Every secret is optional: without it the step is skipped with a warning, never a failure.
 # Secrets and the manual checks per release: docs/release-checklist.md.
+# Platforms: Windows always; Mac only when the repository variable RELEASE_MAC is "true"
+# (Settings > Secrets and variables > Actions > Variables). Until then the Mac app is
+# "coming soon" in the README and the release ships Windows only.
 on:
   push:
     tags: ['v*']
@@ -24,7 +27,24 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      mac: ${{ steps.platforms.outputs.mac }}
+      desktop: ${{ steps.platforms.outputs.desktop }}
     steps:
+      - name: Platforms in this release
+        id: platforms
+        env:
+          RELEASE_MAC: ${{ vars.RELEASE_MAC }}
+        run: |
+          win='{"os":"windows-latest","binary":"apps/desktop/release/win-unpacked/Kamo.exe"}'
+          mac='{"os":"macos-14","binary":"apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo"}'
+          if [ "$RELEASE_MAC" = true ]; then
+            echo "mac=true" >> "$GITHUB_OUTPUT"
+            echo "desktop=[$mac,$win]" >> "$GITHUB_OUTPUT"
+          else
+            echo "mac=false" >> "$GITHUB_OUTPUT"
+            echo "desktop=[$win]" >> "$GITHUB_OUTPUT"
+            echo "::notice::RELEASE_MAC is not true: this release builds Windows only."
+          fi
       - name: Version from the tag
         id: version
         env:
@@ -61,11 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: macos-14
-            binary: apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo
-          - os: windows-latest
-            binary: apps/desktop/release/win-unpacked/Kamo.exe
+        include: ${{ fromJSON(needs.prepare.outputs.desktop) }}
     runs-on: ${{ matrix.os }}
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
@@ -250,6 +266,7 @@ jobs:
       TAG: ${{ github.ref_name }}
       VERSION: ${{ needs.prepare.outputs.version }}
       PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+      MAC: ${{ needs.prepare.outputs.mac }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -258,11 +275,13 @@ jobs:
         with:
           path: assets
           merge-multiple: true
-      - name: Both platforms' update feeds are there
+      - name: The update feeds of this release's platforms are there
         run: |
           ls -la assets
           test -f assets/latest.yml || { echo "::error::latest.yml (Windows) missing"; exit 1; }
-          test -f assets/latest-mac.yml || { echo "::error::latest-mac.yml (Mac) missing"; exit 1; }
+          if [ "$MAC" = true ]; then
+            test -f assets/latest-mac.yml || { echo "::error::latest-mac.yml (Mac) missing"; exit 1; }
+          fi
       # The app built with NPM_TOKEN present tells users to run `npx -y @kamo/mcp@<version>`:
       # that exact version must be on npm before anyone can download the app.
       - name: '@kamo/mcp is on npm when the app advertises it'
