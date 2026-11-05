@@ -8,6 +8,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./gaze": "./src/mascot/gaze.ts",
+    "./selection": "./src/recording/selection.ts",
     "./styles.css": "./src/styles.css"
   },
   "sideEffects": false,

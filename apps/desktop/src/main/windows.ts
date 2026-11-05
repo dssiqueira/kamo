@@ -14,7 +14,7 @@ export type Page =
   | 'settings'
   | 'onboarding'
   | 'transcribe-audio'
-  | 'region-picker'
+  | 'selection'
 const PAGES: readonly Page[] = [
   'index',
   'countdown',
@@ -25,7 +25,7 @@ const PAGES: readonly Page[] = [
   'settings',
   'onboarding',
   'transcribe-audio',
-  'region-picker',
+  'selection',
 ]
 
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']
@@ -77,6 +77,7 @@ export function loadPage(
 export function createAppWindow(
   page: Page,
   options: BrowserWindowConstructorOptions,
+  query: Record<string, string> = {},
 ): BrowserWindow {
   const window = new BrowserWindow({
     ...options,
@@ -89,6 +90,6 @@ export function createAppWindow(
       spellcheck: false,
     },
   })
-  void loadPage(window, page)
+  void loadPage(window, page, query)
   return window
 }

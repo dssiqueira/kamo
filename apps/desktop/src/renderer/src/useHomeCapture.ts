@@ -7,7 +7,7 @@ import type { CaptureRect, CaptureTarget, WindowInfo } from '../../shared/captur
 const WINDOWS_REFRESH_MS = 3000
 
 /**
- * Home's Screen · Window · Region choice (A-08): the kind, the window list and the region,
+ * Home's Screen · Window · Select choice (A-08): the kind, the window list and the selection,
  * remembered in settings (F-01). `target` is what Record records, or null when nothing is
  * chosen yet. Null props until settings are loaded.
  */
@@ -82,9 +82,9 @@ export function useHomeCapture(
   const onPickRegion = useCallback(() => {
     if (!selectedDisplayId) return
     const displayId = selectedDisplayId
-    // main saves it as lastRegion
+    // The frame closes (or records) with the selection; main saves it as lastRegion.
     void window.kamo
-      .pickRegion(displayId)
+      .openSelection(displayId)
       .then((rect) => rect && setRegion({ displayId, rect }))
       .catch(() => {})
   }, [selectedDisplayId])

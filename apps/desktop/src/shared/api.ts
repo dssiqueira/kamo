@@ -41,14 +41,22 @@ export interface KamoApi {
   /** A-08: the windows that can be recorded, front to back, with thumbnails. */
   listWindows(): Promise<WindowInfo[]>
   /**
-   * A-08: covers the display with the region overlay; resolves with the rectangle the user
-   * dragged (DIP, display-local, at least 320×240 pixels), or null on Esc. Saved as lastRegion.
+   * A-08 "Select": opens the selection frame on the display (Home hides meanwhile); resolves
+   * with the selection (DIP, display-local, at least 320×240 pixels) once the frame closes or
+   * records, null when the display is gone. Saved as lastRegion.
    */
-  pickRegion(displayId: string): Promise<CaptureRect | null>
-  /** Region overlay page only: its display's size and scale. */
-  getRegionPicker(): Promise<{ width: number; height: number; scaleFactor: number } | null>
-  /** Region overlay page only: the rectangle (DIP, page coordinates), or null to cancel. */
-  finishRegionPicker(rect: CaptureRect | null): Promise<void>
+  openSelection(displayId: string): Promise<CaptureRect | null>
+  /** Selection frame page only: its display and where the frame opens. */
+  getSelection(): Promise<SelectionInfo | null>
+  /**
+   * Selection frame page only: where the frame takes the mouse (DIP, page coordinates); it lets
+   * clicks through everywhere else. `holding`: a drag is going on, keep the mouse.
+   */
+  setSelectionHitAreas(areas: CaptureRect[], holding: boolean): Promise<void>
+  /** Selection frame page only: × or Esc, keeping the selection (pixels of the recording). */
+  closeSelection(rect: CaptureRect): Promise<void>
+  /** Selection frame page only: Record, with the selection (pixels of the recording). */
+  recordSelection(rect: CaptureRect): Promise<void>
   cancelCountdown(): Promise<void>
   countdownDone(): Promise<void>
   pauseRecording(): Promise<void>
@@ -468,6 +476,16 @@ export interface DisplayInfo {
   thumbnail: string | null
 }
 
+/** A-08: what the selection frame page opens with. */
+export interface SelectionInfo {
+  /** The display: size in DIP (points on Mac) and pixels per DIP. */
+  display: { width: number; height: number; scaleFactor: number }
+  /** Where the frame opens, in pixels of the recording, display-local. */
+  rect: CaptureRect
+  /** The global stop shortcut (accelerator, F-15), shown on the Record button. */
+  stopShortcut: string
+}
+
 export type ScreenAccess = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
 
 /** IPC channel names shared by main and preload. */
@@ -478,9 +496,11 @@ export const IpcChannel = {
   getScreenAccess: 'kamo:get-screen-access',
   startRecording: 'kamo:recording-start',
   listWindows: 'kamo:capture-windows',
-  pickRegion: 'kamo:capture-region-pick',
-  getRegionPicker: 'kamo:capture-region-info',
-  finishRegionPicker: 'kamo:capture-region-done',
+  openSelection: 'kamo:selection-open',
+  getSelection: 'kamo:selection-info',
+  setSelectionHitAreas: 'kamo:selection-hit-areas',
+  closeSelection: 'kamo:selection-close',
+  recordSelection: 'kamo:selection-record',
   cancelCountdown: 'kamo:countdown-cancel',
   countdownDone: 'kamo:countdown-done',
   pauseRecording: 'kamo:recording-pause',

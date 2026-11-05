@@ -43,7 +43,7 @@
 | A-02 | Vertical 9:16 crop and GIF | 28 | Free |
 | A-03 | Webcam bubble | 29 | Free |
 | A-04 | Wallpaper with your own image | 30 | Free |
-| A-08 | Record a window or a region | 30 | Free |
+| A-08 | Record a window or a selection of the screen | 30 | Free |
 
 ---
 
@@ -490,10 +490,10 @@
 - [x] Image copied to the project folder (the project keeps working if the original is deleted): `background-<hash>.<ext>`, see data-model.md
 - [x] Automatic crop to cover the frame in any format (16:9, 1:1, 9:16), the same in the preview, the format previews and the export
 
-## A-08 — Record a window or a region
-- [x] On the Home, besides "Full screen": **Window** (list of open windows, with thumbnail) and **Region** (drag a rectangle) — Screen · Window · Region switch, window list with thumbnails and search, Region overlay on the chosen display (Esc cancels); the choice is remembered and the Record button names it _(Mac untested)_
+## A-08 — Record a window or a selection of the screen
+- [x] On the Home, besides "Full screen": **Window** (list of open windows, with thumbnail) and **Select** (a frame over the screen) — Screen · Window · Select switch with icons, window list with thumbnails and search; Select opens a movable, resizable selection frame on the chosen display (see-through and click-through middle, W × H fields in pixels, size presets, Record on its toolbar; × or Esc closes it keeping the selection); the choice is remembered and the Record button names it _(Mac untested)_
 - [x] Window: ScreenCaptureKit on Mac, Windows Graphics Capture on Windows; if the window changes size or position, the recording follows — verified on Windows (moved and resized mid-recording: the video keeps its size, the window is scaled in centered; closing it stops and saves with a notice); Mac code builds in CI, untested
-- [x] Region: display crop, with a minimum size of 320×240 _(Mac untested)_
+- [x] Select: display crop of exactly the frame's inside, with a minimum size of 320×240 and even sides; while recording, the frame's line stays around the area, left out of the video (content protection; on Mac the helper also leaves out Kamo's windows) — verified on Windows (a 640×360 selection gave a 640×360 video with no line in it) _(Mac untested)_
 - [x] Clicks outside the window or region do not generate a zoom — no `down` is sent outside (nor over a window covering the recorded one, on Windows); moves there are `outside` _(Mac untested; on Mac a window in front is not detected yet)_
 - [x] Event coordinates stay in recorded-video pixels (`core` does not need to know whether it was screen, window or region) _(Mac untested)_
 

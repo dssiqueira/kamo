@@ -39,7 +39,13 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 
 ### 2. Home
 - **Hierarchy:** displays (live thumbnail) → toggles → Record button → recent projects
-- **What to record:** full screen (v0.1); window or region (v0.4, A-08): a Screen · Window · Region switch. Window: open windows with thumbnails and a search box. Region: pick the display, then "Select the area" covers it with an overlay where the user drags a rectangle (at least 320×240; Esc cancels). The choice is remembered and the Record button says what it records ("Record · Notes", "Record · Area 1280 × 720")
+- **What to record:** full screen (v0.1); window or a selection of the screen (v0.4, A-08): a Screen · Window · Select switch, each with its icon. Window: open windows with thumbnails and a search box. Select: pick the display, then "Select an area" (later "Adjust selection", next to the selection's size and display) hides Home and opens the **selection frame** on that display, at the last selection or 1280 × 720 in the middle:
+  - a thin water-colored (tertiary) line around a see-through middle, with small cream squares on the corners; clicks in the middle go to the apps below
+  - drag the edges or corners to resize (at least 320 × 240, even sizes, never past the display), drag the toolbar to move
+  - a slim cream toolbar hangs under the frame (above it when the frame reaches the bottom of the display, inside it when it fills the height): grip · W × H fields in pixels of the recording (Enter or leaving the field applies; ↑/↓ step by 2) · sizes menu (16:9 1280 × 720, 16:9 1920 × 1080, 1:1 1080 × 1080, 9:16 1080 × 1920, scaled down to fit) · Record (coral REC dot, the stop shortcut in small type) · ×
+  - Record starts the usual countdown on that selection; × or Esc (Esc only while the frame has focus; it first leaves a field being edited or the menu) closes it and brings Home back with the selection kept
+  - while recording, the line alone stays around the recorded area (never in the video, clicks go through it) and goes away on stop
+- The choice is remembered and the Record button says what it records ("Record · Notes", "Record · Selection 1280 × 720")
 - **Toggles:** microphone, computer sound, webcam (v0.4), show cursor
 - **States:**
   - empty (no projects): only the recording block, with an encouraging line

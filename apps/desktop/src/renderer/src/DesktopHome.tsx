@@ -87,7 +87,7 @@ export function DesktopHome() {
   const t = useT()
   // F-04: microphone and computer sound toggles, meters and devices.
   const audio = useHomeAudio()
-  // A-08: Screen · Window · Region, remembered like the display.
+  // A-08: Screen · Window · Select, remembered like the display.
   const capture = useHomeCapture(displays, selectedId)
   // A-03: webcam toggle, camera picker and live preview.
   const camera = useHomeCamera()

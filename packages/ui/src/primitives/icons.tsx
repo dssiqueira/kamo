@@ -172,3 +172,38 @@ export function MoreIcon() {
     </Icon>
   )
 }
+
+// Home's Screen · Window · Select switch (A-08).
+export function MonitorIcon() {
+  return (
+    <Icon>
+      <rect x="1.75" y="2.5" width="12.5" height="8.5" rx="1.25" />
+      <path d="M8 11v2.5M5.25 13.5h5.5" />
+    </Icon>
+  )
+}
+
+export function AppWindowIcon() {
+  return (
+    <Icon>
+      <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.25" />
+      <path d="M1.75 5.75h12.5" />
+      <circle cx="3.75" cy="4.25" r="0.65" fill="currentColor" stroke="none" />
+      <circle cx="5.5" cy="4.25" r="0.65" fill="currentColor" stroke="none" />
+      <circle cx="7.25" cy="4.25" r="0.65" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
+/** A dashed selection rectangle with corner handles. */
+export function SelectionIcon() {
+  return (
+    <Icon>
+      <path d="M6 3h4M6 13h4M3 6v4M13 6v4" strokeDasharray="1.5 1.5" />
+      <rect x="1.75" y="1.75" width="2.5" height="2.5" rx="0.5" />
+      <rect x="11.75" y="1.75" width="2.5" height="2.5" rx="0.5" />
+      <rect x="1.75" y="11.75" width="2.5" height="2.5" rx="0.5" />
+      <rect x="11.75" y="11.75" width="2.5" height="2.5" rx="0.5" />
+    </Icon>
+  )
+}

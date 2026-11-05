@@ -70,17 +70,15 @@
       "title": "录制内容",
       "screen": "屏幕",
       "window": "窗口",
-      "region": "区域",
+      "region": "选择",
       "searchWindows": "搜索窗口",
       "loadingWindows": "正在查找打开的窗口…",
       "noWindows": "没有可录制的窗口。打开你要录制的应用，它就会出现在这里。",
       "noMatch": "没有与“{query}”匹配的窗口。",
-      "pickRegion": "选择区域",
-      "pickAgain": "重新选择",
-      "noRegion": "在屏幕上拖出一个矩形，只录制这一部分。",
-      "regionSize": "{display} 上的 {width, number, ::group-off} × {height, number, ::group-off}",
-      "regionHint": "拖动以选择要录制的屏幕部分。按 Esc 取消。",
-      "regionTooSmall": "太小了：至少拖出 {width, number, ::group-off} × {height, number, ::group-off}。按 Esc 取消。"
+      "openSelection": "选择区域",
+      "adjustSelection": "调整选区",
+      "noRegion": "在屏幕上打开一个边框：把它移动并调整到你要录制的内容上。",
+      "regionSize": "{display} 上的 {width, number, ::group-off} × {height, number, ::group-off}"
     },
     "displayName": "显示器 {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
@@ -115,7 +113,7 @@
     "fixPermission": "去设置",
     "recordDisplay": "录制 · {display}",
     "recordWindow": "录制 · {window}",
-    "recordRegion": "录制 · 区域 {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "录制 · 选区 {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "按 Esc 取消",
@@ -156,6 +154,19 @@
       "recording": "正在录制 {elapsed}",
       "paused": "已暂停于 {elapsed}"
     }
+  },
+  "selection": {
+    "toolbar": "选区",
+    "move": "拖动以移动选区",
+    "resize": "拖动以调整选区大小",
+    "width": "宽度（像素）",
+    "height": "高度（像素）",
+    "unit": "px",
+    "sizes": "尺寸",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "录制",
+    "stopHint": "按 {shortcut} 停止录制",
+    "close": "关闭（Esc）"
   },
   "tray": {
     "open": "打开 Kamo",

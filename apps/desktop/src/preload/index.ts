@@ -13,6 +13,7 @@ import {
   type RecoveredRecording,
   type RecordingStatus,
   type ScreenAccess,
+  type SelectionInfo,
 } from '../shared/api.ts'
 import type {
   AudioLevels,
@@ -41,15 +42,13 @@ const api: KamoApi = {
   getScreenAccess: () => invoke(IpcChannel.getScreenAccess) as Promise<ScreenAccess>,
   startRecording: (target) => invoke(IpcChannel.startRecording, target) as Promise<void>,
   listWindows: () => invoke(IpcChannel.listWindows) as Promise<WindowInfo[]>,
-  pickRegion: (displayId) =>
-    invoke(IpcChannel.pickRegion, displayId) as Promise<CaptureRect | null>,
-  getRegionPicker: () =>
-    invoke(IpcChannel.getRegionPicker) as Promise<{
-      width: number
-      height: number
-      scaleFactor: number
-    } | null>,
-  finishRegionPicker: (rect) => invoke(IpcChannel.finishRegionPicker, rect) as Promise<void>,
+  openSelection: (displayId) =>
+    invoke(IpcChannel.openSelection, displayId) as Promise<CaptureRect | null>,
+  getSelection: () => invoke(IpcChannel.getSelection) as Promise<SelectionInfo | null>,
+  setSelectionHitAreas: (areas, holding) =>
+    invoke(IpcChannel.setSelectionHitAreas, areas, holding) as Promise<void>,
+  closeSelection: (rect) => invoke(IpcChannel.closeSelection, rect) as Promise<void>,
+  recordSelection: (rect) => invoke(IpcChannel.recordSelection, rect) as Promise<void>,
   cancelCountdown: () => invoke(IpcChannel.cancelCountdown) as Promise<void>,
   countdownDone: () => invoke(IpcChannel.countdownDone) as Promise<void>,
   pauseRecording: () => invoke(IpcChannel.pauseRecording) as Promise<void>,

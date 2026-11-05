@@ -1,12 +1,13 @@
 // IPC for what Home records (F-01, A-08): start a display, window or region; list windows;
-// drag a region on the overlay. The choice is remembered in settings.json.
+// the selection frame (Select). The choice is remembered in settings.json.
 import { app } from 'electron'
 import { IpcChannel, type StoredSettingsUpdate } from '../shared/api.ts'
 import type { CaptureTarget } from '../shared/capture.ts'
 import { resolveHelperPath } from './capture/helper-path.ts'
 import { parseCaptureTarget } from './capture/targets.ts'
 import { listCaptureWindows } from './capture/windows-list.ts'
-import { RegionPicker, registerRegionPickerIpc } from './region-picker.ts'
+import { currentStopShortcut } from './preferences.ts'
+import { SelectionFrame, registerSelectionIpc } from './selection-frame.ts'
 import { getServices } from './services.ts'
 import type { BrowserWindow } from 'electron'
 
@@ -66,14 +67,21 @@ export function registerCapture(
     for (const window of windows) windowTitles.set(window.id, window.title)
     return windows
   })
-  const picker = new RegionPicker({
+  const frame = new SelectionFrame({
     mainWindow: options.mainWindow,
-    onPicked: (displayId, rect) =>
-      remember({ lastCaptureKind: 'region', lastRegion: { displayId, rect } }),
+    remembered: async () => (await getServices().settings.get()).lastRegion ?? null,
+    onSelected: (displayId, rect) =>
+      remember({
+        lastCaptureKind: 'region',
+        lastDisplayId: displayId,
+        lastRegion: { displayId, rect },
+      }),
+    record: (target) => options.start(target),
+    stopShortcut: currentStopShortcut,
   })
-  handle(IpcChannel.pickRegion, (displayId) => {
+  handle(IpcChannel.openSelection, (displayId) => {
     if (typeof displayId !== 'string') throw new Error('displayId must be a string')
-    return picker.pick(displayId)
+    return frame.show(displayId)
   })
-  registerRegionPickerIpc(picker)
+  registerSelectionIpc(frame)
 }

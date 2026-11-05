@@ -70,17 +70,15 @@
       "title": "O que gravar",
       "screen": "Tela",
       "window": "Janela",
-      "region": "Região",
+      "region": "Selecionar",
       "searchWindows": "Buscar janelas",
       "loadingWindows": "Procurando janelas abertas…",
       "noWindows": "Nenhuma janela para gravar. Abra o app que você quer gravar e ele aparece aqui.",
       "noMatch": "Nenhuma janela corresponde a “{query}”.",
-      "pickRegion": "Selecionar a área",
-      "pickAgain": "Selecionar de novo",
-      "noRegion": "Arraste um retângulo na tela para gravar só essa parte.",
-      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} em {display}",
-      "regionHint": "Arraste para selecionar a parte da tela a gravar. Esc cancela.",
-      "regionTooSmall": "Pequena demais: arraste pelo menos {width, number, ::group-off} × {height, number, ::group-off}. Esc cancela."
+      "openSelection": "Selecionar uma área",
+      "adjustSelection": "Ajustar seleção",
+      "noRegion": "Abre uma moldura na tela: mova e redimensione sobre o que você quer gravar.",
+      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} em {display}"
     },
     "displayName": "Tela {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
@@ -115,7 +113,7 @@
     "fixPermission": "Configurar",
     "recordDisplay": "Gravar · {display}",
     "recordWindow": "Gravar · {window}",
-    "recordRegion": "Gravar · Área {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "Gravar · Seleção {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc pra cancelar",
@@ -156,6 +154,19 @@
       "recording": "Gravando {elapsed}",
       "paused": "Pausado em {elapsed}"
     }
+  },
+  "selection": {
+    "toolbar": "Seleção",
+    "move": "Arraste para mover a seleção",
+    "resize": "Arraste para redimensionar a seleção",
+    "width": "Largura em pixels",
+    "height": "Altura em pixels",
+    "unit": "px",
+    "sizes": "Tamanhos",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "Gravar",
+    "stopHint": "{shortcut} para a gravação",
+    "close": "Fechar (Esc)"
   },
   "tray": {
     "open": "Abrir o Kamo",

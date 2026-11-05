@@ -14,7 +14,7 @@ const finite = z.number().finite()
 
 /**
  * A-08: part of a display, in DIP (Windows) or points (Mac), relative to the display's top
- * left: what Electron's screen API and the region overlay work in. Each helper converts it.
+ * left: what Electron's screen API and the selection frame work in. Each helper converts it.
  */
 export const RegionRect = z.strictObject({
   x: finite,

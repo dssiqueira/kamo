@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { useT } from '../i18n.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
+import { AppWindowIcon, MonitorIcon, SelectionIcon } from '../primitives/icons.tsx'
 import { SecondaryButton, Segmented } from '../settings/parts.tsx'
 import {
   filterWindows,
@@ -9,7 +10,7 @@ import {
   type WindowOption,
 } from './captureSource.ts'
 
-/** Home's choice between a display, a window and a region (A-08). */
+/** Home's choice between a display, a window and a selection of a display (A-08). */
 export interface CaptureSourceProps {
   kind: CaptureKind
   onKindChange(kind: CaptureKind): void
@@ -17,13 +18,13 @@ export interface CaptureSourceProps {
   windows: readonly WindowOption[] | null
   selectedWindowId: string | null
   onSelectWindow(id: string): void
-  /** The region dragged last time (any display); Record uses it on its own display only. */
+  /** The selection made last time (any display); Record uses it on its own display only. */
   region: RegionOption | null
-  /** Opens the overlay on the selected display to drag a rectangle. */
+  /** Opens the selection frame on the selected display. */
   onPickRegion(): void
 }
 
-/** Screen · Window · Region. */
+/** Screen · Window · Select, each with its icon. */
 export function CaptureKindSwitch({
   kind,
   onKindChange,
@@ -35,9 +36,9 @@ export function CaptureKindSwitch({
       value={kind}
       onChange={onKindChange}
       options={[
-        { value: 'display', label: t('home.capture.screen') },
-        { value: 'window', label: t('home.capture.window') },
-        { value: 'region', label: t('home.capture.region') },
+        { value: 'display', label: t('home.capture.screen'), icon: <MonitorIcon /> },
+        { value: 'window', label: t('home.capture.window'), icon: <AppWindowIcon /> },
+        { value: 'region', label: t('home.capture.region'), icon: <SelectionIcon /> },
       ]}
     />
   )
@@ -135,14 +136,14 @@ function WindowCard({
   )
 }
 
-/** Under the display cards in Region mode: the area chosen and the button to drag one. */
+/** Under the display cards in Select mode: the selection's size and the button to (re)open the frame. */
 export function RegionControls({
   region,
   displayName,
   onPickRegion,
   disabled,
 }: {
-  /** The region on the selected display, if any. */
+  /** The selection on the selected display, if any. */
   region: RegionOption | null
   displayName: string | null
   onPickRegion(): void
@@ -152,7 +153,10 @@ export function RegionControls({
   return (
     <div className="flex flex-wrap items-center gap-md">
       <SecondaryButton onClick={onPickRegion} disabled={disabled}>
-        {region ? t('home.capture.pickAgain') : t('home.capture.pickRegion')}
+        <span className="flex items-center gap-[6px]">
+          <SelectionIcon />
+          {region ? t('home.capture.adjustSelection') : t('home.capture.openSelection')}
+        </span>
       </SecondaryButton>
       <p className="text-body text-on-surface-muted">
         {region

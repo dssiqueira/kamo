@@ -70,17 +70,15 @@
       "title": "録画する対象",
       "screen": "画面",
       "window": "ウィンドウ",
-      "region": "範囲",
+      "region": "選択",
       "searchWindows": "ウィンドウを検索",
       "loadingWindows": "開いているウィンドウを探しています…",
       "noWindows": "録画できるウィンドウがありません。録画したいアプリを開くと、ここに表示されます。",
       "noMatch": "「{query}」に一致するウィンドウはありません。",
-      "pickRegion": "範囲を選択",
-      "pickAgain": "選択し直す",
-      "noRegion": "画面上で四角形をドラッグすると、その部分だけを録画します。",
-      "regionSize": "{display} の {width, number, ::group-off} × {height, number, ::group-off}",
-      "regionHint": "ドラッグして録画する範囲を選択します。Esc でキャンセル。",
-      "regionTooSmall": "小さすぎます。{width, number, ::group-off} × {height, number, ::group-off} 以上をドラッグしてください。Esc でキャンセル。"
+      "openSelection": "範囲を選択",
+      "adjustSelection": "選択範囲を調整",
+      "noRegion": "画面に枠が表示されます。録画したい部分に合わせて移動・サイズ変更してください。",
+      "regionSize": "{display} の {width, number, ::group-off} × {height, number, ::group-off}"
     },
     "displayName": "ディスプレイ {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
@@ -115,7 +113,7 @@
     "fixPermission": "設定する",
     "recordDisplay": "録画 · {display}",
     "recordWindow": "録画 · {window}",
-    "recordRegion": "録画 · 範囲 {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "録画 · 選択範囲 {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc でキャンセル",
@@ -156,6 +154,19 @@
       "recording": "録画中 {elapsed}",
       "paused": "{elapsed} で一時停止中"
     }
+  },
+  "selection": {
+    "toolbar": "選択範囲",
+    "move": "ドラッグして選択範囲を移動",
+    "resize": "ドラッグして選択範囲のサイズを変更",
+    "width": "幅（ピクセル）",
+    "height": "高さ（ピクセル）",
+    "unit": "px",
+    "sizes": "サイズ",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "録画",
+    "stopHint": "{shortcut} で録画を停止",
+    "close": "閉じる（Esc）"
   },
   "tray": {
     "open": "Kamo を開く",

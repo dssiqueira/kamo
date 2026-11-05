@@ -108,6 +108,8 @@ export function Row({
 export interface SegmentedOption<T extends string> {
   value: T
   label: string
+  /** Optional decorative icon before the label (hidden from assistive tech; the label names it). */
+  icon?: ReactNode
 }
 
 /** Radio group drawn as chips (DESIGN.md chip-selected). */
@@ -156,12 +158,19 @@ export function Segmented<T extends string>({
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
-            className={`rounded-full px-[14px] py-[5px] text-body transition-colors duration-[120ms] ${
+            className={`rounded-full py-[5px] text-body transition-colors duration-[120ms] ${
+              option.icon ? 'inline-flex items-center gap-[6px] ps-[11px] pe-[14px]' : 'px-[14px]'
+            } ${
               selected
                 ? 'bg-tertiary-container font-semibold text-on-surface'
                 : 'text-on-surface-muted hover:text-on-surface'
             } ${FOCUS_RING}`}
           >
+            {option.icon && (
+              <span aria-hidden className="flex shrink-0">
+                {option.icon}
+              </span>
+            )}
             {option.label}
           </button>
         )

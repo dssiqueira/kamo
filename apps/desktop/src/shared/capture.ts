@@ -21,9 +21,6 @@ export type CaptureTarget =
 
 export type CaptureKind = CaptureTarget['kind']
 
-/** A-08: a region smaller than this, in pixels of the recording, is refused. */
-export const MIN_REGION_PIXELS = { width: 320, height: 240 } as const
-
 /** A window Home can record (A-08). */
 export interface WindowInfo {
   /** HWND (Windows) or CGWindowID (Mac), in decimal. */

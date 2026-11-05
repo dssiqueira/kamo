@@ -1,5 +1,6 @@
 // Drives a recording from the Record button to Stop (flows.md §3–4, F-01, F-02):
 // idle → countdown → recording ⇄ paused → stopping → idle.
+import { borderWindow } from '@kamo/ui/selection'
 import { BrowserWindow, globalShortcut, screen } from 'electron'
 import { IpcChannel, type RecordingClock, type RecordingStatus } from '../shared/api.ts'
 import type { AudioWarning } from '../shared/audio.ts'
@@ -20,6 +21,8 @@ const BAR_HEIGHT = 64
 const BAR_BOTTOM_MARGIN = 48
 /** A bar that keeps dying is not brought back forever: the tray and the shortcut still stop. */
 const MAX_BAR_RECREATIONS = 5
+/** A-08: the line around a recorded selection (DIP), as the frame draws it (SELECTION_BORDER). */
+const SELECTION_LINE = 2
 
 /** What actually records. The native helper implements it (D-023). */
 export interface RecordingBackend {
@@ -94,6 +97,8 @@ type State =
       name: 'recording'
       session: BackendSession
       bar: BrowserWindow
+      /** A-08: the line around a recorded selection (never in the video), or null. */
+      border: BrowserWindow | null
       /** Where the bar lives (it is recreated there if its page goes away). */
       controlDisplayId: number
       barRecreations: number
@@ -226,6 +231,7 @@ export class RecordingController {
     const videoStartedAt = Date.now()
 
     const bar = this.openBar(controlDisplayId)
+    const border = target.kind === 'region' ? this.openBorder(target) : null
     const clock: RecordingClock = {
       state: 'recording',
       elapsedMs: 0,
@@ -236,6 +242,7 @@ export class RecordingController {
       name: 'recording',
       session,
       bar,
+      border,
       controlDisplayId,
       barRecreations: 0,
       clock,
@@ -345,10 +352,11 @@ export class RecordingController {
     if (this.state.name !== 'recording') return
     if (this.registeredShortcut) globalShortcut.unregister(this.registeredShortcut)
     this.registeredShortcut = null
-    const { audio, camera, videoStartedAt, bar } = this.state
+    const { audio, camera, videoStartedAt, bar, border } = this.state
     // Idle first, so the bar closing below is not taken for a bar that went away.
     this.state = { name: 'idle' }
     if (!bar.isDestroyed()) bar.destroy()
+    if (border && !border.isDestroyed()) border.destroy()
     this.tray?.hide()
     this.notifyActive(false)
     this.log.info('recording.finished', { kind: result.kind })
@@ -515,6 +523,48 @@ export class RecordingController {
     )
     bar.on('closed', () => this.replaceBar(bar, 'closed'))
     return bar
+  }
+
+  /**
+   * A-08: while a selection records, its line stays on screen so the user sees what is
+   * captured. Left out of the video like the bar (Windows: WDA_EXCLUDEFROMCAPTURE; Mac: the
+   * helper leaves out Kamo's windows) and drawn outside the selection anyway; every click goes
+   * through it. Null if the display is gone or the window fails (the recording goes on).
+   */
+  private openBorder(target: Extract<CaptureTarget, { kind: 'region' }>): BrowserWindow | null {
+    const display = screen.getAllDisplays().find((d) => String(d.id) === target.displayId)
+    if (!display) return null
+    try {
+      const { bounds, inner } = borderWindow(target.rect, display.bounds, SELECTION_LINE)
+      const border = createAppWindow(
+        'selection',
+        {
+          ...bounds,
+          frame: false,
+          transparent: true,
+          resizable: false,
+          movable: false,
+          focusable: false,
+          skipTaskbar: true,
+          hasShadow: false,
+          alwaysOnTop: true,
+          show: false,
+        },
+        { border: [inner.x, inner.y, inner.width, inner.height].join(',') },
+      )
+      border.setAlwaysOnTop(true, 'screen-saver')
+      border.setContentProtection(true)
+      border.setIgnoreMouseEvents(true)
+      border.once('ready-to-show', () => {
+        if (border.isDestroyed()) return
+        border.setBounds(bounds)
+        border.showInactive()
+      })
+      return border
+    } catch (error) {
+      this.log.error('recording.border.failed', { error })
+      return null
+    }
   }
 
   private sendClock(): void {

@@ -37,8 +37,8 @@ export interface HomeProps {
   /** Above everything else, e.g. "new version ready" (F-14). */
   banner?: ReactNode
   /**
-   * A-08: Screen · Window · Region. Omitted: displays only. `displays`, `selectedId` and
-   * `onSelect` stay the display picker (Region records part of the selected display).
+   * A-08: Screen · Window · Select. Omitted: displays only. `displays`, `selectedId` and
+   * `onSelect` stay the display picker (Select records part of the selected display).
    */
   capture?: CaptureSourceProps
 }

@@ -237,11 +237,20 @@ function showMainWindow(): void {
 }
 
 function applyTraySettings(settings: AppSettings): void {
+  const wasCloseToTray = closeToTray()
   closeToTraySetting = settings.closeToTray
   trayNoticeShown = settings.trayNoticeShown === true
   updateAppTray()
   // Turned off while the window sits in the tray: the icon is gone, so bring the window back.
-  if (!closeToTray() && mainWindow && !mainWindow.isVisible() && !recordingActive) {
+  // Only on that change: other settings saved while Home is hidden on purpose (the selection
+  // frame, the countdown) must not bring it back.
+  if (
+    wasCloseToTray &&
+    !closeToTray() &&
+    mainWindow &&
+    !mainWindow.isVisible() &&
+    !recordingActive
+  ) {
     showMainWindow()
   }
 }

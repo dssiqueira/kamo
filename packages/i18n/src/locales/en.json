@@ -70,17 +70,15 @@
       "title": "What to record",
       "screen": "Screen",
       "window": "Window",
-      "region": "Region",
+      "region": "Select",
       "searchWindows": "Search windows",
       "loadingWindows": "Looking for open windows…",
       "noWindows": "No window to record. Open the app you want to record and it shows up here.",
       "noMatch": "No window matches “{query}”.",
-      "pickRegion": "Select the area",
-      "pickAgain": "Select again",
-      "noRegion": "Drag a rectangle on the screen to record only that part.",
-      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} on {display}",
-      "regionHint": "Drag to select the part of the screen to record. Esc cancels.",
-      "regionTooSmall": "Too small: drag at least {width, number, ::group-off} × {height, number, ::group-off}. Esc cancels."
+      "openSelection": "Select an area",
+      "adjustSelection": "Adjust selection",
+      "noRegion": "Opens a frame over the screen: move and resize it over what you want to record.",
+      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} on {display}"
     },
     "displayName": "Display {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
@@ -115,7 +113,7 @@
     "fixPermission": "Set it up",
     "recordDisplay": "Record · {display}",
     "recordWindow": "Record · {window}",
-    "recordRegion": "Record · Area {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "Record · Selection {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc to cancel",
@@ -156,6 +154,19 @@
       "recording": "Recording {elapsed}",
       "paused": "Paused at {elapsed}"
     }
+  },
+  "selection": {
+    "toolbar": "Selection",
+    "move": "Drag to move the selection",
+    "resize": "Drag to resize the selection",
+    "width": "Width in pixels",
+    "height": "Height in pixels",
+    "unit": "px",
+    "sizes": "Sizes",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "Record",
+    "stopHint": "{shortcut} stops the recording",
+    "close": "Close (Esc)"
   },
   "tray": {
     "open": "Open Kamo",
