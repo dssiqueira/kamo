@@ -3,6 +3,7 @@ import {
   captionPaletteColors,
   createGifFrameEncoder,
   estimateGifBytes,
+  GIF_DIFF_TOLERANCE,
   GIF_LARGE_BYTES,
   GIF_MAX_RESERVED_COLORS,
   GIF_MAX_WIDTH,
@@ -272,6 +273,52 @@ describe('createGifFrameEncoder', () => {
     const bytes = concat([encoder.addFrame(frame(W, H, [103, 98, 101]), 100), encoder.finish()])
     // Header-less continuation: only the frame and the trailer, and the frame is 1×1.
     expect(bytes.length).toBeLessThan(40)
+  })
+
+  it('re-sends pixels the palette showed off, so no ghost of an earlier frame stays', () => {
+    // A busy picture has more colors than one palette holds, so the first frame shows some
+    // pixels several shades off. The source then stays the same: the encoder must still fix
+    // those pixels, or the error (faint text before a zoom, in real recordings) stays forever.
+    const W2 = 64
+    const H2 = 64
+    const data = new Uint8ClampedArray(W2 * H2 * 4)
+    for (let p = 0; p < W2 * H2; p++) {
+      data.set([(p * 37) % 256, ((p >> 6) * 41) % 256, (p * 83 + (p >> 3) * 7) % 256, 255], p * 4)
+    }
+    const encoder = createGifFrameEncoder({ width: W2, height: H2 })
+    const parts = [encoder.addFrame(data, 100)]
+    for (let i = 0; i < 6; i++) parts.push(encoder.addFrame(data, 100))
+    parts.push(encoder.finish())
+    const gif = decodeGif(concat(parts))
+
+    const shown = new Uint8Array(W2 * H2 * 3)
+    /** pixels shown more than the tolerance away from their source, after each frame */
+    const offAfter = gif.frames.map((f) => {
+      if (f.width === W2 && f.height === H2) {
+        f.index.forEach((index, p) => {
+          if (index !== f.transparentIndex) shown.set(f.palette[index] as number[], p * 3)
+        })
+      }
+      let off = 0
+      for (let p = 0; p < W2 * H2; p++) {
+        for (let c = 0; c < 3; c++) {
+          if (
+            Math.abs((shown[p * 3 + c] as number) - (data[p * 4 + c] as number)) >
+            GIF_DIFF_TOLERANCE
+          ) {
+            off++
+            break
+          }
+        }
+      }
+      return off
+    })
+    // The first frame shows many pixels off, the next ones re-send them...
+    expect(offAfter[0]).toBeGreaterThan(100)
+    expect(gif.frames[1]?.width).toBe(W2)
+    // ...and fewer stay off. A noise picture never fits one palette, so it can't reach zero;
+    // before the fix the next frames came out empty and every one of them stayed off.
+    expect(offAfter.at(-1) as number).toBeLessThan(offAfter[0] as number)
   })
 
   it('keeps reserved colors exact even when they are a few pixels', () => {

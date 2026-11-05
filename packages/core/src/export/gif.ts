@@ -114,7 +114,10 @@ export const GIF_MAX_RESERVED_COLORS = 16
 /**
  * Largest per-channel difference under which a pixel counts as unchanged and is left
  * transparent (the previous frame shows through). Absorbs the recording's compression noise
- * on still screens; compared with the pixel as last encoded, so it never drifts further.
+ * on still screens. Compared with the color the viewer is showing (the palette color the pixel
+ * was last encoded with), not its source color: otherwise a pixel whose source stays put but
+ * was shown a few shades off keeps that error forever, and faint traces of earlier frames
+ * (text before a zoom) never go away.
  */
 export const GIF_DIFF_TOLERANCE = 6
 
@@ -151,8 +154,24 @@ export function createGifFrameEncoder({
   const reserved = reservedColors
     .slice(0, GIF_MAX_RESERVED_COLORS)
     .map((c) => [c[0], c[1], c[2]] as RgbColor)
-  /** the source color of each pixel when it was last encoded */
+  /** what the viewer shows for each pixel: the palette color it was last encoded with */
   let last: Uint8Array | null = null
+
+  /** Records the palette colors `index` paints at the listed pixels (all pixels when null). */
+  const remember = (
+    shown: Uint8Array,
+    palette: Palette,
+    index: Uint8Array,
+    at: Uint32Array | null,
+  ): void => {
+    for (let k = 0; k < index.length; k++) {
+      const color = palette[index[k] as number] as RgbColor
+      const i = (at ? (at[k] as number) : k) * 4
+      shown[i] = color[0]
+      shown[i + 1] = color[1]
+      shown[i + 2] = color[2]
+    }
+  }
 
   const take = (): Uint8Array => {
     const bytes = gif.bytes()
@@ -170,11 +189,13 @@ export function createGifFrameEncoder({
       const rgba = new Uint8Array(input.buffer, input.byteOffset, input.length)
 
       if (!last) {
-        last = rgba.slice()
         // quantize() reads the bytes as 32-bit words: give it its own aligned copy.
         const palette = paletteFor(rgba.slice(), 256)
+        const index = applyPalette(rgba.slice(), palette)
+        last = new Uint8Array(pixels * 4)
+        remember(last, palette, index, null)
         gif.writeHeader()
-        gif.writeFrame(applyPalette(rgba.slice(), palette), width, height, {
+        gif.writeFrame(index, width, height, {
           palette,
           delay: delayMs,
           first: true,
@@ -211,21 +232,21 @@ export function createGifFrameEncoder({
       }
 
       const compact = new Uint8Array(count * 4)
-      for (let p = 0, k = 0; p < pixels; p++) {
+      const at = new Uint32Array(count)
+      for (let p = 0, k = 0, n = 0; p < pixels; p++) {
         if (!changed[p]) continue
         const i = p * 4
         compact[k] = rgba[i] as number
         compact[k + 1] = rgba[i + 1] as number
         compact[k + 2] = rgba[i + 2] as number
         compact[k + 3] = 255
-        last[i] = rgba[i] as number
-        last[i + 1] = rgba[i + 1] as number
-        last[i + 2] = rgba[i + 2] as number
+        at[n++] = p
         k += 4
       }
       // One slot stays free for the transparent index.
       const palette = paletteFor(compact.slice(), 255)
       const compactIndex = applyPalette(compact, palette)
+      remember(last, palette, compactIndex, at)
       const transparentIndex = palette.length
       const index = new Uint8Array(pixels).fill(transparentIndex)
       for (let p = 0, k = 0; p < pixels; p++) {
