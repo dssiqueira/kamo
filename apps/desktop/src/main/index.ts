@@ -3,41 +3,26 @@ import './app-identity.ts'
 import {
   app,
   BrowserWindow,
-  dialog,
   ipcMain,
   Menu,
   nativeTheme,
   powerMonitor,
   protocol,
   session,
-  shell,
   type IpcMainInvokeEvent,
 } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { isDeepStrictEqual } from 'node:util'
-import {
-  DEFAULT_STYLE,
-  PROJECT_FILES,
-  PlaylistError,
-  ProjectError,
-  backgroundImageFile,
-  type Style,
-} from '@kamo/core'
-import { createI18n, formatProjectDate } from '@kamo/i18n'
+import { PlaylistError, ProjectError } from '@kamo/core'
+import { createI18n } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
 import { captureHelperPath, registerCapture, windowTitle } from './capture-ipc.ts'
 import { IPC_ERROR_PREFIX, IpcChannel, type AppSettings } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 import { MEDIA_SCHEME, serveMedia } from './media.ts'
-import {
-  ProjectActionError,
-  listProjectSummaries,
-  loadProjectById,
-  renameProject,
-  saveProjectData,
-} from './projects.ts'
-import { notifyPlaylistsChanged, registerPlaylists } from './playlists-ipc.ts'
+import { ProjectActionError } from './projects.ts'
+import { registerProjects } from './projects-ipc.ts'
+import { registerPlaylists } from './playlists-ipc.ts'
 import { PreferenceError } from './preference-error.ts'
 import {
   currentStopShortcut,
@@ -66,29 +51,18 @@ import {
 import { clearQuitting, isQuitting, markQuitting } from './quitting.ts'
 import { sendTo } from './safe-send.ts'
 import { getServices, startServices } from './services.ts'
-import {
-  RecoveryError,
-  discardRecording,
-  listInterruptedRecordings,
-  recoverRecording,
-} from './interrupted.ts'
-import { AUDIO_TEMP_FOLDER, CAMERA_TEMP_FOLDER } from './media-takes.ts'
-import { rawVideoPath } from './raw-video.ts'
+import { RecoveryError } from './interrupted.ts'
+import { registerRecovery } from './recovery-ipc.ts'
+import { newProjectDefaults } from './new-project-defaults.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
-import { UnsafePathError, assertProjectId } from './storage/index.ts'
+import { UnsafePathError } from './storage/index.ts'
 import { createAppWindow, isAppUrl, isDev, loadPage } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
 import { PackError } from './packs/manager.ts'
 import { registerTranscription } from './transcription/index.ts'
 import { TranscriptionError } from './transcription/service.ts'
-import { loadTranscriptText, saveEditedTranscript } from './transcript-file.ts'
 import { runExportSmoke } from './export-smoke.ts'
-import {
-  BACKGROUND_IMAGE_FILTER_EXTENSIONS,
-  BackgroundImageError,
-  importBackgroundImage,
-  pruneBackgroundImages,
-} from './background-image.ts'
+import { BackgroundImageError } from './background-image.ts'
 
 // Must happen before `ready`: a standard, secure scheme that streams (video seeking) and
 // works with fetch, but still obeys the page CSP (src/main/media.ts).
@@ -473,179 +447,11 @@ registerCapture(handle, {
   mainWindow: () => mainWindow,
 })
 
-// Projects (F-12). Ids and data come from the renderer: the store and the schema check them.
-// Local playlists live next to them (`<projects>/playlists.json`).
+// Projects (F-12), with local playlists next to them (`<projects>/playlists.json`).
 const playlists = registerPlaylists(handle)
-handle(IpcChannel.listProjects, () => listProjectSummaries(getServices().store))
-handle(IpcChannel.loadProject, (projectId) => loadProjectById(getServices().store, projectId))
-/**
- * The style new recordings start with (F-08). A background image (A-04) lives in its own
- * project's folder, so it never carries over: new projects get the default wallpaper.
- */
-function styleForNewProjects(style: Style): Style {
-  return backgroundImageFile(style.background) === null
-    ? style
-    : { ...style, background: DEFAULT_STYLE.background }
-}
-
-handle(IpcChannel.saveProject, async (data) => {
-  const { store, settings } = getServices()
-  const { project, previous } = await saveProjectData(store, data)
-  notifyProjectsChanged()
-  // F-08: the last style and cursor the user set become the defaults of new recordings.
-  // Only real changes count, so merely opening an old project does not change the default.
-  const update = {
-    ...(previous && !isDeepStrictEqual(previous.style, project.style)
-      ? { lastStyle: styleForNewProjects(project.style) }
-      : {}),
-    ...(previous && !isDeepStrictEqual(previous.cursor, project.cursor)
-      ? { lastCursor: project.cursor }
-      : {}),
-  }
-  if (Object.keys(update).length) await settings.update(update)
-})
-handle(IpcChannel.renameProject, async (projectId, name) => {
-  const summary = await renameProject(getServices().store, projectId, name)
-  notifyProjectsChanged()
-  return summary
-})
-handle(IpcChannel.deleteProject, async (projectId) => {
-  assertProjectId(projectId as string)
-  await getServices().store.deleteProject(projectId as string)
-  getServices().log.info('project.deleted')
-  notifyProjectsChanged()
-  // A deleted recording leaves every playlist it was in.
-  if (await playlists.forgetProject(projectId as string)) notifyPlaylistsChanged()
-})
-// F-12: a damaged project's recording opens in the system's video player.
-handle(IpcChannel.openRawVideo, async (projectId) => {
-  const path = await rawVideoPath(getServices().store, projectId)
-  const error = await shell.openPath(path)
-  if (error) {
-    getServices().log.warn('project.raw_video.failed', { error })
-    throw new ProjectActionError('project_not_found')
-  }
-})
-handle(IpcChannel.showProjectInFolder, async (projectId) => {
-  const dir = getServices().store.projectDir(projectId as string)
-  const error = await shell.openPath(dir)
-  if (error) {
-    getServices().log.warn('project.show.failed', { error })
-    throw new ProjectActionError('project_not_found')
-  }
-})
-handle(IpcChannel.openEditor, async (projectId) => {
-  // Only checks the folder: a damaged project also opens, so the editor can offer the raw
-  // video and recreate the edit (F-12).
-  assertProjectId(projectId as string)
-  const ids = await getServices().store.listProjectIds()
-  if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
-  if (!mainWindow) return
-  // A-04: background images replaced in an earlier session go; the one in use stays.
-  const { store } = getServices()
-  const current = await loadProjectById(store, projectId)
-    .then((project) => backgroundImageFile(project.style.background))
-    .catch(() => undefined)
-  if (current !== undefined) {
-    await pruneBackgroundImages(store.projectDir(projectId as string), current).catch(
-      (error: unknown) => getServices().log.warn('background.prune.failed', { error }),
-    )
-  }
-  await loadPage(mainWindow, 'editor', { project: projectId as string })
-})
-
-// A-04: wallpaper with your own image. The renderer never sees the original path: main shows
-// the dialog, checks the file and copies it into the project.
-handle(IpcChannel.pickBackgroundImage, async (projectId) => {
-  assertProjectId(projectId as string)
-  const { store, log } = getServices()
-  const ids = await store.listProjectIds()
-  if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
-  const source = await chooseBackgroundImage()
-  if (!source) return null
-  const name = await importBackgroundImage(store.projectDir(projectId as string), source)
-  log.info('background.image.imported')
-  return name
-})
-
-/** The picked image's path, or null when cancelled. */
-async function chooseBackgroundImage(): Promise<string | null> {
-  // Dev builds only: KAMO_SMOKE_BACKGROUND_IMAGE=<file> stands in for the native dialog, which
-  // automated checks cannot drive. A packaged app always shows the dialog.
-  const smoke = process.env['KAMO_SMOKE_BACKGROUND_IMAGE']
-  if (smoke && !app.isPackaged) return smoke
-  const i18n = await createI18n(await uiLocale())
-  const options = {
-    title: i18n.t('editor.panel.imagePickTitle'),
-    properties: ['openFile'] as Array<'openFile'>,
-    filters: [
-      { name: i18n.t('editor.panel.imageFilter'), extensions: BACKGROUND_IMAGE_FILTER_EXTENSIONS },
-    ],
-  }
-  const result = mainWindow
-    ? await dialog.showOpenDialog(mainWindow, options)
-    : await dialog.showOpenDialog(options)
-  return result.canceled ? null : (result.filePaths[0] ?? null)
-}
-
-handle(IpcChannel.loadEvents, async (projectId) => {
-  assertProjectId(projectId as string)
-  return (await getServices().store.readText(projectId as string, PROJECT_FILES.events)) ?? ''
-})
-// A-06: the captions read transcript.json, and caption edits correct it.
-handle(IpcChannel.loadTranscript, async (projectId) => {
-  assertProjectId(projectId as string)
-  return loadTranscriptText(getServices().store, projectId as string)
-})
-handle(IpcChannel.saveTranscript, async (projectId, transcript) => {
-  assertProjectId(projectId as string)
-  await saveEditedTranscript(getServices().store, projectId as string, transcript)
-})
-// Interrupted recordings (F-02). Recordings started after this process did belong to it (one
-// may be running), so only earlier ones are offered.
-const appStartedAt = new Date()
-/** Where the audio and camera takes wait to be attached (recovery follows the marker there). */
-function mediaTempDirs() {
-  const userData = app.getPath('userData')
-  return { audio: join(userData, AUDIO_TEMP_FOLDER), camera: join(userData, CAMERA_TEMP_FOLDER) }
-}
-
-handle(IpcChannel.listInterruptedRecordings, () =>
-  listInterruptedRecordings(getServices().store, { sessionStartedAt: appStartedAt }),
-)
-handle(IpcChannel.recoverRecording, async (projectId) => {
-  const { store, settings, log } = getServices()
-  const locale = await uiLocale()
-  const i18n = await createI18n(locale)
-  const recovered = await recoverRecording(store, projectId, {
-    sessionStartedAt: appStartedAt,
-    mediaTemp: mediaTempDirs(),
-    log,
-    projectName: (date) => i18n.t('project.defaultName', { date: formatProjectDate(locale, date) }),
-    defaults: async () => {
-      const { lastStyle, lastCursor } = await settings.get()
-      return {
-        ...(lastStyle ? { style: styleForNewProjects(lastStyle) } : {}),
-        ...(lastCursor ? { cursor: lastCursor } : {}),
-      }
-    },
-  })
-  log.info('recording.recovered', {
-    durationMs: recovered.project.durationMs,
-    audioWarnings: recovered.audioWarnings,
-    cameraWarnings: recovered.cameraWarnings,
-  })
-  notifyProjectsChanged()
-  return recovered
-})
-handle(IpcChannel.discardRecording, async (projectId) => {
-  await discardRecording(getServices().store, projectId, {
-    sessionStartedAt: appStartedAt,
-    mediaTemp: mediaTempDirs(),
-  })
-  getServices().log.info('recording.discarded', { reason: 'interrupted' })
-  notifyProjectsChanged()
-})
+registerProjects(handle, { mainWindow: () => mainWindow, notifyProjectsChanged, playlists })
+// Interrupted recordings (F-02).
+registerRecovery(handle, { notifyProjectsChanged })
 handle(IpcChannel.openHome, async () => {
   if (mainWindow) await loadPage(mainWindow, 'index')
 })
@@ -715,13 +521,7 @@ async function createBackend(): Promise<RecordingBackend> {
     logger: log,
     appVersion: app.getVersion(),
     locale,
-    defaults: async () => {
-      const { lastStyle, lastCursor } = await settings.get()
-      return {
-        ...(lastStyle ? { style: styleForNewProjects(lastStyle) } : {}),
-        ...(lastCursor ? { cursor: lastCursor } : {}),
-      }
-    },
+    defaults: () => newProjectDefaults(settings),
     projectName: (date) => i18n.t('project.defaultName', { date }),
     helperPath: captureHelperPath,
     // D-024: on Mac the helper records the computer sound (ScreenCaptureKit), when it is on.
