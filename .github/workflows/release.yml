@@ -84,6 +84,11 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.prepare.outputs.desktop) }}
     runs-on: ${{ matrix.os }}
+    # bash on both runners: Windows defaults to PowerShell, where "$VERSION" is an empty
+    # PowerShell variable instead of the environment variable.
+    defaults:
+      run:
+        shell: bash
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
