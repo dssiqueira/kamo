@@ -13,8 +13,8 @@ import {
   type Playlist,
   type Project,
 } from '@kamo/core'
-import { readFile, readdir, stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { readFile, readdir, realpath, stat } from 'node:fs/promises'
+import { basename, isAbsolute, join, relative } from 'node:path'
 import { z } from 'zod'
 
 /** transcript.json (docs/data-model.md → Transcript). Unknown fields are ignored. */
@@ -102,6 +102,17 @@ const FRAME_MIME: Record<string, string> = {
 }
 /** Reference frames are ~20KB; anything this big is not one of ours. */
 export const MAX_FRAME_BYTES = 4 * 1024 * 1024
+/**
+ * Size caps per file: far above what the app writes (a 30-minute recording has ~10MB of
+ * events.jsonl), low enough that a huge or hostile file cannot exhaust memory.
+ */
+export const MAX_READ_BYTES = {
+  project: 8 * 1024 * 1024,
+  transcript: 20 * 1024 * 1024,
+  events: 64 * 1024 * 1024,
+  playlists: 4 * 1024 * 1024,
+} as const
+export type ReadLimits = Record<keyof typeof MAX_READ_BYTES, number>
 /** Parallel file reads while scanning: fast on SSDs without exhausting file handles. */
 const READ_CONCURRENCY = 32
 /** events.jsonl of a 30-minute recording has ~100k lines; keep only a few parsed at once. */
@@ -119,6 +130,19 @@ async function stampOf(path: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+/** A file this server will not read: too big, or a link that leaves the projects folder. */
+export class UnreadableFileError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'UnreadableFileError'
+  }
+}
+
+function isInside(root: string, path: string): boolean {
+  const rel = relative(root, path)
+  return rel !== '' && !rel.startsWith('..') && !isAbsolute(rel)
 }
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>) {
@@ -153,9 +177,11 @@ export class Library {
   private playlistsCache: Cached<PlaylistsRead> | null = null
 
   readonly dir: string
+  private readonly maxBytes: ReadLimits
 
-  constructor(dir: string) {
+  constructor(dir: string, options: { maxBytes?: Partial<ReadLimits> } = {}) {
     this.dir = dir
+    this.maxBytes = { ...MAX_READ_BYTES, ...options.maxBytes }
   }
 
   async scan(): Promise<Scan> {
@@ -204,7 +230,7 @@ export class Library {
     if (!cached || cached.stamp !== stamp) {
       let value: ProjectRead
       try {
-        value = { project: parseProject(await readFile(projectFile, 'utf8')) }
+        value = { project: parseProject(await this.readText(projectFile, this.maxBytes.project)) }
       } catch (error) {
         value = { problem: describeProjectError(error) }
       }
@@ -247,7 +273,9 @@ export class Library {
     if (cached && cached.stamp === stamp) return cached.value
     let value: TranscriptResult
     try {
-      const parsed = Transcript.safeParse(JSON.parse(await readFile(file, 'utf8')))
+      const parsed = Transcript.safeParse(
+        JSON.parse(await this.readText(file, this.maxBytes.transcript)),
+      )
       value = parsed.success
         ? {
             kind: 'ok',
@@ -257,8 +285,14 @@ export class Library {
             },
           }
         : { kind: 'invalid', problem: 'transcript.json does not match the expected format' }
-    } catch {
-      value = { kind: 'invalid', problem: 'transcript.json is not valid JSON' }
+    } catch (error) {
+      value = {
+        kind: 'invalid',
+        problem:
+          error instanceof UnreadableFileError
+            ? error.message
+            : 'transcript.json is not valid JSON',
+      }
     }
     this.transcripts.set(recording.path, { stamp, value })
     return value
@@ -298,7 +332,7 @@ export class Library {
       this.events.set(recording.path, cached)
       return cached.value
     }
-    const parsed = parseEvents(await readFile(file, 'utf8'))
+    const parsed = parseEvents(await this.readText(file, this.maxBytes.events))
     const value = { events: parsed.events, skipped: parsed.skippedLines.length }
     this.events.set(recording.path, { stamp, value })
     while (this.events.size > EVENTS_CACHE_SIZE) {
@@ -338,7 +372,31 @@ export class Library {
     if (info.size > MAX_FRAME_BYTES) {
       throw new Error(`${frame.file} is ${info.size} bytes, too big for a reference frame`)
     }
-    return readFile(path)
+    return this.readInside(path, MAX_FRAME_BYTES)
+  }
+
+  /**
+   * Reads a file only when it really is inside the projects folder (a link may point there,
+   * never outside it: no file elsewhere on the computer reaches the agent) and is at most
+   * `maxBytes`.
+   */
+  private async readInside(path: string, maxBytes: number): Promise<Buffer> {
+    const [root, real] = await Promise.all([realpath(this.dir), realpath(path)])
+    if (!isInside(root, real)) {
+      throw new UnreadableFileError(`${basename(path)} links outside the projects folder`)
+    }
+    const info = await stat(real)
+    if (!info.isFile()) throw new UnreadableFileError(`${basename(path)} is not a file`)
+    if (info.size > maxBytes) {
+      throw new UnreadableFileError(
+        `${basename(path)} is ${info.size} bytes, more than the ${maxBytes} this server reads`,
+      )
+    }
+    return readFile(real)
+  }
+
+  private async readText(path: string, maxBytes: number): Promise<string> {
+    return (await this.readInside(path, maxBytes)).toString('utf8')
   }
 
   /**
@@ -355,7 +413,9 @@ export class Library {
     if (this.playlistsCache?.stamp === stamp) return this.playlistsCache.value
     let value: PlaylistsRead
     try {
-      const { file: parsed, dropped } = parsePlaylists(await readFile(file, 'utf8'))
+      const { file: parsed, dropped } = parsePlaylists(
+        await this.readText(file, this.maxBytes.playlists),
+      )
       value = { kind: 'ok', playlists: parsed.playlists, dropped }
     } catch (error) {
       value = {
