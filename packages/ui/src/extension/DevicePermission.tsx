@@ -2,6 +2,7 @@
 // of the extension). The recorder runs in a hidden document that can't show Chrome's prompt,
 // so each permission is asked here, on a visible page, once.
 import { useT } from '../i18n.tsx'
+import { REST_POSE } from '../mascot/gaze.ts'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { PrimaryButton } from '../settings/parts.tsx'
 
@@ -37,7 +38,7 @@ export function DevicePermission({ device, status, onAllow }: DevicePermissionPr
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-xl font-sans text-on-surface">
       <div className="flex max-w-[480px] flex-col items-center gap-lg text-center">
-        <Mascot pose={status === 'granted' ? 'head-happy' : 'head-look'} size={120} backdrop />
+        <Mascot pose={status === 'granted' ? 'head-happy' : REST_POSE} size={120} backdrop />
         <h1 className="font-serif text-headline">{t(text.title)}</h1>
         {status === 'granted' ? (
           <p role="status" className="text-body text-success">
