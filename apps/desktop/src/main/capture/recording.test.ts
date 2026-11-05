@@ -214,7 +214,7 @@ describe('startRecording', () => {
     expect(await findInterruptedRecordings(store)).toEqual([session.projectId])
   })
 
-  it.each(['display_lost', 'disk_full'] as const)(
+  it.each(['display_lost', 'disk_full', 'window_lost'] as const)(
     'finalizes what was recorded when the helper stops with %s',
     async (code) => {
       const session = await start(
@@ -298,5 +298,76 @@ describe('mouse events (F-03)', () => {
     const session = await start(deps(), { mouse: false })
     await recordAndSave(session)
     expect(await readSavedEvents(session.projectDir)).toEqual([])
+  })
+})
+
+describe('windows and regions (A-08)', () => {
+  it('records a window: project.json says which, with its title', async () => {
+    const session = await start(deps({ KAMO_FAKE_SIZE: '1280x720@1.5' }), {
+      windowId: '1001',
+      windowTitle: '  Notes - Editor ',
+    })
+    const result = await recordAndSave(session)
+    expect(result.project.source).toEqual({
+      kind: 'window',
+      displayId: '42',
+      windowTitle: 'Notes - Editor',
+      width: 1280,
+      height: 720,
+      scaleFactor: 1.5,
+      fps: 30,
+    })
+  })
+
+  it('records a region of a display', async () => {
+    const rect = { x: 100, y: 50, width: 640, height: 360 }
+    const session = await start(deps({ KAMO_FAKE_SIZE: '1280x720@2' }), { region: rect })
+    const result = await recordAndSave(session)
+    expect(result.project.source).toEqual({
+      kind: 'region',
+      displayId: '42',
+      rect,
+      width: 1280,
+      height: 720,
+      scaleFactor: 2,
+      fps: 30,
+    })
+    expect(await loadProject(store, session.projectId)).toEqual(result.project)
+  })
+
+  it('fails to start when the window is gone, and leaves nothing behind', async () => {
+    const d = deps()
+    await expect(start(d, { windowId: '404' })).rejects.toMatchObject({ code: 'window_not_found' })
+    expect(await readdir(join(dir, 'projects')).catch(() => [])).toEqual([])
+  })
+})
+
+describe('computer sound recorded by the helper (D-024, Mac)', () => {
+  it('keeps system.m4a with its offset on the video timeline', async () => {
+    const session = await start(deps(), { systemAudio: true })
+    const result = await recordAndSave(session, 1500)
+    expect(result.audioWarnings).toBeUndefined()
+    expect(result.project.audio.system).toMatchObject({ enabled: true, offsetMs: 40 })
+    const files = await readdir(session.projectDir)
+    expect(files).toContain('system.m4a')
+    expect(files).not.toContain('system.m4a.partial')
+  })
+
+  it('warns when the helper had no sound to give, and leaves no partial', async () => {
+    const session = await start(deps({ KAMO_FAKE_SYSTEM_AUDIO: 'missing' }), {
+      systemAudio: true,
+    })
+    const result = await recordAndSave(session, 1500)
+    expect(result.audioWarnings).toEqual(['system_unavailable'])
+    expect(result.project.audio.system.offsetMs).toBeUndefined()
+    const files = await readdir(session.projectDir)
+    expect(files.some((f) => f.startsWith('system.m4a'))).toBe(false)
+  })
+
+  it('never asks the helper for sound when it is not wanted', async () => {
+    const session = await start(deps())
+    const result = await recordAndSave(session, 1500)
+    expect(result.audioWarnings).toBeUndefined()
+    expect(await readdir(session.projectDir)).not.toContain('system.m4a')
   })
 })

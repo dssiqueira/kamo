@@ -5,6 +5,13 @@ import { Mascot } from '../mascot/Mascot.tsx'
 import { SettingsButton } from '../settings/SettingsButton.tsx'
 import { AudioSources, type AudioSourcesProps } from './AudioSources.tsx'
 import type { CameraSourceProps } from './CameraSource.tsx'
+import {
+  CaptureKindSwitch,
+  RegionControls,
+  WindowList,
+  type CaptureSourceProps,
+} from './CaptureSource.tsx'
+import { recordTarget, shortTitle } from './captureSource.ts'
 import type { DisplayOption } from './pickDisplay.ts'
 import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
 
@@ -29,6 +36,11 @@ export interface HomeProps {
   onFixPermission?(): void
   /** Above everything else, e.g. "new version ready" (F-14). */
   banner?: ReactNode
+  /**
+   * A-08: Screen · Window · Region. Omitted: displays only. `displays`, `selectedId` and
+   * `onSelect` stay the display picker (Region records part of the selected display).
+   */
+  capture?: CaptureSourceProps
 }
 
 /** Home (flows.md §2): displays → toggles → Record → recent projects. */
@@ -45,16 +57,36 @@ export function Home({
   onOpenSettings,
   onFixPermission,
   banner,
+  capture,
 }: HomeProps) {
   const t = useT()
-  const canRecord = selectedId !== null && !needsPermission
-  // The button says which screen it records: the last choice is remembered (F-01), so it may
-  // not be the one the user expects.
+  const kind = capture?.kind ?? 'display'
+  const displayName = (display: DisplayOption, index: number) =>
+    display.label || t('home.displayName', { index: index + 1 })
+  // The button says what it records: the last choice is remembered (F-01, A-08), so it may not
+  // be what the user expects.
+  const target = recordTarget({
+    kind,
+    displays,
+    selectedDisplayId: selectedId,
+    displayName,
+    windows: capture?.windows ?? null,
+    selectedWindowId: capture?.selectedWindowId ?? null,
+    region: capture?.region ?? null,
+  })
+  const canRecord = target !== null && !needsPermission
+  const recordLabel =
+    target === null
+      ? t('home.record')
+      : target.kind === 'display'
+        ? t('home.recordDisplay', { display: target.name })
+        : target.kind === 'window'
+          ? t('home.recordWindow', { window: shortTitle(target.title) })
+          : t('home.recordRegion', { width: target.width, height: target.height })
   const selectedIndex = displays.findIndex((d) => d.id === selectedId)
-  const selected = displays[selectedIndex]
-  const selectedName = selected
-    ? selected.label || t('home.displayName', { index: selectedIndex + 1 })
-    : null
+  const selectedDisplay = displays[selectedIndex]
+  const regionHere =
+    capture?.region && capture.region.displayId === selectedId ? capture.region : null
 
   return (
     <main className="relative min-h-screen bg-background font-sans text-on-surface">
@@ -108,10 +140,20 @@ export function Home({
         )}
 
         <section className="flex flex-col gap-md" aria-labelledby="displays-title">
-          <h2 id="displays-title" className="text-title">
-            {t('home.displays')}
-          </h2>
-          {displays.length === 0 ? (
+          <div className="flex flex-wrap items-center justify-between gap-md">
+            <h2 id="displays-title" className="text-title">
+              {capture ? t('home.capture.title') : t('home.displays')}
+            </h2>
+            {capture && <CaptureKindSwitch kind={kind} onKindChange={capture.onKindChange} />}
+          </div>
+          {capture && kind === 'window' ? (
+            <WindowList
+              windows={capture.windows}
+              selectedWindowId={capture.selectedWindowId}
+              onSelectWindow={capture.onSelectWindow}
+              labelledBy="displays-title"
+            />
+          ) : displays.length === 0 ? (
             <p className="text-body text-on-surface-muted">{t('home.noDisplays')}</p>
           ) : (
             <div
@@ -123,12 +165,20 @@ export function Home({
                 <DisplayCard
                   key={display.id}
                   display={display}
-                  name={display.label || t('home.displayName', { index: index + 1 })}
+                  name={displayName(display, index)}
                   selected={display.id === selectedId}
                   onSelect={() => onSelect(display.id)}
                 />
               ))}
             </div>
+          )}
+          {capture && kind === 'region' && displays.length > 0 && (
+            <RegionControls
+              region={regionHere}
+              displayName={selectedDisplay ? displayName(selectedDisplay, selectedIndex) : null}
+              onPickRegion={capture.onPickRegion}
+              disabled={selectedId === null || !!needsPermission}
+            />
           )}
         </section>
 
@@ -143,7 +193,7 @@ export function Home({
           >
             {/* DESIGN.md: coral is reserved for the REC dot. */}
             <span aria-hidden className="size-[10px] rounded-full bg-recording" />
-            {selectedName ? t('home.recordDisplay', { display: selectedName }) : t('home.record')}
+            {recordLabel}
           </button>
         </div>
 

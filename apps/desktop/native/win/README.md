@@ -1,13 +1,13 @@
 # kamo-capture (Windows)
 
 Native screen capture helper for the desktop app (D-023), in Rust with Microsoft's `windows`
-crate. It records one monitor with **Windows Graphics Capture** without the system cursor
+crate. It records one monitor, a region of it or one window (A-08) with **Windows Graphics Capture** without the system cursor
 (`IsCursorCaptureEnabled = false`, D-005), encodes **H.264 into a fragmented MP4** with the
 **Media Foundation Sink Writer** (hardware encoder), writes the reference JPEGs with **WIC** and
 emits the mouse events (F-03) from a **mouse-only** low-level hook, all on one clock, talking to
 the Electron main process over stdio. The protocol is
 `apps/desktop/src/main/capture/PROTOCOL.md`; `protocol.ts` is the source of truth for field names.
-Audio comes later in step 3.
+Sound is recorded in Electron on Windows (D-024).
 
 Requirements: Windows 10 2004+ (cursor-free capture; borderless capture needs Windows 11), Rust
 stable (edition 2024) and the Visual Studio Build Tools (MSVC linker, `x86_64-pc-windows-msvc`).
@@ -68,6 +68,8 @@ says so) and `MinUpdateInterval` = 1/fps where supported (Windows 11 24H2). Wind
 are left out by the compositor: verified, a content-protected window over the recorded monitor
 does not appear in the MP4. A removed monitor closes the capture item (and fails
 `GetMonitorInfo`, checked every second): non-fatal `display_lost`, the file is finalized.
+
+**Window and region (A-08).** `listWindows` enumerates top-level windows like Alt+Tab (`winlist.rs`: visible, not minimized or cloaked, no tool windows, titled, at least 64px, not Kamo) and answers on stdout only. `start.windowId` captures that HWND with `CreateForWindow`: WGC follows it when it moves and when covered; when it is resized the frame pool is recreated and each frame is scaled into the video (fixed at the starting size) with the aspect kept, centered, black around (`geometry.rs` → `fit_rect`, the video processor's dest rect and background color). Its position for the mouse is read with `DWMWA_EXTENDED_FRAME_BOUNDS` before every click, at most every 50ms otherwise, and every second; a point over another window (WindowFromPoint, root owner) counts as outside. A closed window ends the recording with `window_lost`. `start.region` (DIP) becomes a physical crop of the monitor (`region_crop`, even sides) used as the video processor's source rect; the video is the crop's size.
 
 **Conversion.** Each captured frame goes through the D3D11 video processor on the GPU: BGRA (full
 range) → NV12 BT.709 limited range at the video size. The video is the monitor's physical size,

@@ -207,10 +207,10 @@ private func mouseTapCallback(
 /// relative to the recorded display, times in video ms, moves and scrolls thinned to ~60 Hz.
 /// Confined to the Recorder's queue.
 ///
-/// Off the recorded display: moves go out with `outside: true` (the camera ignores them);
-/// `down` and `scroll` are not sent (the format only allows `outside` on moves); an `up` is sent
-/// only when its `down` was, clamped to the display edge, so a drag that leaves the display
-/// still ends.
+/// Off the recorded display (A-08: or region, or window): moves go out with `outside: true` (the
+/// camera ignores them); `down` and `scroll` are not sent (the format only allows `outside` on
+/// moves), so such clicks make no zoom; an `up` is sent only when its `down` was, clamped to the
+/// edge, so a drag that leaves it still ends.
 final class MouseTrack: @unchecked Sendable {
     /// A little under 1/60 s, so a 60 Hz stream of events is not halved by jitter.
     private static let interval = 1.0 / 60 - 0.002
@@ -219,10 +219,11 @@ final class MouseTrack: @unchecked Sendable {
     /// Video time (seconds) of a host time, or nil when it is not recorded (before the first
     /// frame, while paused or stopping).
     private let videoTime: (Double) -> Double?
-    private let videoWidth: Double
-    private let videoHeight: Double
-    /// The recorded display in global coordinates (points).
+    /// The recorded display, region or window in global coordinates (points).
     private var bounds: CGRect
+    /// Where `bounds` lands in the video, in video pixels: the whole video, or (a window resized
+    /// while recording, A-08) the part it is scaled into.
+    private var dest: CGRect
     private var pendingMove: RawMouseEvent?
     private var pendingScroll: RawMouseEvent?
     private var lastMoveHost = -Double.infinity
@@ -235,15 +236,16 @@ final class MouseTrack: @unchecked Sendable {
          videoTime: @escaping (Double) -> Double?)
     {
         self.queue = queue
-        self.videoWidth = Double(videoWidth)
-        self.videoHeight = Double(videoHeight)
         self.bounds = bounds
+        dest = CGRect(x: 0, y: 0, width: videoWidth, height: videoHeight)
         self.videoTime = videoTime
     }
 
-    /// The display can move in the arrangement or change resolution while recording.
-    func updateBounds(_ rect: CGRect) {
+    /// The display can move in the arrangement or change resolution while recording; a window
+    /// moves and changes size (then `dest` says where it is scaled into).
+    func updateBounds(_ rect: CGRect, dest newDest: CGRect? = nil) {
         if rect.width > 0, rect.height > 0 { bounds = rect }
+        if let newDest, newDest.width > 0, newDest.height > 0 { dest = newDest }
     }
 
     func add(_ raw: RawMouseEvent) {
@@ -331,8 +333,8 @@ final class MouseTrack: @unchecked Sendable {
         } else {
             // Released either way; sent only if its `down` was.
             guard pressed.remove(button) != nil, let t = videoTime(raw.host) else { return }
-            point.x = min(max(point.x, 0), videoWidth)
-            point.y = min(max(point.y, 0), videoHeight)
+            point.x = min(max(point.x, Double(dest.minX)), Double(dest.maxX))
+            point.y = min(max(point.y, Double(dest.minY)), Double(dest.maxY))
             Events.mouse(["t": milliseconds(t), "type": "up", "button": button.rawValue, "x": point.x, "y": point.y])
         }
     }
@@ -344,13 +346,14 @@ final class MouseTrack: @unchecked Sendable {
     /// Video pixels per point on each axis (the backing scale, or less if the video was scaled
     /// down to fit the encoder).
     private func videoScale() -> (x: Double, y: Double) {
-        (videoWidth / Double(bounds.width), videoHeight / Double(bounds.height))
+        (Double(dest.width) / Double(bounds.width), Double(dest.height) / Double(bounds.height))
     }
 
     /// Global points → pixels of the recorded video, origin at its top left.
     private func toVideo(_ raw: RawMouseEvent) -> (x: Double, y: Double) {
         let scale = videoScale()
-        return (round1((raw.x - Double(bounds.minX)) * scale.x), round1((raw.y - Double(bounds.minY)) * scale.y))
+        return (round1(Double(dest.minX) + (raw.x - Double(bounds.minX)) * scale.x),
+                round1(Double(dest.minY) + (raw.y - Double(bounds.minY)) * scale.y))
     }
 }
 

@@ -16,6 +16,7 @@ import {
 import { mkdir, rename, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
+import type { AudioWarning } from '../../shared/audio.ts'
 import { MIN_FREE_BYTES, freeDiskSpace } from '../storage/disk.ts'
 import type { FileProjectStore } from '../storage/file-store.ts'
 import { PARTIAL_SUFFIX } from '../storage/file-store.ts'
@@ -34,9 +35,12 @@ import {
   type HelperErrorCode,
   type HelperEvent,
   type HelperEventOf,
+  type RegionRect,
 } from './protocol.ts'
 
 export const SCREEN_FILE = 'screen.mp4'
+/** D-024: the computer sound, when the helper records it (Mac). */
+export const SYSTEM_AUDIO_FILE = 'system.m4a'
 /** F-02: anything shorter is discarded. */
 export const MIN_DURATION_MS = 1000
 
@@ -70,11 +74,17 @@ export class RecordingError extends Error {
   }
 }
 
-/** Why the recording ended: the user, or the helper on its own (F-02 edge cases). */
-export type StopReason = 'user' | 'display_lost' | 'disk_full'
+/** Why the recording ended: the user, or the helper on its own (F-02 edge cases, A-08). */
+export type StopReason = 'user' | 'display_lost' | 'disk_full' | 'window_lost'
 
 export type RecordingResult =
-  | { project: Project; stoppedBy: StopReason; frames: number }
+  | {
+      project: Project
+      stoppedBy: StopReason
+      frames: number
+      /** D-024: the helper was asked for the computer sound and has none to give. */
+      audioWarnings?: AudioWarning[]
+    }
   | { discarded: 'too_short'; stoppedBy: StopReason; durationMs: number }
 
 /** What the UI hears while recording. Elapsed time is the UI's job. */
@@ -121,6 +131,14 @@ export interface RecordingRequest {
   mouse?: boolean
   /** Windows: a physical screen point inside the display (PROTOCOL.md, `start`). */
   monitorPoint?: { x: number; y: number }
+  /** A-08: record this window (an id from `listWindows`); `displayId` is where it is. */
+  windowId?: string
+  /** A-08: the window's title, kept in project.json (`source.windowTitle`). */
+  windowTitle?: string
+  /** A-08: record only this part of the display (DIP / points, display-local). */
+  region?: RegionRect
+  /** D-024, Mac: the helper records the computer sound into system.m4a. */
+  systemAudio?: boolean
 }
 
 export interface RecordingDeps {
@@ -348,6 +366,11 @@ export async function startRecording(
       frameWidth: FRAME_WIDTH,
       mouse: request.mouse ?? true,
       ...(request.monitorPoint ? { monitorPoint: request.monitorPoint } : {}),
+      ...(request.windowId ? { windowId: request.windowId } : {}),
+      ...(request.region ? { region: request.region } : {}),
+      ...(request.systemAudio
+        ? { systemAudio: join(projectDir, SYSTEM_AUDIO_FILE + PARTIAL_SUFFIX) }
+        : {}),
     })
     const started = await startedPromise
     logger.info('recording.started', {
@@ -386,6 +409,18 @@ export async function startRecording(
   }
 }
 
+/** project.json `source` (data-model.md): what was recorded and the size the helper gave it. */
+function sourceOf(request: RecordingRequest, started: HelperEventOf<'started'>): Project['source'] {
+  const { width, height, scaleFactor, fps } = started
+  const common = { displayId: request.displayId, width, height, scaleFactor, fps }
+  if (request.windowId) {
+    const title = request.windowTitle?.trim().slice(0, 200)
+    return { kind: 'window', ...common, ...(title ? { windowTitle: title } : {}) }
+  }
+  if (request.region) return { kind: 'region', ...common, rect: { ...request.region } }
+  return { kind: 'display', ...common }
+}
+
 interface SessionInit {
   projectId: string
   projectDir: string
@@ -422,8 +457,7 @@ class Session implements RecordingSession {
   ) {
     this.projectId = init.projectId
     this.projectDir = init.projectDir
-    const { width, height, scaleFactor, fps } = init.started
-    this.source = { kind: 'display', displayId: request.displayId, width, height, scaleFactor, fps }
+    this.source = sourceOf(request, init.started)
 
     this.done = new Promise<RecordingResult>((resolve, reject) => {
       this.resolveDone = resolve
@@ -534,7 +568,11 @@ class Session implements RecordingSession {
       case 'error':
         if (event.fatal) {
           this.fatal = event
-        } else if (event.code === 'display_lost' || event.code === 'disk_full') {
+        } else if (
+          event.code === 'display_lost' ||
+          event.code === 'disk_full' ||
+          event.code === 'window_lost'
+        ) {
           // F-02: the helper stops by itself and finalizes; we save what was recorded
           this.stopReason = event.code
           if (this.isActive()) this.currentState = 'stopping'
@@ -588,6 +626,7 @@ class Session implements RecordingSession {
       await renameWithRetry(this.init.partial, join(this.projectDir, SCREEN_FILE))
       // no mouse event can come after `stopped`: events.jsonl.partial → events.jsonl
       await this.init.events.close()
+      const systemAudio = await this.keepSystemAudio(stopped)
 
       const project = createProject({
         id: this.projectId,
@@ -598,15 +637,46 @@ class Session implements RecordingSession {
         ...(this.request.style ? { style: this.request.style } : {}),
         ...(this.request.cursor ? { cursor: this.request.cursor } : {}),
       })
+      if (systemAudio !== null) {
+        project.audio.system = { ...project.audio.system, enabled: true, offsetMs: systemAudio }
+      }
       await saveProject(store, project)
       await clearRecordingMarker(store, this.projectId)
-      return this.succeed({ project, stoppedBy: this.stopReason, frames: stopped.frames })
+      return this.succeed({
+        project,
+        stoppedBy: this.stopReason,
+        frames: stopped.frames,
+        ...(this.request.systemAudio && systemAudio === null
+          ? { audioWarnings: ['system_unavailable' as const] }
+          : {}),
+      })
     } catch (error) {
       // keep the folder (marker + partial): recovery offers it on the next launch
       const failure = toRecordingError(error, 'internal')
       this.fail(failure)
       throw failure
     }
+  }
+
+  /**
+   * D-024, Mac: the computer sound the helper recorded becomes system.m4a; returns its offset
+   * on the video timeline, or null when there is none (asked for but missing: the partial is
+   * deleted and Home warns). Never throws: the sound is never worth the video.
+   */
+  private async keepSystemAudio(stopped: HelperEventOf<'stopped'>): Promise<number | null> {
+    if (!this.request.systemAudio) return null
+    const partial = join(this.projectDir, SYSTEM_AUDIO_FILE + PARTIAL_SUFFIX)
+    try {
+      if (stopped.systemAudio && (await stat(partial)).size > 0) {
+        await renameWithRetry(partial, join(this.projectDir, SYSTEM_AUDIO_FILE))
+        this.deps.logger.info('recording.system_audio', { offsetMs: stopped.systemAudio.offsetMs })
+        return Math.round(stopped.systemAudio.offsetMs)
+      }
+    } catch (error) {
+      this.deps.logger.warn('recording.system_audio_failed', { message: String(error) })
+    }
+    await rm(partial, { force: true }).catch(() => {})
+    return null
   }
 
   private succeed(result: RecordingResult): RecordingResult {

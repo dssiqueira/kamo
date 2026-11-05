@@ -8,7 +8,8 @@
 //   KAMO_FAKE_START_DELAY_MS=500        wall ms before answering `start` (slow start)
 //   KAMO_FAKE_CRASH_AFTER_MS=1000       exit 3 with no `stopped` after this much video time
 //   KAMO_FAKE_AUTOSTOP_AFTER_MS=1500    stop by itself after this much video time, with
-//   KAMO_FAKE_AUTOSTOP_CODE=display_lost  this error code (display_lost or disk_full)
+//   KAMO_FAKE_AUTOSTOP_CODE=display_lost  this error code (display_lost, disk_full or
+//                                       window_lost)
 //   KAMO_FAKE_EXTRA_EVENTS=1            also send an event type main does not know yet
 //   KAMO_FAKE_SIZE=1920x1080@1.5        width x height @ scaleFactor reported in `started`
 //   KAMO_FAKE_MOUSE_UNAVAILABLE=1       no mouse events, a non-fatal `mouse_unavailable` instead
@@ -16,6 +17,11 @@
 //                                       one after `started`, and one while paused (x = 7777)
 //   KAMO_FAKE_REQUIRE_MONITOR_POINT=1   like the Windows helper: `start` without `monitorPoint`
 //                                       is a fatal display_not_found (otherwise it is ignored)
+//   KAMO_FAKE_SYSTEM_AUDIO=missing      with `start.systemAudio`: record no sound (otherwise the
+//                                       fake writes a few bytes there and reports offsetMs 40)
+//
+// A-08: `listWindows` answers with two made-up windows; `windowId` "404" is a fatal
+// window_not_found.
 //
 // Mouse (F-03): unless `start` says `mouse: false`, moves at 60Hz of video time along a curve
 // inside the video, plus a drag (down at 1000ms, up at 1200ms), a scroll at 1500ms and one move
@@ -35,7 +41,10 @@ const numberEnv = (name: string): number | undefined => {
 const timeScale = numberEnv('KAMO_FAKE_TIME_SCALE') ?? 1
 const crashAfterMs = numberEnv('KAMO_FAKE_CRASH_AFTER_MS')
 const autostopAfterMs = numberEnv('KAMO_FAKE_AUTOSTOP_AFTER_MS')
-const autostopCode = env.KAMO_FAKE_AUTOSTOP_CODE === 'disk_full' ? 'disk_full' : 'display_lost'
+const autostopCode =
+  env.KAMO_FAKE_AUTOSTOP_CODE === 'disk_full' || env.KAMO_FAKE_AUTOSTOP_CODE === 'window_lost'
+    ? env.KAMO_FAKE_AUTOSTOP_CODE
+    : 'display_lost'
 const [, width = '1920', height = '1080', scale = '1'] =
   /^(\d+)x(\d+)(?:@([\d.]+))?$/.exec(env.KAMO_FAKE_SIZE ?? '') ?? []
 
@@ -141,13 +150,29 @@ function finish(): void {
     fd = null
   }
   finished = true
-  emit({ event: 'stopped', durationMs: Math.round(videoMs), frames }, () => process.exit(0))
+  let systemAudio: { offsetMs: number } | undefined
+  if (started?.systemAudio && env.KAMO_FAKE_SYSTEM_AUDIO !== 'missing') {
+    writeFileSync(started.systemAudio, new TextEncoder().encode('\0\0\0\x18ftypM4A '))
+    systemAudio = { offsetMs: 40 }
+  }
+  emit(
+    {
+      event: 'stopped',
+      durationMs: Math.round(videoMs),
+      frames,
+      ...(systemAudio ? { systemAudio } : {}),
+    },
+    () => process.exit(0),
+  )
 }
 
 function start(command: StartCommand): void {
   const failCode =
     env.KAMO_FAKE_FAIL_START ||
-    (env.KAMO_FAKE_REQUIRE_MONITOR_POINT && !command.monitorPoint ? 'display_not_found' : '')
+    (env.KAMO_FAKE_REQUIRE_MONITOR_POINT && !command.monitorPoint && !command.windowId
+      ? 'display_not_found'
+      : '') ||
+    (command.windowId === '404' ? 'window_not_found' : '')
   if (failCode) {
     emit({ event: 'error', code: failCode, message: 'simulated', fatal: true }, () =>
       process.exit(1),
@@ -182,6 +207,24 @@ function start(command: StartCommand): void {
 }
 
 function handle(command: HelperCommand): void {
+  if (command.cmd === 'listWindows') {
+    emit({
+      event: 'windows',
+      windows: [
+        {
+          id: '1001',
+          title: 'Notes - Editor',
+          app: 'editor',
+          x: 100,
+          y: 80,
+          width: 1280,
+          height: 720,
+        },
+        { id: '1002', title: 'Browser', app: 'browser', x: -1600, y: 0, width: 1600, height: 900 },
+      ],
+    })
+    return
+  }
   if (command.cmd === 'start') {
     if (started) return
     const delay = numberEnv('KAMO_FAKE_START_DELAY_MS') ?? 0

@@ -27,11 +27,19 @@ import {
 } from './model.ts'
 import { AudioService, type AudioLogger } from './service.ts'
 
+/** Mac 13+: ScreenCaptureKit records the computer sound, in the capture helper (D-024). */
+const macHelperAudio =
+  process.platform === 'darwin' && Number(process.getSystemVersion().split('.')[0]) >= 13
+
 /**
- * Computer sound: Chromium's WASAPI loopback, Windows only. Electron 45 documents
- * `audio: 'loopback'` as Windows-only; Mac needs ScreenCaptureKit audio (TODO, D-024).
+ * Computer sound: Chromium's WASAPI loopback in the recorder page on Windows (Electron 45
+ * documents `audio: 'loopback'` as Windows-only); ScreenCaptureKit audio in the capture helper
+ * on Mac 13+, recorded with the video (D-024).
  */
-export const AUDIO_SUPPORT: AudioSupport = { system: process.platform === 'win32' }
+export const AUDIO_SUPPORT: AudioSupport = {
+  system: process.platform === 'win32' || macHelperAudio,
+  systemInHelper: macHelperAudio,
+}
 
 export interface DesktopAudioOptions {
   mainWindow(): BrowserWindow | undefined
@@ -88,7 +96,8 @@ export function installAudioPermissions(session: Session): void {
   // getDisplayMedia from the recorder page: a screen source plus loopback audio. The page
   // stops the video track at once; only the computer sound is recorded.
   session.setDisplayMediaRequestHandler((request, callback) => {
-    if (!AUDIO_SUPPORT.system || !isRecorderUrl(request.frame?.url)) {
+    const loopback = AUDIO_SUPPORT.system && !AUDIO_SUPPORT.systemInHelper
+    if (!loopback || !isRecorderUrl(request.frame?.url)) {
       callback({})
       return
     }

@@ -4,6 +4,7 @@ import { BrowserWindow, globalShortcut, screen } from 'electron'
 import { IpcChannel, type RecordingClock, type RecordingStatus } from '../shared/api.ts'
 import type { AudioWarning } from '../shared/audio.ts'
 import type { CameraWarning } from '../shared/camera.ts'
+import type { CaptureTarget } from '../shared/capture.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import type { AudioSession, AudioTake } from './audio/service.ts'
 import type { CameraSession, CameraTake } from './camera/service.ts'
@@ -22,7 +23,8 @@ const MAX_BAR_RECREATIONS = 5
 
 /** What actually records. The native helper implements it (D-023). */
 export interface RecordingBackend {
-  start(displayId: string): Promise<BackendSession>
+  /** A display, a window or a region (A-08). */
+  start(target: CaptureTarget): Promise<BackendSession>
 }
 
 export interface BackendSession {
@@ -40,7 +42,13 @@ export interface BackendSession {
 }
 
 export type BackendResult =
-  | { kind: 'saved'; projectId: string; warning?: 'display_lost' | 'disk_full' }
+  | {
+      kind: 'saved'
+      projectId: string
+      warning?: 'display_lost' | 'disk_full' | 'window_lost'
+      /** D-024: audio the backend itself was to record (the Mac computer sound). */
+      audioWarnings?: AudioWarning[]
+    }
   | { kind: 'discarded'; reason: 'too_short' }
   | { kind: 'failed'; code: string }
 
@@ -76,7 +84,7 @@ type State =
   | { name: 'idle' }
   | {
       name: 'countdown'
-      displayId: string
+      target: CaptureTarget
       /** Where the user was when they pressed Record: the floating bar opens there. */
       controlDisplayId: number
       window: BrowserWindow
@@ -139,10 +147,16 @@ export class RecordingController {
   /** The stop shortcut registered for the current recording (null when none). */
   private registeredShortcut: string | null = null
 
-  /** Record button: hides the app and shows the 3-2-1 on the chosen display. */
-  start(displayId: string): void {
+  /**
+   * Record button: hides the app and shows the 3-2-1 on the chosen display (for a window, the
+   * one it was on when listed; A-08).
+   */
+  start(target: CaptureTarget): void {
     if (this.state.name !== 'idle') return
-    const display = screen.getAllDisplays().find((d) => String(d.id) === displayId)
+    const displayId = target.displayId
+    const display =
+      screen.getAllDisplays().find((d) => String(d.id) === displayId) ??
+      (target.kind === 'window' ? screen.getPrimaryDisplay() : undefined)
     if (!display) return this.report({ kind: 'error', code: 'display_not_found' })
 
     // The bar goes where the user is looking (the monitor with Kamo's window), which may not be
@@ -168,7 +182,7 @@ export class RecordingController {
     window.once('ready-to-show', () => window.focus())
     // Safety net if the countdown page never reports back.
     const timer = setTimeout(() => void this.countdownDone(), (COUNTDOWN_SECONDS + 2) * 1000)
-    this.state = { name: 'countdown', displayId, controlDisplayId, window, timer }
+    this.state = { name: 'countdown', target, controlDisplayId, window, timer }
     void this.audio?.prepare().catch((error: unknown) => {
       this.log.error('recording.audio.prepare.failed', { error })
     })
@@ -190,7 +204,7 @@ export class RecordingController {
 
   async countdownDone(): Promise<void> {
     if (this.state.name !== 'countdown') return
-    const { displayId, controlDisplayId, window, timer } = this.state
+    const { target, controlDisplayId, window, timer } = this.state
     clearTimeout(timer)
     window.destroy()
     this.state = { name: 'stopping' }
@@ -201,7 +215,7 @@ export class RecordingController {
     const camera = this.beginCamera()
     let session: BackendSession
     try {
-      session = await this.backend.start(displayId)
+      session = await this.backend.start(target)
     } catch (error) {
       this.log.error('recording.start.failed', { error })
       this.state = { name: 'idle' }
@@ -340,7 +354,10 @@ export class RecordingController {
     this.log.info('recording.finished', { kind: result.kind })
     // Both stop now; they are attached one after the other (each rewrites project.json).
     const cameraTake = this.stopCamera(camera)
-    const audioWarnings = await this.finishAudio(audio, result, videoStartedAt)
+    const audioWarnings = [
+      ...(result.kind === 'saved' ? (result.audioWarnings ?? []) : []),
+      ...(await this.finishAudio(audio, result, videoStartedAt)),
+    ]
     const cameraWarnings = await this.finishCamera(cameraTake, result, videoStartedAt)
     if (result.kind === 'saved') this.onSaved(result.projectId)
     this.report(

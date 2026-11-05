@@ -169,6 +169,18 @@ impl Processor {
             let full = rect(output.0, output.1);
             vc.VideoProcessorSetStreamDestRect(&processor, 0, true, Some(&full));
             vc.VideoProcessorSetOutputTargetRect(&processor, true, Some(&full));
+            // What a window fitted inside the video leaves around it (A-08) is black.
+            let black = D3D11_VIDEO_COLOR {
+                Anonymous: D3D11_VIDEO_COLOR_0 {
+                    RGBA: D3D11_VIDEO_COLOR_RGBA {
+                        R: 0.0,
+                        G: 0.0,
+                        B: 0.0,
+                        A: 1.0,
+                    },
+                },
+            };
+            vc.VideoProcessorSetOutputBackgroundColor(&processor, false, &black);
             Ok(Processor {
                 enumerator,
                 processor,
@@ -209,6 +221,21 @@ impl Processor {
         source: (u32, u32),
         output: &ID3D11VideoProcessorOutputView,
     ) -> Result<()> {
+        let full = rect(self.output_width, self.output_height);
+        self.blit_rect(gpu, input, rect(source.0, source.1), full, output)
+    }
+
+    /// Draws the `source` rectangle of `input` into the `dest` rectangle of the output, scaling
+    /// as needed; the rest of the output is the background (black). A-08: a region is a
+    /// `source` crop, a resized window a smaller `dest`.
+    pub fn blit_rect(
+        &self,
+        gpu: &Gpu,
+        input: &ID3D11Texture2D,
+        source: RECT,
+        dest: RECT,
+        output: &ID3D11VideoProcessorOutputView,
+    ) -> Result<()> {
         let desc = D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC {
             FourCC: 0,
             ViewDimension: D3D11_VPIV_DIMENSION_TEXTURE2D,
@@ -227,12 +254,17 @@ impl Processor {
                 &desc,
                 Some(&mut view),
             )?;
-            let source_rect = rect(source.0, source.1);
             gpu.video_context.VideoProcessorSetStreamSourceRect(
                 &self.processor,
                 0,
                 true,
-                Some(&source_rect),
+                Some(&source),
+            );
+            gpu.video_context.VideoProcessorSetStreamDestRect(
+                &self.processor,
+                0,
+                true,
+                Some(&dest),
             );
             let mut stream = D3D11_VIDEO_PROCESSOR_STREAM {
                 Enable: true.into(),

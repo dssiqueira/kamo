@@ -9,6 +9,11 @@ export interface AudioSourceView {
   /** The toggle. */
   enabled: boolean
   status: 'off' | 'starting' | 'live' | 'denied' | 'unavailable' | 'unsupported'
+  /**
+   * Recorded with the video, out of reach of the meters (the Mac computer sound, D-024): no
+   * level bar, a note instead.
+   */
+  noMeter?: boolean
 }
 
 /** Live levels, 0 to 1 (see audioLevel.ts). */
@@ -113,8 +118,11 @@ function micMessage(source: AudioSourceView, t: (key: string) => string): Messag
 }
 
 function systemMessage(source: AudioSourceView, t: (key: string) => string): Message {
-  // Mac: computer sound needs ScreenCaptureKit audio, not built yet (D-024).
+  // Mac before 13: no ScreenCaptureKit audio (D-024).
   if (source.status === 'unsupported') return { tone: 'muted', text: t('home.audio.systemSoon') }
+  if (source.enabled && source.noMeter) {
+    return { tone: 'muted', text: t('home.audio.systemWithVideo') }
+  }
   if (source.enabled && (source.status === 'unavailable' || source.status === 'denied')) {
     return { tone: 'warning', text: t('home.audio.systemUnavailable') }
   }
@@ -156,11 +164,13 @@ function SourceCard({
           onClick={() => onToggle(!source.enabled)}
         />
       </div>
-      <LevelMeter
-        label={t('home.audio.level', { source: label })}
-        level={on && source.status === 'live' ? level : 0}
-        active={on && source.status === 'live'}
-      />
+      {!source.noMeter && (
+        <LevelMeter
+          label={t('home.audio.level', { source: label })}
+          level={on && source.status === 'live' ? level : 0}
+          active={on && source.status === 'live'}
+        />
+      )}
       {children}
       {message && (
         <p

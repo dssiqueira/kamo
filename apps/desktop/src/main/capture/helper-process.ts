@@ -131,6 +131,8 @@ export class HelperProcess {
   private readonly exitListeners = new Set<HelperExitListener>()
   private exitInfo: HelperExit | null = null
   private stoppedSeen = false
+  /** Main closed stdin on purpose (closeInput): exit 0 then is the expected end. */
+  private inputClosed = false
 
   constructor(launch: HelperLaunch, options: HelperProcessOptions) {
     this.logger = options.logger
@@ -165,7 +167,7 @@ export class HelperProcess {
       stdout.flush().forEach(this.handleLine)
       stderr.flush().forEach(this.handleStderr)
       this.exitInfo = exit
-      const level = exit.code === 0 && this.stoppedSeen ? 'info' : 'warn'
+      const level = exit.code === 0 && (this.stoppedSeen || this.inputClosed) ? 'info' : 'warn'
       this.logger[level]('capture.helper.exit', { code: exit.code, signal: exit.signal })
       for (const listener of [...this.exitListeners]) listener(exit)
       resolveExited(exit)
@@ -245,6 +247,16 @@ export class HelperProcess {
         reject(new HelperExitError(exit, type))
       })
     })
+  }
+
+  /**
+   * Closes stdin and lets the helper exit by itself: EOF means `stop`, and a helper that never
+   * started recording just exits 0 (A-08: after `listWindows`).
+   */
+  closeInput(): void {
+    if (this.exitInfo) return
+    this.inputClosed = true
+    this.child.stdin?.end()
   }
 
   /** Closes stdin (the helper treats EOF as `stop`) and kills it if it is still running. */

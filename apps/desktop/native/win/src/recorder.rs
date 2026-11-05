@@ -1,5 +1,11 @@
-// Records one monitor: WGC frames → NV12 → H.264 fragmented MP4, reference JPEGs and mouse
-// events, all on one clock (PROTOCOL.md).
+// Records one monitor, a region of it or one window (A-08): WGC frames → NV12 → H.264
+// fragmented MP4, reference JPEGs and mouse events, all on one clock (PROTOCOL.md).
+//
+// Targets: a monitor is converted whole; a region is a crop of its monitor's frames (the video
+// is the crop's size); a window is captured on its own (WGC follows it when it moves) and its
+// frames are fitted into the video, which keeps the size the window had at the start
+// (geometry.rs). The mouse geometry follows the same mapping, so events stay in video pixels
+// and `core` never knows which target it was.
 //
 // Threading: everything mutable lives on the main thread, which owns the Recorder and handles
 // one message at a time (commands from the stdin thread, frames from WGC's thread, events from
@@ -21,28 +27,34 @@
 use crate::capture::{self, Capture};
 use crate::clock::{HNS_PER_SECOND, hns_to_ms, now_hns};
 use crate::encoder::{self, Encoder, Path};
+use crate::geometry::{self, fit_rect, region_crop, video_size};
 use crate::gpu::{Gpu, Processor, Surface, SurfacePool};
 use crate::mouse::{Geometry, MouseHook, MouseTrack, RawMouse};
 use crate::out::{self, ErrorCode};
 use crate::protocol::{Command, StartCommand};
 use crate::thumbs::{self, Thumbs};
+use crate::winlist;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
-use windows::Graphics::Capture::{Direct3D11CaptureFrame, GraphicsCaptureSession};
-use windows::Win32::Foundation::{E_ACCESSDENIED, POINT};
+use windows::Graphics::Capture::{
+    Direct3D11CaptureFrame, GraphicsCaptureItem, GraphicsCaptureSession,
+};
+use windows::Win32::Foundation::{E_ACCESSDENIED, HWND, POINT, RECT};
 use windows::Win32::Graphics::Direct3D11::ID3D11Texture2D;
 use windows::Win32::Graphics::Dxgi::Common::*;
 use windows::Win32::Graphics::Gdi::{
-    GetMonitorInfoW, HMONITOR, MONITOR_DEFAULTTONULL, MONITORINFO, MonitorFromPoint,
+    GetMonitorInfoW, HMONITOR, MONITOR_DEFAULTTONEAREST, MONITOR_DEFAULTTONULL, MONITORINFO,
+    MonitorFromPoint, MonitorFromWindow,
 };
 use windows::Win32::Media::MediaFoundation::{
     IMFMediaBuffer, MF_VERSION, MFCreateMemoryBuffer, MFSTARTUP_LITE, MFStartup,
 };
 use windows::Win32::Storage::FileSystem::GetDiskFreeSpaceExW;
-use windows::Win32::UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI};
+use windows::Win32::UI::HiDpi::{GetDpiForMonitor, GetDpiForWindow, MDT_EFFECTIVE_DPI};
+use windows::Win32::UI::WindowsAndMessaging::{IsIconic, IsWindow};
 use windows::core::HSTRING;
 
 pub enum Msg {
@@ -54,8 +66,8 @@ pub enum Msg {
     Mouse(RawMouse),
 }
 
-/// H.264 encoders top out around 4096 px; larger monitors are scaled down to fit.
-const MAX_VIDEO_SIDE: f64 = 4096.0;
+/// How often the recorded window's position is read again for the mouse mapping (100ns).
+const WINDOW_GEOMETRY_HNS: i64 = 500_000;
 /// How long after its time a slot is encoded (see the header).
 const LAG_HNS: i64 = 500_000;
 /// Below this much free space the recording stops by itself with `disk_full` (main asks for
@@ -125,8 +137,20 @@ struct ThumbMaker {
     staging: ID3D11Texture2D,
 }
 
+/// What is recorded (A-08).
+#[derive(Clone, Copy, Debug)]
+enum Target {
+    Monitor,
+    /// A crop of the monitor, in physical pixels from its top left.
+    Region(RECT),
+    Window(HWND),
+}
+
 /// Everything that exists once `start` is accepted.
 struct Session {
+    target: Target,
+    /// When the window's position was last read (Target::Window), QPC 100ns.
+    window_checked: i64,
     opts: StartCommand,
     fps: u32,
     gpu: Gpu,
@@ -194,25 +218,48 @@ impl Recorder {
                     self.begin(*opts);
                 }
             }
+            // A-08: answered at once, in any state (main asks before `start`, then closes stdin).
+            Msg::Command(Command::ListWindows(list)) => {
+                out::windows(winlist::list(list.exclude_pid))
+            }
             Msg::Command(Command::Pause) => self.pause(),
             Msg::Command(Command::Resume) => self.resume(),
             Msg::Command(Command::Stop) | Msg::StdinClosed => self.stop(),
             Msg::BadCommand(message) => out::error(ErrorCode::Internal, &message, false),
             Msg::Frame(frame) => self.on_frame(frame),
-            Msg::CaptureClosed => match self.state {
-                State::Starting => out::fatal(
-                    ErrorCode::DisplayNotFound,
-                    "the capture item closed before the first frame",
-                ),
-                State::Recording => {
-                    self.finish(Some((ErrorCode::DisplayLost, "the monitor was removed")))
+            Msg::CaptureClosed => {
+                let window = matches!(
+                    self.session.as_ref().map(|s| s.target),
+                    Some(Target::Window(_))
+                );
+                match (self.state, window) {
+                    (State::Starting, false) => out::fatal(
+                        ErrorCode::DisplayNotFound,
+                        "the capture item closed before the first frame",
+                    ),
+                    (State::Starting, true) => out::fatal(
+                        ErrorCode::WindowNotFound,
+                        "the window closed before the first frame",
+                    ),
+                    (State::Recording, false) => {
+                        self.finish(Some((ErrorCode::DisplayLost, "the monitor was removed")))
+                    }
+                    (State::Recording, true) => {
+                        self.finish(Some((ErrorCode::WindowLost, "the window was closed")))
+                    }
+                    _ => {}
                 }
-                _ => {}
-            },
+            }
             Msg::Mouse(raw) => {
                 let clock = self.clock;
-                if let Some(track) = self.session.as_mut().and_then(|s| s.track.as_mut()) {
-                    track.add(raw, &|host| clock.mouse_ms(host));
+                if let Some(session) = self.session.as_mut() {
+                    // A window can move at any time: its position is read again before a
+                    // click, and at most every 50ms otherwise.
+                    let click = !matches!(raw.kind, crate::mouse::Kind::Move);
+                    session.follow_window(click);
+                    if let Some(track) = session.track.as_mut() {
+                        track.add(raw, &|host| clock.mouse_ms(host));
+                    }
                 }
             }
         }
@@ -266,17 +313,29 @@ impl Recorder {
         if now >= session.next_check {
             session.next_check = now + HNS_PER_SECOND;
             session.checks += 1;
-            let mut info = MONITORINFO {
-                cbSize: size_of::<MONITORINFO>() as u32,
-                ..Default::default()
-            };
-            if !unsafe { GetMonitorInfoW(session.monitor, &mut info) }.as_bool() {
-                self.finish(Some((ErrorCode::DisplayLost, "the monitor is gone")));
-                return;
-            }
-            // The monitor can move in the arrangement while recording.
-            if let Some(track) = session.track.as_mut() {
-                track.geometry.rect = info.rcMonitor;
+            if let Target::Window(window) = session.target {
+                if !unsafe { IsWindow(Some(window)) }.as_bool() {
+                    self.finish(Some((ErrorCode::WindowLost, "the window is gone")));
+                    return;
+                }
+                session.follow_window(true);
+            } else {
+                let mut info = MONITORINFO {
+                    cbSize: size_of::<MONITORINFO>() as u32,
+                    ..Default::default()
+                };
+                if !unsafe { GetMonitorInfoW(session.monitor, &mut info) }.as_bool() {
+                    self.finish(Some((ErrorCode::DisplayLost, "the monitor is gone")));
+                    return;
+                }
+                // The monitor can move in the arrangement while recording.
+                let rect = match session.target {
+                    Target::Region(crop) => offset(crop, &info.rcMonitor),
+                    _ => info.rcMonitor,
+                };
+                if let Some(track) = session.track.as_mut() {
+                    track.geometry.rect = rect;
+                }
             }
             if session.checks % 5 == 0
                 && session
@@ -298,28 +357,6 @@ impl Recorder {
         if opts.fps != 30 && opts.fps != 60 {
             out::fatal(ErrorCode::Internal, "fps must be 30 or 60");
         }
-        let Some(point) = opts.monitor_point else {
-            out::fatal(ErrorCode::DisplayNotFound, "start has no monitorPoint");
-        };
-        let monitor = unsafe {
-            MonitorFromPoint(
-                POINT {
-                    x: point.x,
-                    y: point.y,
-                },
-                MONITOR_DEFAULTTONULL,
-            )
-        };
-        if monitor.is_invalid() {
-            out::fatal(ErrorCode::DisplayNotFound, "no monitor at monitorPoint");
-        }
-        let mut info = MONITORINFO {
-            cbSize: size_of::<MONITORINFO>() as u32,
-            ..Default::default()
-        };
-        if !unsafe { GetMonitorInfoW(monitor, &mut info) }.as_bool() {
-            out::fatal(ErrorCode::DisplayNotFound, "GetMonitorInfo failed");
-        }
         if !GraphicsCaptureSession::IsSupported().unwrap_or(false) {
             out::fatal(
                 ErrorCode::PermissionDenied,
@@ -340,30 +377,29 @@ impl Recorder {
                 &format!("no Direct3D 11 hardware device with video support: {e}"),
             )
         });
-        let item = capture::create_item(monitor).unwrap_or_else(|e| {
-            let code = if e.code() == E_ACCESSDENIED {
-                ErrorCode::PermissionDenied
-            } else {
-                ErrorCode::DisplayNotFound
-            };
-            out::fatal(code, &format!("cannot capture the monitor: {e}"))
-        });
-        let size = item.Size().unwrap_or_else(|e| {
-            out::fatal(ErrorCode::Internal, &format!("capture item size: {e}"))
-        });
-        let source = (size.Width.max(2) as u32, size.Height.max(2) as u32);
+        let Picked {
+            target,
+            item,
+            monitor,
+            dpi_scale,
+            input,
+            source,
+            screen_rect,
+        } = pick_target(&opts);
 
-        // Video size = physical pixels of the monitor, even, scaled down past 4096.
-        let fit = (MAX_VIDEO_SIDE / source.0.max(source.1) as f64).min(1.0);
-        let even = |v: u32| (((v as f64 * fit).round() as u32) & !1).max(2);
-        let video = (even(source.0), even(source.1));
-        let dpi_scale = monitor_dpi_scale(monitor);
+        // Video size = physical pixels of what is recorded, even, scaled down past 4096.
+        let video = video_size(source);
         // Video pixels per DIP, like Electron's Display.scaleFactor and the Mac helper's
         // "per point": the DPI scale, times the downscale if any.
         let scale_factor =
             ((video.0 as f64 / source.0 as f64) * dpi_scale * 10_000.0).round() / 10_000.0;
+        let what = match target {
+            Target::Monitor => "monitor",
+            Target::Region(_) => "region",
+            Target::Window(_) => "window",
+        };
         out::diag(&format!(
-            "monitor {}x{} px, dpi scale {dpi_scale}, video {}x{} @ {}fps",
+            "{what} {}x{} px, dpi scale {dpi_scale}, video {}x{} @ {}fps",
             source.0, source.1, video.0, video.1, opts.fps
         ));
 
@@ -372,7 +408,7 @@ impl Recorder {
         };
         let converter = Processor::new(
             &gpu,
-            source,
+            input,
             video,
             DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709,
             DXGI_COLOR_SPACE_YCBCR_STUDIO_G22_LEFT_P709,
@@ -453,12 +489,12 @@ impl Recorder {
             }) {
                 Ok(h) => {
                     hook = Some(h);
-                    track = Some(MouseTrack::new(Geometry {
-                        rect: info.rcMonitor,
-                        video_width: video.0,
-                        video_height: video.1,
-                        dpi_scale,
-                    }));
+                    let mut geometry = Geometry::screen(screen_rect, video.0, video.1, dpi_scale);
+                    if let Target::Window(window) = target {
+                        geometry.window = Some(window);
+                        geometry.dest = fit_rect(rect_size(&screen_rect), video);
+                    }
+                    track = Some(MouseTrack::new(geometry));
                 }
                 Err(problem) => mouse_problem = Some(problem),
             }
@@ -467,6 +503,8 @@ impl Recorder {
         let pool = SurfacePool::new(video.0, video.1, encoder.path == Path::Gpu);
         let thumbs = Thumbs::start(PathBuf::from(&opts.frames_dir));
         self.session = Some(Session {
+            target,
+            window_checked: now_hns(),
             fps: opts.fps,
             opts,
             gpu,
@@ -757,9 +795,36 @@ impl Session {
         let Some(surface) = self.pool.acquire(&self.gpu, &self.converter)? else {
             return Ok(None);
         };
+        let whole = geometry::rect(0, 0, content.0 as i32, content.1 as i32);
+        let full = geometry::rect(0, 0, self.video_size.0 as i32, self.video_size.1 as i32);
+        // A-08: what part of the frame goes where in the video.
+        let (source, dest) = match self.target {
+            Target::Monitor => (whole, full),
+            Target::Region(crop) => (geometry::clip(crop, content), full),
+            Target::Window(_) => (whole, fit_rect(content, self.video_size)),
+        };
         self.converter
-            .blit(&self.gpu, &texture, content, &surface.view)?;
+            .blit_rect(&self.gpu, &texture, source, dest, &surface.view)?;
         Ok(Some(surface))
+    }
+
+    /// Window recording: reads where the window is now, for the mouse mapping (its frames
+    /// follow it by themselves). `now` skips the 50ms throttle (a click, the 1s check).
+    fn follow_window(&mut self, now: bool) {
+        let Target::Window(window) = self.target else {
+            return;
+        };
+        let time = now_hns();
+        if !now && time - self.window_checked < WINDOW_GEOMETRY_HNS {
+            return;
+        }
+        self.window_checked = time;
+        let (Some(track), Some(bounds)) = (self.track.as_mut(), winlist::frame_bounds(window))
+        else {
+            return;
+        };
+        track.geometry.rect = bounds;
+        track.geometry.dest = fit_rect(rect_size(&bounds), self.video_size);
     }
 
     /// Encodes the next slot (see the recorder's header) and any reference frame due in it.
@@ -869,6 +934,147 @@ impl Session {
         unsafe { GetDiskFreeSpaceExW(&HSTRING::from(dir), Some(&mut free), None, None) }.ok()?;
         Some(free)
     }
+}
+
+/// The capture target of a `start` (A-08), resolved.
+struct Picked {
+    target: Target,
+    item: GraphicsCaptureItem,
+    /// The monitor (for a window: the one it is mostly on).
+    monitor: HMONITOR,
+    dpi_scale: f64,
+    /// Size of the capture item's frames.
+    input: (u32, u32),
+    /// Size of what is recorded: the frames, or the region's crop.
+    source: (u32, u32),
+    /// Where that is on screen, in physical pixels (the mouse mapping).
+    screen_rect: RECT,
+}
+
+fn access_code(e: &windows::core::Error, otherwise: ErrorCode) -> ErrorCode {
+    if e.code() == E_ACCESSDENIED {
+        ErrorCode::PermissionDenied
+    } else {
+        otherwise
+    }
+}
+
+fn item_size(item: &GraphicsCaptureItem) -> (u32, u32) {
+    let size = item
+        .Size()
+        .unwrap_or_else(|e| out::fatal(ErrorCode::Internal, &format!("capture item size: {e}")));
+    (size.Width.max(2) as u32, size.Height.max(2) as u32)
+}
+
+fn rect_size(r: &RECT) -> (u32, u32) {
+    (
+        geometry::width(r).max(2) as u32,
+        geometry::height(r).max(2) as u32,
+    )
+}
+
+/// Resolves `windowId`, or `monitorPoint` (+ `region`), into a capture item. Fatal on failure.
+fn pick_target(opts: &StartCommand) -> Picked {
+    if let Some(id) = opts.window_id.as_deref() {
+        let Some(window) = winlist::parse_id(id) else {
+            out::fatal(ErrorCode::WindowNotFound, "no window with that id");
+        };
+        if unsafe { IsIconic(window) }.as_bool() {
+            out::fatal(ErrorCode::WindowNotFound, "the window is minimized");
+        }
+        let item = capture::create_window_item(window).unwrap_or_else(|e| {
+            out::fatal(
+                access_code(&e, ErrorCode::WindowNotFound),
+                &format!("cannot capture the window: {e}"),
+            )
+        });
+        let input = item_size(&item);
+        let monitor = unsafe { MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST) };
+        let dpi = unsafe { GetDpiForWindow(window) };
+        let dpi_scale = if dpi > 0 {
+            dpi as f64 / 96.0
+        } else {
+            monitor_dpi_scale(monitor)
+        };
+        let screen_rect = winlist::frame_bounds(window)
+            .unwrap_or_else(|| geometry::rect(0, 0, input.0 as i32, input.1 as i32));
+        return Picked {
+            target: Target::Window(window),
+            item,
+            monitor,
+            dpi_scale,
+            input,
+            source: input,
+            screen_rect,
+        };
+    }
+    let Some(point) = opts.monitor_point else {
+        out::fatal(ErrorCode::DisplayNotFound, "start has no monitorPoint");
+    };
+    let monitor = unsafe {
+        MonitorFromPoint(
+            POINT {
+                x: point.x,
+                y: point.y,
+            },
+            MONITOR_DEFAULTTONULL,
+        )
+    };
+    if monitor.is_invalid() {
+        out::fatal(ErrorCode::DisplayNotFound, "no monitor at monitorPoint");
+    }
+    let mut info = MONITORINFO {
+        cbSize: size_of::<MONITORINFO>() as u32,
+        ..Default::default()
+    };
+    if !unsafe { GetMonitorInfoW(monitor, &mut info) }.as_bool() {
+        out::fatal(ErrorCode::DisplayNotFound, "GetMonitorInfo failed");
+    }
+    let item = capture::create_item(monitor).unwrap_or_else(|e| {
+        out::fatal(
+            access_code(&e, ErrorCode::DisplayNotFound),
+            &format!("cannot capture the monitor: {e}"),
+        )
+    });
+    let input = item_size(&item);
+    let dpi_scale = monitor_dpi_scale(monitor);
+    let m = info.rcMonitor;
+    let Some(region) = opts.region else {
+        return Picked {
+            target: Target::Monitor,
+            item,
+            monitor,
+            dpi_scale,
+            input,
+            source: input,
+            screen_rect: m,
+        };
+    };
+    let Some(crop) = region_crop(region, dpi_scale, input) else {
+        out::fatal(
+            ErrorCode::DisplayNotFound,
+            "the region is not on the display",
+        );
+    };
+    Picked {
+        target: Target::Region(crop),
+        item,
+        monitor,
+        dpi_scale,
+        input,
+        source: rect_size(&crop),
+        screen_rect: offset(crop, &m),
+    }
+}
+
+/// `r` (relative to a monitor) moved to that monitor's place on the virtual screen.
+fn offset(r: RECT, monitor: &RECT) -> RECT {
+    geometry::rect(
+        monitor.left + r.left,
+        monitor.top + r.top,
+        monitor.left + r.right,
+        monitor.top + r.bottom,
+    )
 }
 
 /// Physical pixels per DIP on a monitor (its effective DPI / 96).

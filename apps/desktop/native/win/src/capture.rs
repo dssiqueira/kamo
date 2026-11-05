@@ -1,4 +1,5 @@
-// Windows Graphics Capture of one monitor (D-023), without the system cursor (D-005).
+// Windows Graphics Capture of one monitor or one window (D-023, A-08), without the system cursor
+// (D-005).
 //
 // The frame pool is free-threaded: FrameArrived fires on a system thread, which only takes the
 // frame and hands it to the recorder's thread. Windows that ask not to be captured
@@ -10,6 +11,7 @@ use windows::Graphics::Capture::*;
 use windows::Graphics::DirectX::Direct3D11::IDirect3DDevice;
 use windows::Graphics::DirectX::DirectXPixelFormat;
 use windows::Graphics::SizeInt32;
+use windows::Win32::Foundation::HWND;
 use windows::Win32::Graphics::Direct3D11::ID3D11Texture2D;
 use windows::Win32::Graphics::Gdi::HMONITOR;
 use windows::Win32::System::WinRT::Direct3D11::IDirect3DDxgiInterfaceAccess;
@@ -22,6 +24,13 @@ const POOL_BUFFERS: i32 = 2;
 pub fn create_item(monitor: HMONITOR) -> Result<GraphicsCaptureItem> {
     let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
     unsafe { interop.CreateForMonitor(monitor) }
+}
+
+/// A-08: one window. WGC follows it when it moves, captures it even when other windows cover
+/// it, and its frames change size when it is resized (`texture` recreates the pool).
+pub fn create_window_item(window: HWND) -> Result<GraphicsCaptureItem> {
+    let interop = windows::core::factory::<GraphicsCaptureItem, IGraphicsCaptureItemInterop>()?;
+    unsafe { interop.CreateForWindow(window) }
 }
 
 /// Asks for capture without the yellow border (Windows 11). Unpackaged desktop apps are
@@ -85,7 +94,7 @@ impl Capture {
                 Ok(())
             },
         ))?;
-        // Fires when the monitor goes away (or capture is revoked).
+        // Fires when the monitor goes away, the window is closed, or capture is revoked.
         item.Closed(&TypedEventHandler::new(move |_, _| {
             on_closed();
             Ok(())

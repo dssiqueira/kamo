@@ -1,11 +1,13 @@
 // Connects the RecordingController to the native helper through startRecording.
 import type { CursorSettings, Style } from '@kamo/core'
 import { formatProjectDate, type Locale } from '@kamo/i18n'
+import type { CaptureTarget } from '../../shared/capture.ts'
 import { monitorPointFor } from '../displays.ts'
 import type { BackendResult, BackendSession, RecordingBackend } from '../recording-controller.ts'
 import type { FileProjectStore } from '../storage/index.ts'
 import { linkRecordingMedia } from '../storage/recovery.ts'
 import type { CaptureLogger } from './helper-process.ts'
+import type { RegionRect } from './protocol.ts'
 import { RecordingError, startRecording, type RecordingResult } from './recording.ts'
 
 const FPS = 30
@@ -27,16 +29,25 @@ export interface HelperBackendOptions {
   monitorPoint?: (displayId: string) => { x: number; y: number } | undefined
   /** Last style and cursor used: the defaults of a new project (F-08). */
   defaults?: () => Promise<{ style?: Style; cursor?: CursorSettings }>
+  /** D-024: whether the helper records the computer sound (Mac 13+ with the toggle on). */
+  systemAudio?: () => Promise<boolean>
+  /** A-08: a window's title for project.json, if the last list had it. */
+  windowTitle?: (windowId: string) => string | undefined
 }
 
 export function createHelperBackend(options: HelperBackendOptions): RecordingBackend {
   return {
-    async start(displayId) {
+    async start(target) {
       const executable = options.helperPath()
       if (!executable) throw new RecordingError('helper_missing', 'capture helper not found')
       const defaults = (await options.defaults?.().catch(() => undefined)) ?? {}
+      const systemAudio = (await options.systemAudio?.().catch(() => false)) ?? false
       const now = new Date()
-      const monitorPoint = (options.monitorPoint ?? monitorPointFor)(displayId)
+      const displayId = target.kind === 'window' ? (target.displayId ?? '0') : target.displayId
+      // A window is found by its id; a display (or a region of it) by a point inside it.
+      const monitorPoint =
+        target.kind === 'window' ? undefined : (options.monitorPoint ?? monitorPointFor)(displayId)
+      const windowTitle = target.kind === 'window' ? options.windowTitle?.(target.windowId) : ''
       const session = await startRecording(
         {
           store: options.store,
@@ -52,6 +63,9 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
           ...(defaults.style ? { style: defaults.style } : {}),
           ...(defaults.cursor ? { cursor: defaults.cursor } : {}),
           ...(monitorPoint ? { monitorPoint } : {}),
+          ...targetFields(target),
+          ...(windowTitle ? { windowTitle } : {}),
+          ...(systemAudio ? { systemAudio } : {}),
         },
       )
       const backendSession: BackendSession = {
@@ -80,9 +94,19 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
   }
 }
 
+/** The helper's `start` fields for a window or a region (A-08); none for a whole display. */
+function targetFields(target: CaptureTarget): { windowId?: string; region?: RegionRect } {
+  if (target.kind === 'window') return { windowId: target.windowId }
+  if (target.kind === 'region') return { region: { ...target.rect } }
+  return {}
+}
+
 function toBackendResult(result: RecordingResult): BackendResult {
   if ('discarded' in result) return { kind: 'discarded', reason: result.discarded }
-  return result.stoppedBy === 'user'
-    ? { kind: 'saved', projectId: result.project.id }
-    : { kind: 'saved', projectId: result.project.id, warning: result.stoppedBy }
+  return {
+    kind: 'saved',
+    projectId: result.project.id,
+    ...(result.stoppedBy === 'user' ? {} : { warning: result.stoppedBy }),
+    ...(result.audioWarnings?.length ? { audioWarnings: result.audioWarnings } : {}),
+  }
 }

@@ -31,6 +31,7 @@ spawn ──► ready ──start──► started ──pause──► paused �
 | Command | Fields | Notes |
 |---|---|---|
 | `start` | `displayId: string`, `fps: 30 \| 60`, `output: string`, `framesDir: string`, `frameIntervalMs: int`, `frameWidth: int`, `mouse?: boolean`, `monitorPoint?: {x: int, y: int}` | `output` is the absolute path of `screen.mp4.partial`; `framesDir` is the absolute path of the project's `frames/` (main creates it). Today `frameIntervalMs` is 5000 and `frameWidth` 480. `mouse` (default `true`): send `mouse` events; `false` records video only and installs no mouse hook. `monitorPoint`: Windows only, see below. Only the first `start` counts. |
+| `listWindows` | `excludePid?: int` | A-08. Answered at once with `windows`, in any state; the helper then keeps waiting (main closes stdin, and a helper that never started exits 0). `excludePid`: main's pid, so Kamo never lists itself (the helper also leaves out its own and, on Mac, its parent's and Kamo's bundle id). |
 | `pause` | — | Ignored if already paused. |
 | `resume` | — | Ignored if not paused. |
 | `stop` | — | Finalize and exit. |
@@ -40,6 +41,19 @@ spawn ──► ready ──start──► started ──pause──► paused �
 ```
 
 `displayId` is the Electron `Display.id` as a string (what Home lists, F-01). On Mac it is the `CGDirectDisplayID`, which the helper uses directly. On Windows it is not an `HMONITOR` (nor anything Win32 can look up), so main also sends **`monitorPoint`**: a point inside the display in **physical pixels of the virtual screen**, computed from Electron (`screen.getAllDisplays()` → the display with that id → the center of its `bounds` → `screen.dipToScreenPoint`; `displays.ts → monitorPointFor`). The Windows helper records the monitor that contains it (`MonitorFromPoint` with `MONITOR_DEFAULTTONULL`); a missing `monitorPoint`, or one on no monitor, is a fatal `display_not_found`. Main omits it on Mac and the Mac helper ignores it.
+
+### Capture targets (A-08)
+
+`start` records the whole display by default. Two optional fields, never both, change that:
+
+- **`windowId: string`** (decimal, from `listWindows`: an HWND on Windows, a CGWindowID on Mac) records that window. `displayId` is then the display the window was on (for the record); Windows ignores `monitorPoint`. Windows: Windows Graphics Capture of the window (`CreateForWindow`), which follows it when it moves and captures it even when covered; Mac: `SCContentFilter(desktopIndependentWindow:)`. The video keeps the size the window had at the start (physical pixels, even, longest side ≤ 4096); if the window is resized, its frames are scaled into the video with the aspect kept, centered, black around (Mac: `scalesToFit` + `preservesAspectRatio` on macOS 14+). A minimized or missing window is a fatal `window_not_found`; a window closed while recording is a non-fatal `window_lost` (the helper stops by itself, like `display_lost`).
+- **`region: {x, y, width, height}`** records part of the display: DIP (Windows) or points (Mac), relative to the display's top left, what Electron and the region overlay work in. Windows converts it with the monitor's DPI and crops the monitor's frames on the GPU (video processor source rect); Mac sets `sourceRect` on the display stream. Clipped to the display, even sides; nothing left on the display is a fatal `display_not_found`. Main only sends regions of at least 320×240 pixels.
+
+`started`, `frame` and `mouse` work the same for every target: `width`/`height` are the video's, `scaleFactor` is video pixels per DIP/point, and mouse positions are video pixels, so `core` never knows which target it was.
+
+### Computer sound on Mac (D-024)
+
+`systemAudio: string` (Mac only; Windows ignores it) is the absolute path of `system.m4a.partial`. The Swift helper turns on ScreenCaptureKit audio (`capturesAudio`, `excludesCurrentProcessAudio = true`, 48kHz stereo; Kamo's own app is also excluded by the display filter) and writes AAC through AVAssetWriter, on the host clock of the video: samples before the first frame or inside a pause are dropped, the rest are retimed so the file starts at 0 and has no gaps, like the video. `stopped` then carries `systemAudio: {offsetMs}`, where the file's first sample sits on the video timeline. No `systemAudio` in `stopped` means no usable sound (nothing written, or the writer failed): main deletes the partial and warns `system_unavailable`.
 
 ## Events (stdout)
 
@@ -51,13 +65,14 @@ spawn ──► ready ──start──► started ──pause──► paused �
 | `resumed` | `tMs: number` | After `resume`; equals the `tMs` of the pause (paused time is not video time). |
 | `frame` | `file: string`, `tMs: number` | A reference thumbnail was written to `framesDir/file`. JPEG, `frameWidth` px wide, aspect kept. `file` is the video second, zero-padded to 4 digits: `0000.jpg`, `0005.jpg`, `0010.jpg`. Written straight from the capture stream, no decoding afterwards. |
 | `mouse` | `t: number`, `type`, `x: number`, `y: number`, `button?`, `dx?`, `dy?`, `outside?: true` | One mouse event; see [Mouse events](#mouse-events). |
-| `stopped` | `durationMs: number`, `frames: int` | The MP4 is finalized and closed. `durationMs` excludes pauses. The helper exits 0 right after. |
+| `windows` | `windows: [{id, title, app, x, y, width, height}]` | A-08, the answer to `listWindows`, front to back: what a user would pick (Windows: what Alt+Tab shows: visible, not minimized or cloaked, not a tool window, titled, at least 64px; Mac: on-screen layer-0 windows with a title). Bounds in physical pixels of the virtual screen (Windows) or global points (Mac). Titles go on stdout only, never stderr. |
+| `stopped` | `durationMs: number`, `frames: int`, `systemAudio?: {offsetMs: number}` | The MP4 is finalized and closed. `durationMs` excludes pauses. `systemAudio`: see [Computer sound on Mac](#computer-sound-on-mac-d-024). The helper exits 0 right after. |
 | `error` | `code`, `message: string`, `fatal: boolean` | See below. `message` is technical English for the log, never shown to the user. |
 
-Error codes: `display_not_found`, `permission_denied`, `encoder_failed`, `disk_full`, `display_lost`, `mouse_unavailable`, `internal`.
+Error codes: `display_not_found`, `window_not_found`, `permission_denied`, `encoder_failed`, `disk_full`, `display_lost`, `window_lost`, `mouse_unavailable`, `internal`.
 
-- **`fatal: true`**: the helper cannot go on and exits non-zero **without** `stopped`. Used for start failures (`display_not_found`, `permission_denied`, `encoder_failed`) and for anything that leaves no usable file. Main deletes the project folder if recording never started, and keeps it for recovery otherwise.
-- **`fatal: false`** with `display_lost` or `disk_full`: the helper stops **by itself**, finalizes what it has, sends the error, then `stopped`, then exits 0. Main saves the project and tells the user why it stopped (F-02 edge cases).
+- **`fatal: true`**: the helper cannot go on and exits non-zero **without** `stopped`. Used for start failures (`display_not_found`, `window_not_found`, `permission_denied`, `encoder_failed`) and for anything that leaves no usable file. Main deletes the project folder if recording never started, and keeps it for recovery otherwise.
+- **`fatal: false`** with `display_lost`, `window_lost` or `disk_full`: the helper stops **by itself**, finalizes what it has, sends the error, then `stopped`, then exits 0. Main saves the project and tells the user why it stopped (F-02 edge cases).
 - **`fatal: false`** with another code: a warning; recording continues. `mouse_unavailable` means the mouse cannot be observed (Mac: the event tap could not be created, i.e. a missing permission; Windows: the `WH_MOUSE_LL` hook could not be installed); the video goes on and `events.jsonl` stays empty. When it happens before `started`, the helper sends it right after `started`.
 
 ## Mouse events
@@ -78,7 +93,7 @@ Apart from `event`, the fields are exactly those of a line of `events.jsonl` (`M
 - `x`, `y`: pixels of the recorded video, origin at its top left (display position minus the display origin, times video pixels per display unit, so the scale factor and any downscaling are included; Mac works in points, Windows in physical pixels, the helper being per-monitor DPI aware).
 - `button`: `left` \| `right` \| `middle`, on `down`/`up` only (other buttons are not sent).
 - `dx`, `dy`: on `scroll` only, wheel delta in video pixels, coalesced to about 60Hz. Positive `dy` means scrolling toward the top of the content (a classic wheel rolled away from the user); the helpers pass the OS sign through, so the meaning under macOS natural scrolling is still to be checked on a Mac. Windows reports wheel notches, not pixels: the helper converts one notch (120) to 100 DIP, what Chromium scrolls by default.
-- `outside: true`: on `move` only, the pointer is off the recorded display; the camera ignores those stretches. `x`/`y` are then outside `[0, width] × [0, height]`. Off the display, `down` and `scroll` are not sent; an `up` is sent only if its `down` was, clamped to the display edge, so a drag that leaves the display still ends.
+- `outside: true`: on `move` only, the pointer is off what is recorded (the display, the region, or the window; on Windows also over another window in front of the recorded one, or over Kamo's bar); the camera ignores those stretches. `x`/`y` are then outside `[0, width] × [0, height]`, except over a covering window. Off it, `down` and `scroll` are not sent (A-08: a click outside the window or region makes no zoom); an `up` is sent only if its `down` was, clamped to the edge of what is recorded, so a drag that leaves it still ends.
 
 Main streams them into `events.jsonl` through the store's `openWritable`: `events.jsonl.partial` while recording, renamed to `events.jsonl` with the project on a clean stop (empty when the mouse is off or unavailable). If the helper crashes, main closes the file as `events.jsonl` next to the marker and the video partial; if main itself dies, `events.jsonl.partial` stays. Either way the marker is what recovery looks for.
 

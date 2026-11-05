@@ -1,4 +1,5 @@
-// Records one display with ScreenCaptureKit into the VideoWriter and the FrameWriter.
+// Records one display, a region of it or one window (A-08) with ScreenCaptureKit into the
+// VideoWriter and the FrameWriter, and the computer sound (D-024) into the AudioWriter.
 //
 // Threading: everything mutable lives on `queue`. Commands from stdin, sample buffers from
 // ScreenCaptureKit (it delivers on `queue`), the monitor timer and completion handlers all hop
@@ -10,7 +11,14 @@
 // while paused are dropped, so the MP4 is continuous and its duration excludes the pauses
 // (F-02); every tMs sent to main is video time. Mouse events (F-03, Mouse.swift) use the same
 // formula on their own host timestamps, and none is sent before the first frame, while paused,
-// or for a moment that fell in a pause.
+// or for a moment that fell in a pause. Audio samples too: the sound file starts at its first
+// sample after the first frame (its video time is the offset sent in `stopped`) and leaves the
+// pauses out, like the video.
+//
+// Targets (A-08): a display is recorded whole; a region is the display stream with a
+// `sourceRect` (the video is the region's size); a window is a desktop-independent window
+// filter, whose frames are scaled into the video, which keeps the size the window had at the
+// start. The mouse mapping follows the same rectangle, so events stay in video pixels.
 import AVFoundation
 import CoreGraphics
 import CoreMedia
@@ -27,18 +35,35 @@ private let maxVideoSide = 4096.0
 /// 1GB before starting), so the MP4 can still be finalized.
 private let minFreeBytes: Int64 = 200 * 1024 * 1024
 
+/// Smaller than this (points) is a widget, not a window to record (A-08 list).
+private let minWindowSide = 64.0
+
+/// How often the recorded window's position is read again for the mouse mapping (seconds).
+private let windowGeometryInterval = 0.05
+
 final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sendable {
     private enum State {
         case idle, starting, recording, finishing
     }
 
+    /// What is recorded (A-08).
+    private enum Target {
+        case display
+        /// Part of the display, in points relative to its top left.
+        case region(CGRect)
+        case window(CGWindowID)
+    }
+
     private let queue = DispatchQueue(label: "app.kamo.capture.recorder", qos: .userInteractive)
     private var state = State.idle
     private var options: StartCommand?
+    private var target = Target.display
     private var displayID: CGDirectDisplayID = 0
     private var stream: SCStream?
     private var writer: VideoWriter?
     private var frames: FrameWriter?
+    /// Computer sound (D-024); nil when not asked for or when it could not be set up.
+    private var audio: AudioWriter?
     private var monitor: DispatchSourceTimer?
     private var monitorTicks = 0
 
@@ -61,6 +86,10 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     // Mouse (F-03). The tap runs on its own thread; the track lives on `queue`.
     private var mouseTap: MouseTap?
     private var mouseTrack: MouseTrack?
+    /// Where the recorded content is, in global points (the mouse mapping).
+    private var mouseBounds = CGRect.zero
+    /// Host time the window's position was last read (Target.window).
+    private var windowCheckedHost = -Double.infinity
     /// Host time of the last resume: an event from before it was captured during a pause.
     private var resumeHost = -Double.infinity
     /// Why the mouse tap failed before `started` went out; reported right after it.
@@ -78,6 +107,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         case let .start(options):
             // Only the first `start` counts.
             if state == .idle { begin(options) }
+        case let .listWindows(excludePid):
+            listWindows(excluding: excludePid)
         case .pause:
             pause()
         case .resume:
@@ -110,48 +141,110 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         guard let content else {
             Events.fatal(.permissionDenied, "SCShareableContent failed: \(describe(error))")
         }
-        guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
-            Events.fatal(.displayNotFound, "no shareable display with that id")
+
+        let filter: SCContentFilter
+        /// Size of what is recorded, in points.
+        let pointSize: CGSize
+        var sourceRect: CGRect?
+        if let windowId = options.windowId {
+            guard let id = CGWindowID(windowId),
+                  let window = content.windows.first(where: { $0.windowID == id })
+            else {
+                Events.fatal(.windowNotFound, "no shareable window with that id")
+            }
+            target = .window(id)
+            filter = SCContentFilter(desktopIndependentWindow: window)
+            let frame = windowBounds(id) ?? window.frame
+            pointSize = frame.size
+            mouseBounds = frame
+            // The display the window is mostly on gives the backing scale.
+            let center = CGPoint(x: frame.midX, y: frame.midY)
+            if let display = content.displays.first(where: { $0.frame.contains(center) }) {
+                displayID = display.displayID
+            }
+        } else {
+            guard let display = content.displays.first(where: { $0.displayID == displayID }) else {
+                Events.fatal(.displayNotFound, "no shareable display with that id")
+            }
+            // Exclude every window of the parent app (Electron main owns all of Kamo's windows,
+            // the floating bar included). The bundle id covers a packaged Kamo started some
+            // other way.
+            let parent = getppid()
+            let kamo = content.applications.filter {
+                $0.processID == parent || $0.bundleIdentifier == kamoBundleIdentifier
+            }
+            if kamo.isEmpty { Log.diag("parent app not found in shareable content; nothing excluded") }
+            filter = SCContentFilter(display: display, excludingApplications: kamo, exceptingWindows: [])
+            let displayBounds = CGDisplayBounds(displayID)
+            if let region = options.region {
+                let whole = CGRect(x: 0, y: 0, width: Double(display.width), height: Double(display.height))
+                let rect = CGRect(x: region.x, y: region.y, width: region.width, height: region.height)
+                    .intersection(whole)
+                guard !rect.isNull, rect.width >= 2, rect.height >= 2 else {
+                    Events.fatal(.displayNotFound, "the region is not on the display")
+                }
+                target = .region(rect)
+                sourceRect = rect
+                pointSize = rect.size
+                mouseBounds = rect.offsetBy(dx: displayBounds.minX, dy: displayBounds.minY)
+            } else {
+                target = .display
+                pointSize = CGSize(width: Double(display.width), height: Double(display.height))
+                mouseBounds = displayBounds
+            }
         }
 
-        // Exclude every window of the parent app (Electron main owns all of Kamo's windows, the
-        // floating bar included). The bundle id covers a packaged Kamo started some other way.
-        let parent = getppid()
-        let kamo = content.applications.filter {
-            $0.processID == parent || $0.bundleIdentifier == kamoBundleIdentifier
-        }
-        if kamo.isEmpty { Log.diag("parent app not found in shareable content; nothing excluded") }
-        let filter = SCContentFilter(display: display, excludingApplications: kamo, exceptingWindows: [])
-
-        // Video size = physical pixels of the display (points x backing scale), even for H.264.
-        let pointWidth = Double(display.width)
-        let pointHeight = Double(display.height)
+        // Video size = physical pixels of what is recorded (points x backing scale), even.
         var backingScale = 1.0
         if let mode = CGDisplayCopyDisplayMode(displayID), mode.width > 0 {
             backingScale = Double(mode.pixelWidth) / Double(mode.width)
         }
-        var pixelWidth = pointWidth * backingScale
-        var pixelHeight = pointHeight * backingScale
-        let fit = maxVideoSide / max(pixelWidth, pixelHeight)
+        var pixelWidth = Double(pointSize.width) * backingScale
+        var pixelHeight = Double(pointSize.height) * backingScale
+        let fit = maxVideoSide / max(pixelWidth, pixelHeight, 1)
         if fit < 1 {
             pixelWidth *= fit
             pixelHeight *= fit
         }
         videoWidth = max(2, Int(pixelWidth.rounded()) & ~1)
         videoHeight = max(2, Int(pixelHeight.rounded()) & ~1)
-        // Video pixels per display point: the backing scale, unless the video was scaled down.
-        scaleFactor = Double(videoWidth) / pointWidth
+        // Video pixels per point: the backing scale, unless the video was scaled down.
+        scaleFactor = Double(videoWidth) / max(1, Double(pointSize.width))
 
         let config = SCStreamConfiguration()
         config.width = videoWidth
         config.height = videoHeight
+        if let sourceRect { config.sourceRect = sourceRect }
+        if case .window = target {
+            // A window resized while recording is scaled into the video, aspect kept.
+            if #available(macOS 14.0, *) {
+                config.scalesToFit = true
+                config.preservesAspectRatio = true
+            }
+        }
         config.minimumFrameInterval = CMTime(value: 1, timescale: CMTimeScale(options.fps))
         // 4:2:0 video range goes to the H.264 encoder without a conversion.
         config.pixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
         config.colorSpaceName = CGColorSpace.sRGB
         config.showsCursor = false // D-005: Kamo draws its own cursor from the mouse events
-        config.capturesAudio = false // audio arrives in step 3
         config.queueDepth = 8 // one buffer is held as lastPixelBuffer
+
+        // D-024: computer sound, never Kamo's own (the helper plays nothing; Kamo's app is
+        // excluded by the display filter).
+        if let path = options.systemAudio {
+            do {
+                audio = try AudioWriter(url: URL(fileURLWithPath: path))
+            } catch {
+                // Not fatal: the video goes on, main hears no `systemAudio` and warns.
+                Log.diag("computer sound unavailable: \(describe(error))")
+            }
+        }
+        config.capturesAudio = audio != nil
+        if audio != nil {
+            config.excludesCurrentProcessAudio = true
+            config.sampleRate = 48_000
+            config.channelCount = 2
+        }
 
         do {
             writer = try VideoWriter(
@@ -161,6 +254,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
                 fps: options.fps
             )
         } catch {
+            audio?.cancel()
             Events.fatal(.encoderFailed, "cannot start the MP4 writer: \(describe(error))")
         }
         frames = FrameWriter(directory: URL(fileURLWithPath: options.framesDir, isDirectory: true),
@@ -170,7 +264,17 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         do {
             try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: queue)
         } catch {
+            audio?.cancel()
             Events.fatal(.internalError, "cannot add the stream output: \(describe(error))")
+        }
+        if audio != nil {
+            do {
+                try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: queue)
+            } catch {
+                Log.diag("cannot add the audio output: \(describe(error))")
+                audio?.cancel()
+                audio = nil
+            }
         }
         self.stream = stream
         // Before the capture, so the first frames already have their mouse events.
@@ -185,6 +289,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     private func startFailed(_ error: Error) {
         guard state == .starting else { return }
         writer?.cancel()
+        audio?.cancel()
         Events.fatal(isPermissionError(error) ? .permissionDenied : .internalError,
                      "cannot start the capture stream: \(describe(error))")
     }
@@ -217,6 +322,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
             // Main gave up before the first frame: nothing worth keeping.
             stream?.stopCapture(completionHandler: nil)
             writer?.cancel()
+            audio?.cancel()
             exit(0)
         case .recording:
             finish(warning: nil)
@@ -225,11 +331,87 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         }
     }
 
+    // MARK: - Windows (A-08)
+
+    /// Answers `listWindows`: the windows a user would pick, front to back, never Kamo's own.
+    private func listWindows(excluding excludePid: Int32?) {
+        SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: true) { content, error in
+            guard let content else {
+                // No permission yet: an empty list (Home shows the permission warning).
+                Log.diag("cannot list windows: \(describe(error))")
+                Events.windows([])
+                return
+            }
+            var skip: Set<pid_t> = [getpid(), getppid()]
+            if let excludePid { skip.insert(excludePid) }
+            let list = content.windows.compactMap { (window: SCWindow) -> [String: Any]? in
+                guard let app = window.owningApplication, let title = window.title,
+                      window.windowLayer == 0, window.isOnScreen,
+                      !title.trimmingCharacters(in: .whitespaces).isEmpty,
+                      Double(window.frame.width) >= minWindowSide,
+                      Double(window.frame.height) >= minWindowSide,
+                      !skip.contains(app.processID), app.bundleIdentifier != kamoBundleIdentifier
+                else { return nil }
+                return [
+                    "id": String(window.windowID),
+                    "title": title,
+                    "app": app.applicationName,
+                    "x": Double(window.frame.minX),
+                    "y": Double(window.frame.minY),
+                    "width": Double(window.frame.width),
+                    "height": Double(window.frame.height),
+                ]
+            }
+            Events.windows(list)
+        }
+    }
+
+    /// The window's frame in global points (top left origin, like mouse locations), or nil
+    /// when it is gone.
+    private func windowBounds(_ id: CGWindowID) -> CGRect? {
+        guard let list = CGWindowListCopyWindowInfo(.optionIncludingWindow, id) as? [[String: Any]],
+              let info = list.first,
+              let dictionary = info[kCGWindowBounds as String] as? NSDictionary,
+              let rect = CGRect(dictionaryRepresentation: dictionary as CFDictionary),
+              rect.width > 0, rect.height > 0
+        else { return nil }
+        return rect
+    }
+
+    /// Where a window of `size` lands in the video: scaled to fit, aspect kept, centered.
+    private func fitInVideo(_ size: CGSize) -> CGRect {
+        let width = max(1, Double(size.width))
+        let height = max(1, Double(size.height))
+        let scale = min(Double(videoWidth) / width, Double(videoHeight) / height)
+        let w = (width * scale).rounded()
+        let h = (height * scale).rounded()
+        return CGRect(x: ((Double(videoWidth) - w) / 2).rounded(), y: ((Double(videoHeight) - h) / 2).rounded(),
+                      width: w, height: h)
+    }
+
+    /// Window recording: reads where the window is now, for the mouse mapping. `force` skips
+    /// the 50ms throttle (a click, the 1s check). Returns false when the window is gone.
+    @discardableResult
+    private func followWindow(force: Bool) -> Bool {
+        guard case let .window(id) = target else { return true }
+        let now = hostNow()
+        if !force, now - windowCheckedHost < windowGeometryInterval { return true }
+        windowCheckedHost = now
+        guard let frame = windowBounds(id) else { return false }
+        mouseBounds = frame
+        mouseTrack?.updateBounds(frame, dest: fitInVideo(frame.size))
+        return true
+    }
+
     // MARK: - Frames
 
     func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer,
                 of type: SCStreamOutputType)
     {
+        if type == .audio {
+            appendAudio(sampleBuffer)
+            return
+        }
         guard type == .screen, state == .starting || state == .recording, sampleBuffer.isValid,
               let writer
         else { return }
@@ -276,6 +458,14 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         }
     }
 
+    /// Computer sound (D-024): only what plays while the video records, on the video clock.
+    private func appendAudio(_ buffer: CMSampleBuffer) {
+        guard state == .recording, let audio, buffer.isValid, let startHost, pauseHost == nil else { return }
+        let host = buffer.presentationTimeStamp.seconds
+        guard host.isFinite, host >= startHost, host >= resumeHost else { return }
+        audio.append(buffer, videoTime: videoTime(atHost: host))
+    }
+
     /// Queues the reference frames due up to `limitMs` of video time, all from `buffer`.
     private func emitReferenceFrames(through limitMs: Double, inclusive: Bool, using buffer: CVPixelBuffer?) {
         guard let buffer, let frames, let options else { return }
@@ -287,7 +477,8 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     // MARK: - Monitor
 
-    /// Once a second: display still there? disk not full? reference frames while the screen is static.
+    /// Once a second: display or window still there? disk not full? reference frames while the
+    /// screen is static.
     private func startMonitor() {
         let timer = DispatchSource.makeTimerSource(queue: queue)
         timer.schedule(deadline: .now() + 1, repeating: 1)
@@ -298,12 +489,27 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     private func tick() {
         guard state == .recording else { return }
-        if CGDisplayIsOnline(displayID) == 0 {
-            finish(warning: (.displayLost, "the display went offline"))
-            return
+        switch target {
+        case .window:
+            guard followWindow(force: true) else {
+                finish(warning: (.windowLost, "the window was closed"))
+                return
+            }
+        case .display, .region:
+            if CGDisplayIsOnline(displayID) == 0 {
+                finish(warning: (.displayLost, "the display went offline"))
+                return
+            }
+            // The display can move in the arrangement while recording.
+            let bounds = CGDisplayBounds(displayID)
+            if case let .region(rect) = target {
+                mouseBounds = rect.offsetBy(dx: bounds.minX, dy: bounds.minY)
+            } else {
+                mouseBounds = bounds
+            }
+            mouseTrack?.updateBounds(mouseBounds)
         }
         monitorTicks += 1
-        mouseTrack?.updateBounds(CGDisplayBounds(displayID))
         if monitorTicks % 5 == 0, let free = freeBytes(), free < minFreeBytes {
             finish(warning: (.diskFull, "less than 200MB free on the output volume"))
             return
@@ -326,27 +532,34 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     // MARK: - Stopping
 
-    /// ScreenCaptureKit stopped the stream by itself (display gone, stopped from the system UI, ...).
+    /// ScreenCaptureKit stopped the stream by itself (display gone, window closed, stopped from
+    /// the system UI, ...).
     func stream(_ stream: SCStream, didStopWithError error: Error) {
         queue.async {
             switch self.state {
             case .starting:
                 self.startFailed(error)
             case .recording:
-                if CGDisplayIsOnline(self.displayID) == 0 {
+                if case let .window(id) = self.target {
+                    if self.windowBounds(id) == nil {
+                        self.finish(warning: (.windowLost, "the capture stream stopped: window closed"))
+                        return
+                    }
+                } else if CGDisplayIsOnline(self.displayID) == 0 {
                     self.finish(warning: (.displayLost, "the capture stream stopped: display offline"))
-                } else {
-                    // Not one of the protocol's stop reasons: warn, then keep what was recorded.
-                    self.finish(warning: (.internalError, "the capture stream stopped: \(describe(error))"))
+                    return
                 }
+                // Not one of the protocol's stop reasons: warn, then keep what was recorded.
+                self.finish(warning: (.internalError, "the capture stream stopped: \(describe(error))"))
             case .idle, .finishing:
                 break
             }
         }
     }
 
-    /// Normal end: finalize the MP4, send `stopped`, exit 0. With a warning (display_lost,
-    /// disk_full), the error goes out first as non-fatal, as PROTOCOL.md asks.
+    /// Normal end: finalize the MP4 (and the sound file), send `stopped`, exit 0. With a warning
+    /// (display_lost, window_lost, disk_full), the error goes out first as non-fatal, as
+    /// PROTOCOL.md asks.
     private func finish(warning: (code: ErrorCode, message: String)?) {
         guard state == .recording, let writer, let options else { return }
         // Mouse events held back by the throttle belong before `stopped`.
@@ -369,13 +582,27 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
         writer.finish(at: end) { completed in
             self.queue.async {
-                let count = self.frames?.drain() ?? 0
-                if completed {
-                    Events.stopped(seconds: end, frames: count)
-                    exit(0)
+                self.finishAudio { audioOffset in
+                    let count = self.frames?.drain() ?? 0
+                    if completed {
+                        Events.stopped(seconds: end, frames: count, systemAudioOffset: audioOffset)
+                        exit(0)
+                    }
+                    self.failAfterWriterError(count: count, duration: end)
                 }
-                self.failAfterWriterError(count: count, duration: end)
             }
+        }
+    }
+
+    /// Closes the sound file; calls back on `queue` with its offset on the video timeline, or
+    /// nil when there is no usable sound (main then warns, F-04).
+    private func finishAudio(then: @escaping @Sendable (Double?) -> Void) {
+        guard let audio else {
+            then(nil)
+            return
+        }
+        audio.finish { completed in
+            self.queue.async { then(completed ? audio.offset : nil) }
         }
     }
 
@@ -390,6 +617,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
         monitor = nil
         stream?.stopCapture(completionHandler: nil)
         lastPixelBuffer = nil
+        audio?.cancel()
         failAfterWriterError(count: frames?.drain() ?? 0, duration: max(0, lastAppended))
     }
 
@@ -410,13 +638,19 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     /// Starts the mouse tap (Mouse.swift). A tap that cannot be created is not fatal: the video
     /// goes on and main hears `mouse_unavailable`.
     private func startMouse() {
-        mouseTrack = MouseTrack(queue: queue, videoWidth: videoWidth, videoHeight: videoHeight,
-                                bounds: CGDisplayBounds(displayID),
-                                videoTime: { [unowned self] host in self.mouseVideoTime(atHost: host) })
+        let track = MouseTrack(queue: queue, videoWidth: videoWidth, videoHeight: videoHeight,
+                               bounds: mouseBounds,
+                               videoTime: { [unowned self] host in self.mouseVideoTime(atHost: host) })
+        if case .window = target { track.updateBounds(mouseBounds, dest: fitInVideo(mouseBounds.size)) }
+        mouseTrack = track
         // Diagnostics for F-13: does a mouse-only listen tap need Input Monitoring?
         Log.diag("listen event access preflight: \(CGPreflightListenEventAccess())")
         let tap = MouseTap { raw in
-            self.queue.async { self.mouseTrack?.add(raw) }
+            self.queue.async {
+                // A window can move at any time: read where it is before a click.
+                self.followWindow(force: raw.kind == .down || raw.kind == .up)
+                self.mouseTrack?.add(raw)
+            }
         }
         mouseTap = tap
         tap.start { problem in

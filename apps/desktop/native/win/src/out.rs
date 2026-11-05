@@ -14,6 +14,10 @@ pub enum ErrorCode {
     EncoderFailed,
     DiskFull,
     DisplayLost,
+    /// A-08: the window to record is gone or minimized (fatal, before `started`).
+    WindowNotFound,
+    /// A-08: the recorded window was closed (non-fatal: the helper stops by itself).
+    WindowLost,
     MouseUnavailable,
     Internal,
 }
@@ -26,6 +30,8 @@ impl ErrorCode {
             ErrorCode::EncoderFailed => "encoder_failed",
             ErrorCode::DiskFull => "disk_full",
             ErrorCode::DisplayLost => "display_lost",
+            ErrorCode::WindowNotFound => "window_not_found",
+            ErrorCode::WindowLost => "window_lost",
             ErrorCode::MouseUnavailable => "mouse_unavailable",
             ErrorCode::Internal => "internal",
         }
@@ -78,6 +84,11 @@ pub fn mouse(fields: Map<String, Value>) {
     event.insert("event".into(), Value::from("mouse"));
     event.extend(fields);
     emit(Value::Object(event));
+}
+
+/// A-08: the answer to `listWindows`. Titles go to stdout only, never to stderr.
+pub fn windows(windows: Vec<Value>) {
+    emit(json!({ "event": "windows", "windows": windows }));
 }
 
 pub fn stopped(duration_ms: f64, frames: u32) {

@@ -13,7 +13,7 @@ use serde_json::{Map, Value};
 use std::cell::RefCell;
 use std::sync::mpsc::sync_channel;
 use std::thread::JoinHandle;
-use windows::Win32::Foundation::{LPARAM, LRESULT, POINT, RECT, WPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, POINT, RECT, WPARAM};
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Threading::GetCurrentThreadId;
 use windows::Win32::UI::WindowsAndMessaging::*;
@@ -173,49 +173,79 @@ const INTERVAL_HNS: i64 = 10_000_000 / 60 - 20_000;
 /// One wheel notch scrolls about 100 DIP in Chromium and most Windows apps (3 lines).
 const DIP_PER_NOTCH: f64 = 100.0;
 
-/// Where the recorded monitor is and how big the video is.
+/// Where the recorded content is on screen and where it lands in the video.
 #[derive(Clone, Copy, Debug)]
 pub struct Geometry {
-    /// The monitor in physical virtual-screen pixels (GetMonitorInfo, per-monitor DPI aware).
+    /// The recorded monitor, region or window in physical virtual-screen pixels (per-monitor
+    /// DPI aware).
     pub rect: RECT,
-    pub video_width: u32,
-    pub video_height: u32,
+    /// Where `rect` lands in the video, in video pixels: the whole video for a monitor or a
+    /// region; a window resized while recording is fitted inside it (geometry::fit_rect).
+    pub dest: RECT,
     /// Physical pixels per DIP on that monitor (its DPI / 96).
     pub dpi_scale: f64,
+    /// A-08, window recording: a point over another window (one in front of it, Kamo's bar) is
+    /// not in the recorded window, even inside its rectangle.
+    pub window: Option<HWND>,
 }
 
 impl Geometry {
+    /// A monitor or a region of it, recorded into the whole video.
+    pub fn screen(rect: RECT, video_width: u32, video_height: u32, dpi_scale: f64) -> Geometry {
+        Geometry {
+            rect,
+            dest: crate::geometry::rect(0, 0, video_width as i32, video_height as i32),
+            dpi_scale,
+            window: None,
+        }
+    }
+
     fn contains(&self, x: i32, y: i32) -> bool {
         // RECT is right/bottom exclusive, which PtInRect would also say.
         let p = POINT { x, y };
-        p.x >= self.rect.left
+        let inside = p.x >= self.rect.left
             && p.x < self.rect.right
             && p.y >= self.rect.top
-            && p.y < self.rect.bottom
+            && p.y < self.rect.bottom;
+        inside && self.window.is_none_or(|window| shows(window, p))
     }
 
     /// Video pixels per physical pixel, on each axis.
     fn scale(&self) -> (f64, f64) {
         let w = (self.rect.right - self.rect.left).max(1) as f64;
         let h = (self.rect.bottom - self.rect.top).max(1) as f64;
-        (self.video_width as f64 / w, self.video_height as f64 / h)
+        (
+            (self.dest.right - self.dest.left) as f64 / w,
+            (self.dest.bottom - self.dest.top) as f64 / h,
+        )
     }
 
     fn video_point(&self, x: i32, y: i32) -> (f64, f64) {
         let (sx, sy) = self.scale();
         (
-            round1((x - self.rect.left) as f64 * sx),
-            round1((y - self.rect.top) as f64 * sy),
+            round1(self.dest.left as f64 + (x - self.rect.left) as f64 * sx),
+            round1(self.dest.top as f64 + (y - self.rect.top) as f64 * sy),
         )
     }
 }
 
+/// Whether the screen at `p` shows `window` (or one of its own popups), not something in front.
+fn shows(window: HWND, p: POINT) -> bool {
+    let at = unsafe { WindowFromPoint(p) };
+    if at.is_invalid() {
+        return false;
+    }
+    let root = |hwnd| unsafe { GetAncestor(hwnd, GA_ROOTOWNER) };
+    at == window || root(at) == root(window)
+}
+
 /// Turns raw events into protocol `mouse` events (PROTOCOL.md → Mouse events): video pixels of
-/// the recorded monitor, video time, moves and scrolls thinned to ~60Hz.
+/// the recorded monitor, region or window, video time, moves and scrolls thinned to ~60Hz.
 ///
-/// Off the recorded monitor: moves go out with `outside: true`; `down` and `scroll` are not
-/// sent; an `up` is sent only when its `down` was, clamped to the edge, so a drag that leaves
-/// the monitor still ends.
+/// Off what is recorded (A-08: outside the region or window, or over another window in front
+/// of the recorded one): moves go out with `outside: true`; `down` and `scroll` are not sent,
+/// so such clicks make no zoom; an `up` is sent only when its `down` was, clamped to the edge,
+/// so a drag that leaves it still ends.
 pub struct MouseTrack {
     pub geometry: Geometry,
     pending_move: Option<RawMouse>,
@@ -360,8 +390,9 @@ impl MouseTrack {
             };
             self.pressed.swap_remove(index);
             let Some(t) = video_ms(raw.hns) else { return };
-            x = x.clamp(0.0, self.geometry.video_width as f64);
-            y = y.clamp(0.0, self.geometry.video_height as f64);
+            let dest = self.geometry.dest;
+            x = x.clamp(dest.left as f64, dest.right as f64);
+            y = y.clamp(dest.top as f64, dest.bottom as f64);
             let mut fields = event(t, "up", x, y);
             fields.insert("button".into(), Value::from(button.as_str()));
             (self.sink)(fields);
@@ -389,22 +420,90 @@ mod tests {
     fn track() -> (MouseTrack, Rc<RefCell<Vec<Value>>>) {
         let events = Rc::new(RefCell::new(Vec::new()));
         let sink = events.clone();
-        let geometry = Geometry {
-            rect: RECT {
+        let geometry = Geometry::screen(
+            RECT {
                 left: 1920,
                 top: 0,
                 right: 4480,
                 bottom: 1440,
             },
-            video_width: 1280,
-            video_height: 720,
-            dpi_scale: 1.5,
+            1280,
+            720,
+            1.5,
+        );
+        let track = MouseTrack::with_sink(
+            geometry,
+            Box::new(move |f| sink.borrow_mut().push(Value::Object(f))),
+        );
+        (track, events)
+    }
+
+    /// A-08: a 640x360 window at (100, 200) fitted into a 1280x720 video (scaled up 2x) after a
+    /// resize, or a 1000x500 region recorded 1:1.
+    fn fitted(rect: RECT, dest: RECT) -> (MouseTrack, Rc<RefCell<Vec<Value>>>) {
+        let events = Rc::new(RefCell::new(Vec::new()));
+        let sink = events.clone();
+        let geometry = Geometry {
+            rect,
+            dest,
+            dpi_scale: 1.0,
+            window: None,
         };
         let track = MouseTrack::with_sink(
             geometry,
             Box::new(move |f| sink.borrow_mut().push(Value::Object(f))),
         );
         (track, events)
+    }
+
+    #[test]
+    fn maps_a_window_into_where_it_lands_in_the_video() {
+        let window = RECT {
+            left: 100,
+            top: 200,
+            right: 740,
+            bottom: 560,
+        };
+        // a 640x360 window in a 1280x800 video: scaled 2x, letterboxed 40px top and bottom
+        let dest = crate::geometry::fit_rect((640, 360), (1280, 800));
+        assert_eq!((dest.top, dest.bottom), (40, 760));
+        let (mut t, events) = fitted(window, dest);
+        t.add(raw(Kind::Down(Button::Left), 1100, 420, 380), &clock);
+        t.add(raw(Kind::Up(Button::Left), 1200, 2000, 380), &clock);
+        let e = events.borrow();
+        assert_eq!(
+            e[0],
+            serde_json::json!({"t": 100.0, "type": "down", "button": "left", "x": 640.0, "y": 400.0})
+        );
+        // the drag left the window: its up is clamped to where the window is in the video
+        assert_eq!(e[1]["x"], 1280.0);
+        assert_eq!(e[1]["y"], 400.0);
+    }
+
+    #[test]
+    fn clicks_outside_a_region_make_no_events() {
+        let region = RECT {
+            left: 300,
+            top: 100,
+            right: 1300,
+            bottom: 600,
+        };
+        let (mut t, events) = fitted(region, crate::geometry::rect(0, 0, 1000, 500));
+        t.add(raw(Kind::Down(Button::Left), 1100, 200, 300), &clock);
+        t.add(
+            raw(Kind::Scroll { dx: 0, dy: 120 }, 1150, 1400, 300),
+            &clock,
+        );
+        t.add(raw(Kind::Move, 1200, 250, 300), &clock);
+        t.add(raw(Kind::Down(Button::Left), 1300, 800, 350), &clock);
+        let e = events.borrow();
+        assert_eq!(e.len(), 2);
+        assert_eq!(e[0]["outside"], true);
+        assert_eq!(e[0]["x"], -50.0);
+        assert_eq!(
+            e[1],
+            serde_json::json!({"t": 300.0, "type": "down", "button": "left", "x": 500.0, "y": 250.0})
+        );
     }
 
     fn raw(kind: Kind, ms: i64, x: i32, y: i32) -> RawMouse {

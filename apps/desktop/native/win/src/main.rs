@@ -1,18 +1,20 @@
 // kamo-capture (Windows): the native capture helper of the desktop app (D-023).
 //
-// Records one monitor with Windows Graphics Capture (no system cursor, D-005), encodes H.264
+// Records one monitor, a region of it or one window (A-08) with Windows Graphics Capture (no system cursor, D-005), encodes H.264
 // into a fragmented MP4 with Media Foundation, writes the reference JPEGs and emits the mouse
 // events (F-03, mouse only: AGENTS.md rule 2), talking to the Electron main process over stdio.
 // The protocol is apps/desktop/src/main/capture/PROTOCOL.md; protocol.ts is the source of truth.
 mod capture;
 mod clock;
 mod encoder;
+mod geometry;
 mod gpu;
 mod mouse;
 mod out;
 mod protocol;
 mod recorder;
 mod thumbs;
+mod winlist;
 
 use recorder::{Msg, Recorder};
 use std::io::BufRead;

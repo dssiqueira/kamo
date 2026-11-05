@@ -15,6 +15,8 @@ interface Toggles {
 export function useHomeAudio(): AudioSourcesProps | null {
   const [toggles, setToggles] = useState<Toggles | null>(null)
   const [systemSupported, setSystemSupported] = useState(true)
+  // Mac: the capture helper records the computer sound with the video (D-024): no meter.
+  const [systemInHelper, setSystemInHelper] = useState(false)
   const [status, setStatus] = useState<AudioStatus | null>(null)
 
   useEffect(() => {
@@ -23,6 +25,7 @@ export function useHomeAudio(): AudioSourcesProps | null {
       .then(([settings, support]) => {
         if (cancelled) return
         setSystemSupported(support.system)
+        setSystemInHelper(support.systemInHelper === true)
         setToggles({
           mic: settings.micEnabled === true,
           micDeviceId: settings.micDeviceId || null,
@@ -71,10 +74,12 @@ export function useHomeAudio(): AudioSourcesProps | null {
 
   return {
     mic: { enabled: toggles.mic, status: shown(toggles.mic, status?.mic) },
-    system: {
-      enabled: toggles.system,
-      status: systemSupported ? shown(toggles.system, status?.system) : 'unsupported',
-    },
+    system: systemInHelper
+      ? { enabled: toggles.system, status: toggles.system ? 'live' : 'off', noMeter: true }
+      : {
+          enabled: toggles.system,
+          status: systemSupported ? shown(toggles.system, status?.system) : 'unsupported',
+        },
     onToggleMic: (enabled) => {
       if (!enabled) return update({ mic: false })
       // Mac shows its microphone prompt once, before the device is opened; denied shows as

@@ -109,3 +109,68 @@ describe('parseEvent', () => {
     expect(parsed).not.toHaveProperty('unknownType')
   })
 })
+
+describe('A-08 and D-024 protocol', () => {
+  const start = {
+    cmd: 'start',
+    displayId: '1',
+    fps: 30,
+    output: 'x',
+    framesDir: 'y',
+    frameIntervalMs: 5000,
+    frameWidth: 480,
+  } as const
+
+  it('sends a window, a region, the computer sound and the window list', () => {
+    const window = { ...start, windowId: '132456' }
+    expect(JSON.parse(encodeCommand(window))).toEqual(window)
+    const region = { ...start, region: { x: 10, y: 20.5, width: 640, height: 480 } }
+    expect(JSON.parse(encodeCommand(region))).toEqual(region)
+    const sound = { ...start, systemAudio: '/p/system.m4a.partial' }
+    expect(JSON.parse(encodeCommand(sound))).toEqual(sound)
+    expect(encodeCommand({ cmd: 'listWindows', excludePid: 42 })).toBe(
+      '{"cmd":"listWindows","excludePid":42}\n',
+    )
+  })
+
+  it.each([
+    [
+      'a window and a region at once',
+      { windowId: '1', region: { x: 0, y: 0, width: 9, height: 9 } },
+    ],
+    ['a window id that is not a number', { windowId: '0x1F' }],
+    ['an empty region', { region: { x: 0, y: 0, width: 0, height: 9 } }],
+    ['a region with extra fields', { region: { x: 0, y: 0, width: 9, height: 9, z: 1 } }],
+    ['an empty sound path', { systemAudio: '' }],
+  ])('refuses %s', (_name, fields) => {
+    expect(() => encodeCommand({ ...start, ...fields } as unknown as HelperCommand)).toThrow()
+  })
+
+  it('reads the window list, the sound offset and the window errors', () => {
+    const list = parseEvent(
+      '{"event":"windows","windows":[{"id":"7","title":"Notes","app":"notepad","x":-10,"y":0,"width":800,"height":600}]}',
+    )
+    expect(list.event).toEqual({
+      event: 'windows',
+      windows: [{ id: '7', title: 'Notes', app: 'notepad', x: -10, y: 0, width: 800, height: 600 }],
+    })
+    expect(parseEvent('{"event":"windows","windows":[]}').event).toEqual({
+      event: 'windows',
+      windows: [],
+    })
+    expect(
+      parseEvent('{"event":"stopped","durationMs":10,"frames":1,"systemAudio":{"offsetMs":-12.5}}')
+        .event,
+    ).toMatchObject({ systemAudio: { offsetMs: -12.5 } })
+    for (const code of ['window_not_found', 'window_lost']) {
+      expect(
+        parseEvent(`{"event":"error","code":"${code}","message":"x","fatal":false}`).event,
+      ).toBeTruthy()
+    }
+    expect(
+      parseEvent(
+        '{"event":"windows","windows":[{"id":"../x","title":"","app":"","x":0,"y":0,"width":1,"height":1}]}',
+      ).event,
+    ).toBeNull()
+  })
+})

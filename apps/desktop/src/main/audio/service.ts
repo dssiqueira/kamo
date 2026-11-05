@@ -264,8 +264,10 @@ export class AudioService {
     this.closeWindow(true)
   }
 
+  /** The recorder page never records the computer sound where the helper does (Mac). */
   private sanitize(sources: AudioSources): AudioSources {
-    return { ...sources, system: sources.system && this.options.support.system }
+    const { system, systemInHelper } = this.options.support
+    return { ...sources, system: sources.system && system && !systemInHelper }
   }
 
   private async send(command: RecorderCommand): Promise<void> {

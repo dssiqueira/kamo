@@ -1,12 +1,13 @@
 # kamo-capture (Mac)
 
-Native screen capture helper for the desktop app (D-023). It records one display with
+Native screen capture helper for the desktop app (D-023). It records one display, a region of it (`sourceRect`) or one window (`desktopIndependentWindow`, A-08) with
 ScreenCaptureKit (`showsCursor = false`, D-005), encodes H.264 into a fragmented MP4 with
 AVAssetWriter (VideoToolbox) and writes the reference JPEGs, talking to the Electron main
 process over stdio. The protocol is in `apps/desktop/src/main/capture/PROTOCOL.md`; `protocol.ts`
 is the source of truth for field names. It also emits the mouse events (F-03) from a listen-only,
-mouse-only event tap (`Sources/kamo-capture/Mouse.swift`), on the same clock as the video. Audio
-comes later in step 3.
+mouse-only event tap (`Sources/kamo-capture/Mouse.swift`), on the same clock as the video, and, when `start.systemAudio` asks, the computer sound
+(ScreenCaptureKit audio → AAC `system.m4a` through AVAssetWriter, D-024). Window, region and sound are
+not tried on a Mac yet.
 
 Requirements: macOS 13.3+, Xcode 15+ (Swift 5.9+). No third-party dependencies.
 

@@ -44,8 +44,13 @@ export interface AudioLevels {
 
 /** What this OS can record. */
 export interface AudioSupport {
-  /** Computer sound: Windows (WASAPI loopback) only for now; Mac is a TODO (D-024). */
+  /** Computer sound: Windows (WASAPI loopback) and Mac 13+ (ScreenCaptureKit, D-024). */
   system: boolean
+  /**
+   * Mac: the capture helper records the computer sound with the video, not the hidden recorder
+   * page, so Home has no level meter for it. Absent: false.
+   */
+  systemInHelper?: boolean
 }
 
 export type MicrophoneAccess = 'granted' | 'denied' | 'not-determined' | 'restricted' | 'unknown'
