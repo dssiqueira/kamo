@@ -298,7 +298,14 @@ jobs:
           fi
       - name: Create or update the draft release
         run: |
-          flags=(--draft --verify-tag --title "Kamo $VERSION" --generate-notes)
+          # Hand-written notes in docs/releases/v<version>.md when there are some (CHANGELOG.md
+          # links them); otherwise GitHub's generated list of changes.
+          notes="docs/releases/v$VERSION.md"
+          if [ -f "$notes" ]; then
+            flags=(--draft --verify-tag --title "Kamo $VERSION" --notes-file "$notes")
+          else
+            flags=(--draft --verify-tag --title "Kamo $VERSION" --generate-notes)
+          fi
           [ "$PRERELEASE" = true ] && flags+=(--prerelease)
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG exists; replacing its assets."
