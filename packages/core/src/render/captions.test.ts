@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import type { CaptionCue } from '../captions/cues.ts'
-import { DEFAULT_CAPTIONS, type Aspect, type CaptionSettings } from '../project/schema.ts'
+import {
+  DEFAULT_CAPTIONS,
+  DEFAULT_WEBCAM,
+  type Aspect,
+  type CaptionSettings,
+  type WebcamSettings,
+} from '../project/schema.ts'
 import {
   activeCaption,
   buildCaptionTrack,
   CAPTION_FADE_MS,
   CAPTION_SAFE_BOTTOM,
   CAPTION_WIDTH,
+  captionDodge,
   captionFontFamily,
   captionFontPx,
   captionMaxUnits,
@@ -16,6 +23,7 @@ import {
 import { computeLayout, outputSize } from './layout.ts'
 import { splitRegions } from './split.ts'
 import type { Box } from './types.ts'
+import { webcamBubbleAt, type WebcamBubble } from './webcam.ts'
 
 const cue = (startMs: number, endMs: number, text = 'Olá'): CaptionCue => ({
   startMs,
@@ -139,6 +147,101 @@ describe('captionPlacement', () => {
     expect(captionFontPx(uhd, DEFAULT_CAPTIONS)).toBeCloseTo(
       2 * captionFontPx(hd, DEFAULT_CAPTIONS),
     )
+  })
+})
+
+describe('captions and the webcam bubble', () => {
+  const widths = [900, 700]
+  const bubbleBox = (b: WebcamBubble): Box => ({
+    x: b.x - b.width / 2,
+    y: b.y - b.height / 2,
+    width: b.width,
+    height: b.height,
+  })
+  const overlaps = (a: Box, b: Box) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+  const frameFor = (aspect: Aspect) => {
+    const output = outputSize(aspect, '1080p')
+    const { frame } = computeLayout({
+      output,
+      sourceSize: { width: 2560, height: 1440 },
+      style: { padding: 8, radius: 12 },
+      aspect,
+    })
+    return { output, frame }
+  }
+  // Dragged to the bottom middle, right where the captions sit.
+  const bottomMiddle: WebcamSettings = { ...DEFAULT_WEBCAM, anchor: { x: 0.5, y: 1 } }
+
+  it.each(['16:9', '1:1'] as const)('rises above a bubble at the bottom middle (%s)', (aspect) => {
+    const { output, frame } = frameFor(aspect)
+    const bubble = webcamBubbleAt(bottomMiddle, output, 0, 1)!
+    const plain = captionPlacement(frame, output, layer(aspect), widths)
+    expect(overlaps(plain.box, bubbleBox(bubble))).toBe(true)
+    const place = captionPlacement(frame, output, layer(aspect), widths, bubble)
+    expect(overlaps(place.box, bubbleBox(bubble))).toBe(false)
+    expect(place.box.y + place.box.height).toBeLessThanOrEqual(bubbleBox(bubble).y + 1e-6)
+    expect(inside(place.box, frame)).toBe(true)
+    // Same lines, same size: only moved up, and the lines move with the box.
+    expect(place.fontPx).toBeCloseTo(plain.fontPx)
+    expect(place.lines[0]!.y - plain.lines[0]!.y).toBeCloseTo(place.box.y - plain.box.y)
+  })
+
+  it('leaves the captions alone when the bubble is in a corner, hidden or absent', () => {
+    const { output, frame } = frameFor('16:9')
+    const plain = captionPlacement(frame, output, layer('16:9'), widths)
+    const corner = webcamBubbleAt(DEFAULT_WEBCAM, output, 0, 1)!
+    expect(captionPlacement(frame, output, layer('16:9'), widths, corner)).toEqual(plain)
+    const gone = { ...webcamBubbleAt(bottomMiddle, output, 0, 1)!, opacity: 0 }
+    expect(captionPlacement(frame, output, layer('16:9'), widths, gone)).toEqual(plain)
+    expect(captionPlacement(frame, output, layer('16:9'), widths, null)).toEqual(plain)
+  })
+
+  it('follows the bubble while it shrinks on zoom, with no jumps', () => {
+    const { output, frame } = frameFor('16:9')
+    let previous: number | null = null
+    let lowest = -Infinity
+    for (let scale = 1; scale <= 2.0001; scale += 0.02) {
+      const bubble = webcamBubbleAt(bottomMiddle, output, 0, scale)!
+      const place = captionPlacement(frame, output, layer('16:9'), widths, bubble)
+      expect(overlaps(place.box, bubbleBox(bubble))).toBe(false)
+      if (previous !== null) expect(Math.abs(place.box.y - previous)).toBeLessThan(12)
+      previous = place.box.y
+      lowest = Math.max(lowest, place.box.y)
+    }
+    // A smaller bubble lets the captions sit lower.
+    const full = captionPlacement(
+      frame,
+      output,
+      layer('16:9'),
+      widths,
+      webcamBubbleAt(bottomMiddle, output, 0, 1),
+    )
+    expect(lowest).toBeGreaterThan(full.box.y)
+  })
+
+  it('glides with the bubble fade instead of snapping', () => {
+    const box = { x: 500, y: 900, width: 900, height: 120 }
+    const bubble = { x: 960, y: 960, width: 300, height: 300, opacity: 1 }
+    const limits = { top: 0, bottom: 1080 }
+    const full = captionDodge(box, bubble, limits, 20)
+    expect(full).toBeCloseTo(810 - 20 - 1020)
+    expect(captionDodge(box, { ...bubble, opacity: 0.5 }, limits, 20)).toBeCloseTo(full / 2)
+    // Sideways, the move ramps in over the gap as the boxes start to overlap.
+    const edge = { ...bubble, x: 500 - 150 - 20 + 10 }
+    expect(captionDodge(box, edge, limits, 20)).toBeCloseTo(full / 2)
+    expect(captionDodge(box, { ...bubble, x: 200 }, limits, 20)).toBe(0)
+  })
+
+  it('goes below the bubble when that is shorter, and stays put when neither way fits', () => {
+    const box = { x: 500, y: 500, width: 900, height: 120 }
+    const limits = { top: 0, bottom: 1080 }
+    // Bubble just over the top of the captions: nudged down below it.
+    const above = { x: 960, y: 420, width: 200, height: 200, opacity: 1 }
+    expect(captionDodge(box, above, limits, 20)).toBeCloseTo(520 + 20 - 500)
+    // A bubble as tall as the room: no way out, no move.
+    const tall = { x: 960, y: 540, width: 200, height: 1060, opacity: 1 }
+    expect(captionDodge(box, tall, limits, 20)).toBe(0)
   })
 })
 

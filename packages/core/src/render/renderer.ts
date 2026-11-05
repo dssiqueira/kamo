@@ -15,6 +15,7 @@ import {
   captionFontPx,
   captionPlacement,
   type CaptionLayer,
+  type CaptionObstacle,
 } from './captions.ts'
 import {
   computeLayout,
@@ -188,7 +189,8 @@ export function createRenderer(ctx: Context2D, options: RendererOptions = {}): R
         drawWebcamCard(ctx, input.webcam, input.webcam.card, layout, input.style)
       else if (input.webcam?.bubble)
         drawWebcam(ctx, input.webcam, input.webcam.bubble, layout.output)
-      if (input.captions) drawCaption(ctx, input.captions, layout)
+      // Captions move clear of the bubble (captionDodge); the split layout's card is outside the frame.
+      if (input.captions) drawCaption(ctx, input.captions, layout, input.webcam?.bubble ?? null)
       return layout
     },
     invalidate() {
@@ -358,7 +360,12 @@ function drawWebcamCard(
  * outline preset. Measured at the nominal size; captionPlacement shrinks lines too wide for
  * the frame. While fading in, the lines rise CAPTION_LIFT_EM into place.
  */
-function drawCaption(ctx: Context2D, layer: CaptionLayer, layout: Layout): void {
+function drawCaption(
+  ctx: Context2D,
+  layer: CaptionLayer,
+  layout: Layout,
+  bubble: CaptionObstacle | null,
+): void {
   if (!(layer.opacity > 0) || layer.lines.length === 0) return
   const look = CAPTION_LOOKS[layer.preset]
   const font = (px: number) => `${look.weight} ${px}px ${layer.fontFamily}`
@@ -368,7 +375,7 @@ function drawCaption(ctx: Context2D, layer: CaptionLayer, layout: Layout): void 
   const widths = layer.lines.map(
     (line) => ctx.measureText(line)?.width ?? line.length * nominal * 0.5,
   )
-  const place = captionPlacement(layout.frame, layout.output, layer, widths)
+  const place = captionPlacement(layout.frame, layout.output, layer, widths, bubble)
   const opacity = Math.min(1, layer.opacity)
   ctx.globalAlpha = opacity
   if (layer.rising) ctx.translate(0, (1 - opacity) * CAPTION_LIFT_EM * place.fontPx)

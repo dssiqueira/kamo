@@ -68,9 +68,16 @@ describe('parseSettingsUpdate', () => {
       { lastDisplayId: '' },
       { lastDisplayId: 1 },
       { lastStyle: { ...DEFAULT_STYLE, shadow: 'yes' } },
+      { homePlaylistId: 'not-a-playlist-id' },
     ]) {
       expect(() => parseSettingsUpdate(update)).toThrow(SettingsError)
     }
+  })
+
+  it("accepts Home's playlist: an id, or '' for All", () => {
+    const id = '0d6c8a52-6a5e-4f3b-9a51-2f6a2b8c9d10'
+    expect(parseSettingsUpdate({ homePlaylistId: id })).toEqual({ homePlaylistId: id })
+    expect(parseSettingsUpdate({ homePlaylistId: '' })).toEqual({ homePlaylistId: '' })
   })
 })
 

@@ -15,6 +15,10 @@
 // - Fade: each cue fades in with the 170/26 spring (rule 10) from its start and fades out
 //   from its end, as a pure function of time. Cues closer than the fade bridge the gap and
 //   switch at once, so back-to-back cues do not blink.
+// - The webcam bubble (A-03) can be dragged anywhere, e.g. bottom-middle, right where the
+//   captions sit. Captions then move clear of it, above it (or below when that is shorter and
+//   fits), a pure function of the bubble in that frame: its size after shrink-on-zoom and its fade
+//   move the captions continuously, so preview and export agree and nothing jumps.
 // - Font: Inter (the app font), then the system CJK stack of the transcript's language
 //   (DESIGN.md typography: never a bundled CJK font).
 import { captionCues, type CaptionCue } from '../captions/cues.ts'
@@ -29,6 +33,7 @@ import { springSettleTime, springStep } from '../spring.ts'
 import type { Transcript } from '../transcript/transcript.ts'
 import { outputSize, paddedArea, REFERENCE_SHORT_SIDE } from './layout.ts'
 import type { Box, Size } from './types.ts'
+import type { WebcamBubble } from './webcam.ts'
 
 /** Font size as a fraction of the output's short side (1080p: 39, 48, 59px). */
 export const CAPTION_FONT_SIZE: Readonly<Record<CaptionSize, number>> = {
@@ -54,6 +59,9 @@ export const CAPTION_SAFE_BOTTOM: Readonly<Record<Aspect, number>> = {
   '1:1': 0.05,
   '9:16': 0.13,
 }
+
+/** Space kept between the captions and the webcam bubble, as a share of the short side. */
+export const CAPTION_BUBBLE_GAP = 0.02
 
 /** Visibility left when a fade counts as done. */
 const FADE_EPSILON = 0.02
@@ -280,15 +288,20 @@ export interface CaptionPlacement {
   radius: number
 }
 
+/** The webcam bubble as the captions see it: center, outer size and fade (WebcamBubble). */
+export type CaptionObstacle = Pick<WebcamBubble, 'x' | 'y' | 'width' | 'height' | 'opacity'>
+
 /**
  * Places the lines in the screen frame. `lineWidths` are the measured widths at
  * captionFontPx; when the widest exceeds CAPTION_WIDTH of the frame the font shrinks to fit.
+ * `avoid`: the webcam bubble in this frame; the captions move clear of it (captionDodge).
  */
 export function captionPlacement(
   frame: Box,
   output: Size,
   layer: Pick<CaptionLayer, 'preset' | 'position' | 'size' | 'aspect'>,
   lineWidths: readonly number[],
+  avoid?: CaptionObstacle | null,
 ): CaptionPlacement {
   const look = CAPTION_LOOKS[layer.preset]
   let fontPx = captionFontPx(output, layer)
@@ -313,10 +326,62 @@ export function captionPlacement(
     )
     y = Math.max(frame.y, bottom - height)
   }
+  if (avoid) {
+    const bottomLimit =
+      layer.position === 'middle'
+        ? frame.y + frame.height
+        : Math.min(frame.y + frame.height, output.height * (1 - CAPTION_SAFE_BOTTOM[layer.aspect]))
+    y += captionDodge(
+      { x: x - width / 2, y, width, height },
+      avoid,
+      { top: frame.y, bottom: bottomLimit },
+      CAPTION_BUBBLE_GAP * Math.min(output.width, output.height),
+    )
+  }
   return {
     box: { x: x - width / 2, y, width, height },
     fontPx,
     lines: lineWidths.map((_, i) => ({ x, y: y + padY + lineHeight * (i + 0.5) })),
     radius: Math.min(look.radius * fontPx, height / 2),
   }
+}
+
+/**
+ * How far (output px, negative = up) the caption box moves to stay clear of the bubble.
+ * The shorter way out that stays in the frame: above the bubble or below it (up when it is a
+ * tie, and for bottom captions below rarely fits); not at all when neither fits. Continuous in the bubble: the move fades with the bubble's opacity and ramps in
+ * over `gap` as the boxes start to overlap sideways, so a shrinking or fading bubble glides
+ * the captions instead of snapping them.
+ */
+export function captionDodge(
+  box: Box,
+  bubble: CaptionObstacle,
+  limits: { top: number; bottom: number },
+  gap: number,
+): number {
+  if (!(bubble.opacity > 0) || bubble.width <= 0 || bubble.height <= 0) return 0
+  const left = bubble.x - bubble.width / 2
+  const right = bubble.x + bubble.width / 2
+  const top = bubble.y - bubble.height / 2
+  const bottom = bubble.y + bubble.height / 2
+  // Sideways overlap, gap included; the move ramps in over the last `gap` pixels of it.
+  const sideways = Math.min(box.x + box.width, right + gap) - Math.max(box.x, left - gap)
+  const ramp = gap > 0 ? clamp01(sideways / gap) : sideways > 0 ? 1 : 0
+  const weight = ramp * Math.min(1, bubble.opacity)
+  if (weight <= 0) return 0
+  // Already clear vertically.
+  if (box.y + box.height <= top - gap || box.y >= bottom + gap) return 0
+  const up = top - gap - (box.y + box.height)
+  const down = bottom + gap - box.y
+  const fitsUp = box.y + up >= limits.top
+  const fitsDown = box.y + box.height + down <= limits.bottom
+  // The shorter way that fits (up when equal): a bubble just touching the captions from above
+  // nudges them down a little instead of sending them over the bubble.
+  if (fitsUp && (!fitsDown || -up <= down)) return up * weight
+  if (fitsDown) return down * weight
+  return 0
+}
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value))
 }

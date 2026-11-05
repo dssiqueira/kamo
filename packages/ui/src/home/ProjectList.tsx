@@ -4,11 +4,13 @@ import { useLocale, useT } from '../i18n.tsx'
 import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { IconButton } from '../primitives/controls.tsx'
+import { MenuButton, type MenuItem } from '../primitives/Menu.tsx'
 import {
   ArrowDownIcon,
   ArrowUpIcon,
   FolderIcon,
   MinusCircleIcon,
+  MoreIcon,
   PencilIcon,
   PlaylistAddIcon,
   TrashIcon,
@@ -60,6 +62,12 @@ export interface ProjectListProps {
   onOpenRawVideo(projectId: string): void
   /** Local playlists: chips above the list and "Add to playlist" on cards. Omitted: none. */
   playlists?: PlaylistsProps
+  /**
+   * The playlist shown (null: All). With it, the caller keeps the choice (e.g. across the
+   * editor and restarts); without it, the list keeps it while it is on screen.
+   */
+  selectedPlaylistId?: string | null
+  onSelectPlaylist?(playlistId: string | null): void
   /** Local transcription (A-05): "Transcribe" on each card. Omitted: no button. */
   transcription?: {
     onTranscribe(projectId: string): void
@@ -81,10 +89,17 @@ export function ProjectList({
   onShowInFolder,
   onOpenRawVideo,
   playlists,
+  selectedPlaylistId,
+  onSelectPlaylist,
   transcription,
 }: ProjectListProps) {
   const t = useT()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [ownSelectedId, setOwnSelectedId] = useState<string | null>(null)
+  const selectedId = selectedPlaylistId === undefined ? ownSelectedId : selectedPlaylistId
+  const setSelectedId = (playlistId: string | null) => {
+    setOwnSelectedId(playlistId)
+    onSelectPlaylist?.(playlistId)
+  }
   const [dragging, setDragging] = useState<string | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
   // Read by the drag events before React re-renders, so a ref and not only the state.
@@ -307,12 +322,12 @@ function ProjectCard({
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [choosingPlaylists, setChoosingPlaylists] = useState(false)
-  const deleteButton = useRef<HTMLButtonElement>(null)
-  const renameButton = useRef<HTMLButtonElement>(null)
-  const playlistButton = useRef<HTMLButtonElement>(null)
+  // Rename, Add to playlist, Show in folder and Delete live in the "More actions" menu; focus
+  // goes back to its button when their field or popover closes from the keyboard.
+  const moreButton = useRef<HTMLButtonElement>(null)
   const closePlaylists = useCallback((byKeyboard: boolean) => {
     setChoosingPlaylists(false)
-    if (byKeyboard) playlistButton.current?.focus()
+    if (byKeyboard) moreButton.current?.focus()
   }, [])
 
   const finishEditing = (name: string | null, byKeyboard: boolean) => {
@@ -320,8 +335,40 @@ function ProjectCard({
     const trimmed = name?.trim()
     if (trimmed && trimmed !== project.name) onRename(trimmed)
     // Enter/Esc keep the keyboard user in place; a click elsewhere keeps its own focus.
-    if (byKeyboard) renameButton.current?.focus()
+    if (byKeyboard) moreButton.current?.focus()
   }
+
+  const menuItems: MenuItem[] = [
+    {
+      id: 'rename',
+      label: t('projects.rename'),
+      icon: <PencilIcon />,
+      onSelect: () => setEditing(true),
+    },
+    ...(playlists
+      ? [
+          {
+            id: 'playlists',
+            label: t('playlists.addTo'),
+            icon: <PlaylistAddIcon />,
+            onSelect: () => setChoosingPlaylists(true),
+          },
+        ]
+      : []),
+    {
+      id: 'folder',
+      label: t('common.showInFolder'),
+      icon: <FolderIcon />,
+      onSelect: onShowInFolder,
+    },
+    {
+      id: 'delete',
+      label: t('projects.delete'),
+      icon: <TrashIcon />,
+      tone: 'danger',
+      onSelect: () => setConfirming(true),
+    },
+  ]
 
   return (
     <article className="relative flex flex-col gap-sm rounded-lg border border-border bg-surface p-sm">
@@ -335,71 +382,54 @@ function ProjectCard({
         <Thumbnail url={project.thumbnailUrl} />
       </button>
 
-      <div className="flex items-start gap-xs">
-        <div className="flex min-w-0 flex-1 flex-col gap-xs px-xs">
-          {editing ? (
-            <NameEditor initial={project.name} onDone={finishEditing} />
-          ) : (
-            <h3
-              className="truncate text-title"
-              title={project.name}
-              onDoubleClick={() => setEditing(true)}
-            >
-              {project.name}
-            </h3>
-          )}
-          <p className="flex flex-wrap gap-x-sm text-label text-on-surface-muted">
-            <span>{formatDuration(locale, project.durationMs)}</span>
-            <span aria-hidden="true">·</span>
-            <time dateTime={project.createdAt}>
-              {formatDate(locale, new Date(project.createdAt), {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-              })}
-            </time>
-          </p>
-          {transcription && project.transcript && (
-            <TranscriptStatus transcript={project.transcript} />
-          )}
-        </div>
-        <div className="flex shrink-0">
-          <IconButton
-            label={t('projects.rename')}
-            buttonRef={renameButton}
-            onClick={() => setEditing(true)}
-          >
-            <PencilIcon />
-          </IconButton>
-          {playlists && (
-            <IconButton
-              label={t('playlists.addTo')}
-              buttonRef={playlistButton}
-              expanded={choosingPlaylists}
-              onClick={() => setChoosingPlaylists((open) => !open)}
-            >
-              <PlaylistAddIcon />
-            </IconButton>
-          )}
-          {transcription && (
-            <TranscribeButton
-              transcript={project.transcript ?? { state: 'none' }}
-              onTranscribe={transcription.onTranscribe}
-              onCancel={transcription.onCancel}
+      <div className="flex flex-col gap-xs">
+        {/* Name and the two actions on one line; the date gets the card's whole width below. */}
+        <div className="flex items-center gap-xs">
+          <div className="min-w-0 flex-1 px-xs">
+            {editing ? (
+              <NameEditor initial={project.name} onDone={finishEditing} />
+            ) : (
+              <h3
+                className="truncate text-title"
+                title={project.name}
+                onDoubleClick={() => setEditing(true)}
+              >
+                {project.name}
+              </h3>
+            )}
+          </div>
+          <div className="flex shrink-0">
+            {transcription && (
+              <TranscribeButton
+                transcript={project.transcript ?? { state: 'none' }}
+                onTranscribe={transcription.onTranscribe}
+                onCancel={transcription.onCancel}
+              />
+            )}
+            <MenuButton
+              label={t('projects.moreNamed', { name: project.name })}
+              title={t('projects.more')}
+              icon={<MoreIcon />}
+              items={menuItems}
+              buttonRef={moreButton}
             />
-          )}
-          <IconButton label={t('common.showInFolder')} onClick={onShowInFolder}>
-            <FolderIcon />
-          </IconButton>
-          <IconButton
-            label={t('projects.delete')}
-            tone="danger"
-            buttonRef={deleteButton}
-            expanded={confirming}
-            onClick={() => setConfirming(true)}
-          >
-            <TrashIcon />
-          </IconButton>
+          </div>
         </div>
+        <p className="flex flex-wrap gap-x-sm px-xs text-label text-on-surface-muted">
+          <span className="whitespace-nowrap">{formatDuration(locale, project.durationMs)}</span>
+          <span aria-hidden="true">·</span>
+          <time dateTime={project.createdAt} className="whitespace-nowrap">
+            {formatDate(locale, new Date(project.createdAt), {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })}
+          </time>
+        </p>
+        {transcription && project.transcript && (
+          <div className="px-xs">
+            <TranscriptStatus transcript={project.transcript} />
+          </div>
+        )}
       </div>
 
       {confirming && (
@@ -407,7 +437,7 @@ function ProjectCard({
           name={project.name}
           onCancel={() => {
             setConfirming(false)
-            deleteButton.current?.focus()
+            moreButton.current?.focus()
           }}
           onConfirm={() => {
             setConfirming(false)
@@ -448,7 +478,7 @@ function ProjectCard({
           onRemove={playlists.onRemove}
           onCreate={playlists.onCreate}
           onClose={closePlaylists}
-          anchor={playlistButton}
+          anchor={moreButton}
         />
       )}
     </article>

@@ -18,6 +18,8 @@
     "empty": "Nothing here yet. Hit Record and your first video lands right here.",
     "open": "Open",
     "openNamed": "Open {name}",
+    "more": "More actions",
+    "moreNamed": "More actions for {name}",
     "rename": "Rename",
     "nameLabel": "Project name",
     "delete": "Delete",

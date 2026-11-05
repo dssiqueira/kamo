@@ -30,6 +30,8 @@ const Accelerator = z.string().refine(isValidAccelerator)
 const DeviceId = z.string().max(512)
 const TranscriptionLanguageSchema = z.enum(TRANSCRIPTION_LANGUAGES)
 const PackIdSchema = z.enum(PACK_IDS)
+// Home's selected playlist (D-028): a playlist id, or '' for All.
+const HomePlaylistId = z.union([z.literal(''), z.uuid()])
 
 // `.catch(undefined)`: one broken field never resets the others.
 const StoredSettings = z.looseObject({
@@ -56,6 +58,7 @@ const StoredSettings = z.looseObject({
   autoTranscribe: z.boolean().optional().catch(undefined),
   transcriptionLanguage: TranscriptionLanguageSchema.optional().catch(undefined),
   transcriptionPack: PackIdSchema.optional().catch(undefined),
+  homePlaylistId: HomePlaylistId.optional().catch(undefined),
 })
 
 /**
@@ -78,6 +81,7 @@ export const SettingsUpdateSchema = z.strictObject({
   autoTranscribe: z.boolean().optional(),
   transcriptionLanguage: TranscriptionLanguageSchema.optional(),
   transcriptionPack: PackIdSchema.optional(),
+  homePlaylistId: HomePlaylistId.optional(),
 })
 
 /** Every field main may write: the renderer's plus folders, the shortcut and the tray notice. */
@@ -166,6 +170,7 @@ const PUBLIC_KEYS = [
   'autoTranscribe',
   'transcriptionLanguage',
   'transcriptionPack',
+  'homePlaylistId',
 ] as const satisfies readonly (keyof AppSettings)[]
 
 /** Only the known fields go to the renderer. */

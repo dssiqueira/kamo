@@ -18,6 +18,8 @@
     "empty": "这里还空着。点击录制，你的第一个视频就会出现在这里。",
     "open": "打开",
     "openNamed": "打开 {name}",
+    "more": "更多操作",
+    "moreNamed": "{name} 的更多操作",
     "rename": "重命名",
     "nameLabel": "项目名称",
     "delete": "删除",

@@ -18,6 +18,8 @@
     "empty": "Nada por aqui ainda. Aperte Gravar e seu primeiro vídeo aparece aqui.",
     "open": "Abrir",
     "openNamed": "Abrir {name}",
+    "more": "Mais ações",
+    "moreNamed": "Mais ações para {name}",
     "rename": "Renomear",
     "nameLabel": "Nome do projeto",
     "delete": "Excluir",

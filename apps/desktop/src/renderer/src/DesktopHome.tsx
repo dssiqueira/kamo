@@ -107,13 +107,34 @@ export function DesktopHome() {
 
   // Local playlists: on mount and whenever main says one changed.
   const [playlists, setPlaylists] = useState<PlaylistInfo[]>([])
+  const [playlistsLoaded, setPlaylistsLoaded] = useState(false)
   const refreshPlaylists = useCallback(async () => {
     try {
       setPlaylists(await window.kamo.listPlaylists())
     } catch {
       // Keeps what it had; the next change tries again.
+    } finally {
+      setPlaylistsLoaded(true)
     }
   }, [])
+
+  // The playlist shown last time (settings.json), kept across the editor and restarts.
+  // undefined until read, so the list does not flash All first; a deleted one shows All.
+  const [homePlaylistId, setHomePlaylistId] = useState<string | null | undefined>(undefined)
+  useEffect(() => {
+    let cancelled = false
+    void window.kamo
+      .getSettings()
+      .then((settings) => !cancelled && setHomePlaylistId(settings.homePlaylistId || null))
+      .catch(() => !cancelled && setHomePlaylistId(null))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const selectHomePlaylist = (playlistId: string | null) => {
+    setHomePlaylistId(playlistId)
+    void window.kamo.updateSettings({ homePlaylistId: playlistId ?? '' }).catch(() => {})
+  }
 
   useEffect(() => {
     void refreshPlaylists()
@@ -252,8 +273,12 @@ export function DesktopHome() {
 
   const projects: ProjectListProps = {
     playlists: playlistProps,
+    selectedPlaylistId: homePlaylistId ?? null,
+    onSelectPlaylist: selectHomePlaylist,
     projects:
-      listing?.projects.map((p) => ({ ...p, transcript: transcription.stateOf(p) })) ?? null,
+      homePlaylistId === undefined || !playlistsLoaded
+        ? null
+        : (listing?.projects.map((p) => ({ ...p, transcript: transcription.stateOf(p) })) ?? null),
     transcription: {
       onTranscribe: transcription.onTranscribe,
       onCancel: transcription.onCancelTranscription,

@@ -18,6 +18,8 @@
     "empty": "まだ何もありません。録画を押すと、最初の動画がここに表示されます。",
     "open": "開く",
     "openNamed": "{name} を開く",
+    "more": "その他の操作",
+    "moreNamed": "{name} のその他の操作",
     "rename": "名前を変更",
     "nameLabel": "プロジェクト名",
     "delete": "削除",

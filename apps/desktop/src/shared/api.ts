@@ -338,6 +338,8 @@ export interface AppSettings {
   transcriptionLanguage?: TranscriptionLanguage
   /** A-05: which installed pack transcribes. Absent: Accurate when installed, else Light. */
   transcriptionPack?: PackId
+  /** Playlist shown on Home last time (D-028). Absent or '': All; a deleted one falls back to All. */
+  homePlaylistId?: string
 }
 
 export type Theme = 'light' | 'dark' | 'system'

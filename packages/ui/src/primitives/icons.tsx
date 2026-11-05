@@ -161,3 +161,14 @@ export function MinusCircleIcon() {
     </Icon>
   )
 }
+
+/** Three dots in a row: "more actions". */
+export function MoreIcon() {
+  return (
+    <Icon>
+      <circle cx="3.75" cy="8" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="8" cy="8" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="12.25" cy="8" r="1.1" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
