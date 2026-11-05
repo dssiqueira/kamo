@@ -5,13 +5,19 @@ on:
   push:
     branches: [main]
 
+# Read-only token for every job: CI builds and tests, it never writes to the repository.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -46,15 +52,17 @@ jobs:
   visual:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm visual
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: failure()
         with:
           name: visual-diff
@@ -64,7 +72,9 @@ jobs:
   mac-helper:
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - run: swift --version
       - run: swift build -c release --package-path apps/desktop/native/mac --scratch-path apps/desktop/native/mac/build -Xswiftc -warnings-as-errors
 
@@ -75,13 +85,15 @@ jobs:
       run:
         working-directory: apps/desktop/native/win
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - run: rustup component add clippy rustfmt
       - run: cargo --version
       - run: cargo fmt --check
-      - run: cargo clippy --all-targets --target-dir build -- -D warnings
-      - run: cargo test --target-dir build
-      - run: cargo build --release --target-dir build
+      - run: cargo clippy --locked --all-targets --target-dir build -- -D warnings
+      - run: cargo test --locked --target-dir build
+      - run: cargo build --locked --release --target-dir build
 
   # Builds the installers on both OSes, opens the packaged app once and enforces the
   # 130MB installer budget (rule 6). Unsigned here; signing happens in the release workflow.
@@ -100,9 +112,11 @@ jobs:
     env:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -113,16 +127,24 @@ jobs:
         run: swift build -c release --package-path apps/desktop/native/mac --scratch-path apps/desktop/native/mac/build
       - name: Build the Windows capture helper
         if: runner.os == 'Windows'
-        run: cargo build --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
-      # CI never signs: identity null makes electron-builder skip Mac signing (harmless on Windows).
+        run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+      # KAMO_BUILD_CI_SMOKE=1 keeps --smoke-test and the KAMO_SMOKE_* hooks in this packaged
+      # build (src/main/build-flags.ts); release builds never set it, so they ignore both.
       - run: pnpm --filter @kamo/desktop exec electron-vite build
+        env:
+          KAMO_BUILD_CI_SMOKE: '1'
+      # CI never signs: identity null makes electron-builder skip Mac signing (harmless on Windows).
       - run: pnpm --filter @kamo/desktop exec electron-builder --publish never -c.mac.identity=null
       - name: Installer size budget
         shell: bash
-        run: node scripts/check-size.ts 130 ${{ matrix.installer }}
+        env:
+          INSTALLER: ${{ matrix.installer }}
+        run: node scripts/check-size.ts 130 $INSTALLER
       - name: Smoke test (packaged app opens and renders)
         shell: bash
-        run: ${{ matrix.binary }} --smoke-test
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: '"$BINARY" --smoke-test'
       # Export benchmark: a fixed sample project (apps/desktop/scripts/sample-project: ~19s,
       # 1920×1080, scripted clicks) exported for real at 1080p30 by the packaged app's export
       # smoke test. Runners have no GPU, so the numbers go to the job summary and only a gross
@@ -141,8 +163,9 @@ jobs:
         shell: bash
         env:
           KAMO_SMOKE_EXPORT: ${{ steps.sample.outputs.project }}
+          BINARY: ${{ matrix.binary }}
         run: |
-          ${{ matrix.binary }} --smoke-test 2>&1 | tee export-smoke.log
+          "$BINARY" --smoke-test 2>&1 | tee export-smoke.log
           exit "${PIPESTATUS[0]}"
       - name: 'Benchmark: report'
         if: steps.sample.outputs.project != ''

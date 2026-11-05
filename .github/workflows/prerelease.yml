@@ -9,32 +9,40 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     if: github.repository == 'dssiqueira/kamo'
+    permissions:
+      contents: read
+      id-token: write # npm provenance
     strategy:
       matrix:
         package: [design-tokens, core]
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      PACKAGE: ${{ matrix.package }}
     steps:
+      # Only whether the secret exists reaches this step; the token itself is given to the
+      # publish step alone, never to the install, the tests or a third-party action.
       - name: NPM_TOKEN present?
         id: token
+        env:
+          HAS_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::notice::NPM_TOKEN is not set; @kamo/${{ matrix.package }}@next was not published."
+          if [ "$HAS_TOKEN" != true ]; then
+            echo "::notice::NPM_TOKEN is not set; @kamo/$PACKAGE@next was not published."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
         if: steps.token.outputs.publish == 'true'
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         if: steps.token.outputs.publish == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: steps.token.outputs.publish == 'true'
         with:
           node-version: 24
@@ -44,10 +52,17 @@ jobs:
         run: pnpm install --frozen-lockfile
       - if: steps.token.outputs.publish == 'true'
         run: pnpm test
+      - name: Build @kamo/${{ matrix.package }}@next
+        if: steps.token.outputs.publish == 'true'
+        working-directory: packages/${{ matrix.package }}
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          pnpm build
+          npm pkg set version="0.0.$RUN_NUMBER-next"
       - name: Publish @kamo/${{ matrix.package }}@next
         if: steps.token.outputs.publish == 'true'
         working-directory: packages/${{ matrix.package }}
-        run: |
-          pnpm build
-          npm pkg set version="0.0.${{ github.run_number }}-next"
-          pnpm publish --tag next --access public --no-git-checks --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --tag next --access public --no-git-checks --provenance --ignore-scripts

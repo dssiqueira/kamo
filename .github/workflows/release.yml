@@ -45,9 +45,11 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -68,17 +70,20 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        # No dependency cache in the job that signs: a poisoned cache entry would run next to
+        # the signing secrets.
         with:
           node-version: 24
-          cache: pnpm
       - run: pnpm install --frozen-lockfile
       # electron-builder names the files and latest*.yml after package.json's version.
       - name: Set the app version
         working-directory: apps/desktop
-        run: npm pkg set version="${{ env.VERSION }}"
+        run: npm pkg set version="$VERSION"
 
       # The capture helpers ship inside the app (extraResources in electron-builder.yml).
       - name: Build the Mac capture helper
@@ -86,9 +91,17 @@ jobs:
         run: swift build -c release --package-path apps/desktop/native/mac --scratch-path apps/desktop/native/mac/build -Xswiftc -warnings-as-errors
       - name: Build the Windows capture helper
         if: runner.os == 'Windows'
-        run: cargo build --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+        run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
 
-      - run: pnpm --filter @kamo/desktop build
+      # Never KAMO_BUILD_CI_SMOKE here: a release ignores --smoke-test and every KAMO_SMOKE_*
+      # hook (src/main/build-flags.ts). KAMO_BUILD_MCP_ON_NPM=1 only when this release also
+      # publishes @kamo/mcp (the npm job below, which needs NPM_TOKEN): only then does Settings →
+      # Connect to an agent offer `npx -y @kamo/mcp@<version>`. github-release checks that it
+      # really is on npm before the draft is made.
+      - name: Build the app
+        env:
+          KAMO_BUILD_MCP_ON_NPM: ${{ secrets.NPM_TOKEN != '' && '1' || '0' }}
+        run: pnpm --filter @kamo/desktop build
 
       # Mac: Developer ID signing (hardened runtime, the helper included) and notarization by
       # electron-builder, which reads these variables. Each part is skipped on its own when its
@@ -143,9 +156,24 @@ jobs:
           installers=(apps/desktop/release/*.dmg apps/desktop/release/*.exe)
           [ ${#installers[@]} -gt 0 ] || { echo "::error::No installer in apps/desktop/release"; exit 1; }
           node scripts/check-size.ts 130 "${installers[@]}"
-      - name: Smoke test (packaged app opens and renders)
+      # A release build has no --smoke-test (CI's packaged smoke test covers rendering): here the
+      # app must start from its own app.asar, with the fuses flipped, and still be running after
+      # 20s. A separate user-data folder keeps it away from anything on the runner.
+      - name: Launch check (packaged app starts and keeps running)
         shell: bash
-        run: ${{ matrix.binary }} --smoke-test
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: |
+          "$BINARY" --user-data-dir="$RUNNER_TEMP/kamo-launch-check" > launch.log 2>&1 &
+          pid=$!
+          sleep 20
+          if ! kill -0 "$pid" 2>/dev/null; then
+            cat launch.log
+            echo "::error::The packaged app exited within 20s of starting"
+            exit 1
+          fi
+          kill "$pid" || true
+          cat launch.log
       - name: Check the Mac signature and notarization
         if: runner.os == 'macOS'
         shell: bash
@@ -163,7 +191,7 @@ jobs:
           else
             echo "::warning::The Mac app has no Developer ID signature."
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: desktop-${{ runner.os }}
           if-no-files-found: error
@@ -180,9 +208,11 @@ jobs:
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: pnpm
@@ -191,7 +221,7 @@ jobs:
       # prerelease to Chrome's numeric `version` and keeps the full one in `version_name`).
       - name: Set the extension version
         working-directory: apps/extension
-        run: npm pkg set version="${{ env.VERSION }}"
+        run: npm pkg set version="$VERSION"
       - run: pnpm --filter @kamo/extension build
       - name: Extension size budget (rule 6)
         run: |
@@ -202,7 +232,7 @@ jobs:
           mkdir -p upload
           (cd apps/extension/dist && zip -r -X "$GITHUB_WORKSPACE/upload/kamo-extension-$VERSION.zip" .)
           node scripts/check-size.ts 5 "upload/kamo-extension-$VERSION.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: extension
           path: upload/kamo-extension-*.zip
@@ -211,7 +241,7 @@ jobs:
   # One job uploads everything, so the two desktop builds never race to create the release.
   # The release stays a draft: electron-updater only sees it once a person publishes it.
   github-release:
-    needs: [prepare, check, desktop, extension]
+    needs: [prepare, check, desktop, extension, npm]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -221,8 +251,10 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: assets
           merge-multiple: true
@@ -231,6 +263,20 @@ jobs:
           ls -la assets
           test -f assets/latest.yml || { echo "::error::latest.yml (Windows) missing"; exit 1; }
           test -f assets/latest-mac.yml || { echo "::error::latest-mac.yml (Mac) missing"; exit 1; }
+      # The app built with NPM_TOKEN present tells users to run `npx -y @kamo/mcp@<version>`:
+      # that exact version must be on npm before anyone can download the app.
+      - name: '@kamo/mcp is on npm when the app advertises it'
+        env:
+          MCP_ON_NPM: ${{ secrets.NPM_TOKEN != '' }}
+        run: |
+          if [ "$MCP_ON_NPM" != true ]; then
+            echo "::notice::No NPM_TOKEN: this app shows no npx command, only the note that @kamo/mcp is not published yet."
+            exit 0
+          fi
+          if ! npm view "@kamo/mcp@$VERSION" version; then
+            echo "::error::The app offers npx -y @kamo/mcp@$VERSION, but that version is not on npm."
+            exit 1
+          fi
       - name: Create or update the draft release
         run: |
           flags=(--draft --verify-tag --title "Kamo $VERSION" --generate-notes)
@@ -252,22 +298,27 @@ jobs:
       id-token: write # npm provenance
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
+      # Only whether the secret exists reaches this step; the token itself is given to the
+      # publish step alone, never to the install, the build or a third-party action.
       - name: NPM_TOKEN present?
         id: token
+        env:
+          HAS_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
+          if [ "$HAS_TOKEN" != true ]; then
             echo "::warning::NPM_TOKEN is not set: npm packages were not published."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "publish=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
         if: steps.token.outputs.publish == 'true'
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         if: steps.token.outputs.publish == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: steps.token.outputs.publish == 'true'
         with:
           node-version: 24
@@ -275,18 +326,22 @@ jobs:
           registry-url: https://registry.npmjs.org
       - if: steps.token.outputs.publish == 'true'
         run: pnpm install --frozen-lockfile
+      - name: Build @kamo/design-tokens, i18n, core, cloud-client and mcp at this version
+        if: steps.token.outputs.publish == 'true'
+        run: |
+          for dir in packages/design-tokens packages/i18n packages/core packages/cloud-client apps/mcp; do
+            (cd "$dir" && npm pkg set version="$VERSION" && pnpm build)
+          done
       # Dependencies first: `workspace:*` becomes this exact version on publish, so @kamo/core
       # must be on npm before @kamo/mcp. A version already on npm is skipped (re-runs).
       - name: Publish @kamo/design-tokens, i18n, core, cloud-client and mcp
         if: steps.token.outputs.publish == 'true'
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
           tag=latest
           [ "$PRERELEASE" = true ] && tag=next
-          for dir in packages/design-tokens packages/i18n packages/core packages/cloud-client apps/mcp; do
-            (cd "$dir" && npm pkg set version="$VERSION")
-          done
           for dir in packages/design-tokens packages/i18n packages/core packages/cloud-client apps/mcp; do
             name=$(node -p "require('./$dir/package.json').name")
             if npm view "$name@$VERSION" version >/dev/null 2>&1; then
@@ -294,7 +349,7 @@ jobs:
               continue
             fi
             echo "::group::$name@$VERSION ($tag)"
-            (cd "$dir" && pnpm build && pnpm publish --access public --tag "$tag" --provenance --no-git-checks)
+            (cd "$dir" && pnpm publish --access public --tag "$tag" --provenance --no-git-checks --ignore-scripts)
             echo "::endgroup::"
           done
       - name: '@kamo/mcp size budget (D-019: 5MB)'
@@ -312,18 +367,20 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
-      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
-      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
-      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
-      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
-      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
     steps:
+      # Only whether each secret exists reaches this step; the values go to the upload step alone.
       - name: Chrome Web Store secrets present?
         id: secrets
+        env:
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID != '' }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID != '' }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID != '' }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET != '' }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN != '' }}
         run: |
           missing=""
           for name in CWS_PUBLISHER_ID CWS_EXTENSION_ID CWS_CLIENT_ID CWS_CLIENT_SECRET CWS_REFRESH_TOKEN; do
-            [ -z "${!name}" ] && missing="$missing $name"
+            [ "${!name}" != true ] && missing="$missing $name"
           done
           if [ -n "$missing" ]; then
             echo "::warning::Not uploaded to the Chrome Web Store; missing secrets:$missing. Upload the release's extension zip by hand."
@@ -331,17 +388,25 @@ jobs:
           else
             echo "upload=true" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
         if: steps.secrets.outputs.upload == 'true'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         if: steps.secrets.outputs.upload == 'true'
         with:
           node-version: 24
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         if: steps.secrets.outputs.upload == 'true'
         with:
           name: extension
           path: upload
       - name: Upload and submit for review
         if: steps.secrets.outputs.upload == 'true'
+        env:
+          CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
         run: node scripts/chrome-web-store.ts "upload/kamo-extension-$VERSION.zip"
