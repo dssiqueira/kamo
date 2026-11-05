@@ -1,4 +1,8 @@
 <p align="center">
+  <b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
+</p>
+
+<p align="center">
   <img src="packages/design-tokens/assets/mascot/kamo-scene.webp" width="240" alt="Kamo, a paper-cut chameleon, standing among leaves">
 </p>
 
@@ -13,20 +17,20 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Platforms: Windows, macOS, Chrome" src="https://img.shields.io/badge/platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Chrome-2F6F68?style=flat-square">
+  <img alt="Platform: Windows today, Mac and Chrome coming soon" src="https://img.shields.io/badge/platform-Windows%20%C2%B7%20Mac%20%26%20Chrome%20soon-2F6F68?style=flat-square">
   <img alt="No telemetry" src="https://img.shields.io/badge/telemetry-none-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Available for Windows · Mac · Chrome</h3>
+<h3 align="center">Out now for Windows</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Mac (Apple silicon)" src="https://img.shields.io/badge/Download-Mac%20(Apple%20silicon)-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Chrome Web Store: coming soon" src="https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68"></a>
+  <img alt="Mac: coming soon" src="https://img.shields.io/badge/Mac-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68">
+  <img alt="Chrome extension: coming soon" src="https://img.shields.io/badge/Chrome-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
 <p align="center">
-  <sub>The extension also runs in other Chromium browsers: Edge, Brave, Arc. Until it is on the store, grab it from <a href="https://github.com/dssiqueira/kamo/releases/latest">Releases</a> or <a href="#build-from-source">build it</a>.</sub>
+  <sub>When the Chrome extension ships, it also runs in Edge, Brave and Arc. Can't wait? <a href="#build-from-source">Build it from source</a>.</sub>
 </p>
 
 <p align="center">
@@ -34,7 +38,10 @@
 </p>
 
 > [!NOTE]
-> **Kamo is young.** Windows is where it is built and tested every day. The Mac build compiles in CI but has not been tried on a real Mac yet, and installers are not signed yet. Builds land on [GitHub Releases](https://github.com/dssiqueira/kamo/releases); if you hit a rough edge, [open an issue](https://github.com/dssiqueira/kamo/issues).
+> **Kamo is young.** The Windows build is out, and Windows is where Kamo is built and tested every day. The Mac app and the Chrome extension are coming soon. Installers are not code-signed yet. Builds land on [GitHub Releases](https://github.com/dssiqueira/kamo/releases); if you hit a rough edge, [open an issue](https://github.com/dssiqueira/kamo/issues).
+
+> [!TIP]
+> **First launch on Windows.** The installer isn't code-signed yet, so SmartScreen may say "Windows protected your PC". Click **More info**, then **Run anyway**.
 
 ---
 
@@ -139,14 +146,14 @@
 
 <p align="center">
   <img src="docs/readme/extension-popup.webp" width="300" alt="The Chrome extension popup: Record this tab, with microphone, tab sound and camera toggles">
-  <br><sub>The Chrome extension: one popup, one button.</sub>
+  <br><sub>The Chrome extension (coming soon): one popup, one button.</sub>
 </p>
 
 ## Desktop or extension?
 
-Same engine, same editor, same export. The difference is what they can record.
+Same engine, same editor, same export. The difference is what they can record. Windows is out now; the Mac app and the extension are coming soon.
 
-| | Desktop app<br><sub>Windows · Mac (Apple silicon)</sub> | Chrome extension<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | Desktop app<br><sub>Windows · Mac (Apple silicon, soon)</sub> | Chrome extension (soon)<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | Record the whole screen | ✅ | — |
 | Record one window or a selection | ✅ | — |
