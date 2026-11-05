@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { LOCALES, loadMessages } from '@kamo/i18n'
 import { describe, expect, it } from 'vitest'
 import {
   MANIFEST_MESSAGES,
+  OPTIONAL_HOST_PERMISSIONS,
   PERMISSIONS,
   buildManifest,
   chromeLocale,
@@ -29,11 +32,13 @@ describe('manifest', () => {
     })
   })
 
-  it('asks for no host permission and never <all_urls> (E-06)', () => {
+  it('asks for no host permission; <all_urls> only as optional (E-06)', () => {
     const manifest = buildManifest('0.2.0')
     expect(manifest).not.toHaveProperty('host_permissions')
     expect(manifest).not.toHaveProperty('content_scripts')
-    expect(JSON.stringify(manifest)).not.toContain('<all_urls>')
+    expect(manifest['optional_host_permissions']).toEqual(['<all_urls>'])
+    const { optional_host_permissions: _optional, ...rest } = manifest
+    expect(JSON.stringify(rest)).not.toContain('<all_urls>')
     expect(PERMISSIONS).toEqual([
       'tabCapture',
       'offscreen',
@@ -41,7 +46,18 @@ describe('manifest', () => {
       'activeTab',
       'scripting',
       'alarms',
+      'downloads',
     ])
+  })
+
+  it('justifies every permission for the store, and only those (E-06)', () => {
+    const doc = readFileSync(
+      resolve(import.meta.dirname, '../../../docs/store/permissions.md'),
+      'utf8',
+    )
+    const listed = [...doc.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1])
+    expect(listed.sort()).toEqual([...PERMISSIONS].sort())
+    for (const origin of OPTIONAL_HOST_PERMISSIONS) expect(doc).toContain(`\`${origin}\``)
   })
 
   it('stops with ⌘⇧2 / Ctrl+Shift+2', () => {

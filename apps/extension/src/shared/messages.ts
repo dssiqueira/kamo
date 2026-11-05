@@ -11,6 +11,9 @@ export const POPUP_PORT = 'kamo-popup'
 /** Chrome command (manifest `commands`) that stops the recording: ⌘⇧2 / Ctrl+Shift+2. */
 export const STOP_COMMAND = 'stop-recording'
 
+/** Port the content script in the recorded tab opens to the offscreen recorder (E-02). */
+export const MOUSE_PORT = 'kamo-mouse'
+
 /** Where the recording is. Only one recording at a time, in one tab. */
 export type Session =
   | { phase: 'idle' }
@@ -65,6 +68,8 @@ export interface PrepareRequest {
   target: 'offscreen'
   type: 'prepare'
   streamId: string
+  /** The recorded tab: only its mouse events are kept (E-02). */
+  tabId: number
   projectId: string
   projectName: string
   microphone: boolean
@@ -86,6 +91,8 @@ export type OffscreenRequest =
   | { target: 'offscreen'; type: 'resume' }
   | { target: 'offscreen'; type: 'stop' }
   | { target: 'offscreen'; type: 'cancel' }
+  /** The tab went where the extension cannot follow: clicks stop being captured (E-02). */
+  | { target: 'offscreen'; type: 'events-lost' }
 
 export type OffscreenResponse =
   { ok: true; clock?: ClockSnapshot; notices?: Notice[] } | { ok: false; notice: Notice }

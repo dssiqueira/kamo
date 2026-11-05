@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`events.jsonl from the fixture > lands every mouse sample in video pixels and recording time 1`] = `
+"{"t":100,"x":960,"y":540,"type":"move"}
+{"t":200,"x":150,"y":300,"type":"down","button":"left"}
+{"t":300,"x":150,"y":300,"type":"up","button":"left"}
+{"t":400,"x":1918.5,"y":1078.5,"type":"down","button":"right"}
+{"t":1000,"x":960,"y":540,"type":"down","button":"left"}
+{"t":2000,"x":150,"y":150,"type":"down","button":"middle"}
+{"t":3000,"x":960,"y":540,"type":"down","button":"left"}
+{"t":4000,"x":960,"y":540,"type":"scroll","dx":0,"dy":72}
+{"t":5000,"x":1918.5,"y":30,"type":"move","outside":true}
+"
+`;

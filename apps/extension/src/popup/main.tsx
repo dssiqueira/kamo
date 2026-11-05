@@ -35,6 +35,8 @@ import {
   type MediaDevice,
   type Preferences,
 } from '../shared/preferences.ts'
+import { PROJECTS_PAGE, editorPath } from '../shared/pages.ts'
+import { hasLowSpace } from '../shared/storage-space.ts'
 import { readLibrary, type InterruptedSummary } from '../storage/library.ts'
 import { OpfsProjectStore } from '../storage/opfs-store.ts'
 
@@ -202,8 +204,47 @@ function useCameraPreview(enabled: boolean, cameraId: string) {
   return { stream, status }
 }
 
+const DESKTOP_CARD_HIDDEN = 'kamo.desktopCardHidden'
+
+/** The "Want captions?" card, until the user hides it (remembered in chrome.storage.local). */
+function useDesktopCard(): { visible: boolean; hide(): void } {
+  const [hidden, setHidden] = useState(true)
+  useEffect(() => {
+    void chrome.storage.local
+      .get(DESKTOP_CARD_HIDDEN)
+      .then((stored) => setHidden(stored[DESKTOP_CARD_HIDDEN] === true))
+      .catch(() => setHidden(false))
+  }, [])
+  return {
+    visible: !hidden,
+    hide: () => {
+      setHidden(true)
+      void chrome.storage.local.set({ [DESKTOP_CARD_HIDDEN]: true })
+    },
+  }
+}
+
+/** E-03 edge: warn before recording when the browser has almost no room left. */
+function useLowSpace(): boolean {
+  const [low, setLow] = useState(false)
+  useEffect(() => {
+    void navigator.storage
+      .estimate()
+      .then((estimate) => setLow(hasLowSpace(estimate)))
+      .catch(() => undefined)
+  }, [])
+  return low
+}
+
+/** Opens an extension page in a new tab and closes the popup. */
+function openPage(path: string): void {
+  void chrome.tabs.create({ url: chrome.runtime.getURL(path) }).then(() => window.close())
+}
+
 function Popup() {
   const t = useT()
+  const desktopCard = useDesktopCard()
+  const lowSpace = useLowSpace()
   const state = useBackgroundState()
   const tab = useActiveTab()
   const stopShortcut = useStopShortcut()
@@ -338,7 +379,11 @@ function Popup() {
       interrupted={library.interrupted}
       onRecover={recover}
       onDiscard={discard}
-      desktopAppUrl={DESKTOP_DOWNLOAD_URL}
+      desktopAppUrl={desktopCard.visible ? DESKTOP_DOWNLOAD_URL : undefined}
+      onDismissDesktopApp={desktopCard.hide}
+      onOpenProject={(projectId) => openPage(editorPath(projectId))}
+      onOpenAllProjects={() => openPage(PROJECTS_PAGE)}
+      lowSpace={lowSpace}
     />
   )
 }

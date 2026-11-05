@@ -8,6 +8,7 @@ import {
   type OffscreenResponse,
 } from '../shared/messages.ts'
 import { OpfsProjectStore } from '../storage/opfs-store.ts'
+import { TabEventSource } from './tab-events.ts'
 import { CaptureError, TabRecording } from './tab-recording.ts'
 
 const store = new OpfsProjectStore()
@@ -30,15 +31,24 @@ async function handle(request: OffscreenRequest): Promise<OffscreenResponse> {
     case 'prepare': {
       if (recording) await recording.cancel()
       const id = request.projectId
-      recording = await TabRecording.prepare({
+      let prepared: TabRecording | null = null
+      // Mouse events of the recorded tab (E-02), on the recording's own clock and video size.
+      const events = new TabEventSource({
+        tabId: request.tabId,
+        video: () => prepared?.source ?? { width: request.width, height: request.height },
+        recordedAt: (wallMs) => prepared?.recordedAt(wallMs) ?? null,
+      })
+      prepared = await TabRecording.prepare({
         store,
         request,
+        events,
         onClock: (clock) => emit({ target: 'background', type: 'clock', projectId: id, clock }),
         onFinishedByItself: (notices) => {
           recording = null
           emit({ target: 'background', type: 'finished', projectId: id, notices })
         },
       })
+      recording = prepared
       return { ok: true }
     }
     case 'start': {
@@ -67,6 +77,9 @@ async function handle(request: OffscreenRequest): Promise<OffscreenResponse> {
     case 'cancel':
       await recording?.cancel()
       recording = null
+      return { ok: true }
+    case 'events-lost':
+      recording?.markEventsLost()
       return { ok: true }
   }
 }

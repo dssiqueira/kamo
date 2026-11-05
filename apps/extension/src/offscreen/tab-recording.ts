@@ -179,6 +179,8 @@ export class TabRecording implements CaptureSession {
   private stopping: Promise<Notice[]> | null = null
   private readonly notices: Notice[] = []
   private pendingEvents: string[] = []
+  /** E-02: when the tab went where the content script could not follow. */
+  private eventsLostAtMs: number | undefined
 
   private constructor(
     private readonly options: TabRecordingOptions,
@@ -329,6 +331,18 @@ export class TabRecording implements CaptureSession {
     return this.timer.snapshot()
   }
 
+  /** Recording time of a `Date.now()` instant (mouse events, E-02); null while paused. */
+  recordedAt(wallMs: number): number | null {
+    if (!this.startedAt || this.stopping) return null
+    return this.timer.recordedAt(wallMs)
+  }
+
+  /** Clicks stop being captured from now on (E-02); only the first time counts. */
+  markEventsLost(): void {
+    if (!this.startedAt || this.stopping || this.eventsLostAtMs !== undefined) return
+    this.eventsLostAtMs = Math.round(this.timer.elapsedMs())
+  }
+
   async pause(): Promise<void> {
     if (this.timer.paused || this.stopping) return
     this.screenRecorder?.pause()
@@ -363,6 +377,7 @@ export class TabRecording implements CaptureSession {
 
   /** Countdown cancelled: nothing was recorded, nothing stays. */
   async cancel(): Promise<void> {
+    await this.options.events?.stop()
     this.release()
     await this.options.store.deleteProject(this.projectId)
   }
@@ -412,6 +427,9 @@ export class TabRecording implements CaptureSession {
     })
     if (this.micRecorder && this.micOffsetMs !== undefined) {
       project.audio.mic.offsetMs = this.micOffsetMs
+    }
+    if (this.eventsLostAtMs !== undefined && this.eventsLostAtMs < durationMs) {
+      project.eventsLostAtMs = this.eventsLostAtMs
     }
     if (this.hasCamera()) {
       project.webcam = { ...structuredClone(DEFAULT_WEBCAM), offsetMs: this.cameraOffsetMs ?? 0 }

@@ -16,6 +16,7 @@ import { useLocale, useT } from '../i18n.tsx'
 import { GazingMascot } from '../mascot/GazingMascot.tsx'
 import { FOCUS_RING, IconButton, Switch } from '../primitives/controls.tsx'
 import { CloseIcon, PauseIcon, PlayIcon, StopIcon } from '../primitives/icons.tsx'
+import { DesktopAppCard } from './DesktopAppCard.tsx'
 import type { RecordingClock } from '../recording/RecordingBar.tsx'
 import { useSpring } from '../motion/useSpring.ts'
 
@@ -91,9 +92,18 @@ export interface ExtensionPopupProps {
   onDiscard(projectId: string): Promise<RecoveryOutcome>
   /**
    * Where to get the desktop app, which has what the extension doesn't (transcription and
-   * captions). Shown as one quiet line under the latest recordings; omitted, no line.
+   * captions). Shown as a small card under the latest recordings, never while recording;
+   * omitted (e.g. the user hid it), no card.
    */
   desktopAppUrl?: string | undefined
+  /** The card's ×; the extension remembers it. */
+  onDismissDesktopApp?: (() => void) | undefined
+  /** Opens a project of the latest list in the editor (E-03). */
+  onOpenProject?: ((projectId: string) => void) | undefined
+  /** Opens the "All projects" page (E-03). */
+  onOpenAllProjects?: (() => void) | undefined
+  /** The browser is almost out of space: warn before recording (E-03). */
+  lowSpace?: boolean | undefined
 }
 
 export function ExtensionPopup(props: ExtensionPopupProps) {
@@ -160,6 +170,11 @@ function Ready(props: ExtensionPopupProps) {
             {t('extension.popup.unrecordable')}
           </p>
         )}
+        {props.lowSpace && (
+          <p role="alert" className="text-label text-warning">
+            {t('extension.popup.lowSpace')}
+          </p>
+        )}
       </div>
       <div className="flex flex-col gap-sm rounded-lg bg-surface p-md">
         <Switch
@@ -195,27 +210,16 @@ function Ready(props: ExtensionPopupProps) {
         onDiscard={props.onDiscard}
         discardTo="deletion"
       />
-      <Recent projects={props.recent} />
-      {props.desktopAppUrl && <DesktopNote url={props.desktopAppUrl} />}
+      <Recent
+        projects={props.recent}
+        onOpen={props.onOpenProject}
+        onOpenAll={props.onOpenAllProjects}
+      />
+      {/* Transcription and captions are desktop-only: a friendly card, never a nag. */}
+      {props.desktopAppUrl && (
+        <DesktopAppCard url={props.desktopAppUrl} onDismiss={props.onDismissDesktopApp} />
+      )}
     </>
-  )
-}
-
-/** Transcription and captions are desktop-only: one muted line, never a nag. */
-function DesktopNote({ url }: { url: string }) {
-  const t = useT()
-  return (
-    <p className="text-label text-on-surface-muted">
-      {t('extension.popup.desktopOnly')}{' '}
-      <a
-        href={url}
-        target="_blank"
-        rel="noreferrer"
-        className={`rounded-sm text-tertiary-strong underline underline-offset-2 hover:text-tertiary ${FOCUS_RING}`}
-      >
-        {t('extension.popup.getDesktop')}
-      </a>
-    </p>
   )
 }
 
@@ -282,37 +286,64 @@ function DeviceSelect(props: {
   )
 }
 
-function Recent({ projects }: { projects: readonly PopupProject[] }) {
+function Recent({
+  projects,
+  onOpen,
+  onOpenAll,
+}: {
+  projects: readonly PopupProject[]
+  onOpen?: ((projectId: string) => void) | undefined
+  onOpenAll?: (() => void) | undefined
+}) {
   const t = useT()
   const locale = resolveLocale([useLocale()])
   return (
     <section className="flex flex-col gap-sm" aria-labelledby="recent-title">
-      <h2 id="recent-title" className="text-label text-on-surface-muted">
-        {t('extension.popup.recent')}
-      </h2>
+      <div className="flex items-center justify-between gap-sm">
+        <h2 id="recent-title" className="text-label text-on-surface-muted">
+          {t('extension.popup.recent')}
+        </h2>
+        {onOpenAll && (
+          <button
+            type="button"
+            onClick={onOpenAll}
+            className={`rounded-sm text-label text-tertiary-strong underline-offset-2 hover:underline ${FOCUS_RING}`}
+          >
+            {t('extension.popup.allProjects')}
+          </button>
+        )}
+      </div>
       {projects.length === 0 ? (
         <p className="text-body text-on-surface-muted">{t('extension.popup.noRecent')}</p>
       ) : (
         <ul className="flex flex-col gap-xs">
           {projects.map((project) => (
-            <li key={project.id} className="flex items-center gap-sm">
-              <span className="flex h-[36px] w-[64px] shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-raised">
-                {project.thumbnailUrl && (
-                  <img src={project.thumbnailUrl} alt="" className="h-full w-full object-cover" />
-                )}
-              </span>
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate text-body">{project.name}</span>
-                <span className="font-mono text-label text-on-surface-muted">
-                  {t('extension.popup.projectMeta', {
-                    duration: formatDuration(locale, project.durationMs),
-                    date: formatDate(locale, new Date(project.createdAt), {
-                      dateStyle: 'short',
-                      timeStyle: 'short',
-                    }),
-                  })}
+            <li key={project.id}>
+              <button
+                type="button"
+                disabled={!onOpen}
+                onClick={() => onOpen?.(project.id)}
+                aria-label={t('projects.openNamed', { name: project.name })}
+                className={`flex w-full items-center gap-sm rounded-md p-[4px] text-left transition-colors duration-[120ms] enabled:hover:bg-surface-raised ${FOCUS_RING}`}
+              >
+                <span className="flex h-[36px] w-[64px] shrink-0 items-center justify-center overflow-hidden rounded-sm bg-surface-raised">
+                  {project.thumbnailUrl && (
+                    <img src={project.thumbnailUrl} alt="" className="h-full w-full object-cover" />
+                  )}
                 </span>
-              </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-body">{project.name}</span>
+                  <span className="font-mono text-label text-on-surface-muted">
+                    {t('extension.popup.projectMeta', {
+                      duration: formatDuration(locale, project.durationMs),
+                      date: formatDate(locale, new Date(project.createdAt), {
+                        dateStyle: 'short',
+                        timeStyle: 'short',
+                      }),
+                    })}
+                  </span>
+                </span>
+              </button>
             </li>
           ))}
         </ul>

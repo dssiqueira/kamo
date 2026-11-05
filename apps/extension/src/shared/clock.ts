@@ -38,6 +38,16 @@ export class RecordingTimer {
     return this.runningSince === null
   }
 
+  /**
+   * Recorded time of something that happened at `wallMs` (`Date.now()` time), or null when it
+   * happened while paused or before the recording (re)started: mouse events (E-02) land on
+   * the same timeline as the video.
+   */
+  recordedAt(wallMs: number): number | null {
+    if (this.runningSince === null || wallMs < this.runningSince) return null
+    return this.elapsedBeforePause + (wallMs - this.runningSince)
+  }
+
   elapsedMs(): number {
     const running = this.runningSince === null ? 0 : this.now() - this.runningSince
     return this.elapsedBeforePause + running

@@ -9,6 +9,7 @@ import { tokens } from '@kamo/design-tokens'
 import { captureSize } from '../shared/capture.ts'
 import { formatBadge } from '../shared/badge.ts'
 import {
+  MOUSE_PORT,
   POPUP_PORT,
   STOP_COMMAND,
   isBackgroundMessage,
@@ -22,6 +23,8 @@ import {
   type Session,
 } from '../shared/messages.ts'
 import { removeCountdown, showCountdown } from '../content/countdown-overlay.ts'
+import { startMouseCapture, stopMouseCapture } from '../content/mouse-capture.ts'
+import { WELCOME_PAGE, editorPath } from '../shared/pages.ts'
 import { GAZE_ALARM, GAZE_PERIOD_MINUTES, gazeAlarmAction } from './gaze-alarm.ts'
 import { playGaze, setIdleIcon, setRecordingIcon } from './icon.ts'
 
@@ -173,6 +176,33 @@ async function clearCountdown(tabId: number): Promise<void> {
     .catch(() => undefined)
 }
 
+// ---------------------------------------------------------------------------------------------
+// Mouse capture in the recorded tab (E-02): injected once recording starts (the page has nothing
+// of Kamo during the countdown but the overlay), again after each navigation, removed on stop.
+
+/** Injects the mouse listener; when the tab is out of reach, clicks stop being captured. */
+async function injectMouseCapture(tabId: number): Promise<void> {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: startMouseCapture,
+      args: [MOUSE_PORT],
+    })
+  } catch {
+    // A site activeTab does not cover (another domain) and no optional host permission: the
+    // video keeps recording, the editor says from when clicks are missing.
+    if (state.session.phase === 'recording' && state.session.tabId === tabId) {
+      await toOffscreen({ type: 'events-lost' })
+    }
+  }
+}
+
+async function removeMouseCapture(tabId: number): Promise<void> {
+  await chrome.scripting
+    .executeScript({ target: { tabId }, func: stopMouseCapture })
+    .catch(() => undefined)
+}
+
 async function record(tabId: number, options: RecordOptions): Promise<void> {
   if (state.session.phase !== 'idle') return
   const tab = await chrome.tabs.get(tabId)
@@ -192,6 +222,7 @@ async function record(tabId: number, options: RecordOptions): Promise<void> {
   const prepared = await toOffscreen({
     type: 'prepare',
     streamId,
+    tabId,
     projectId,
     projectName: options.projectName,
     microphone: options.microphone,
@@ -238,6 +269,7 @@ async function beginRecording(tabId: number, projectId: string): Promise<void> {
     return
   }
   await setState({ session: { phase: 'recording', tabId, projectId, clock: started.clock } })
+  await injectMouseCapture(tabId)
 }
 
 async function cancel(): Promise<void> {
@@ -266,6 +298,7 @@ async function stop(): Promise<void> {
   await setState({
     session: { phase: 'saving', tabId: session.tabId, projectId: session.projectId },
   })
+  await removeMouseCapture(session.tabId)
   const response = await toOffscreen({ type: 'stop' })
   await finished(
     session.projectId,
@@ -273,15 +306,26 @@ async function stop(): Promise<void> {
   )
 }
 
-/**
- * The project is final (or was discarded). Step 14 opens the editor from here; until then the
- * popup says it was saved.
- */
+/** The project is final (or was discarded). A saved one opens in the editor (flows.md step 6). */
 async function finished(projectId: string, notices: Notice[]): Promise<void> {
   const session = state.session
   if (session.phase === 'idle' || session.projectId !== projectId) return
+  await removeMouseCapture(session.tabId)
   await closeOffscreenDocument()
-  await setState({ session: { phase: 'idle' }, notices: addNotices(notices) })
+  const saved = notices.some((notice) => notice.key === 'recording.saved')
+  // The editor says it was saved by opening; the popup keeps only the warnings.
+  await setState({
+    session: { phase: 'idle' },
+    notices: addNotices(saved ? notices.filter((n) => n.key !== 'recording.saved') : notices),
+  })
+  if (saved) await openEditor(projectId)
+}
+
+/** The editor of one project, in a new tab next to the current one. */
+async function openEditor(projectId: string): Promise<void> {
+  await chrome.tabs
+    .create({ url: chrome.runtime.getURL(editorPath(projectId)) })
+    .catch(() => undefined)
 }
 
 async function setPaused(paused: boolean): Promise<void> {
@@ -347,6 +391,15 @@ chrome.commands.onCommand.addListener((command) => {
   if (command === STOP_COMMAND) void loaded.then(stop)
 })
 
+// The recorded tab loaded a new page: the content script went with the old one (E-02).
+chrome.tabs.onUpdated.addListener((tabId, change) => {
+  if (change.status !== 'complete') return
+  void loaded.then(async () => {
+    const session = state.session
+    if (session.phase === 'recording' && session.tabId === tabId) await injectMouseCapture(tabId)
+  })
+})
+
 // The recorded tab closed: the recorder sees its track end and saves on its own; a countdown
 // on that tab just goes away.
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -358,7 +411,13 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 })
 
 chrome.runtime.onStartup.addListener(() => void loaded.then(() => updateAction(state.session)))
-chrome.runtime.onInstalled.addListener(() => void loaded.then(() => updateAction(state.session)))
+// E-05: a first install opens the welcome page (not updates, nor Chrome updates).
+chrome.runtime.onInstalled.addListener((details) => {
+  void loaded.then(() => updateAction(state.session))
+  if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    void chrome.tabs.create({ url: chrome.runtime.getURL(WELCOME_PAGE) }).catch(() => undefined)
+  }
+})
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== GAZE_ALARM) return

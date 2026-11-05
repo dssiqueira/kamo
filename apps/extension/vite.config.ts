@@ -56,6 +56,12 @@ export default defineConfig(({ mode }) => {
           offscreen: resolve(root, 'offscreen.html'),
           // Asks for the microphone or the camera on a visible page (E-01, A-03).
           permission: resolve(root, 'permission.html'),
+          // The editor (E-03, E-04): core + ui, loaded only when its tab opens.
+          editor: resolve(root, 'editor.html'),
+          // "All projects" (E-03).
+          projects: resolve(root, 'projects.html'),
+          // Opened once on install (E-05).
+          welcome: resolve(root, 'welcome.html'),
           'service-worker': resolve(root, 'background/service-worker.ts'),
         },
         output: {

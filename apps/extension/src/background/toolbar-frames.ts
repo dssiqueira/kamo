@@ -1,10 +1,11 @@
 // Toolbar icon frames (E-01): Kamo's head, cut from the mascot art, with the eye in each pose
 // (look, aside, up, blink). The service worker draws them on demand from the same webp files
 // the popup shows, so the extension ships no extra image; `icons/toolbar-*.png` is the
-// `head-look` frame as a static file for the manifest. Pure, so it is unit tested.
+// resting frame (`head-look-side`, looking ahead) as a static file for the manifest. Pure, so
+// it is unit tested.
 import { GAZE_OFFSETS, HEAD_ART_HEIGHT, type GazePose } from '@kamo/ui/gaze'
 
-/** The resting frame (`head-look`) as static files: the manifest's toolbar icon. */
+/** The resting frame (REST_POSE, looking ahead) as static files: the manifest's toolbar icon. */
 export const TOOLBAR_ICON = { 16: 'icons/toolbar-16.png', 32: 'icons/toolbar-32.png' } as const
 
 /** Toolbar sizes: 16px, and 32px for 2x displays. */

@@ -15,8 +15,9 @@ import { Mascot } from './Mascot.tsx'
 const HEAD_ART_WIDTH = 160
 
 /**
- * Kamo's head, looking around now and then (blinks, glances aside or up) while it is on
- * screen. Still for anyone who asked the system for reduced motion. Decorative, like Mascot.
+ * Kamo's head, looking ahead most of the time, with a short blink or glance (back or up)
+ * every 6 to 12 seconds while it is on screen. Still, looking ahead, for anyone who asked the
+ * system for reduced motion. Decorative, like Mascot.
  */
 export function GazingMascot({ size }: { size: number }) {
   const pose = useGaze()

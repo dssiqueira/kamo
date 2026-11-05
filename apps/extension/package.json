@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "vite build",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
+    "store:zip": "vite build && node scripts/size-budget.ts && node scripts/store-zip.ts",
+    "size": "node scripts/size-budget.ts"
   },
   "devDependencies": {
     "@kamo/core": "workspace:*",

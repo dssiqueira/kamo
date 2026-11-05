@@ -11,6 +11,17 @@ function isNotFound(error: unknown): boolean {
   )
 }
 
+async function folderSize(folder: FileSystemDirectoryHandle): Promise<number> {
+  let total = 0
+  for await (const handle of folder.values()) {
+    total +=
+      handle.kind === 'file'
+        ? (await (handle as FileSystemFileHandle).getFile()).size
+        : await folderSize(handle as FileSystemDirectoryHandle)
+  }
+  return total
+}
+
 export class OpfsProjectStore implements ProjectStore {
   private rootPromise: Promise<FileSystemDirectoryHandle> | null = null
 
@@ -95,6 +106,31 @@ export class OpfsProjectStore implements ProjectStore {
     } catch (error) {
       if (!isNotFound(error)) throw error
     }
+  }
+
+  /** Writes binary data in one go (a swap file until close, like writeText). */
+  async writeBlob(projectId: string, path: string, data: Blob): Promise<void> {
+    const file = await this.fileHandle(projectId, path, true)
+    const writable = await file.createWritable()
+    try {
+      await writable.write(data)
+      await writable.close()
+    } catch (error) {
+      await writable.abort().catch(() => undefined)
+      throw error
+    }
+  }
+
+  /** Bytes the whole project folder takes (E-03: space used by the projects). */
+  async projectSize(projectId: string): Promise<number> {
+    let folder: FileSystemDirectoryHandle
+    try {
+      folder = await this.directory(projectId, [], false)
+    } catch (error) {
+      if (isNotFound(error)) return 0
+      throw error
+    }
+    return folderSize(folder)
   }
 
   /** Bytes in the file, or `null` when it does not exist. */

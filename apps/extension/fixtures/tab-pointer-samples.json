@@ -1,0 +1,148 @@
+{
+  "description": "Mouse samples from the content script (CSS px) for a 1280x720 tab recorded at DPR 1.5 into a 1920x1080 video. Then the browser zoom goes to 125% (the viewport shrinks to 1024x576 CSS px), then the page is pinch-zoomed 2x at (100, 50), then the window is resized to 1280x900 (letterboxed into the fixed frame), then a wheel scroll, the pointer leaving the page, a sample from before the recording and one that is not a mouse sample.",
+  "video": { "width": 1920, "height": 1080 },
+  "recordingStartedAt": 1000000,
+  "samples": [
+    {
+      "kind": "move",
+      "at": 1000100,
+      "x": 640,
+      "y": 360,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "down",
+      "at": 1000200,
+      "x": 100,
+      "y": 200,
+      "button": 0,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "up",
+      "at": 1000300,
+      "x": 100,
+      "y": 200,
+      "button": 0,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "down",
+      "at": 1000400,
+      "x": 1279,
+      "y": 719,
+      "button": 2,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "down",
+      "at": 1000450,
+      "x": 10,
+      "y": 10,
+      "button": 3,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "down",
+      "at": 1001000,
+      "x": 512,
+      "y": 288,
+      "button": 0,
+      "vw": 1024,
+      "vh": 576,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "down",
+      "at": 1002000,
+      "x": 150,
+      "y": 100,
+      "button": 1,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 2,
+      "ox": 100,
+      "oy": 50
+    },
+    {
+      "kind": "down",
+      "at": 1003000,
+      "x": 640,
+      "y": 450,
+      "button": 0,
+      "vw": 1280,
+      "vh": 900,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "scroll",
+      "at": 1004000,
+      "x": 640,
+      "y": 360,
+      "dx": 0,
+      "dy": 48,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "leave",
+      "at": 1005000,
+      "x": 1279,
+      "y": 20,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "move",
+      "at": 999000,
+      "x": 1,
+      "y": 1,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    },
+    {
+      "kind": "keydown",
+      "at": 1005500,
+      "x": 1,
+      "y": 1,
+      "vw": 1280,
+      "vh": 720,
+      "scale": 1,
+      "ox": 0,
+      "oy": 0
+    }
+  ]
+}

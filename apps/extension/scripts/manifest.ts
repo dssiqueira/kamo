@@ -8,9 +8,9 @@ export const SERVICE_WORKER = 'service-worker.js'
 export const POPUP = 'popup.html'
 
 /**
- * Permissions of step 12 only (docs/integrations.md lists the full set: `downloads` arrives
- * with export in step 15 and `identity` with the cloud login in step 17). `scripting` +
- * `activeTab` draw the countdown over the tab the user clicked on; no host permission.
+ * Permissions of the extension so far (docs/integrations.md lists the full set; `identity` arrives
+ * with the cloud login in step 17). `scripting` + `activeTab` draw the countdown over the tab the
+ * user clicked on and listen to its mouse (E-02); no host permission. `downloads` saves exports (E-04).
  * `alarms` wakes the service worker about once a minute so the toolbar Kamo blinks or glances.
  */
 export const PERMISSIONS = [
@@ -20,7 +20,15 @@ export const PERMISSIONS = [
   'activeTab',
   'scripting',
   'alarms',
+  'downloads',
 ]
+
+/**
+ * Asked for only when the user opts in (welcome page or the editor's notice): keeps capturing
+ * clicks after the recorded tab moves to another site, which activeTab does not cover (E-02).
+ * Never a permanent host permission (E-06).
+ */
+export const OPTIONAL_HOST_PERMISSIONS = ['<all_urls>']
 
 /** Chrome's `_locales` folder names use an underscore: pt_BR, zh_CN. */
 export function chromeLocale(locale: Locale): string {
@@ -61,6 +69,7 @@ export function buildManifest(version: string): Record<string, unknown> {
     },
     background: { service_worker: SERVICE_WORKER, type: 'module' },
     permissions: PERMISSIONS,
+    optional_host_permissions: OPTIONAL_HOST_PERMISSIONS,
     commands: {
       'stop-recording': {
         suggested_key: { default: 'Ctrl+Shift+2', mac: 'Command+Shift+2' },

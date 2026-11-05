@@ -12,7 +12,7 @@ const T_CALL = /\bt\(\s*(['"`])([^'"`$]+?)\1/g
 /** Any string literal shaped like a key (`'recording.errors.lowDisk'`), e.g. in lookup tables. */
 const KEY_LITERAL = /(['"`])([a-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)+)\1/g
 /** `project.json`, `recording.lock`: file names, not keys. */
-const FILE_NAME = /\.(json|jsonl|lock|mp4|webm|m4a|jpg|jpeg|png|webp|svg|partial|tmp)$/
+const FILE_NAME = /\.(json|jsonl|lock|mp4|webm|m4a|jpg|jpeg|png|webp|svg|partial|tmp|html)$/
 /** Comment-only lines, including the `* …` lines of doc comments. */
 const COMMENT_LINE = /^\s*(\/\/|\*|\/\*)/
 /** The main process uses dotted strings for log events (`recording.started`). */
