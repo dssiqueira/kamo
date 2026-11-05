@@ -133,8 +133,12 @@ jobs:
       - run: pnpm --filter @kamo/desktop exec electron-vite build
         env:
           KAMO_BUILD_CI_SMOKE: '1'
-      # CI never signs: identity null makes electron-builder skip Mac signing (harmless on Windows).
-      - run: pnpm --filter @kamo/desktop exec electron-builder --publish never -c.mac.identity=null
+      # CI never signs. On Mac, identity null makes electron-builder skip signing; Windows
+      # rejects that option, and without a certificate it builds unsigned anyway.
+      - if: runner.os == 'macOS'
+        run: pnpm --filter @kamo/desktop exec electron-builder --publish never -c.mac.identity=null
+      - if: runner.os == 'Windows'
+        run: pnpm --filter @kamo/desktop exec electron-builder --publish never
       - name: Installer size budget
         shell: bash
         env:
