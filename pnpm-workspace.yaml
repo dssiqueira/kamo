@@ -6,3 +6,13 @@ packages:
 # but Kamo ships NSIS on Windows, so its script never needs to run.
 allowBuilds:
   electron-winstaller: false
+
+# Electron 45.2.3 is a security backport release (Chromium, V8, Skia, PDFium…), taken before
+# the default minimum release age. Remove the entry once it is older than that.
+minimumReleaseAgeExclude:
+  - electron@45.2.3
+
+# GHSA-g3hv-75wg-m249 (minimatch ReDoS, fixed in 11.0.1): eslint and electron-builder still ask
+# for 9.x/10.x. Build and lint tooling only; nothing of it ships in the app.
+overrides:
+  'minimatch@>=7.0.0 <11.0.1': ^11.0.1
