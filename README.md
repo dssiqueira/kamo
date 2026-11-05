@@ -1,128 +1,249 @@
-# Kamo
+<p align="center">
+  <img src="packages/design-tokens/assets/mascot/kamo-scene.webp" width="240" alt="Kamo, a paper-cut chameleon, standing among leaves">
+</p>
 
-**Hit record. Click. Stop. It's already edited.**
+<h1 align="center">Kamo</h1>
 
-[![CI](https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg)](https://github.com/dssiqueira/kamo/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+<p align="center">
+  <b>Hit record. Click. Stop. It's already edited.</b><br>
+  A free, open-source screen recorder that zooms in on every click, smooths your cursor<br>
+  and exports a video that looks like someone spent an hour editing it. You spent zero minutes.
+</p>
 
-Kamo is a free, open-source screen recorder that zooms in on every click, smooths your cursor with spring physics, and exports a video that looks like someone spent an hour editing it. You spent zero minutes.
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-3F7539?style=flat-square"></a>
+  <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Platforms: Windows, macOS, Chrome" src="https://img.shields.io/badge/platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Chrome-2F6F68?style=flat-square">
+  <img alt="No telemetry" src="https://img.shields.io/badge/telemetry-none-A8D5A2?style=flat-square">
+</p>
 
-It comes in two flavors that share one engine: a **desktop app** (Mac on Apple silicon, and Windows) that records your whole screen or any app, and a **Chrome extension** that records browser tabs without installing anything else. Everything runs on your machine. No account, no watermark, no telemetry.
+<h3 align="center">Available for Windows · Mac · Chrome</h3>
 
-The name comes from the chameleon: it tracks its target with one eye and hits the exact spot. The camera does the same with each click.
+<p align="center">
+  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Mac (Apple silicon)" src="https://img.shields.io/badge/Download-Mac%20(Apple%20silicon)-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Chrome Web Store: coming soon" src="https://img.shields.io/badge/Chrome%20Web%20Store-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68"></a>
+</p>
 
-> **Status: early development, nothing to download yet.** Desktop v0.1 runs from source on Windows: record the screen (no system cursor), mouse, microphone and computer sound, get zooms from your clicks, tweak them on the timeline and export MP4 in 16:9 and 1:1. The Mac build compiles in CI but has not been tested on a real Mac, and there is no signed release yet. Items marked ✅ below work today on Windows; the rest is planned. Watch the repo if you want to see it come together.
+<p align="center">
+  <sub>The extension also runs in other Chromium browsers: Edge, Brave, Arc. Until it is on the store, grab it from <a href="https://github.com/dssiqueira/kamo/releases/latest">Releases</a> or <a href="#build-from-source">build it</a>.</sub>
+</p>
 
-## What Kamo does (and will do)
+<p align="center">
+  <img src="docs/readme/hero.gif" width="880" alt="A recording of a demo app: each click turns into a smooth zoom on the spot that was clicked">
+</p>
 
-**Recording** (desktop v0.1, extension v0.2)
-- ✅ Record a full display with a 3-2-1 countdown, pause and resume, and recovery if something crashes mid-take
-- ✅ Capture mouse position and clicks alongside the video, synced to the frame
-- ✅ Microphone and computer sound (computer sound on Mac still to come)
-- Browser tabs through the Chrome extension (v0.2)
+> [!NOTE]
+> **Kamo is young.** Windows is where it is built and tested every day. The Mac build compiles in CI but has not been tried on a real Mac yet, and installers are not signed yet. Builds land on [GitHub Releases](https://github.com/dssiqueira/kamo/releases); if you hit a rough edge, [open an issue](https://github.com/dssiqueira/kamo/issues).
 
-**Editing** (v0.1)
-- ✅ Zoom blocks generated automatically from your clicks, with nearby clicks grouped into one shot so the camera doesn't bounce
-- ✅ A virtual camera that moves with a spring, never a linear slide
-- ✅ Smoothed cursor
-- ✅ Wallpaper, padding, rounded corners and shadow applied by default
-- ✅ A timeline where you drag, stretch and tweak zooms, and trim the start and end. Your manual zooms are never overwritten by regeneration
-- ✅ Webcam bubble: recorded to its own file, round or square, in a corner or anywhere you drag it, shrinking when the camera zooms (built ahead of v0.4)
+---
 
-**Export**
-- ✅ 1080p30 in 16:9 and 1:1 (v0.1)
-- 4K, 60fps, vertical 9:16 and GIF (v0.4; 9:16 in progress)
-- ✅ Preview and export share the same rendering code, so what you see is what you get
+## What makes it different
 
-**Privacy**
-- ✅ Local by default: recordings live in a folder on your disk
-- ✅ Nothing leaves your machine unless you send it yourself
+**You don't edit. You record.** Kamo watches where you click (only the mouse, never the keyboard), and when you stop, the video already has a camera that follows the action, a cursor that glides instead of jitters, and a frame that looks designed.
 
-**AI and MCP** (v0.4)
-- Local transcription with an optional download pack, plus captions generated from it
-- ✅ A local, read-only MCP server so Claude Code (or another agent) can talk to what you recorded: transcripts, click timelines, reference frames (built in `apps/mcp`, ahead of v0.4)
+<p align="center">
+  <img src="docs/readme/before-after.gif" width="880" alt="Side by side: on the left the raw recording with a tiny, jittery cursor; on the right the same take in Kamo, zooming into each click on a sage background">
+</p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><b>Clicks become zooms.</b> Nearby clicks share one shot, so the camera never bounces. Every move is a spring (stiffness 170, damping 26), never a linear slide.</td>
+    <td width="50%" valign="top"><b>A cursor that glides.</b> Kamo leaves the system cursor out of the recording and redraws it from your mouse path with the same spring. Bigger, smoother, with a ripple on each click.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Background, padding, corners and shadow</b> are on by default. Pick a preset, a solid color or your own image.</td>
+    <td width="50%" valign="top"><b>Everything is editable.</b> Drag, stretch or delete zooms on the timeline, trim the ends. Your manual zooms are never overwritten when zooms regenerate.</td>
+  </tr>
+</table>
+
+### One recording, every format
+
+16:9 for YouTube, 1:1 for the feed, 9:16 for Reels and Shorts, exported together from the same timeline. MP4 up to 4K60, GIF, and `.srt` captions. Preview and export share the same rendering code, so what you see is what you get. No watermark, no time limit.
+
+<p align="center">
+  <img src="docs/readme/formats.gif" width="880" alt="The same recording exported side by side in 16:9, 1:1 and a vertical 9:16 with the camera below the screen">
+</p>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/readme/webcam.gif" alt="A round webcam bubble in the corner that shrinks while the camera zooms in">
+      <br><b>Webcam bubble.</b> Round, square or wide, in any corner or wherever you drag it. It shrinks while the camera zooms and comes back after. In 9:16 it can become its own card (split).
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/readme/captions.gif" alt="Captions in five styles: Bold, Kamo, Typewriter, Neon and Marker">
+      <br><b>Captions in 12 styles.</b> Transcribed on your computer (an optional pack you download only if you want it). Fix a word on the timeline and the transcript follows. Burn them in or export an <code>.srt</code>.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/readme/background.gif" alt="The recording framed on a custom paper-cut sunset wallpaper">
+      <br><b>Your own background.</b> Drop in a PNG, JPG or WebP. Kamo copies it into the project and crops it to fit every format.
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/readme/caption-styles-dark.webp">
+        <img src="docs/readme/caption-styles-light.webp" alt="The editor's caption style gallery next to a caption in the Kamo style on the preview">
+      </picture>
+      <br><b>Pick a look, not a font.</b> Clean, Bold, Kamo, Neon, Typewriter, Cinema and six more, at the bottom or the middle, in three sizes. One click and the preview updates.
+    </td>
+  </tr>
+</table>
+
+<sub>Every clip on this page is a made-up demo app, edited and exported by Kamo, then shrunk into a GIF for GitHub. The "webcam" is an illustrated chameleon drawn on a canvas. No real screens or faces were harmed.</sub>
+
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/how-it-works-dark.svg">
+  <img src="docs/readme/how-it-works-light.svg" width="920" alt="Four steps: Record a screen, window or selection; Click, and Kamo logs the mouse but never the keyboard; Zoom, where each click becomes a spring zoom; Export to MP4, GIF and .srt in 16:9, 1:1 and 9:16">
+</picture>
+
+## A tour of the app
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.webp">
+        <img src="docs/readme/home-light.webp" alt="Kamo's Home: choose Screen, Window or Select, toggle microphone, computer sound and camera, and see recent projects">
+      </picture>
+      <br><b>Home.</b> Screen, Window or Select. Mic, computer sound and camera are one toggle each. Your projects and local playlists live right below.
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/readme/editor-dark.webp">
+        <img src="docs/readme/editor-light.webp" alt="The editor: live preview with zooms, a webcam bubble, the style panel and a timeline with zoom, webcam and caption lanes">
+      </picture>
+      <br><b>Editor.</b> Live preview in the middle, style on the right, zooms, webcam and captions on the timeline. Edits are non-destructive: the raw video is never touched.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/readme/select-frame-dark.webp">
+        <img src="docs/readme/select-frame-light.webp" alt="The Select frame over a demo app, with width and height fields and a Record button">
+      </picture>
+      <br><b>Select.</b> A frame you move and resize over the screen, with exact pixel sizes. Clicks outside it never make a zoom.
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/readme/welcome-tour-dark.webp">
+        <img src="docs/readme/welcome-tour-light.webp" alt="The welcome tour: Kamo the chameleon says Hit Record, next to a sketch of the recording options">
+      </picture>
+      <br><b>Welcome tour.</b> Kamo walks you through it in three slides, in your language. Then it gets out of the way.
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/readme/extension-popup.webp" width="300" alt="The Chrome extension popup: Record this tab, with microphone, tab sound and camera toggles">
+  <br><sub>The Chrome extension: one popup, one button.</sub>
+</p>
+
+## Desktop or extension?
+
+Same engine, same editor, same export. The difference is what they can record.
+
+| | Desktop app<br><sub>Windows · Mac (Apple silicon)</sub> | Chrome extension<br><sub>Chrome · Edge · Brave · Arc</sub> |
+|---|:---:|:---:|
+| Record the whole screen | ✅ | — |
+| Record one window or a selection | ✅ | — |
+| Record a browser tab | ✅ (as a window) | ✅ |
+| Microphone | ✅ | ✅ |
+| Computer sound / tab sound | ✅ | ✅ (tab sound) |
+| Webcam bubble and 9:16 split | ✅ | ✅ |
+| Auto zoom, spring camera, smooth cursor, timeline | ✅ | ✅ |
+| Background presets and solid colors | ✅ | ✅ |
+| Your own background image | ✅ | not yet |
+| Local transcription and captions | ✅ | — (desktop only) |
+| Export MP4 and GIF in 16:9, 1:1, 9:16 | ✅ | ✅ |
+| 4K and 60fps export | ✅ | — (tabs record up to 1080p30) |
+| Where projects live | A folder on your disk | Inside the browser (OPFS) |
+| Readable by the local MCP server | ✅ | — |
+
+## Private by design
+
+- **100% local.** Recording, editing and exporting work offline, with no account.
+- **No telemetry. No analytics.** Not "anonymized". None.
+- **Nothing leaves your machine unless you choose to send it.**
+- **Mouse only, never the keyboard.** Kamo records clicks and movement. It does not capture keystrokes, and the extension never reads the page you record. CI checks this on every pull request.
+- **Small download.** The app records, edits and exports. Heavy things like the transcription model are optional packs, downloaded only when you ask for them.
+- **Non-destructive.** Your raw recording is never altered; every edit lives in `project.json`.
+
+## Use your recordings with AI
+
+Kamo ships a small **local MCP server** so Claude Code (or any MCP client) can talk to what you recorded: transcripts, the click timeline, zooms, and a reference screenshot every 5 seconds.
+
+> "Find the recording where I explained billing settings and write step-by-step docs from it."
+
+It is **read-only and has no network access**: it reads your projects folder and answers the agent you connected. Nothing else.
 
 ```bash
-npx @kamo/mcp   # not published to npm yet; run it from apps/mcp for now
+# Once @kamo/mcp is on npm (coming soon):
+claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"
+
+# Today, from a clone of this repository:
+pnpm install && pnpm --filter @kamo/mcp build
+claude mcp add kamo -- node "<path to kamo>/apps/mcp/dist/cli.js" --dir "<projects folder>"
 ```
 
-## Principles
+The desktop app shows the exact command, with your folder filled in, under **Settings → Connect to an agent**. Tools, examples and other clients: [apps/mcp/README.md](apps/mcp/README.md).
 
-- **Free and complete.** No watermark, no time limit, no locked features. The app has everything.
-- **Local first.** No account to record, edit or export.
-- **Mouse only, never the keyboard.** Kamo records clicks and movement. It does not capture keystrokes, and the extension does not read page content.
-- **No telemetry.** No analytics in the app.
-- **Non-destructive editing.** The raw video is never touched; edits live in `project.json`.
-- **Small installer.** The base app records, edits and exports. Heavy things (like the transcription model) are optional packs, downloaded only when you ask.
-- **Springs, not slides.** Every camera move uses spring animation.
-
-## Roadmap
-
-| Version | What it brings |
-|---|---|
-| **v0.1 Desktop** | Record the screen, capture mouse and audio, editor, auto zoom, spring camera, smooth cursor, timeline, 1080p export, installers for Mac and Windows |
-| **v0.2 Extension** | Chrome (and Chromium) extension recording tabs, same editor and engine, export with download |
-| **v0.3 Kamo Cloud** | Optional subscription: upload, short links, playlists, sharing and a web library |
-| **v0.4 Transcription and MCP** | Optional transcription pack, captions, local MCP server (built), 4K/60fps, 9:16 and GIF, webcam bubble (built), custom wallpaper, window and region capture |
-| **v0.5 Cloud MCP** | For subscribers: search and manage the whole cloud library from an agent |
-
-**Kamo Cloud** is the only paid piece. It is an optional subscription for sharing links and playlists, and it is what funds the project. The app itself stays free.
-
-The detailed step-by-step plan is in [docs/plan.md](docs/plan.md).
-
-## Repository structure
-
-```
-kamo/
-├── packages/
-│   ├── core/            # the engine: project format, zooms, virtual camera, cursor, rendering, export
-│   ├── ui/              # editor, timeline, panels and React components
-│   ├── i18n/            # interface text per language (@kamo/i18n)
-│   ├── design-tokens/   # tokens generated from DESIGN.md (@kamo/design-tokens)
-│   └── cloud-client/    # typed client for the Kamo Cloud API (@kamo/cloud-client)
-├── apps/
-│   ├── desktop/         # Electron: native screen and mouse capture, files, installers
-│   ├── extension/       # Chrome MV3: tab capture, click content script
-│   └── mcp/             # local MCP server (@kamo/mcp): read-only, stdio, no network
-├── docs/
-├── AGENTS.md
-└── DESIGN.md
-```
-
-## Development
+## Build from source
 
 Requires Node 24+ and pnpm (`npm i -g pnpm`).
 
 ```bash
 pnpm install
-pnpm check                          # lint, typecheck, tests and i18n in one go
-pnpm test
-pnpm --filter design-tokens build   # regenerate tokens from DESIGN.md
-pnpm i18n:check                     # every locale has every key
+pnpm --filter @kamo/desktop dev       # the desktop app
+pnpm --filter @kamo/extension build   # the extension: load apps/extension/dist in chrome://extensions
+pnpm --filter @kamo/mcp dev           # the local MCP server (try it with the MCP Inspector)
+pnpm check                            # lint, typecheck, tests, i18n and the keyboard guard
 ```
 
-New here, human or agent? Start at [AGENTS.md](AGENTS.md), then follow it into [docs/](docs/). It covers the product, features and acceptance criteria, data model, flows, decisions already made, and the plan. UI work follows [DESIGN.md](DESIGN.md).
+Recording on the desktop needs the native capture helper: Rust and the Visual Studio Build Tools on Windows, Xcode on Mac. See [`apps/desktop/native`](apps/desktop/native). No recording setup handy? [`apps/desktop/scripts/sample-project`](apps/desktop/scripts/sample-project) writes a realistic sample project you can open in the editor (it is the "Acme Studio" demo in the clips above).
 
-## Contributing
+## Architecture
 
-Issues and pull requests are welcome. Everything in the repo (code, docs, commits, issues) is in English. A few rules the project holds firmly:
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/readme/architecture-dark.svg">
+  <img src="docs/readme/architecture-light.svg" width="920" alt="Architecture: the desktop app and the Chrome extension both use packages/ui, which uses packages/core. The local MCP server reads the projects folder written by the desktop app.">
+</picture>
 
-- `packages/core` and `packages/ui` are platform-agnostic: no Electron, Node or `chrome.*` inside them. Platform things come in through interfaces.
-- Every visible UI string comes from `packages/i18n`, with an English key and a translation in every launch language. CI fails if a key is missing.
-- Mouse only. Never capture the keyboard.
-- New dependencies need a one-line justification.
-- Architecture changes get recorded in [docs/decisions.md](docs/decisions.md).
+A pnpm monorepo, TypeScript everywhere.
 
-Please read [AGENTS.md](AGENTS.md) before opening a larger PR.
+- **`packages/core`** is the engine: project format, zoom generation, virtual camera, smooth cursor, frame rendering and WebCodecs export (MP4 and GIF). Preview and export run the same code.
+- **`packages/ui`** is the editor, timeline and panels (React).
+- Neither knows where it runs: no Electron, Node or `chrome.*` inside them. Capture, events, storage and files come in through interfaces, so the extension reuses both as-is.
+- **`apps/desktop`** is Electron, with small native helpers for capture: Rust (Windows Graphics Capture) and Swift (ScreenCaptureKit).
+- **`apps/extension`** is Manifest V3: tab capture in an offscreen document, a mouse-only content script, projects in OPFS.
+- **`apps/mcp`** is the local MCP server: stdio, read-only, no network.
 
-## Privacy
-
-The app talks to nothing by default. There is no telemetry and no analytics. Kamo Cloud is opt-in: a recording only goes up when you choose to send it. The MCP server reads your recordings folder and nothing else, and it has no network access.
+New here, human or agent? Start at [AGENTS.md](AGENTS.md). It points to the product docs, decisions and plan in [docs/](docs/). UI follows [DESIGN.md](DESIGN.md).
 
 ## Languages
 
-The interface launches in English, Portuguese (pt-BR), Spanish (es), Simplified Chinese (zh-CN) and Japanese (ja). Dates, numbers and durations are formatted with `Intl`.
+English, Português (Brasil), Español, 简体中文 and 日本語, picked from your system and switchable any time. Dates, numbers and durations are formatted for your language. Native speakers: reviews of the translations are one of the most useful contributions.
+
+## Roadmap
+
+The step-by-step plan lives in [docs/plan.md](docs/plan.md), and every feature with its acceptance criteria in [docs/features.md](docs/features.md). Next up: a tested Mac build, signed installers, the Chrome Web Store listing and `@kamo/mcp` on npm. An optional cloud for sharing links is planned; the app itself stays free and complete.
+
+## Contributing
+
+Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first; it covers the few rules the project holds firmly (platform-agnostic engine, mouse only, every string translated). By taking part you agree to the [Code of Conduct](CODE_OF_CONDUCT.md). Found a security issue? Please follow [SECURITY.md](SECURITY.md) instead of opening a public issue.
 
 ## License
 
-[MIT](LICENSE). Third-party notices are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+[MIT](LICENSE). Use it, fork it, ship it.
+
+## Acknowledgements
+
+Kamo stands on great open-source work: Electron, React, Vite, Tailwind CSS, mediabunny, gifenc, the MCP TypeScript SDK, whisper.cpp (in the optional transcription pack), and the Inter, Instrument Serif and JetBrains Mono typefaces. License notices for what ships inside the app are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+
+<p align="center">
+  <img src="packages/design-tokens/assets/mascot/kamo-head-happy.webp" width="72" alt="Kamo smiling">
+  <br><sub>Made with a chameleon's patience. Now go record something.</sub>
+</p>
