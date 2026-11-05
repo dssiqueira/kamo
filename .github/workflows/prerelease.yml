@@ -1,6 +1,8 @@
 name: Prerelease
 
 # 0.0.x-next prereleases on every merge to main: kamo-site uses these packages from phase 0.
+# Without the NPM_TOKEN secret (forks, or before the @kamo npm org exists) every step after
+# the check is skipped and the run stays green.
 on:
   push:
     branches: [main]
@@ -16,22 +18,36 @@ jobs:
     strategy:
       matrix:
         package: [design-tokens, core]
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
+      - name: NPM_TOKEN present?
+        id: token
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::notice::NPM_TOKEN is not set; @kamo/${{ matrix.package }}@next was not published."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.token.outputs.publish == 'true'
       - uses: pnpm/action-setup@v4
+        if: steps.token.outputs.publish == 'true'
       - uses: actions/setup-node@v4
+        if: steps.token.outputs.publish == 'true'
         with:
           node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm test
+      - if: steps.token.outputs.publish == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.token.outputs.publish == 'true'
+        run: pnpm test
       - name: Publish @kamo/${{ matrix.package }}@next
+        if: steps.token.outputs.publish == 'true'
         working-directory: packages/${{ matrix.package }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then echo "NPM_TOKEN not set; skipping."; exit 0; fi
           pnpm build
           npm pkg set version="0.0.${{ github.run_number }}-next"
           pnpm publish --tag next --access public --no-git-checks --provenance

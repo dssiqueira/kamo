@@ -25,10 +25,40 @@ jobs:
       # Rule 2: no system-wide keyboard capture anywhere in the app or the native helpers.
       - run: pnpm guard:keyboard
       - run: pnpm build
-      # Chrome extension (MV3) and its 5MB budget (rule 6). The 150KB popup check comes with
-      # the store publishing in step 15.
+      # Chrome extension (MV3): 5MB package and 150KB popup, gzipped, as the popup loads it (rule 6,
+      # E-06).
       - run: pnpm --filter @kamo/extension build
       - run: node scripts/check-size.ts 5 apps/extension/dist
+      - run: node apps/extension/scripts/size-budget.ts
+      # @kamo/mcp as npm ships it (D-019: 5MB).
+      - name: '@kamo/mcp package size budget'
+        run: |
+          pnpm --filter @kamo/mcp build
+          mkdir -p out-packed
+          (cd apps/mcp && pnpm pack --pack-destination ../../out-packed)
+          node scripts/check-size.ts 5 out-packed/*.tgz
+
+  # Visual regression (AGENTS.md → Quality): frames rendered by core's renderer from the event
+  # fixtures, compared with packages/core/fixtures/visual/*.png. On Windows, like the machine
+  # the references are made on, so Skia's anti-aliasing matches. On a failure the actual,
+  # expected and diff images are in the "visual-diff" artifact; for an intended change run
+  # `pnpm visual:update` (or take the artifact's *.actual.png) and commit the new references.
+  visual:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diff
+          path: out-visual
 
   # Swift capture helper (D-023): must build with no warnings on the Mac runner.
   mac-helper:
@@ -91,3 +121,28 @@ jobs:
       - name: Smoke test (packaged app opens and renders)
         shell: bash
         run: ${{ matrix.binary }} --smoke-test
+      # Export benchmark: a fixed sample project (apps/desktop/scripts/sample-project: ~19s,
+      # 1920×1080, scripted clicks) exported for real at 1080p30 by the packaged app's export
+      # smoke test. Runners have no GPU, so the numbers go to the job summary and only a gross
+      # regression against scripts/export-benchmark-baseline.json fails the job.
+      - name: 'Benchmark: write the sample project'
+        id: sample
+        shell: bash
+        run: |
+          pnpm --filter @kamo/desktop exec install-electron
+          apps/desktop/node_modules/.bin/electron apps/desktop/scripts/sample-project --name "CI benchmark" | tee sample.log
+          id=$(grep -oE '^project: +[0-9a-f-]{36}' sample.log | awk '{print $2}')
+          echo "project=$id" >> "$GITHUB_OUTPUT"
+      - name: 'Benchmark: export smoke on the packaged app'
+        if: steps.sample.outputs.project != ''
+        continue-on-error: true
+        shell: bash
+        env:
+          KAMO_SMOKE_EXPORT: ${{ steps.sample.outputs.project }}
+        run: |
+          ${{ matrix.binary }} --smoke-test 2>&1 | tee export-smoke.log
+          exit "${PIPESTATUS[0]}"
+      - name: 'Benchmark: report'
+        if: steps.sample.outputs.project != ''
+        shell: bash
+        run: node scripts/export-benchmark.ts export-smoke.log "$(node -p process.platform)"

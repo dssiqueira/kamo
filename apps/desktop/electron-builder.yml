@@ -45,8 +45,10 @@ mac:
     - from: build/tray
       to: tray
       filter: ['trayTemplate*.png']
-  # Signing and notarization arrive with the release workflow (step 10).
-  identity: null
+  # Signing (Developer ID, every binary in the bundle including the helper) and notarization
+  # come from the environment: CSC_LINK/CSC_KEY_PASSWORD and APPLE_ID/APPLE_APP_SPECIFIC_PASSWORD/
+  # APPLE_TEAM_ID in .github/workflows/release.yml. Without them (CI, forks) the build sets
+  # CSC_IDENTITY_AUTO_DISCOVERY=false and stays unsigned.
 
 dmg:
   artifactName: Kamo-${version}-mac-${arch}.${ext}

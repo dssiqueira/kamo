@@ -16,10 +16,13 @@
     "i18n:check": "pnpm --filter @kamo/i18n check-keys",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm i18n:check && pnpm i18n:usage && pnpm guard:keyboard",
     "guard:keyboard": "node scripts/check-no-keyboard.ts",
-    "i18n:usage": "node scripts/check-i18n-usage.ts"
+    "i18n:usage": "node scripts/check-i18n-usage.ts",
+    "visual": "node --experimental-transform-types --no-warnings=ExperimentalWarning scripts/visual-regression.ts",
+    "visual:update": "node --experimental-transform-types --no-warnings=ExperimentalWarning scripts/visual-regression.ts --update"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@napi-rs/canvas": "1.0.13",
     "@types/node": "^24.19.2",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
