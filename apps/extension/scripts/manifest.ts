@@ -42,6 +42,25 @@ export function chromeVersion(version: string): string {
   return core
 }
 
+/**
+ * CSP of every extension page and the service worker, tighter than MV3's default (which only
+ * sets script-src and object-src): the extension's own files, plus blob: and data: for the
+ * recordings it reads back from OPFS (thumbnails, preview, export). No network at all: an
+ * injected script could not send a recording anywhere.
+ */
+export const EXTENSION_PAGES_CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "connect-src 'self' data: blob:",
+  "font-src 'self'",
+  "object-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+].join('; ')
+
 export function buildManifest(version: string): Record<string, unknown> {
   const icons = {
     16: 'icons/icon-16.png',
@@ -68,6 +87,7 @@ export function buildManifest(version: string): Record<string, unknown> {
       default_icon: TOOLBAR_ICON,
     },
     background: { service_worker: SERVICE_WORKER, type: 'module' },
+    content_security_policy: { extension_pages: EXTENSION_PAGES_CSP },
     permissions: PERMISSIONS,
     optional_host_permissions: OPTIONAL_HOST_PERMISSIONS,
     commands: {

@@ -25,6 +25,7 @@ import {
 import { removeCountdown, showCountdown } from '../content/countdown-overlay.ts'
 import { startMouseCapture, stopMouseCapture } from '../content/mouse-capture.ts'
 import { installErrorLog, recordError } from '../shared/error-log.ts'
+import { fromExtensionPage, fromPage, OFFSCREEN_PAGE } from '../shared/sender.ts'
 import { WELCOME_PAGE, editorPath } from '../shared/pages.ts'
 import { GAZE_ALARM, GAZE_PERIOD_MINUTES, gazeAlarmAction } from './gaze-alarm.ts'
 import { playGaze, setIdleIcon, setRecordingIcon } from './icon.ts'
@@ -378,14 +379,18 @@ async function onRequest(message: BackgroundRequest | OffscreenEvent): Promise<u
   }
 }
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   if (!isBackgroundMessage(message)) return false
+  // Requests come from the extension's own pages (the popup), the recorder's events from the
+  // offscreen document only; never from the content script in the recorded page.
+  const recorderEvent = message.type === 'clock' || message.type === 'finished'
+  if (recorderEvent ? !fromPage(sender, OFFSCREEN_PAGE) : !fromExtensionPage(sender)) return false
   onRequest(message).then(sendResponse, () => sendResponse(undefined))
   return true
 })
 
 chrome.runtime.onConnect.addListener((port) => {
-  if (port.name !== POPUP_PORT) return
+  if (port.name !== POPUP_PORT || !fromExtensionPage(port.sender)) return
   ports.add(port)
   port.onDisconnect.addListener(() => ports.delete(port))
   void loaded.then(() => port.postMessage(state))

@@ -7,6 +7,7 @@ import {
   type OffscreenRequest,
   type OffscreenResponse,
 } from '../shared/messages.ts'
+import { fromPage, SERVICE_WORKER_PAGE } from '../shared/sender.ts'
 import { OpfsProjectStore } from '../storage/opfs-store.ts'
 import { TabEventSource } from './tab-events.ts'
 import { CaptureError, TabRecording } from './tab-recording.ts'
@@ -84,8 +85,9 @@ async function handle(request: OffscreenRequest): Promise<OffscreenResponse> {
   }
 }
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  if (!isOffscreenRequest(message)) return false
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
+  // Only the service worker drives the recorder.
+  if (!isOffscreenRequest(message) || !fromPage(sender, SERVICE_WORKER_PAGE)) return false
   handle(message).then(sendResponse, (error: unknown) => sendResponse(failure(error)))
   return true
 })

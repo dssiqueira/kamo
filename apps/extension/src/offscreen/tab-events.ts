@@ -24,7 +24,11 @@ export class TabEventSource implements EventSource {
   private readonly onConnect = (port: chrome.runtime.Port) => {
     if (port.name !== MOUSE_PORT) return
     const sender = port.sender
-    if (sender?.tab?.id !== this.options.tabId || (sender.frameId ?? 0) !== 0) {
+    if (
+      sender?.id !== chrome.runtime.id ||
+      sender.tab?.id !== this.options.tabId ||
+      (sender.frameId ?? 0) !== 0
+    ) {
       port.disconnect()
       return
     }

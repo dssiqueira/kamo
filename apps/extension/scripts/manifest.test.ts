@@ -24,6 +24,15 @@ describe('manifest', () => {
     })
   })
 
+  it('sets a CSP for its pages with no network and no remote code (L6)', () => {
+    const csp = (buildManifest('0.2.0')['content_security_policy'] as { extension_pages: string })
+      .extension_pages
+    expect(csp).toContain("default-src 'self'")
+    expect(csp).toContain("script-src 'self'")
+    expect(csp).toContain("object-src 'none'")
+    expect(csp).not.toMatch(/https?:|unsafe-(eval|inline)|\*/)
+  })
+
   it('shows the head in the toolbar and the framed app icon everywhere else', () => {
     const manifest = buildManifest('0.2.0')
     expect(manifest).toMatchObject({
