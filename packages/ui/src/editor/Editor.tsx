@@ -52,6 +52,7 @@ import { PreviewAudio, type PreviewAudioTrack } from './PreviewAudio.tsx'
 import { PreviewDecor } from './PreviewDecor.tsx'
 import type { EditorTranscription } from './CaptionsSection.tsx'
 import { StylePanel } from './StylePanel.tsx'
+import { usePlaybackTime, type PlaybackClock } from './playback-clock.ts'
 import { usePlayback } from './usePlayback.ts'
 
 export interface EditorProps {
@@ -425,7 +426,7 @@ export function Editor({
               onSplitDragEnd={() => history.commit()}
               splitHandleLabel={t('editor.webcam.dividerHint')}
             />
-            <PreviewAudio video={video} tracks={previewAudio} />
+            <PreviewAudio video={video} videoUrl={videoUrl} tracks={previewAudio} />
           </div>
           <div className="flex items-center gap-md border-t border-border px-md py-sm">
             <button
@@ -437,13 +438,7 @@ export function Editor({
             >
               {playback.playing ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
             </button>
-            <span className="font-mono text-timecode tabular-nums">
-              {formatTimecode(playback.timeMs - project.trim.startMs, fps)}
-              <span className="text-on-surface-muted">
-                {' / '}
-                {formatTimecode(project.trim.endMs - project.trim.startMs, fps)}
-              </span>
-            </span>
+            <PlaybackTimecode clock={playback.clock} fps={fps} trim={project.trim} />
             {endTrimEnd !== null && (
               <EndTrimSuggestion
                 seconds={(project.durationMs - endTrimEnd) / 1000}
@@ -461,7 +456,7 @@ export function Editor({
             fps={fps}
             trim={project.trim}
             zooms={project.zooms}
-            playheadMs={playback.timeMs}
+            playhead={playback.clock}
             selectedZoomId={selectedZoomId}
             tracks={{ ...(mic ? { mic } : {}), ...(system ? { system } : {}) }}
             webcam={
@@ -568,7 +563,7 @@ export function Editor({
                   onCaptions: (patch) => edit((p) => setCaptions(p, patch)),
                   onTranscribeAgain: transcribeAgain,
                   video,
-                  timeMs: playback.timeMs,
+                  time: playback.settled,
                 }
               : undefined
           }
@@ -583,7 +578,8 @@ export function Editor({
           video={video.current}
           webcamVideo={webcamUrl ? webcamVideo.current : null}
           backgroundImage={backgroundImage}
-          timeMs={playback.timeMs}
+          // Opening the sheet pauses: the playhead holds still while it is open.
+          timeMs={playback.clock.get()}
           transcript={transcript}
           platform={exportPlatform}
           onClose={() => setExportOpen(false)}
@@ -598,6 +594,31 @@ export function Editor({
         onKeep={() => setAskReplace(false)}
       />
     </div>
+  )
+}
+
+/**
+ * Time in the trimmed video / its length, under the preview. Follows the playhead on every
+ * frame on its own, so playing re-renders this line and not the editor around it.
+ */
+function PlaybackTimecode({
+  clock,
+  fps,
+  trim,
+}: {
+  clock: PlaybackClock
+  fps: number
+  trim: { startMs: number; endMs: number }
+}) {
+  const timeMs = usePlaybackTime(clock)
+  return (
+    <span className="font-mono text-timecode tabular-nums">
+      {formatTimecode(timeMs - trim.startMs, fps)}
+      <span className="text-on-surface-muted">
+        {' / '}
+        {formatTimecode(trim.endMs - trim.startMs, fps)}
+      </span>
+    </span>
   )
 }
 

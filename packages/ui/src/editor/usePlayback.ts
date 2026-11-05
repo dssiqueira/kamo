@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { createPlaybackClock, type PlaybackClock } from './playback-clock.ts'
 
 export interface Playback {
   playing: boolean
-  /** Video time in ms (raw video, not relative to the trim). */
-  timeMs: number
+  /**
+   * The playhead (raw video time in ms, not relative to the trim), moved on every presented
+   * frame. An external store, not state: read it with usePlaybackTime / usePlaybackValue in
+   * the small components that show it, so playing does not re-render the whole editor.
+   */
+  clock: PlaybackClock
+  /**
+   * The playhead where it rests: moved by seeks, steps and pauses while paused, not by the
+   * frames of playback. For things that only follow a still frame (the caption gallery).
+   */
+  settled: PlaybackClock
   toggle(): void
   seek(timeMs: number): void
   /** Moves by whole frames (F-10: arrows step one frame). */
@@ -21,7 +31,8 @@ export function usePlayback(
   onFrame: (timeMs: number) => void,
 ): Playback {
   const [playing, setPlaying] = useState(false)
-  const [timeMs, setTimeMs] = useState(trim.startMs)
+  const [clock] = useState(() => createPlaybackClock(trim.startMs))
+  const [settled] = useState(() => createPlaybackClock(trim.startMs))
   const trimRef = useRef(trim)
   trimRef.current = trim
   const onFrameRef = useRef(onFrame)
@@ -32,7 +43,8 @@ export function usePlayback(
     if (!element) return
     let handle = 0
     const report = (ms: number) => {
-      setTimeMs(ms)
+      clock.set(ms)
+      if (element.paused) settled.set(ms)
       onFrameRef.current(ms)
     }
     const onVideoFrame = (_now: number, meta: VideoFrameCallbackMetadata) => {
@@ -48,7 +60,10 @@ export function usePlayback(
       setPlaying(true)
       handle = element.requestVideoFrameCallback(onVideoFrame)
     }
-    const onPause = () => setPlaying(false)
+    const onPause = () => {
+      setPlaying(false)
+      settled.set(clock.get())
+    }
     const onSeeked = () => report(element.currentTime * 1000)
     element.addEventListener('play', onPlay)
     element.addEventListener('pause', onPause)
@@ -61,7 +76,7 @@ export function usePlayback(
       element.removeEventListener('seeked', onSeeked)
       element.removeEventListener('loadeddata', onSeeked)
     }
-  }, [video])
+  }, [video, clock, settled])
 
   const seek = useCallback(
     (ms: number) => {
@@ -94,5 +109,8 @@ export function usePlayback(
     [video, seek, fps],
   )
 
-  return { playing, timeMs, toggle, seek, step }
+  return useMemo(
+    () => ({ playing, clock, settled, toggle, seek, step }),
+    [playing, clock, settled, toggle, seek, step],
+  )
 }

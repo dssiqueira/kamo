@@ -1,5 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import { syncAudio, type PreviewAudioSettings } from './audio-sync.ts'
+import { audioGain, syncAudio, type PreviewAudioSettings } from './audio-sync.ts'
 
 export type PreviewAudioId = 'mic' | 'system'
 
@@ -12,6 +12,11 @@ export interface PreviewAudioTrack extends PreviewAudioSettings {
 export interface PreviewAudioProps {
   /** the preview's screen element: the audio follows its clock */
   video: RefObject<HTMLVideoElement | null>
+  /**
+   * the screen element's source. A track served from the same file (the extension's tab
+   * sound lives in screen.webm) plays from the screen element itself.
+   */
+  videoUrl?: string | undefined
   /** the recorded tracks (project.audio.<track>.enabled) the app can serve */
   tracks: readonly PreviewAudioTrack[]
 }
@@ -21,15 +26,48 @@ export interface PreviewAudioProps {
  * video's clock with the export's offset and volume rules (audio-sync.ts). Volume and mute
  * edits apply live. Frame steps and seeks are silent: the audio only runs while the video
  * plays.
+ *
+ * A track inside the screen file with no offset is the screen element's own sound: it is
+ * unmuted at the track's volume instead of opening the file a second time, which would
+ * decode the whole video again and keep re-seeking it to stay in sync (slow on a long WebM).
  */
-export function PreviewAudio({ video, tracks }: PreviewAudioProps) {
+export function PreviewAudio({ video, videoUrl, tracks }: PreviewAudioProps) {
+  const inVideo = tracks.find((track) => track.url === videoUrl && track.offsetMs === 0)
   return (
     <>
-      {tracks.map((track) => (
-        <PreviewAudioElement key={track.id} video={video} track={track} />
-      ))}
+      {tracks.map((track) =>
+        track === inVideo ? (
+          <VideoSound key={track.id} video={video} volume={track.volume} />
+        ) : (
+          <PreviewAudioElement key={track.id} video={video} track={track} />
+        ),
+      )}
     </>
   )
+}
+
+/** The screen element's own sound at a track's volume; muted again when the track goes. */
+function VideoSound({
+  video,
+  volume,
+}: {
+  video: RefObject<HTMLVideoElement | null>
+  volume: number
+}) {
+  useEffect(() => {
+    const element = video.current
+    if (!element) return
+    const gain = audioGain(volume)
+    element.volume = gain.volume
+    element.muted = gain.muted
+  }, [video, volume])
+  useEffect(() => {
+    const element = video.current
+    return () => {
+      if (element) element.muted = true
+    }
+  }, [video])
+  return null
 }
 
 function PreviewAudioElement({

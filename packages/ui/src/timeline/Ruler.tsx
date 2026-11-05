@@ -1,5 +1,6 @@
 import { formatTimecode } from '@kamo/i18n'
-import type { KeyboardEvent } from 'react'
+import { memo, type KeyboardEvent } from 'react'
+import { usePlaybackTime, type PlaybackClock } from '../editor/playback-clock.ts'
 import { useT } from '../i18n.tsx'
 import { nudgeMs, rulerTicks, snapToFrame, tickStep, type TimeScale } from './scale.ts'
 import { useDrag } from './useDrag.ts'
@@ -7,7 +8,8 @@ import { useDrag } from './useDrag.ts'
 export interface RulerProps {
   scale: TimeScale
   fps: number
-  playheadMs: number
+  /** the playhead (ms); the slider's value follows it, the marks do not re-render */
+  playhead: PlaybackClock
   onScrub(tMs: number): void
 }
 
@@ -15,10 +17,9 @@ export interface RulerProps {
  * Ruler with hh:mm:ss:ff marks. Pressing and dragging on it moves the playhead (F-09 scrub);
  * it is a slider for keyboard and screen readers.
  */
-export function Ruler({ scale, fps, playheadMs, onScrub }: RulerProps) {
+export function Ruler({ scale, fps, playhead, onScrub }: RulerProps) {
   const t = useT()
-  const step = tickStep(scale)
-  const ticks = rulerTicks(scale, step)
+  const playheadMs = usePlaybackTime(playhead)
   const durationMs = scale.durationMs
 
   const scrubTo = (clientX: number, element: HTMLElement) => {
@@ -56,6 +57,16 @@ export function Ruler({ scale, fps, playheadMs, onScrub }: RulerProps) {
       {...drag}
       className="relative h-[24px] cursor-pointer touch-none overflow-hidden rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary"
     >
+      <RulerMarks scale={scale} fps={fps} />
+    </div>
+  )
+}
+
+/** The marks and their labels: they change with the zoom level, not with the playhead. */
+const RulerMarks = memo(function RulerMarks({ scale, fps }: { scale: TimeScale; fps: number }) {
+  const ticks = rulerTicks(scale, tickStep(scale))
+  return (
+    <>
       {ticks.map((tick) => (
         <span
           key={tick.ms}
@@ -76,6 +87,6 @@ export function Ruler({ scale, fps, playheadMs, onScrub }: RulerProps) {
             {formatTimecode(tick.ms, fps)}
           </span>
         ))}
-    </div>
+    </>
   )
-}
+})

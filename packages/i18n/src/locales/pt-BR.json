@@ -277,7 +277,17 @@
       "block": "Legenda de {start} a {end}: {text}",
       "blockHint": "Dois cliques ou Enter pra corrigir o texto. Arraste pra mover, puxe uma borda pra mudar o tempo. Delete apaga.",
       "editLabel": "Texto da legenda",
-      "editHelp": "Enter salva · Esc cancela"
+      "editHelp": "Enter salva · Esc cancela",
+      "offer": {
+        "title": "Legendas automáticas",
+        "local": "Feitas a partir da sua voz, no seu computador",
+        "fix": "Corrija qualquer palavra direto na linha do tempo",
+        "styles": "12 estilos, no MP4, no GIF ou em .srt",
+        "create": "Criar legendas",
+        "transcribe": "Transcrever esta gravação",
+        "sizeExact": "Download único de {size}, só quando você clicar",
+        "sizeApprox": "Download único de cerca de {size}, só quando você clicar"
+      }
     }
   },
   "style": {

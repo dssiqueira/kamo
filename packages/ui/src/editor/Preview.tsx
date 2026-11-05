@@ -340,8 +340,10 @@ export function Preview({
           />
         )}
       </div>
-      {/* The source of every frame; never shown itself. */}
-      <video ref={video} src={videoUrl} preload="auto" playsInline className="hidden" />
+      {/* The source of every frame; never shown itself. Muted: PreviewAudio owns the sound,
+          and only unmutes it (at the track's volume) when a recorded track lives in this
+          same file, like the extension's tab sound in screen.webm. */}
+      <video ref={video} src={videoUrl} preload="auto" playsInline muted className="hidden" />
       {webcamUrl && project.webcam && (
         <video
           ref={webcamVideo}

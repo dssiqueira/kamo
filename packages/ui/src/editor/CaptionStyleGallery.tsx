@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 
 import { useLocale, useT } from '../i18n.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
 import { captionSample, paintCaptionThumbnail, thumbnailFonts } from './caption-gallery.ts'
+import { fixedPlaybackClock, usePlaybackTime, type PlaybackClock } from './playback-clock.ts'
 
 const PRESET_KEY: Record<CaptionPreset, string> = {
   clean: 'editor.captions.clean',
@@ -24,6 +25,8 @@ const PRESET_KEY: Record<CaptionPreset, string> = {
   duo: 'editor.captions.duo',
 }
 
+/** Without a playhead, the start of the video. */
+const START = fixedPlaybackClock(0)
 /** Columns of the grid (arrow up and down move by a row). */
 const COLUMNS = 3
 /** Thumbnails repaint this long after the playhead or the sample stops changing. */
@@ -38,8 +41,11 @@ export interface CaptionStyleGalleryProps {
   position: CaptionPosition
   /** the editor's video, at the playhead; missing: a plain backdrop */
   video?: RefObject<HTMLVideoElement | null> | undefined
-  /** the playhead, ms of video time */
-  timeMs?: number | undefined
+  /**
+   * the playhead at rest (ms of video time); the thumbnails follow it. Pass the paused
+   * playhead, not the one moving with playback: the gallery would re-render on every frame.
+   */
+  time?: PlaybackClock | undefined
 }
 
 /**
@@ -54,10 +60,11 @@ export function CaptionStyleGallery({
   transcript,
   position,
   video,
-  timeMs = 0,
+  time = START,
 }: CaptionStyleGalleryProps) {
   const t = useT()
   const locale = useLocale()
+  const timeMs = usePlaybackTime(time)
   const canvases = useRef(new Map<CaptionPreset, HTMLCanvasElement>())
   const buttons = useRef(new Map<CaptionPreset, HTMLButtonElement>())
   const fallback = t('editor.captions.sample')

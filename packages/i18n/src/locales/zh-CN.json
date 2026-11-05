@@ -277,7 +277,17 @@
       "block": "字幕 {start} 至 {end}：{text}",
       "blockHint": "双击或按 Enter 修改文字。拖动可移动，拉动边缘可调整时间。按 Delete 删除。",
       "editLabel": "字幕文字",
-      "editHelp": "Enter 保存 · Esc 取消"
+      "editHelp": "Enter 保存 · Esc 取消",
+      "offer": {
+        "title": "自动字幕",
+        "local": "根据你的语音在本机生成",
+        "fix": "直接在时间轴上修改任意文字",
+        "styles": "12 种样式，可烧录到 MP4、GIF 或导出 .srt",
+        "create": "生成字幕",
+        "transcribe": "转写这段录制",
+        "sizeExact": "一次性下载 {size}，仅在你点击时",
+        "sizeApprox": "一次性下载约 {size}，仅在你点击时"
+      }
     }
   },
   "style": {

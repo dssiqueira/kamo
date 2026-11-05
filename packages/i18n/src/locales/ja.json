@@ -277,7 +277,17 @@
       "block": "字幕 {start}〜{end}：{text}",
       "blockHint": "ダブルクリックか Enter で文字を修正。ドラッグで移動、端を引くとタイミングを変更。Delete で削除。",
       "editLabel": "字幕の文字",
-      "editHelp": "Enter で保存 · Esc でキャンセル"
+      "editHelp": "Enter で保存 · Esc でキャンセル",
+      "offer": {
+        "title": "自動字幕",
+        "local": "あなたの声から、このパソコンの中で作成",
+        "fix": "タイムライン上でどの言葉もすぐに修正",
+        "styles": "12 種類のスタイル。MP4・GIF に焼き込み、または .srt",
+        "create": "字幕を作成",
+        "transcribe": "この録画を文字起こし",
+        "sizeExact": "{size} を一度だけダウンロード（クリックしたときのみ）",
+        "sizeApprox": "約 {size} を一度だけダウンロード（クリックしたときのみ）"
+      }
     }
   },
   "style": {

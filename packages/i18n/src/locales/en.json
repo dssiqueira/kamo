@@ -277,7 +277,17 @@
       "block": "Caption from {start} to {end}: {text}",
       "blockHint": "Double-click or press Enter to fix the text. Drag to move, pull an edge to change the timing. Delete removes it.",
       "editLabel": "Caption text",
-      "editHelp": "Enter saves · Esc cancels"
+      "editHelp": "Enter saves · Esc cancels",
+      "offer": {
+        "title": "Automatic captions",
+        "local": "Made from your voice, right on your computer",
+        "fix": "Fix any word straight on the timeline",
+        "styles": "12 styles, burned into MP4 or GIF, or as .srt",
+        "create": "Create captions",
+        "transcribe": "Transcribe this recording",
+        "sizeExact": "One-time {size} download, only when you click",
+        "sizeApprox": "One-time download of about {size}, only when you click"
+      }
     }
   },
   "style": {

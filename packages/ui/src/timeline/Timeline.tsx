@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react'
+import { usePlaybackTime, usePlaybackValue, type PlaybackClock } from '../editor/playback-clock.ts'
 import { useLocale, useT } from '../i18n.tsx'
 import { EyeOffIcon, PlusIcon, SpeakerIcon } from './icons.tsx'
 import { Ruler } from './Ruler.tsx'
@@ -67,7 +68,11 @@ export interface TimelineProps {
   trim: { startMs: number; endMs: number }
   /** all the project's zooms; the ones outside the trim are hidden, not deleted (F-16) */
   zooms: readonly Zoom[]
-  playheadMs: number
+  /**
+   * The playhead (ms of video time) as a store that moves on every frame of playback: only
+   * the timecode, the ruler and the playhead line follow it, the lanes do not re-render.
+   */
+  playhead: PlaybackClock
   selectedZoomId: string | null
   /** audio rows appear only for the tracks that were recorded */
   tracks?: { mic?: TimelineAudioTrack; system?: TimelineAudioTrack }
@@ -123,8 +128,7 @@ const FOCUS_RING =
  * Time flows left to right in every language (it is video notation), so the lanes are LTR.
  */
 export function Timeline(props: TimelineProps) {
-  const { durationMs, fps, trim, zooms, playheadMs, selectedZoomId, tracks, webcam, captions } =
-    props
+  const { durationMs, fps, trim, zooms, playhead, selectedZoomId, tracks, webcam, captions } = props
   const t = useT()
   const lanesRef = useRef<HTMLDivElement>(null)
   const width = useElementWidth(lanesRef)
@@ -136,7 +140,10 @@ export function Timeline(props: TimelineProps) {
     return track ? [{ id, track }] : []
   })
 
-  const canAddAtPlayhead = playheadMs >= trim.startMs && playheadMs <= trim.endMs
+  const canAddAtPlayhead = usePlaybackValue(
+    playhead,
+    (ms) => ms >= trim.startMs && ms <= trim.endMs,
+  )
 
   return (
     <section
@@ -146,16 +153,14 @@ export function Timeline(props: TimelineProps) {
       {/* Track headers */}
       <div className="flex w-[12.5rem] shrink-0 flex-col gap-xs ps-md">
         <div className={`${ROW.ruler} flex items-center`}>
-          <span className="font-mono text-timecode text-on-surface tabular-nums">
-            {formatTimecode(playheadMs, fps)}
-          </span>
+          <PlayheadTimecode playhead={playhead} fps={fps} />
         </div>
         <TrackHeader className={ROW.video} label={t('timeline.tracks.video')} />
         <TrackHeader className={ROW.zoom} label={t('timeline.tracks.zoom')}>
           <IconButton
             label={t('timeline.addZoom')}
             disabled={!canAddAtPlayhead}
-            onClick={() => props.onCreateZoom(snapToFrame(playheadMs, fps))}
+            onClick={() => props.onCreateZoom(snapToFrame(playhead.get(), fps))}
           >
             <PlusIcon />
           </IconButton>
@@ -165,7 +170,7 @@ export function Timeline(props: TimelineProps) {
             <IconButton
               label={t('editor.webcam.hideAtPlayhead')}
               disabled={!canAddAtPlayhead}
-              onClick={() => webcam.onAddHidden(snapToFrame(playheadMs, fps))}
+              onClick={() => webcam.onAddHidden(snapToFrame(playhead.get(), fps))}
             >
               <EyeOffIcon />
             </IconButton>
@@ -188,7 +193,7 @@ export function Timeline(props: TimelineProps) {
       {/* Lanes */}
       <div dir="ltr" className="relative min-w-0 flex-1 pe-sm">
         <div ref={lanesRef} className={`relative flex flex-col gap-xs ${LANE_GUTTER}`}>
-          <Ruler scale={scale} fps={fps} playheadMs={playheadMs} onScrub={props.onScrub} />
+          <Ruler scale={scale} fps={fps} playhead={playhead} onScrub={props.onScrub} />
           <VideoLane
             scale={scale}
             fps={fps}
@@ -255,7 +260,7 @@ export function Timeline(props: TimelineProps) {
           ))}
 
           <TrimShade scale={scale} trim={trim} />
-          <Playhead scale={scale} playheadMs={playheadMs} />
+          <Playhead scale={scale} playhead={playhead} />
         </div>
       </div>
     </section>
@@ -554,7 +559,18 @@ function TrimShade({
   )
 }
 
-function Playhead({ scale, playheadMs }: { scale: TimeScale; playheadMs: number }) {
+/** The time at the playhead, hh:mm:ss:ff; re-renders on every frame of playback. */
+function PlayheadTimecode({ playhead, fps }: { playhead: PlaybackClock; fps: number }) {
+  const playheadMs = usePlaybackTime(playhead)
+  return (
+    <span className="font-mono text-timecode text-on-surface tabular-nums">
+      {formatTimecode(playheadMs, fps)}
+    </span>
+  )
+}
+
+function Playhead({ scale, playhead }: { scale: TimeScale; playhead: PlaybackClock }) {
+  const playheadMs = usePlaybackTime(playhead)
   if (scale.widthPx <= 0) return null
   return (
     <div

@@ -277,7 +277,17 @@
       "block": "Subtítulo de {start} a {end}: {text}",
       "blockHint": "Doble clic o Enter para corregir el texto. Arrastra para mover, tira de un borde para cambiar el tiempo. Supr lo elimina.",
       "editLabel": "Texto del subtítulo",
-      "editHelp": "Enter guarda · Esc cancela"
+      "editHelp": "Enter guarda · Esc cancela",
+      "offer": {
+        "title": "Subtítulos automáticos",
+        "local": "Hechos a partir de tu voz, en tu computadora",
+        "fix": "Corrige cualquier palabra en la línea de tiempo",
+        "styles": "12 estilos, en MP4, GIF o .srt",
+        "create": "Crear subtítulos",
+        "transcribe": "Transcribir esta grabación",
+        "sizeExact": "Descarga única de {size}, solo cuando hagas clic",
+        "sizeApprox": "Descarga única de unos {size}, solo cuando hagas clic"
+      }
     }
   },
   "style": {
