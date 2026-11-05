@@ -51,17 +51,32 @@ export function videoBitrate(size: Size, fps: number = CAPTURE_FPS): number {
 }
 
 /**
- * First WebM type the browser records (docs/integrations.md: VP9/VP8 video + Opus audio).
- * `null` when none is supported.
+ * First type the browser records (D-037): H.264 in MP4, which the editor's <video> decodes on
+ * the GPU, else WebM (VP9/VP8, which Chrome decodes in software: MediaRecorder's WebM marks
+ * the track as possibly transparent, and the hardware decoders refuse that). The tab sound is
+ * Opus in either. `null` when none is supported.
  */
 export function pickVideoMimeType(
   isTypeSupported: (type: string) => boolean,
   withAudio: boolean,
 ): string | null {
   const candidates = withAudio
-    ? ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
-    : ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+    ? [
+        'video/mp4;codecs=avc1,opus',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm',
+      ]
+    : ['video/mp4;codecs=avc1', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
   return candidates.find((type) => isTypeSupported(type)) ?? null
 }
+
+/**
+ * Key frame interval of the MP4 screen recording. Chrome's MP4 recorder writes a fragment only
+ * at a key frame (as for the camera), so this is also the most a crash can lose; and a seek
+ * decodes from the key frame before it, so editor seeks stay short. WebM keeps the encoder's
+ * default.
+ */
+export const SCREEN_KEYFRAME_INTERVAL_MS = 2000
 
 export const MICROPHONE_MIME_TYPE = 'audio/webm;codecs=opus'

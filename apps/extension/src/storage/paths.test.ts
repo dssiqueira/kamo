@@ -1,5 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { assertProjectId, isProjectId, splitProjectPath } from './paths.ts'
+import {
+  assertProjectId,
+  findScreenFile,
+  isProjectId,
+  screenFileFor,
+  splitProjectPath,
+} from './paths.ts'
+
+describe('screen file', () => {
+  it('follows the recorded container', () => {
+    expect(screenFileFor('video/mp4;codecs=avc1,opus')).toBe('screen.mp4')
+    expect(screenFileFor('video/webm;codecs=vp9,opus')).toBe('screen.webm')
+  })
+
+  it('finds the one with content, MP4 first', async () => {
+    const sizes = (map: Record<string, number>) => async (name: string) => map[name] ?? null
+    expect(await findScreenFile(sizes({ 'screen.webm': 10 }))).toBe('screen.webm')
+    expect(await findScreenFile(sizes({ 'screen.mp4': 10, 'screen.webm': 10 }))).toBe('screen.mp4')
+    expect(await findScreenFile(sizes({ 'screen.mp4': 0, 'screen.webm': 5 }))).toBe('screen.webm')
+    expect(await findScreenFile(sizes({}))).toBeNull()
+  })
+})
 
 describe('project paths', () => {
   it('splits a nested path', () => {

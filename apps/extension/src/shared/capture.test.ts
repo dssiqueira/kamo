@@ -52,17 +52,24 @@ describe('videoBitrate', () => {
 })
 
 describe('pickVideoMimeType', () => {
-  it('prefers VP9 with Opus, then VP8, then plain WebM', () => {
-    expect(pickVideoMimeType(() => true, true)).toBe('video/webm;codecs=vp9,opus')
-    expect(pickVideoMimeType((t) => !t.includes('vp9'), true)).toBe('video/webm;codecs=vp8,opus')
+  it('prefers H.264 in MP4, then VP9, then VP8, then plain WebM (D-037)', () => {
+    expect(pickVideoMimeType(() => true, true)).toBe('video/mp4;codecs=avc1,opus')
+    const noMp4 = (t: string) => !t.startsWith('video/mp4')
+    expect(pickVideoMimeType(noMp4, true)).toBe('video/webm;codecs=vp9,opus')
+    expect(pickVideoMimeType((t) => noMp4(t) && !t.includes('vp9'), true)).toBe(
+      'video/webm;codecs=vp8,opus',
+    )
     expect(pickVideoMimeType((t) => t === 'video/webm', false)).toBe('video/webm')
   })
 
   it('asks for a video-only type when the tab sound is off', () => {
-    expect(pickVideoMimeType(() => true, false)).toBe('video/webm;codecs=vp9')
+    expect(pickVideoMimeType(() => true, false)).toBe('video/mp4;codecs=avc1')
+    expect(pickVideoMimeType((t) => !t.startsWith('video/mp4'), false)).toBe(
+      'video/webm;codecs=vp9',
+    )
   })
 
-  it('returns null when the browser records no WebM', () => {
+  it('returns null when the browser records none of them', () => {
     expect(pickVideoMimeType(() => false, true)).toBeNull()
   })
 })

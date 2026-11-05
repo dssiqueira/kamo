@@ -1,6 +1,7 @@
 // "We found an interrupted recording" in the extension (E-01: browser closed midway → offer to
-// recover on the next launch). What a closed browser leaves: the marker, `screen.webm` with
-// every chunk flushed so far (WebM plays up to the last complete cluster), maybe `audio.webm`,
+// recover on the next launch). What a closed browser leaves: the marker, `screen.mp4` (or
+// `screen.webm`, D-037) with every chunk flushed so far (it plays up to the last complete MP4
+// fragment or WebM cluster), maybe `audio.webm`,
 // `webcam.mp4` and `frames/`, and no project.json. Recovery turns that into a normal project.
 // Loaded only when the user clicks Recover, so the engine never weighs on the popup.
 import {
@@ -12,7 +13,7 @@ import {
   type ProjectStore,
 } from '@kamo/core'
 import { parseMarker } from './marker.ts'
-import { MICROPHONE_FILE, RECORDING_MARKER, SCREEN_FILE, isWebcamFile } from './paths.ts'
+import { MICROPHONE_FILE, RECORDING_MARKER, findScreenFile, isWebcamFile } from './paths.ts'
 
 export type RecoveryStore = Pick<ProjectStore, 'readText' | 'writeText' | 'deleteProject'> & {
   removeFile(projectId: string, path: string): Promise<void>
@@ -38,8 +39,8 @@ export async function recoverRecording(store: RecoveryStore, projectId: string):
   const text = await store.readText(projectId, RECORDING_MARKER)
   const marker = text === null ? null : parseMarker(text)
   if (!marker) throw new RecoveryError('not_interrupted')
-  const videoBytes = (await store.fileSize(projectId, SCREEN_FILE)) ?? 0
-  if (videoBytes === 0 || marker.durationMs < MIN_RECORDING_MS) {
+  const screen = await findScreenFile((name) => store.fileSize(projectId, name))
+  if (screen === null || marker.durationMs < MIN_RECORDING_MS) {
     throw new RecoveryError('unrecoverable')
   }
   const micBytes = (await store.fileSize(projectId, MICROPHONE_FILE)) ?? 0

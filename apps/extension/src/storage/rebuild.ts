@@ -1,10 +1,10 @@
 // "Open raw video" for a project whose project.json can't be read (F-12 in the extension): the
-// edits are lost, so a fresh project is made around screen.webm, keeping the clicks, the
+// edits are lost, so a fresh project is made around the screen file, keeping the clicks, the
 // microphone and the camera that are still in the folder. The size and length come from the
-// video itself (a <video> element: the extension page plays WebM natively).
+// video itself (a <video> element: the extension page plays MP4 and WebM natively).
 import { DEFAULT_WEBCAM, PROJECT_FILES, createProject, saveProject, type Source } from '@kamo/core'
 import type { OpfsProjectStore } from './opfs-store.ts'
-import { MICROPHONE_FILE, SCREEN_FILE, WEBCAM_FILES } from './paths.ts'
+import { MICROPHONE_FILE, WEBCAM_FILES, findScreenFile } from './paths.ts'
 
 /** Size and length of a recorded WebM. MediaRecorder files carry no duration: seek to find it. */
 function probe(blob: Blob): Promise<{ width: number; height: number; durationMs: number }> {
@@ -49,7 +49,8 @@ export async function rebuildFromVideo(
   projectId: string,
   nameFor: (createdAt: Date) => string,
 ): Promise<void> {
-  const screen = await store.readBlob(projectId, SCREEN_FILE)
+  const file = await findScreenFile((name) => store.fileSize(projectId, name))
+  const screen = file === null ? null : await store.readBlob(projectId, file)
   if (!screen || screen.size === 0) throw new Error('no video')
   const { width, height, durationMs } = await probe(screen)
   if (!(width > 0 && height > 0 && durationMs > 0)) throw new Error('unreadable video')
@@ -63,7 +64,7 @@ export async function rebuildFromVideo(
     createdAt: created,
     audio: {
       mic: ((await store.fileSize(projectId, MICROPHONE_FILE)) ?? 0) > 0,
-      // The tab sound, if any, is inside screen.webm; the export skips a missing track.
+      // The tab sound, if any, is inside the screen file; the export skips a missing track.
       system: true,
     },
   })

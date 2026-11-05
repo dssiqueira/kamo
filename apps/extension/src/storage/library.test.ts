@@ -2,8 +2,11 @@ import { createProject, parseProject, serializeProject, type Source } from '@kam
 import { describe, expect, it } from 'vitest'
 import { readLibrary } from './library.ts'
 import { serializeMarker, type RecordingMarker } from './marker.ts'
-import { MICROPHONE_FILE, RECORDING_MARKER, SCREEN_FILE } from './paths.ts'
+import { MICROPHONE_FILE, RECORDING_MARKER } from './paths.ts'
 import { RecoveryError, discardRecording, recoverRecording } from './recovery.ts'
+
+/** Recordings made before D-037; new ones may be screen.mp4 (tested below). */
+const SCREEN_FILE = 'screen.webm'
 
 /** Same contract as OpfsProjectStore, in memory (OPFS does not exist in Node). */
 class FakeStore {
@@ -116,6 +119,13 @@ describe('recoverRecording', () => {
       audio: { mic: { enabled: true, offsetMs: -12 }, system: { enabled: true } },
     })
     expect(await store.readText(ids.a, RECORDING_MARKER)).toBeNull()
+  })
+
+  it('recovers a screen.mp4 recording too', async () => {
+    const store = new FakeStore()
+    await store.writeText(ids.a, RECORDING_MARKER, marker())
+    store.put(ids.a, 'screen.mp4', new Blob([new Uint8Array(100)]))
+    expect((await recoverRecording(store, ids.a)).durationMs).toBe(12_000)
   })
 
   it('leaves the microphone off when its file never got any data', async () => {

@@ -188,7 +188,7 @@ function ExtensionEditor({ projectId }: { projectId: string }) {
       media: {
         video: media.screen,
         mic: media.mic,
-        // The tab sound is the audio track of screen.webm.
+        // The tab sound is the audio track of the screen file.
         system: ready.project.audio.system.enabled ? media.screen : null,
         webcam: media.webcam,
         backgroundImage: (file) => media.images.get(file) ?? null,

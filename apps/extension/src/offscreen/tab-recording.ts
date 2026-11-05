@@ -2,7 +2,8 @@
 // media, so the stream id from `chrome.tabCapture.getMediaStreamId` comes here, where
 // `getUserMedia` turns it into a stream and `MediaRecorder` writes it to OPFS in 1s chunks.
 //
-//   tab stream ─┬─ video + tab sound ─▶ MediaRecorder ─▶ screen.webm   (chunk writer worker)
+//   tab stream ─┬─ video + tab sound ─▶ MediaRecorder ─▶ screen.mp4    (chunk writer worker;
+//               │                                         screen.webm without MP4, D-037)
 //               ├─ tab sound ─▶ AudioContext ─▶ speakers  (the tab would go silent otherwise)
 //               └─ video ─▶ <video> ─▶ frames/0005.jpg every 5s
 //   microphone ───────────────▶ MediaRecorder ─▶ audio.webm
@@ -22,6 +23,7 @@ import {
 import {
   CAPTURE_FPS,
   MICROPHONE_MIME_TYPE,
+  SCREEN_KEYFRAME_INTERVAL_MS,
   pickVideoMimeType,
   videoBitrate,
 } from '../shared/capture.ts'
@@ -38,7 +40,12 @@ import {
 import type { Notice, PrepareRequest } from '../shared/messages.ts'
 import { serializeMarker, type RecordingMarker } from '../storage/marker.ts'
 import type { OpfsProjectStore } from '../storage/opfs-store.ts'
-import { MICROPHONE_FILE, RECORDING_MARKER, SCREEN_FILE } from '../storage/paths.ts'
+import {
+  MICROPHONE_FILE,
+  RECORDING_MARKER,
+  screenFileFor,
+  type ScreenFile,
+} from '../storage/paths.ts'
 import { MIN_RECORDING_MS } from '../storage/recovery.ts'
 import { ChunkWriter, WriteError } from './chunk-writer.ts'
 
@@ -161,6 +168,8 @@ export class TabRecording implements CaptureSession {
   private readonly video = document.createElement('video')
   private audioContext: AudioContext | null = null
   private screenRecorder: MediaRecorder | null = null
+  /** `screen.mp4` (or `.webm`) once recording starts. */
+  private screenFile: ScreenFile | null = null
   private micRecorder: MediaRecorder | null = null
   private micOffsetMs: number | undefined
   private cameraRecorder: MediaRecorder | null = null
@@ -266,13 +275,18 @@ export class TabRecording implements CaptureSession {
     // The marker goes first: a folder with media and no marker would be invisible to recovery.
     this.startedAt = new Date()
     await this.writeMarker()
-    await this.writer.open(projectId, SCREEN_FILE)
+    const screenFile = screenFileFor(mimeType)
+    const mp4 = screenFile === 'screen.mp4'
+    this.screenFile = screenFile
+    await this.writer.open(projectId, screenFile)
     this.screenRecorder = new MediaRecorder(this.tabStream, {
       mimeType,
       videoBitsPerSecond: videoBitrate(this.source),
       ...(hasTabAudio ? { audioBitsPerSecond: 128_000 } : {}),
-    })
-    this.pipe(this.screenRecorder, SCREEN_FILE)
+      // Chrome-only option, missing from the DOM types (see SCREEN_KEYFRAME_INTERVAL_MS).
+      ...(mp4 ? { videoKeyFrameIntervalDuration: SCREEN_KEYFRAME_INTERVAL_MS } : {}),
+    } as MediaRecorderOptions)
+    this.pipe(this.screenRecorder, screenFile)
     const screenStarted = whenStarted(this.screenRecorder)
 
     let micStarted: Promise<number> | null = null
@@ -307,7 +321,10 @@ export class TabRecording implements CaptureSession {
       this.dropCamera()
     }
     this.timer.start()
-    const screenAt = await screenStarted
+    // Chrome's MP4 recorder fires `start` only once its encoder is up, yet the file begins
+    // with the first frame after start() (see the camera below): time MP4 from the call.
+    const screenStartedAt = await screenStarted
+    const screenAt = mp4 ? screenCalledAt : screenStartedAt
     if (micStarted) {
       // Where the first microphone sample sits on the video timeline (data-model.md offsetMs).
       const settings = this.micStream?.getAudioTracks()[0]?.getSettings() as
@@ -400,7 +417,7 @@ export class TabRecording implements CaptureSession {
     this.flushEvents()
     await this.writes.catch(() => undefined)
     const { projectId, options } = this
-    for (const path of [SCREEN_FILE, MICROPHONE_FILE, EVENTS_FILE, this.cameraFile]) {
+    for (const path of [this.screenFile, MICROPHONE_FILE, EVENTS_FILE, this.cameraFile]) {
       if (path === null) continue
       await this.writer.close(projectId, path).catch(() => undefined)
     }

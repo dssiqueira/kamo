@@ -2,13 +2,13 @@
 // The preview gets object URLs (an extension page cannot fetch OPFS by path); the export gets
 // the Blobs themselves (mediabunny reads them in ranges, nothing is loaded whole).
 //
-//   screen.webm  video + tab sound (the "system" track, F-04)
+//   screen.mp4 / screen.webm  video + tab sound (the "system" track, F-04; D-037)
 //   audio.webm   microphone
 //   webcam.mp4 / webcam.webm   the bubble (A-03)
 //   background-<hash>.<ext>    own-image wallpaper (A-04)
 import { isBackgroundImageFile, type Project } from '@kamo/core'
 import type { OpfsProjectStore } from '../storage/opfs-store.ts'
-import { MICROPHONE_FILE, SCREEN_FILE, WEBCAM_FILES } from '../storage/paths.ts'
+import { MICROPHONE_FILE, WEBCAM_FILES, findScreenFile } from '../storage/paths.ts'
 
 export interface ProjectMedia {
   screen: Blob
@@ -21,7 +21,7 @@ export interface ProjectMedia {
 export interface MediaUrls {
   video: string
   mic: string | undefined
-  /** The tab sound lives in screen.webm: the preview plays its audio from the same file. */
+  /** The tab sound lives in the screen file: the preview plays its audio from the same file. */
   system: string | undefined
   webcam: string | undefined
   image(file: string): string
@@ -32,8 +32,9 @@ export async function loadProjectMedia(
   project: Project,
 ): Promise<ProjectMedia> {
   const id = project.id
-  const screen = await store.readBlob(id, SCREEN_FILE)
-  if (!screen || screen.size === 0) throw new Error('screen.webm missing')
+  const file = await findScreenFile((name) => store.fileSize(id, name))
+  const screen = file === null ? null : await store.readBlob(id, file)
+  if (!screen || screen.size === 0) throw new Error('screen file missing')
   const mic = project.audio.mic.enabled ? await store.readBlob(id, MICROPHONE_FILE) : null
   let webcam: Blob | null = null
   if (project.webcam) {

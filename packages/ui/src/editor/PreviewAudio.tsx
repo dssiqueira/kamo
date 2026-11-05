@@ -14,7 +14,7 @@ export interface PreviewAudioProps {
   video: RefObject<HTMLVideoElement | null>
   /**
    * the screen element's source. A track served from the same file (the extension's tab
-   * sound lives in screen.webm) plays from the screen element itself.
+   * sound lives in its screen file) plays from the screen element itself.
    */
   videoUrl?: string | undefined
   /** the recorded tracks (project.audio.<track>.enabled) the app can serve */
