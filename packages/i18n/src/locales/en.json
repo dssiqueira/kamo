@@ -186,7 +186,6 @@
     "export": "Export",
     "play": "Play",
     "pause": "Pause",
-    "scrub": "Playhead",
     "loading": "Opening the project…",
     "endTrim": {
       "question": "Trim the last {seconds, plural, one {# second} other {# seconds}}?",
@@ -284,8 +283,6 @@
       "medium": "Medium",
       "large": "Large",
       "editHint": "Double-click a caption on the timeline to fix its text. Your fixes also correct the transcript.",
-      "fromTranscript": "Captions come from the transcript of this recording.",
-      "needsPack": "Transcription is an optional pack ({size}) that runs on your computer. Kamo downloads it only when you ask.",
       "download": "Download and transcribe",
       "noSpeech": "No speech was found in this recording, so there are no captions.",
       "track": "Captions",
@@ -544,7 +541,6 @@
       "square": "Square",
       "vertical": "Vertical"
     },
-    "soon": "Coming soon",
     "resolution": "Resolution",
     "frameRate": "Frame rate",
     "fileFormat": "Format",
@@ -629,8 +625,6 @@
       "recent": "Latest recordings",
       "noRecent": "Your recordings show up here.",
       "projectMeta": "{duration} · {date}",
-      "desktopOnly": "Transcription and captions are in the Kamo desktop app.",
-      "getDesktop": "Get the app",
       "allProjects": "All projects",
       "lowSpace": "The browser is almost out of space. Delete old projects before recording."
     },

@@ -76,7 +76,7 @@ import { AUDIO_TEMP_FOLDER, CAMERA_TEMP_FOLDER } from './media-takes.ts'
 import { rawVideoPath } from './raw-video.ts'
 import { SettingsError, parseSettingsUpdate } from './settings.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
-import { createAppWindow, isAppUrl, isDev, loadPage, pageExists } from './windows.ts'
+import { createAppWindow, isAppUrl, isDev, loadPage } from './windows.ts'
 import { registerExport } from './export-ipc.ts'
 import { PackError } from './packs/manager.ts'
 import { registerTranscription } from './transcription/index.ts'
@@ -541,11 +541,6 @@ handle(IpcChannel.openEditor, async (projectId) => {
   const ids = await getServices().store.listProjectIds()
   if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
   if (!mainWindow) return
-  if (!pageExists('editor')) {
-    // The editor page is built in the next step; until then Home stays where it is.
-    getServices().log.warn('editor.missing')
-    return
-  }
   // A-04: background images replaced in an earlier session go; the one in use stays.
   const { store } = getServices()
   const current = await loadProjectById(store, projectId)

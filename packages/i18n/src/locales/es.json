@@ -186,7 +186,6 @@
     "export": "Exportar",
     "play": "Reproducir",
     "pause": "Pausar",
-    "scrub": "Posición",
     "loading": "Abriendo el proyecto…",
     "endTrim": {
       "question": "¿Recortar {seconds, plural, one {el último # segundo} other {los últimos # segundos}}?",
@@ -284,8 +283,6 @@
       "medium": "Mediano",
       "large": "Grande",
       "editHint": "Haz doble clic en un subtítulo de la línea de tiempo para corregir el texto. Tus correcciones también corrigen la transcripción.",
-      "fromTranscript": "Los subtítulos salen de la transcripción de esta grabación.",
-      "needsPack": "La transcripción es un paquete opcional ({size}) que funciona en tu computadora. Kamo solo lo descarga cuando lo pides.",
       "download": "Descargar y transcribir",
       "noSpeech": "No encontramos voz en esta grabación, así que no hay subtítulos.",
       "track": "Subtítulos",
@@ -544,7 +541,6 @@
       "square": "Cuadrado",
       "vertical": "Vertical"
     },
-    "soon": "Muy pronto",
     "resolution": "Resolución",
     "frameRate": "Fotogramas por segundo",
     "fileFormat": "Formato",
@@ -629,8 +625,6 @@
       "recent": "Últimas grabaciones",
       "noRecent": "Tus grabaciones aparecen aquí.",
       "projectMeta": "{duration} · {date}",
-      "desktopOnly": "La transcripción y los subtítulos están en la app de Kamo para ordenador.",
-      "getDesktop": "Descargar la app",
       "allProjects": "Todos los proyectos",
       "lowSpace": "Al navegador casi no le queda espacio. Borra proyectos antiguos antes de grabar."
     },

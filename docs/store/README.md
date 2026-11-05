@@ -43,4 +43,3 @@ Video (E-06): a 30–45s recording of recording a tab with Kamo, exported with K
 - [ ] Privacy policy URL (the site's page with `privacy.md`)
 - [ ] 5 screenshots + promo tile + video link
 - [ ] After approval: the same zip to Edge Add-ons
-- [ ] Not before: the `extension.popup.desktopOnly` / `getDesktop` keys can go once nothing uses them

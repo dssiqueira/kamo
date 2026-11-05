@@ -22,7 +22,3 @@ export async function freeDiskSpace(dir: string): Promise<number> {
     }
   }
 }
-
-export async function hasEnoughSpace(dir: string, minBytes = MIN_FREE_BYTES): Promise<boolean> {
-  return (await freeDiskSpace(dir)) >= minBytes
-}

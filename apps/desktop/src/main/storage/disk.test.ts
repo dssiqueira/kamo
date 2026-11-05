@@ -1,7 +1,7 @@
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { freeDiskSpace, hasEnoughSpace } from './disk.ts'
+import { freeDiskSpace } from './disk.ts'
 
 describe('freeDiskSpace', () => {
   it('returns the bytes available on the volume', async () => {
@@ -15,10 +15,5 @@ describe('freeDiskSpace', () => {
     const [fromMissing, fromParent] = [await freeDiskSpace(missing), await freeDiskSpace(tmpdir())]
     // other processes write meanwhile; same volume means about the same number
     expect(Math.abs(fromMissing - fromParent)).toBeLessThan(100_000_000)
-  })
-
-  it('compares against the 1GB default or a custom minimum', async () => {
-    expect(await hasEnoughSpace(tmpdir(), 1)).toBe(true)
-    expect(await hasEnoughSpace(tmpdir(), Number.MAX_SAFE_INTEGER)).toBe(false)
   })
 })

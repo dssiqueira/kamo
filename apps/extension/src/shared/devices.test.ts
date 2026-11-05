@@ -5,7 +5,6 @@ import {
   isDeviceGone,
   openWithFallback,
   pickCameraMimeType,
-  selectedDevice,
   webcamFileFor,
 } from './devices.ts'
 
@@ -27,17 +26,6 @@ describe('deviceOptions', () => {
       { id: 'a2', label: 'Built-in' },
     ])
     expect(deviceOptions(all, 'videoinput')).toEqual([{ id: 'v1', label: 'FaceTime' }])
-  })
-})
-
-describe('selectedDevice', () => {
-  const options = [{ id: 'a1', label: '' }]
-  it('keeps a remembered device that is plugged in', () => {
-    expect(selectedDevice(options, 'a1')).toBe('a1')
-  })
-  it('reads as the default when the device is gone', () => {
-    expect(selectedDevice(options, 'gone')).toBe('')
-    expect(selectedDevice([], '')).toBe('')
   })
 })
 

@@ -15,7 +15,3 @@ export function hasLowSpace(estimate: { quota?: number; usage?: number }): boole
   if (quota === undefined || usage === undefined) return false
   return quota - usage < LOW_SPACE_BYTES
 }
-
-export function isOverWarning(bytes: number): boolean {
-  return bytes > PROJECTS_WARNING_BYTES
-}

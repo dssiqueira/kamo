@@ -9,8 +9,6 @@ import type {
   RecorderReport,
 } from '../../shared/audio.ts'
 
-export const AUDIO_TRACKS: readonly AudioTrackName[] = ['mic', 'system']
-
 /** What the next recording captures: the Home toggles saved in settings (F-01, F-04). */
 export function audioSourcesFromSettings(
   settings: AppSettings,

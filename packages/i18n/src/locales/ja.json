@@ -186,7 +186,6 @@
     "export": "書き出し",
     "play": "再生",
     "pause": "一時停止",
-    "scrub": "再生位置",
     "loading": "プロジェクトを開いています…",
     "endTrim": {
       "question": "最後の{seconds, number}秒をカットしますか？",
@@ -284,8 +283,6 @@
       "medium": "中",
       "large": "大",
       "editHint": "タイムラインの字幕をダブルクリックすると文字を修正できます。修正は文字起こしにも反映されます。",
-      "fromTranscript": "字幕はこの録画の文字起こしから作られます。",
-      "needsPack": "文字起こしはパソコン上で動くオプションのパック（{size}）です。Kamo は頼まれたときだけダウンロードします。",
       "download": "ダウンロードして文字起こし",
       "noSpeech": "この録画には音声が見つからなかったため、字幕はありません。",
       "track": "字幕",
@@ -544,7 +541,6 @@
       "square": "正方形",
       "vertical": "縦長"
     },
-    "soon": "近日公開",
     "resolution": "解像度",
     "frameRate": "フレームレート",
     "fileFormat": "ファイル形式",
@@ -629,8 +625,6 @@
       "recent": "最近の録画",
       "noRecent": "録画はここに表示されます。",
       "projectMeta": "{duration} · {date}",
-      "desktopOnly": "文字起こしと字幕は Kamo のデスクトップアプリで使えます。",
-      "getDesktop": "アプリを入手",
       "allProjects": "すべてのプロジェクト",
       "lowSpace": "ブラウザの空き容量がほとんどありません。録画の前に古いプロジェクトを削除してください。"
     },

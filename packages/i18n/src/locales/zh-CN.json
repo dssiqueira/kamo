@@ -186,7 +186,6 @@
     "export": "导出",
     "play": "播放",
     "pause": "暂停",
-    "scrub": "播放位置",
     "loading": "正在打开项目…",
     "endTrim": {
       "question": "剪掉最后 {seconds, number} 秒？",
@@ -284,8 +283,6 @@
       "medium": "中",
       "large": "大",
       "editHint": "在时间轴上双击字幕即可修改文字。修改也会同步更正转录。",
-      "fromTranscript": "字幕来自这段录屏的转录。",
-      "needsPack": "转录是一个可选扩展包（{size}），在你的电脑上运行。只有你需要时 Kamo 才会下载。",
       "download": "下载并转录",
       "noSpeech": "这段录屏里没有找到语音，所以没有字幕。",
       "track": "字幕",
@@ -544,7 +541,6 @@
       "square": "方形",
       "vertical": "竖屏"
     },
-    "soon": "即将推出",
     "resolution": "分辨率",
     "frameRate": "帧率",
     "fileFormat": "文件格式",
@@ -629,8 +625,6 @@
       "recent": "最近的录制",
       "noRecent": "你的录制会显示在这里。",
       "projectMeta": "{duration} · {date}",
-      "desktopOnly": "转写和字幕功能在 Kamo 桌面应用中提供。",
-      "getDesktop": "下载应用",
       "allProjects": "全部项目",
       "lowSpace": "浏览器的存储空间快用完了。录制前请删除旧项目。"
     },

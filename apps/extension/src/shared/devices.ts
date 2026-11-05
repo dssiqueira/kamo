@@ -23,11 +23,6 @@ export function deviceOptions(
     .map((d) => ({ id: d.deviceId, label: d.label }))
 }
 
-/** The remembered device when it is plugged in, else '' (the default). */
-export function selectedDevice(options: readonly DeviceOption[], id: string): string {
-  return options.some((option) => option.id === id) ? id : ''
-}
-
 /** The chosen device is gone (unplugged, or its id changed). Other errors are real failures. */
 export function isDeviceGone(error: unknown): boolean {
   const name = (error as { name?: unknown } | null)?.name

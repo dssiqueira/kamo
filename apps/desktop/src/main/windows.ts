@@ -1,5 +1,4 @@
 import { app, BrowserWindow, type BrowserWindowConstructorOptions } from 'electron'
-import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -45,18 +44,6 @@ export function isPageUrl(url: string, page: Page): boolean {
   if (!isAppUrl(url)) return false
   if (devServerUrl) return new URL(url).pathname === `/${page}.html`
   return url.split(/[?#]/)[0] === pathToFileURL(join(rendererDir, `${page}.html`)).href
-}
-
-/**
- * Whether a page was built. The editor page arrives in a later step; until then, opening a
- * project is a no-op. Dev checks the source page, production the bundled one.
- */
-export function pageExists(page: Page): boolean {
-  return existsSync(
-    devServerUrl
-      ? join(app.getAppPath(), 'src/renderer', `${page}.html`)
-      : join(rendererDir, `${page}.html`),
-  )
 }
 
 /** Loads a page in an existing window, with an optional query (e.g. `?project=<id>`). */

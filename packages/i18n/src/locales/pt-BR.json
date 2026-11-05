@@ -186,7 +186,6 @@
     "export": "Exportar",
     "play": "Tocar",
     "pause": "Pausar",
-    "scrub": "Posição",
     "loading": "Abrindo o projeto…",
     "endTrim": {
       "question": "Cortar {seconds, plural, one {o último # segundo} other {os últimos # segundos}}?",
@@ -284,8 +283,6 @@
       "medium": "Médio",
       "large": "Grande",
       "editHint": "Dê dois cliques numa legenda na linha do tempo pra corrigir o texto. A correção também vale pra transcrição.",
-      "fromTranscript": "As legendas vêm da transcrição desta gravação.",
-      "needsPack": "A transcrição é um pacote opcional ({size}) que roda no seu computador. O Kamo só baixa quando você pede.",
       "download": "Baixar e transcrever",
       "noSpeech": "Não encontramos fala nesta gravação, então não há legendas.",
       "track": "Legendas",
@@ -544,7 +541,6 @@
       "square": "Quadrado",
       "vertical": "Vertical"
     },
-    "soon": "Em breve",
     "resolution": "Resolução",
     "frameRate": "Taxa de quadros",
     "fileFormat": "Formato",
@@ -629,8 +625,6 @@
       "recent": "Últimas gravações",
       "noRecent": "Suas gravações aparecem aqui.",
       "projectMeta": "{duration} · {date}",
-      "desktopOnly": "Transcrição e legendas estão no app Kamo para computador.",
-      "getDesktop": "Baixar o app",
       "allProjects": "Todos os projetos",
       "lowSpace": "O navegador está quase sem espaço. Apague projetos antigos antes de gravar."
     },
