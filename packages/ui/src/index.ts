@@ -81,7 +81,10 @@ export { DesktopAppCard, DesktopAppProvider } from './extension/DesktopAppCard.t
 export type { DesktopAppCardProps } from './extension/DesktopAppCard.tsx'
 // Extension pages (E-03, E-05): All projects, the welcome tab, notices over the editor.
 export { ExtensionProjects } from './extension/ExtensionProjects.tsx'
-export type { ExtensionProjectsProps } from './extension/ExtensionProjects.tsx'
+export type {
+  ExtensionDiagnosticsProps,
+  ExtensionProjectsProps,
+} from './extension/ExtensionProjects.tsx'
 export { ExtensionWelcome } from './extension/ExtensionWelcome.tsx'
 export type { ExtensionWelcomeProps, WelcomeAskStatus } from './extension/ExtensionWelcome.tsx'
 export { FloatingNotices } from './extension/FloatingNotice.tsx'

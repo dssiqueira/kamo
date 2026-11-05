@@ -113,7 +113,11 @@
     "fixPermission": "Configurar",
     "recordDisplay": "Grabar · {display}",
     "recordWindow": "Grabar · {window}",
-    "recordRegion": "Grabar · Selección {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "Grabar · Selección {width, number, ::group-off} × {height, number, ::group-off}",
+    "recordingFps": {
+      "label": "Grabar a 60 fps",
+      "hint": "Desplazamientos y animaciones más fluidos. Los archivos ocupan aproximadamente 1,5 veces más."
+    }
   },
   "countdown": {
     "cancelHint": "Esc para cancelar",

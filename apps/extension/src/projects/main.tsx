@@ -21,9 +21,11 @@ import { boot } from '../shared/boot.tsx'
 import { editorPath } from '../shared/pages.ts'
 import { PROJECTS_WARNING_BYTES } from '../shared/storage-space.ts'
 import { OpfsProjectStore } from '../storage/opfs-store.ts'
-import { SCREEN_FILE } from '../storage/paths.ts'
+import { findScreenFile } from '../storage/paths.ts'
 import { PlaylistStore, opfsPlaylistIo } from '../storage/playlists.ts'
 import { rebuildFromVideo } from '../storage/rebuild.ts'
+import { recordError } from '../shared/error-log.ts'
+import { collectDiagnostics, copyDiagnostics, openIssue } from './diagnostics.ts'
 
 const store = new OpfsProjectStore()
 const playlistStore = new PlaylistStore(opfsPlaylistIo())
@@ -63,7 +65,7 @@ async function readListing(urls: string[]): Promise<Listing> {
     list.broken.map(async ({ projectId, error }) => ({
       projectId,
       code: error.code,
-      hasVideo: ((await store.fileSize(projectId, SCREEN_FILE)) ?? 0) > 0,
+      hasVideo: (await findScreenFile((name) => store.fileSize(projectId, name))) !== null,
     })),
   )
   let usedBytes = 0
@@ -118,6 +120,7 @@ function ProjectsPage() {
       .catch((cause: unknown) => {
         const code = (cause as { code?: string } | null)?.code
         setError(t((code && keys[code]) || 'projects.errors.failed'))
+        void recordError('projects.action_failed', 'projects', code ?? cause)
         reload()
       })
   }
@@ -150,6 +153,7 @@ function ProjectsPage() {
       usedBytes={listing?.usedBytes ?? null}
       warningBytes={PROJECTS_WARNING_BYTES}
       error={error}
+      diagnostics={{ load: collectDiagnostics, onCopy: copyDiagnostics, onOpenIssue: openIssue }}
       list={{
         projects: listing && playlists ? listing.projects : null,
         broken: listing?.broken ?? [],

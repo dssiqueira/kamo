@@ -24,6 +24,7 @@ import {
 } from '../shared/messages.ts'
 import { removeCountdown, showCountdown } from '../content/countdown-overlay.ts'
 import { startMouseCapture, stopMouseCapture } from '../content/mouse-capture.ts'
+import { installErrorLog, recordError } from '../shared/error-log.ts'
 import { WELCOME_PAGE, editorPath } from '../shared/pages.ts'
 import { GAZE_ALARM, GAZE_PERIOD_MINUTES, gazeAlarmAction } from './gaze-alarm.ts'
 import { playGaze, setIdleIcon, setRecordingIcon } from './icon.ts'
@@ -38,6 +39,8 @@ let state: BackgroundState = { session: { phase: 'idle' }, notices: [] }
 const loaded = loadState()
 const ports = new Set<chrome.runtime.Port>()
 let countdownTimer: ReturnType<typeof setTimeout> | null = null
+// F-17: uncaught errors and failed recordings go to the local log (Copy diagnostics).
+installErrorLog('service-worker')
 
 async function loadState(): Promise<void> {
   const stored = (await chrome.storage.session.get(STATE_KEY))[STATE_KEY] as
@@ -285,6 +288,7 @@ async function fail(notice: Notice): Promise<void> {
   const session = state.session
   // Already cancelled by the user: the failure is just the cancel catching up.
   if (session.phase === 'idle') return
+  void recordError('recording.capture_failed', 'service-worker', `${session.phase}: ${notice.key}`)
   if (session.phase !== 'recording') await clearCountdown(session.tabId)
   await toOffscreen({ type: 'cancel' })
   await closeOffscreenDocument()
@@ -300,6 +304,7 @@ async function stop(): Promise<void> {
   })
   await removeMouseCapture(session.tabId)
   const response = await toOffscreen({ type: 'stop' })
+  if (!response.ok) void recordError('recording.stop_failed', 'service-worker', response.notice.key)
   await finished(
     session.projectId,
     response.ok ? (response.notices ?? []) : [{ key: 'recording.errors.failed', tone: 'error' }],

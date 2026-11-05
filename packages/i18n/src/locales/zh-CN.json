@@ -113,7 +113,11 @@
     "fixPermission": "去设置",
     "recordDisplay": "录制 · {display}",
     "recordWindow": "录制 · {window}",
-    "recordRegion": "录制 · 选区 {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "录制 · 选区 {width, number, ::group-off} × {height, number, ::group-off}",
+    "recordingFps": {
+      "label": "以 60 fps 录制",
+      "hint": "滚动和动画更流畅。文件大约会大 1.5 倍。"
+    }
   },
   "countdown": {
     "cancelHint": "按 Esc 取消",

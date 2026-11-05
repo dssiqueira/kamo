@@ -113,7 +113,11 @@
     "fixPermission": "Set it up",
     "recordDisplay": "Record · {display}",
     "recordWindow": "Record · {window}",
-    "recordRegion": "Record · Selection {width, number, ::group-off} × {height, number, ::group-off}"
+    "recordRegion": "Record · Selection {width, number, ::group-off} × {height, number, ::group-off}",
+    "recordingFps": {
+      "label": "Record at 60 fps",
+      "hint": "Smoother scrolling and animation. Files are about 1.5 times larger."
+    }
   },
   "countdown": {
     "cancelHint": "Esc to cancel",
