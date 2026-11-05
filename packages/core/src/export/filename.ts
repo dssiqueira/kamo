@@ -1,6 +1,6 @@
 // Export file names (F-11): `<project name> <format> <resolution><fps>.mp4`, e.g.
-// `Demo 16x9 1080p30.mp4`. Pure, so the desktop main process re-checks names with it too.
-import type { Aspect, Fps } from '../project/schema.ts'
+// `Demo 16x9 1080p30.mp4`, `Demo 16x9 720p15.gif` (A-02). Pure, so the desktop main process re-checks names with it too.
+import type { Aspect } from '../project/schema.ts'
 import type { Resolution } from '../render/layout.ts'
 
 /** `16:9` → `16x9`: a colon is not allowed in Windows file names. */
@@ -44,8 +44,10 @@ export function sanitizeFileName(name: string, fallback = 'Kamo'): string {
 export interface ExportNameInput {
   projectName: string
   aspect: Aspect
-  resolution: Resolution
-  fps: Fps
+  /** `720p`: the GIF size (A-02) */
+  resolution: Resolution | '720p'
+  /** 30 or 60 for an MP4, 10 or 15 for a GIF */
+  fps: number
   extension?: 'mp4' | 'gif'
 }
 

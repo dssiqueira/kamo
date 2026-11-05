@@ -8,47 +8,19 @@ import {
   AudioSample,
   AudioSampleSink,
   AudioSampleSource,
-  BlobSource,
   CanvasSource,
-  CustomSource,
-  Input,
-  MATROSKA,
-  MP4,
   Mp4OutputFormat,
   Output,
-  QTFF,
   StreamTarget,
-  VideoSampleSink,
-  WEBM,
+  type Input,
   type InputAudioTrack,
-  type InputVideoTrack,
-  type Source,
   type StreamTargetChunk,
 } from 'mediabunny'
 import type { MouseEventRecord } from '../events/events.ts'
 import type { SinkFile } from '../platform/sink.ts'
-import { MAX_BACKGROUND_IMAGE_BYTES } from '../project/background-image.ts'
-import {
-  projectAutoZoom,
-  type Aspect,
-  type CaptionSettings,
-  type Fps,
-  type Project,
-} from '../project/schema.ts'
-import {
-  buildCaptionTrack,
-  CAPTION_LOOKS,
-  captionFontPx,
-  type CaptionTrack,
-} from '../render/captions.ts'
-import type { Transcript } from '../transcript/transcript.ts'
+import type { Aspect, CaptionSettings, Fps, Project } from '../project/schema.ts'
 import { outputSize, type Resolution } from '../render/layout.ts'
-import { createRenderer, type Renderer } from '../render/renderer.ts'
-import { buildScene, sceneFrame } from '../render/scene.ts'
-import type { BackgroundImage } from '../render/wallpapers.ts'
-import { webcamTimeMs } from '../render/webcam.ts'
-import type { Context2D, Size } from '../render/types.ts'
-import { visibleZooms } from '../zoom/visible.ts'
+import type { Transcript } from '../transcript/transcript.ts'
 import {
   audioFrameCount,
   createTrackReader,
@@ -59,23 +31,10 @@ import {
   type PcmChunk,
   type TrackReader,
 } from './audio-mix.ts'
-import { ExportError, exportErrorCode, type ExportWarning } from './errors.ts'
-import {
-  createFramePicker,
-  exportFrameCount,
-  exportFrameTimeMs,
-  exportFrameTimestamp,
-} from './timing.ts'
-
-/** A file the platform can read at any offset (desktop: IPC to the main process). */
-export interface RandomAccessFile {
-  size(): Promise<number>
-  /** bytes [start, end) */
-  read(start: number, end: number): Promise<Uint8Array>
-}
-
-/** A raw media file: a Blob/File (extension: OPFS) or a random-access reader (desktop). */
-export type MediaFile = Blob | RandomAccessFile
+import { chooseVideoEncoder, exportBitrate } from './encoder-config.ts'
+import { ExportError, toExportError, type ExportWarning } from './errors.ts'
+import { openFrameRenderer, openInput, type FrameRenderer, type MediaFile } from './frames.ts'
+import { exportFrameCount, exportFrameTimeMs, exportFrameTimestamp } from './timing.ts'
 
 export interface ExportAudioTrack {
   file: MediaFile
@@ -109,6 +68,11 @@ export interface ExportVideoOptions {
   captions?: { transcript: Transcript; settings: CaptionSettings } | null
   aspect: Aspect
   resolution: Resolution
+  /**
+   * Output frame rate (A-01). At 60fps the camera, the cursor and the captions are computed
+   * for every output frame; a 30fps recording shows each of its frames twice (nothing is
+   * interpolated).
+   */
   fps: Fps
   /** the editor's auto-zoom toggle (F-05); default: `project.autoZoom` (on when absent) */
   autoZoom?: boolean
@@ -132,11 +96,7 @@ export interface ExportResult {
   encoder: { codec: string; hardware: boolean }
 }
 
-/** Container formats Kamo records to (desktop MP4/M4A, extension WebM). */
-const INPUT_FORMATS = [MP4, QTFF, WEBM, MATROSKA]
 const OUTPUT_CHUNK_BYTES = 4 * 2 ** 20
-/** H.264 bits per pixel per frame: generous, because screen text blurs fast. */
-const VIDEO_BITS_PER_PIXEL = 0.16
 const AUDIO_BITRATE = 160_000
 const AUDIO_CODEC = 'mp4a.40.2'
 /** Samples per AAC packet, to size the reserved MP4 header. */
@@ -156,10 +116,8 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
   const warnings: ExportWarning[] = []
   const inputs: Input[] = []
   let output: Output | null = null
-  let picker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
-  let webcamPicker: ReturnType<typeof createFramePicker<FrameSample>> | null = null
+  let frameRenderer: FrameRenderer | null = null
   let sinkError: unknown = null
-  let background: (BackgroundImage & { source: ImageBitmap }) | null = null
 
   const checkAbort = () => {
     if (signal?.aborted) throw new ExportError('aborted', { cause: signal.reason })
@@ -172,28 +130,28 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     const durationS = frames / fps
     const trimStartS = project.trim.startMs / 1000
 
-    // Source video.
-    const videoInput = openInput(options.video)
-    inputs.push(videoInput)
-    const videoTrack = await videoInput.getPrimaryVideoTrack().catch(() => null)
-    if (!videoTrack || !(await videoTrack.canDecode())) throw new ExportError('source_unreadable')
-
     // Encoders.
-    const bitrate = Math.round(size.width * size.height * fps * VIDEO_BITS_PER_PIXEL)
+    const bitrate = exportBitrate(size, fps)
     const encoder = await chooseVideoEncoder(size, fps, bitrate)
     if (!encoder) throw new ExportError('encoder_unavailable')
     if (!encoder.hardware) warnings.push('software_encoder')
 
-    // Webcam (A-03): decoded alongside the screen, frame by frame at the matching time.
-    const webcam = project.webcam
-    let webcamTrack: InputVideoTrack | null = null
-    if (webcam?.visible && options.webcam) {
-      const input = openInput(options.webcam)
-      inputs.push(input)
-      webcamTrack = await input.getPrimaryVideoTrack().catch(() => null)
-      if (webcamTrack && !(await webcamTrack.canDecode().catch(() => false))) webcamTrack = null
-      if (!webcamTrack) warnings.push('webcam_unreadable')
-    }
+    // Picture: the recording, webcam, background and captions, painted by the preview's
+    // renderer (frames.ts).
+    frameRenderer = await openFrameRenderer(
+      {
+        project,
+        events: options.events,
+        video: options.video,
+        webcam: options.webcam ?? null,
+        backgroundImage: options.backgroundImage ?? null,
+        captions: options.captions ?? null,
+        aspect,
+        size,
+        ...(options.autoZoom === undefined ? {} : { autoZoom: options.autoZoom }),
+      },
+      warnings,
+    )
 
     const audioReaders = await openAudioTracks(options.audio ?? [], trimStartS, inputs, warnings)
     let withAudio = audioReaders.length > 0
@@ -202,29 +160,6 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
       withAudio = false
     }
     checkAbort()
-
-    // Renderer: the preview's, on an offscreen canvas of the output size (rule 11).
-    const canvas = new OffscreenCanvas(size.width, size.height)
-    const ctx = canvas.getContext('2d', { alpha: false })
-    if (!ctx) throw new ExportError('failed')
-    const renderer: Renderer = createRenderer(ctx as unknown as Context2D)
-    const zooms = visibleZooms(project.zooms, {
-      autoZoom: options.autoZoom ?? projectAutoZoom(project),
-    })
-    const captions = options.captions
-      ? buildCaptionTrack(options.captions.transcript, {
-          ...options.captions.settings,
-          enabled: true,
-        })
-      : null
-    if (captions) await loadCaptionFont(captions, size)
-    const scene = buildScene({ project, events: options.events, zooms, captions })
-    if (project.style.background.kind === 'image') {
-      background = options.backgroundImage ? await decodeImage(options.backgroundImage) : null
-      if (background) scene.backgroundImage = background
-      else warnings.push('background_unreadable')
-      checkAbort()
-    }
 
     // Muxer → sink. The wrapper keeps the sink's own error (e.g. disk full), which the
     // muxer would otherwise rethrow as a generic failure.
@@ -245,7 +180,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
       format: new Mp4OutputFormat({ fastStart: 'reserve' }),
       target: new StreamTarget(target, { chunked: true, chunkSize: OUTPUT_CHUNK_BYTES }),
     })
-    const videoSource = new CanvasSource(canvas, {
+    const videoSource = new CanvasSource(frameRenderer.canvas, {
       codec: 'avc',
       fullCodecString: encoder.codec,
       bitrate,
@@ -294,44 +229,14 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     }
 
     // Frames: output frame i shows the raw video at trim.start + i/fps.
-    const samples = new VideoSampleSink(videoTrack).samples(trimStartS)
-    picker = createFramePicker<FrameSample>(samples[Symbol.asyncIterator]())
-    if (webcam && webcamTrack) {
-      const fromS = webcamTimeMs(webcam, project.trim.startMs) / 1000
-      const webcamSamples = new VideoSampleSink(webcamTrack).samples(fromS)
-      webcamPicker = createFramePicker<FrameSample>(webcamSamples[Symbol.asyncIterator]())
-    }
     for (let i = 0; i < frames; i++) {
       checkAbort()
-      const timeMs = exportFrameTimeMs(project.trim, i, fps)
-      const frame = await picker.at(timeMs / 1000)
-      if (!frame) throw new ExportError('source_unreadable')
-      // Before its first frame the webcam shows that frame; past its end, the last one.
-      const camera =
-        webcam && webcamPicker ? await webcamPicker.at(webcamTimeMs(webcam, timeMs) / 1000) : null
-      renderer.render(
-        sceneFrame(
-          scene,
-          frame.toCanvasImageSource(),
-          aspect,
-          size,
-          timeMs,
-          camera
-            ? {
-                source: camera.toCanvasImageSource(),
-                size: { width: camera.displayWidth, height: camera.displayHeight },
-              }
-            : null,
-        ),
-      )
+      await frameRenderer.render(exportFrameTimeMs(project.trim, i, fps))
       await videoSource.add(exportFrameTimestamp(i, fps), 1 / fps)
       await pumpAudio((i + 1) / fps + AUDIO_LEAD_S)
       options.onProgress?.((i + 1) / frames)
     }
-    picker.release()
-    picker = null
-    webcamPicker?.release()
-    webcamPicker = null
+    frameRenderer.dispose()
     await pumpAudio(Infinity)
     checkAbort()
 
@@ -348,89 +253,20 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
       encoder: { codec: encoder.codec, hardware: encoder.hardware },
     }
   } catch (error) {
-    picker?.release()
-    webcamPicker?.release()
+    frameRenderer?.dispose()
     if (output && output.state !== 'finalized' && output.state !== 'canceled') {
       await output.cancel().catch(() => {})
     }
     await sink.abort(error).catch(() => {})
     throw toExportError(sinkError ?? error)
   } finally {
+    frameRenderer?.dispose()
     for (const input of inputs) input.dispose()
-    background?.source.close()
   }
-}
-
-/** Decodes the whole image file once (A-04); null when it cannot be read or decoded. */
-async function decodeImage(
-  file: MediaFile,
-): Promise<(BackgroundImage & { source: ImageBitmap }) | null> {
-  try {
-    const blob =
-      typeof Blob !== 'undefined' && file instanceof Blob
-        ? file
-        : await (async () => {
-            const reader = file as RandomAccessFile
-            const size = await reader.size()
-            if (size > MAX_BACKGROUND_IMAGE_BYTES) return null
-            return new Blob([(await reader.read(0, size)) as Uint8Array<ArrayBuffer>])
-          })()
-    if (!blob || blob.size > MAX_BACKGROUND_IMAGE_BYTES) return null
-    const bitmap = await createImageBitmap(blob)
-    if (!(bitmap.width > 0 && bitmap.height > 0)) {
-      bitmap.close()
-      return null
-    }
-    return { source: bitmap, size: { width: bitmap.width, height: bitmap.height } }
-  } catch {
-    return null
-  }
-}
-
-/**
- * The canvas only draws with a font the page has loaded; Inter is loaded by the app's CSS,
- * but maybe not yet at this weight. Without a FontFaceSet (a worker) the fallback is used.
- */
-async function loadCaptionFont(track: CaptionTrack, output: Size): Promise<void> {
-  const fonts = (globalThis as { document?: { fonts?: { load(font: string): Promise<unknown> } } })
-    .document?.fonts
-  if (!fonts) return
-  const look = CAPTION_LOOKS[track.settings.preset]
-  const px = Math.round(captionFontPx(output, track.settings))
-  await fonts.load(`${look.weight} ${px}px ${track.fontFamily}`).catch(() => {})
-}
-
-interface FrameSample {
-  readonly timestamp: number
-  readonly displayWidth: number
-  readonly displayHeight: number
-  close(): void
-  toCanvasImageSource(): CanvasImageSource
-}
-
-function toExportError(error: unknown): ExportError {
-  if (error instanceof ExportError) return error
-  const code = exportErrorCode(error)
-  return new ExportError(code, { cause: error })
 }
 
 function now(): number {
   return globalThis.performance?.now() ?? Date.now()
-}
-
-function openInput(file: MediaFile): Input {
-  return new Input({ source: toSource(file), formats: INPUT_FORMATS })
-}
-
-function toSource(file: MediaFile): Source {
-  if (typeof Blob !== 'undefined' && file instanceof Blob) return new BlobSource(file)
-  const reader = file as RandomAccessFile
-  return new CustomSource({
-    getSize: () => reader.size(),
-    read: (start, end) => reader.read(start, end),
-    // IPC has latency: read ahead in big steps when the access is sequential.
-    prefetchProfile: 'network',
-  })
 }
 
 interface AudioTrackReader {
@@ -489,42 +325,6 @@ async function openAudioTracks(
     })
   }
   return readers
-}
-
-export interface VideoEncoderChoice {
-  codec: string
-  hardware: boolean
-}
-
-/**
- * H.264 encoder for this size: hardware first (fast, D-011), else software with a warning.
- * High profile first, Main and Baseline as fallbacks for encoders that refuse High.
- */
-export async function chooseVideoEncoder(
-  size: Size,
-  fps: number,
-  bitrate: number,
-): Promise<VideoEncoderChoice | null> {
-  const Encoder = globalThis.VideoEncoder
-  if (!Encoder) return null
-  const level = size.width * size.height > 2_228_224 ? '33' : '28'
-  const codecs = [`avc1.6400${level}`, `avc1.4d00${level}`, `avc1.42e0${level}`]
-  for (const hardware of [true, false]) {
-    for (const codec of codecs) {
-      const config: VideoEncoderConfig = {
-        codec,
-        width: size.width,
-        height: size.height,
-        bitrate,
-        framerate: fps,
-        hardwareAcceleration: hardware ? 'prefer-hardware' : 'prefer-software',
-        avc: { format: 'avc' },
-      }
-      const support = await Encoder.isConfigSupported(config).catch(() => null)
-      if (support?.supported) return { codec, hardware }
-    }
-  }
-  return null
 }
 
 async function canEncodeAac(): Promise<boolean> {

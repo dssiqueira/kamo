@@ -109,7 +109,8 @@ async function run(projectId: string): Promise<SmokeResult> {
       'code'
     ]
     const names = [...document.querySelectorAll<HTMLElement>('[data-testid^="export-job-"]')].map(
-      (row) => row.querySelector('span')?.title ?? '',
+      // The row's first titled span is the file name (the .srt line sits under it, A-06).
+      (row) => row.querySelector<HTMLElement>('span[title]')?.title ?? '',
     )
     result.files = names
     check('ui: both formats exported through the Formats screen', phase === 'done', {
@@ -133,7 +134,11 @@ async function run(projectId: string): Promise<SmokeResult> {
     const index = click0 ? Math.round(((click0.t - project.trim.startMs) * FPS) / 1000) : 0
     const rawMs = project.trim.startMs + (index * 1000) / FPS
     for (const name of names) {
-      const aspect: Aspect = name.includes(' 1x1 ') ? '1:1' : '16:9'
+      const aspect: Aspect = name.includes(' 1x1 ')
+        ? '1:1'
+        : name.includes(' 9x16 ')
+          ? '9:16'
+          : '16:9'
       const size = outputSize(aspect, '1080p')
       const file = projectMedia(projectId, `${SMOKE_FOLDER}/${name}`)
       const info = await inspectMedia(file)

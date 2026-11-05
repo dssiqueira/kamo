@@ -18,7 +18,7 @@ import {
   BlobSource,
   CustomSource,
 } from 'mediabunny'
-import type { MediaFile, RandomAccessFile } from '../export/pipeline.ts'
+import type { MediaFile, RandomAccessFile } from '../export/frames.ts'
 import type { SinkChunk, SinkFile } from '../platform/sink.ts'
 
 const FORMATS = [MP4, QTFF, WEBM, MATROSKA]

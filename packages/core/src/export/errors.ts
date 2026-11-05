@@ -34,6 +34,11 @@ export type ExportWarning =
   | 'webcam_unreadable'
   /** the background image file is missing or could not be decoded; exported on the fallback color (A-04) */
   | 'background_unreadable'
+  /**
+   * this machine's encoder cannot make the asked resolution or frame rate (A-01, e.g. 4K60);
+   * the file was exported at the best setting it takes, which its name says
+   */
+  | 'settings_fallback'
 
 export function exportErrorCode(error: unknown): ExportErrorCode {
   if (error instanceof ExportError) return error.code
@@ -41,4 +46,10 @@ export function exportErrorCode(error: unknown): ExportErrorCode {
     return 'aborted'
   }
   return 'failed'
+}
+
+/** Any failure as an ExportError (an ExportError stays as it is). */
+export function toExportError(error: unknown): ExportError {
+  if (error instanceof ExportError) return error
+  return new ExportError(exportErrorCode(error), { cause: error })
 }

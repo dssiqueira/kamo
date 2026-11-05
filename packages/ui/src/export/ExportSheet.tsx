@@ -10,19 +10,29 @@ import {
   type Transcript,
   type Zoom,
 } from '@kamo/core'
+import { formatFileSize, resolveLocale } from '@kamo/i18n'
+import {
+  canExport4k,
+  estimateGifBytes,
+  GIF_FPS_CHOICES,
+  GIF_LARGE_BYTES,
+  gifSize,
+  resolveVideoSettings,
+  type VideoSettings,
+} from '@kamo/core/export'
 import { useEffect, useId, useMemo, useState } from 'react'
-import { useLocale, useT } from '../i18n.tsx'
+import { useLocale, useT, type Translate } from '../i18n.tsx'
 import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
 import { FormatPreview } from './FormatPreview.tsx'
 import {
-  EXPORT_FPS,
-  EXPORT_RESOLUTION,
+  DEFAULT_EXPORT_SETTINGS,
   useExportRun,
   type CaptionExport,
   type ExportJob,
   type ExportPlatform,
+  type ExportSettings,
 } from './useExportRun.ts'
 
 export interface ExportSheetProps {
@@ -102,6 +112,15 @@ export function ExportSheet({
   const [captions, setCaptions] = useState<CaptionExport>(() =>
     hasCaptions && projectCaptions(project).enabled ? 'burn' : 'none',
   )
+  // A-01 / A-02: resolution and frame rate (MP4), or a GIF at 10 or 15fps.
+  const [settings, setSettings] =
+    useState<Omit<ExportSettings, 'captions'>>(DEFAULT_EXPORT_SETTINGS)
+  const gif = settings.format === 'gif'
+  const allow4k = canExport4k(project.source)
+  // What this machine's encoder will really make (4K60 is beyond many): said before exporting.
+  const fallback = useEncoderFallback(gif ? null : settings)
+  // A GIF only takes captions burned in (A-06): the .srt choice counts as burned in there.
+  const effectiveCaptions: CaptionExport = gif && captions === 'srt' ? 'burn' : captions
   const { state, start, retry, cancel, reset } = useExportRun({
     project,
     events,
@@ -112,10 +131,10 @@ export function ExportSheet({
   // The format previews show the captions only when they will be burned in.
   const captionTrack = useMemo(
     () =>
-      captions === 'burn'
+      effectiveCaptions === 'burn'
         ? buildCaptionTrack(transcript, { ...projectCaptions(project), enabled: true })
         : null,
-    [captions, transcript, project],
+    [effectiveCaptions, transcript, project],
   )
   const scene = useMemo(
     () => ({
@@ -125,6 +144,23 @@ export function ExportSheet({
     [project, events, zooms, backgroundImage, captionTrack],
   )
   const selected = ASPECTS.filter((aspect) => checked[aspect])
+  // A-02: the estimated size of each GIF, shown (and warned about) before exporting.
+  const gifBytes = gif
+    ? selected.map((aspect) =>
+        estimateGifBytes({
+          size: gifSize(aspect),
+          fps: settings.gifFps,
+          durationMs: project.trim.endMs - project.trim.startMs,
+        }),
+      )
+    : []
+  const gifTotal = gifBytes.reduce((sum, bytes) => sum + bytes, 0)
+  const gifLarge = gifBytes.some((bytes) => bytes > GIF_LARGE_BYTES)
+  const locale = resolveLocale([useLocale()])
+  const chooseFormat = (format: ExportSettings['format']) => {
+    setSettings({ ...settings, format })
+    if (format === 'gif' && captions === 'srt') setCaptions('burn')
+  }
   const exporting = state.phase === 'exporting'
 
   useEffect(() => {
@@ -215,20 +251,79 @@ export function ExportSheet({
             </fieldset>
 
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-md gap-y-sm text-body">
-              <dt className="text-on-surface-muted">{t('export.resolution')}</dt>
-              <dd className="flex flex-wrap gap-xs">
-                <Chip selected>{EXPORT_RESOLUTION}</Chip>
-                <Chip>4K</Chip>
-              </dd>
-              <dt className="text-on-surface-muted">{t('export.frameRate')}</dt>
-              <dd className="flex flex-wrap gap-xs">
-                <Chip selected>{t('export.fps', { fps: EXPORT_FPS })}</Chip>
-                <Chip>{t('export.fps', { fps: 60 })}</Chip>
-              </dd>
               <dt className="text-on-surface-muted">{t('export.fileFormat')}</dt>
-              <dd className="flex flex-wrap gap-xs">
-                <Chip selected>MP4</Chip>
-                <Chip>GIF</Chip>
+              <dd>
+                <Choices
+                  label={t('export.fileFormat')}
+                  testId="export-file-format"
+                  value={settings.format}
+                  onChange={chooseFormat}
+                  options={[
+                    { value: 'mp4', label: 'MP4' },
+                    { value: 'gif', label: 'GIF' },
+                  ]}
+                />
+              </dd>
+              {!gif && (
+                <>
+                  <dt className="text-on-surface-muted">{t('export.resolution')}</dt>
+                  <dd className="flex flex-col gap-xs">
+                    <Choices
+                      label={t('export.resolution')}
+                      testId="export-resolution"
+                      value={settings.resolution}
+                      onChange={(resolution) => setSettings({ ...settings, resolution })}
+                      options={[
+                        { value: '1080p', label: '1080p' },
+                        { value: '4k', label: '4K', disabled: !allow4k },
+                      ]}
+                    />
+                    {!allow4k && (
+                      <span
+                        className="text-label text-on-surface-muted"
+                        data-testid="export-4k-hint"
+                      >
+                        {t('export.needs4kSource', {
+                          size: `${project.source.width}×${project.source.height}`,
+                        })}
+                      </span>
+                    )}
+                  </dd>
+                </>
+              )}
+              <dt className="text-on-surface-muted">{t('export.frameRate')}</dt>
+              <dd className="flex flex-col gap-xs">
+                {gif ? (
+                  <Choices
+                    label={t('export.frameRate')}
+                    testId="export-gif-fps"
+                    value={settings.gifFps}
+                    onChange={(gifFps) => setSettings({ ...settings, gifFps })}
+                    options={GIF_FPS_CHOICES.map((fps) => ({
+                      value: fps,
+                      label: t('export.fps', { fps }),
+                    }))}
+                  />
+                ) : (
+                  <Choices
+                    label={t('export.frameRate')}
+                    testId="export-fps"
+                    value={settings.fps}
+                    onChange={(fps) => setSettings({ ...settings, fps })}
+                    options={[
+                      { value: 30, label: t('export.fps', { fps: 30 }) },
+                      { value: 60, label: t('export.fps', { fps: 60 }) },
+                    ]}
+                  />
+                )}
+                {!gif && settings.fps === 60 && project.source.fps < 60 && (
+                  <span className="text-label text-on-surface-muted" data-testid="export-60-hint">
+                    {t('export.fps60From30', { fps: project.source.fps })}
+                  </span>
+                )}
+                {gif && (
+                  <span className="text-label text-on-surface-muted">{t('export.gifHint')}</span>
+                )}
               </dd>
               {hasCaptions && (
                 <>
@@ -244,11 +339,12 @@ export function ExportSheet({
                           key={choice}
                           type="button"
                           role="radio"
-                          aria-checked={captions === choice}
+                          aria-checked={effectiveCaptions === choice}
+                          disabled={gif && choice === 'srt'}
                           data-testid={`export-captions-${choice}`}
                           onClick={() => setCaptions(choice)}
-                          className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] ${FOCUS_RING} ${
-                            captions === choice
+                          className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING} ${
+                            effectiveCaptions === choice
                               ? 'bg-tertiary-container text-on-surface'
                               : 'text-on-surface-muted hover:bg-surface-raised'
                           }`}
@@ -257,10 +353,15 @@ export function ExportSheet({
                         </button>
                       ))}
                     </div>
-                    {captions !== 'none' && (
+                    {gif && (
+                      <span className="text-label text-on-surface-muted">
+                        {t('export.captions.gifBurnOnly')}
+                      </span>
+                    )}
+                    {effectiveCaptions !== 'none' && (
                       <span className="text-label text-on-surface-muted">
                         {t(
-                          captions === 'srt'
+                          effectiveCaptions === 'srt'
                             ? 'export.captions.srtHint'
                             : 'export.captions.burnHint',
                         )}
@@ -270,7 +371,30 @@ export function ExportSheet({
                 </>
               )}
             </dl>
-            <p className="-mt-sm text-label text-on-surface-muted">{t('export.laterNote')}</p>
+            {fallback && (
+              <p
+                role="status"
+                className="-mt-sm text-label text-warning"
+                data-testid="export-encoder-fallback"
+              >
+                {t('export.encoderFallback', {
+                  wanted: settingsLabel(t, settings),
+                  actual: settingsLabel(t, fallback),
+                })}
+              </p>
+            )}
+            {gif && selected.length > 0 && (
+              <p
+                className={`-mt-sm text-label ${gifLarge ? 'text-warning' : 'text-on-surface-muted'}`}
+                data-testid="export-gif-estimate"
+                data-bytes={gifTotal}
+                role={gifLarge ? 'status' : undefined}
+              >
+                {t('export.gifEstimate', { size: formatFileSize(locale, gifTotal) })}
+                {gifLarge &&
+                  ` ${t('export.gifLarge', { limit: formatFileSize(locale, GIF_LARGE_BYTES) })}`}
+              </p>
+            )}
 
             {folder !== null && (
               <p className="flex min-w-0 items-center gap-sm text-body">
@@ -301,7 +425,12 @@ export function ExportSheet({
                 type="button"
                 data-testid="export-start"
                 disabled={selected.length === 0}
-                onClick={() => start(selected, hasCaptions ? captions : 'none')}
+                onClick={() =>
+                  start(selected, {
+                    ...settings,
+                    captions: hasCaptions ? effectiveCaptions : 'none',
+                  })
+                }
                 className={BUTTON_PRIMARY}
               >
                 {t('export.start', { count: selected.length })}
@@ -450,16 +579,79 @@ function JobRow({ job }: { job: ExportJob }) {
   )
 }
 
-/** Read-only option chip (chip-selected); unselected ones are what arrives in v0.4. */
-function Chip({ selected = false, children }: { selected?: boolean; children: string }) {
+/** "4K 60 fps" for the encoder fallback notice. */
+function settingsLabel(t: Translate, settings: VideoSettings): string {
+  return `${settings.resolution === '4k' ? '4K' : '1080p'} ${t('export.fps', { fps: settings.fps })}`
+}
+
+/**
+ * The settings the encoder will fall back to when it cannot make what was picked (A-01), or
+ * null when it can (or for a GIF). Asked again whenever the resolution or rate changes.
+ */
+function useEncoderFallback(
+  settings: Pick<ExportSettings, 'resolution' | 'fps'> | null,
+): VideoSettings | null {
+  const [fallback, setFallback] = useState<VideoSettings | null>(null)
+  const resolution = settings?.resolution
+  const fps = settings?.fps
+  useEffect(() => {
+    setFallback(null)
+    if (!resolution || !fps || (resolution === '1080p' && fps === 30)) return
+    let live = true
+    void resolveVideoSettings('16:9', { resolution, fps })
+      .then((resolved) => {
+        if (live && resolved?.fallback) {
+          setFallback({ resolution: resolved.resolution, fps: resolved.fps })
+        }
+      })
+      .catch(() => {})
+    return () => {
+      live = false
+    }
+  }, [resolution, fps])
+  return fallback
+}
+
+interface ChoiceOption<T> {
+  value: T
+  label: string
+  disabled?: boolean
+}
+
+/** One-of chips (chip-selected), the same look as the captions choice. */
+function Choices<T extends string | number>({
+  label,
+  testId,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  testId: string
+  value: T
+  options: readonly ChoiceOption<T>[]
+  onChange(value: T): void
+}) {
   return (
-    <span
-      aria-disabled={!selected}
-      className={`rounded-full px-[12px] py-xs text-label ${
-        selected ? 'bg-tertiary-container text-on-surface' : 'text-on-surface-muted'
-      }`}
-    >
-      {children}
-    </span>
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-xs">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          disabled={option.disabled}
+          data-testid={`${testId}-${option.value}`}
+          onClick={() => onChange(option.value)}
+          className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING} ${
+            value === option.value
+              ? 'bg-tertiary-container text-on-surface'
+              : 'text-on-surface-muted enabled:hover:bg-surface-raised'
+          }`}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
   )
 }
