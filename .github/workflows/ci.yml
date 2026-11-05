@@ -114,7 +114,9 @@ jobs:
       - name: Build the Windows capture helper
         if: runner.os == 'Windows'
         run: cargo build --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
-      - run: pnpm --filter @kamo/desktop package
+      # CI never signs: identity null makes electron-builder skip Mac signing (harmless on Windows).
+      - run: pnpm --filter @kamo/desktop exec electron-vite build
+      - run: pnpm --filter @kamo/desktop exec electron-builder --publish never -c.mac.identity=null
       - name: Installer size budget
         shell: bash
         run: node scripts/check-size.ts 130 ${{ matrix.installer }}

@@ -104,15 +104,19 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # No certificate: identity null makes electron-builder skip signing on Mac (without it,
+          # the hardened-runtime build fails looking for an identity).
+          UNSIGNED=""
           if [ -z "$CSC_LINK" ]; then
             unset CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             export CSC_IDENTITY_AUTO_DISCOVERY=false
+            UNSIGNED="-c.mac.identity=null"
             echo "::warning::CSC_LINK is not set: the Mac app is NOT signed or notarized. Gatekeeper will block it; do not publish this draft for users."
           elif [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_SPECIFIC_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
             unset APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID
             echo "::warning::APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD or APPLE_TEAM_ID is not set: the Mac app is signed but NOT notarized. Gatekeeper will warn users."
           fi
-          pnpm exec electron-builder --mac --publish never
+          pnpm exec electron-builder --mac --publish never $UNSIGNED
 
       # Windows: unsigned in v0.1 (docs/integrations.md → Distribution; users see SmartScreen).
       # A certificate in WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD signs it. The Mac CSC_LINK is never
