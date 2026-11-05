@@ -733,6 +733,8 @@ async function createBackend(): Promise<RecordingBackend> {
     systemAudio: async () =>
       AUDIO_SUPPORT.systemInHelper === true && (await settings.get()).systemAudioEnabled === true,
     windowTitle,
+    // A-01: Home's "Record at 60 fps".
+    fps: async () => (await settings.get()).recordingFps ?? 30,
   })
 }
 

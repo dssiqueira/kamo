@@ -71,7 +71,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 | Settings and cloud session | `chrome.storage.local` |
 | Export download | `chrome.downloads` |
 
-**Manifest permissions:** `tabCapture`, `offscreen`, `storage`, `downloads`, `scripting`, `activeTab`, `identity`, plus the cloud API and R2 domains in `host_permissions` (for upload only). `<all_urls>` only as **`optional_host_permissions`**, requested on the first recording with the explanation "to keep capturing clicks when the page changes site". If the user denies it, click capture works until the tab navigates to another domain (`activeTab` loses access at that point), and the video keeps recording normally. This eases Chrome Web Store review and reinforces privacy.
+**Manifest permissions:** `tabCapture`, `offscreen`, `storage`, `downloads`, `scripting`, `activeTab`, `alarms` (the toolbar Kamo's idle glance, about once a minute), and from step 17 `identity` plus the cloud API and R2 domains in `host_permissions` (for upload only); until then the manifest has neither (`apps/extension/scripts/manifest.ts`, justified in `docs/store/permissions.md`). `<all_urls>` only as **`optional_host_permissions`**, requested on the first recording with the explanation "to keep capturing clicks when the page changes site". If the user denies it, click capture works until the tab navigates to another domain (`activeTab` loses access at that point), and the video keeps recording normally. This eases Chrome Web Store review and reinforces privacy.
 
 **Known limits:**
 - Doesn't record internal pages (`chrome://`, the Chrome Web Store itself), nor capture clicks on them

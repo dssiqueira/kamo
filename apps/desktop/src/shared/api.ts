@@ -376,6 +376,8 @@ export interface AppSettings {
   transcriptionPack?: PackId
   /** Playlist shown on Home last time (D-028). Absent or '': All; a deleted one falls back to All. */
   homePlaylistId?: string
+  /** A-01: Home's "Record at 60 fps" switch. Absent: 30. */
+  recordingFps?: 30 | 60
 }
 
 export type Theme = 'light' | 'dark' | 'system'

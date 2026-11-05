@@ -79,6 +79,14 @@ describe('parseSettingsUpdate', () => {
     expect(parseSettingsUpdate({ homePlaylistId: id })).toEqual({ homePlaylistId: id })
     expect(parseSettingsUpdate({ homePlaylistId: '' })).toEqual({ homePlaylistId: '' })
   })
+
+  it('accepts a recording frame rate of 30 or 60 only (A-01)', () => {
+    expect(parseSettingsUpdate({ recordingFps: 60 })).toEqual({ recordingFps: 60 })
+    expect(parseSettingsUpdate({ recordingFps: 30 })).toEqual({ recordingFps: 30 })
+    expect(() => parseSettingsUpdate({ recordingFps: 24 })).toThrow(SettingsError)
+    expect(publicSettings(parseSettings('{"recordingFps":60}')).recordingFps).toBe(60)
+    expect(parseSettings('{"recordingFps":"60"}').recordingFps).toBeUndefined()
+  })
 })
 
 describe('mergeSettings', () => {

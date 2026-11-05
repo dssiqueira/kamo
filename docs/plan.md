@@ -178,24 +178,26 @@ On the `kamo` side: ensure `@kamo/design-tokens` and `@kamo/core` are stable on 
 ---
 
 ## Extension v0.2
-### Step 12 — Popup + tab recording (E-01) ⏳ (started 2026-11-04)
+### Step 12 — Popup + tab recording (E-01) ⏳ (2026-11-05, built; real-Chrome checks pending)
+> Built (e721772 and later). Open: Esc cancels the countdown only from the popup, the icon opens the popup instead of stopping, no 30-minute or microphone-sync measurement, no end-to-end run in Chrome, and German, French and Korean (D-021) are not in `packages/i18n` yet.
 - Vite with multiple entry points: popup (≤ 150KB, no `core`), offscreen, service worker, editor, welcome
 - `tabCapture` → offscreen → chunked `MediaRecorder` into OPFS; tab audio returned to the user; microphone with permission requested on a visible page
 - Countdown overlaid and removed before the 1st frame; badge with the time; nothing injected during recording
 - Reference frames in OPFS; recovery of interrupted recording
 - i18n: + German, French and Korean (D-021) and `_locales/`
 
-### Step 13 — Clicks in the tab (E-02)
+### Step 13 — Clicks in the tab (E-02) ⏳ (2026-11-05, built; the 33ms offset is not measured)
 - Mouse-only content script via `scripting` + `activeTab`; CSS px × DPR × zoom → video pixels
 - Re-injection on navigation; `optional_host_permissions` for another domain; warning "clicks not captured after X:XX"
 - Code test that forbids keyboard listeners and DOM reading in the content script
 
-### Step 14 — Editor and projects in OPFS (E-03)
+### Step 14 — Editor and projects in OPFS (E-03) ⏳ (2026-11-05, built; no Playwright E2E yet, editor open time not measured)
 - OPFS `ProjectStore`; `core` reads `screen.webm` with Opus tracks
 - `packages/ui` editor in an extension tab; "All projects"; space usage and 2GB warning
 - Playwright E2E with the extension loaded in Chromium
 
-### Step 15 — Export, welcome and store (E-04, E-05, E-06)
+### Step 15 — Export, welcome and store (E-04, E-05, E-06) ⏳ (2026-11-05, extension side built)
+> Done: export + `chrome.downloads` with "Download again", confirmation on close, welcome tab, permission justifications and privacy statement (`docs/store/`), size budgets in CI, the Chrome Web Store job in `release.yml`, and "Copy diagnostics" on All projects (F-17). Open: the extension-vs-desktop frame test, the "slower encoder" notice before exporting, the store screenshots, video and German/French/Korean texts, the first real store publication, Edge Add-ons, and the timing measurements.
 - WebCodecs export + `chrome.downloads`; software fallback with a warning; confirmation on close
 - Test that compares frames rendered in the extension and on desktop (before encode)
 - Welcome, permission justifications, privacy statement, store page in 8 languages
@@ -248,7 +250,7 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 - Ready-made command with the current folder, Copy button, instructions for other clients
 
 ### Steps 27–30 — Advanced (A-01, A-02, A-03, A-04, A-08)
-- 27 ⏳ (2026-11-04: export done — 1080p/4K and 30/60fps in the Formats sheet, AVC level per size and rate, encoder probe with fallback 4K60 → 4K30 → 1080p and a notice, 4K only for recordings above 1080p; checked with real 4K30 and 1080p60 exports. The 60fps recording option on Home is not built): 60fps recording on Home + 4K/60 export when the source allows
+- 27 ✅ (2026-11-04: export done — 1080p/4K and 30/60fps in the Formats sheet, AVC level per size and rate, encoder probe with fallback 4K60 → 4K30 → 1080p and a notice, 4K only for recordings above 1080p; checked with real 4K30 and 1080p60 exports. 2026-11-05: "Record at 60 fps" on Home, remembered in settings, passed to the helper, bitrate ×1.5, `source.fps` 60 and the sheet starting at 60fps; checked with a real 60fps recording and its 1080p60 export on Windows; Mac compiled in CI only, the extension stays at 30fps): 60fps recording on Home + 4K/60 export when the source allows
 - 28 ✅ (2026-11-04: 9:16 done; GIF done — 10/15fps, ≤ 1280px, estimated size and a warning over 10 MB, captions burned in with their colors kept in every palette, `gifenc` in a worker; checked with real GIFs in 16:9, 1:1 and 9:16): 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
 - 29 ✅ (2026-11-04, built ahead of order: 48517e3, e1c5319, cf42d40, 57f94d0, 0c38467, 7d0fa3c): webcam in a separate file, bubble (4 corners, 3 sizes), shrinks on zoom, hidden per segment; camera requested only here. Also square, 16:9 and 9:16 shapes and free drag. Not yet tried by the user in a full real flow on a Mac
 - 30 ⏳ (2026-11-04: wallpaper with own image done on desktop, A-04; window and region done on Windows, Mac written and untested): wallpaper with own image copied into the project; record a window and a region (`source.kind`). Done: helper protocol `listWindows`/`windows`, `start.windowId` / `start.region`, `window_not_found` / `window_lost` (PROTOCOL.md); Rust helper (WGC for an HWND, fitted into the video when resized; region as a GPU crop of the monitor; mouse mapped to the window or region, clicks outside dropped); Swift helper (desktop-independent window filter, `sourceRect`); Home's Screen · Window · Select switch (with icons), window list with thumbnails (desktopCapturer) and search, a ScreenToGif-style selection frame (movable, resizable, click-through middle, W × H fields, size presets, Record on its toolbar; its line stays around the area while recording, left out of the video), choice remembered, Record button names it. Verified on Windows 11 with short real window and region recordings (move, resize, close, clicks inside and outside). Pending: a real Mac test; on Mac, a window covering the recorded one is not treated as outside. Also in this step, D-024's Mac computer sound in the Swift helper (ScreenCaptureKit audio → `system.m4a`), untested on a Mac

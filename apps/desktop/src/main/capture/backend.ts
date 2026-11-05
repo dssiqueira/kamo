@@ -10,7 +10,8 @@ import type { CaptureLogger } from './helper-process.ts'
 import type { RegionRect } from './protocol.ts'
 import { RecordingError, startRecording, type RecordingResult } from './recording.ts'
 
-const FPS = 30
+/** A-01: what a recording gets when no frame rate was chosen. */
+const DEFAULT_FPS: 30 | 60 = 30
 
 export interface HelperBackendOptions {
   store: FileProjectStore
@@ -33,6 +34,8 @@ export interface HelperBackendOptions {
   systemAudio?: () => Promise<boolean>
   /** A-08: a window's title for project.json, if the last list had it. */
   windowTitle?: (windowId: string) => string | undefined
+  /** A-01: Home's frame rate (settings.recordingFps). Omitted or failing: 30. */
+  fps?: () => Promise<30 | 60>
 }
 
 export function createHelperBackend(options: HelperBackendOptions): RecordingBackend {
@@ -42,6 +45,7 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
       if (!executable) throw new RecordingError('helper_missing', 'capture helper not found')
       const defaults = (await options.defaults?.().catch(() => undefined)) ?? {}
       const systemAudio = (await options.systemAudio?.().catch(() => false)) ?? false
+      const fps = (await options.fps?.().catch(() => DEFAULT_FPS)) ?? DEFAULT_FPS
       const now = new Date()
       const displayId = target.kind === 'window' ? (target.displayId ?? '0') : target.displayId
       // A window is found by its id; a display (or a region of it) by a point inside it.
@@ -58,7 +62,7 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
         },
         {
           displayId,
-          fps: FPS,
+          fps,
           name: options.projectName(formatProjectDate(options.locale, now)),
           ...(defaults.style ? { style: defaults.style } : {}),
           ...(defaults.cursor ? { cursor: defaults.cursor } : {}),
@@ -69,7 +73,8 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
         },
       )
       const backendSession: BackendSession = {
-        fps: FPS,
+        // What the helper really records at (it echoes the asked rate in `started`).
+        fps: session.source.fps,
         pause: () => session.pause(),
         resume: () => session.resume(),
         stop: async () => toBackendResult(await session.stop()),

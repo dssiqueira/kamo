@@ -225,7 +225,7 @@
 - [x] Saves to the system Videos folder by default, which can be changed
 - [x] "Show in folder" button at the end
 - [x] Can be canceled midway; the incomplete file is deleted
-- [ ] Exporting 1 minute at 1080p30 takes less than 1 minute on an average machine — on the dev machine 19s export in ~3s; no average-machine run or CI benchmark yet
+- [ ] Exporting 1 minute at 1080p30 takes less than 1 minute on an average machine — on the dev machine 19s export in ~3s; CI now benchmarks the packaged app, but on GPU-less runners, so the average-machine figure is still open
 - [x] No watermark, ever
 
 **Edge cases**
@@ -277,7 +277,7 @@
 - [x] Checks on launch and every 24h (installed builds only; not yet run against a real GitHub release)
 - [x] Downloads in the background and shows "New version ready, restart now?"
 - [x] Never restarts on its own during a recording or an export
-- [ ] The app update neither includes nor deletes the optional packages — no packs exist yet (A-07)
+- [ ] The app update neither includes nor deletes the optional packages — packs live in `app-data/packs/`, outside the app folder (A-07), but an update over installed packs has not been tried yet
 - [ ] On Mac (signed), permissions persist after the update — needs signing and a real Mac
 
 ---
@@ -320,7 +320,7 @@
 - [x] Shows the text before copying, so the person sees what they are about to send
 - [x] "Open GitHub issue" button with the diagnostics already in the body
 - [x] Nothing is sent automatically, ever
-- [ ] In the extension, the same button on the Settings page
+- [x] In the extension, the same button on the Settings page — the extension has no Settings page, so it is in the footer of "All projects": the same dialog (text shown first, Copy, Open issue on GitHub in a new tab) and report format minus the desktop-only lines (extension version, browser from UA-CH, OS, locale, storage used/quota, microphone/camera/sites permissions, hardware H.264, and the last 50 errors kept in `chrome.storage.session`, URLs and user folders stripped, never page content). Unit tested; _(not yet tried in a real Chrome)_. Errors from the offscreen recorder are not logged yet (it has no `chrome.storage`)
 
 ---
 
@@ -328,15 +328,16 @@
 **Behavior:** the user clicks the Kamo icon, presses Record in the popup and the current tab starts recording after the countdown. The recording runs in an offscreen document and is saved in chunks to OPFS as it goes.
 
 **Acceptance criteria**
-- [ ] Records the current tab at up to 1080p30 (or the tab's resolution, if smaller)
-- [ ] The video comes out without the cursor (the cursor is redrawn by `core`, as on desktop)
-- [ ] 3-2-1 countdown overlaid on the tab and removed before the first recorded frame; Esc cancels
-- [ ] During recording, **nothing is injected into the page** (it would appear in the video): the icon shows the time on the badge, the popup becomes the control (timecode, pause, stop)
-- [ ] Stop via the shortcut (⌘⇧2 / Ctrl+Shift+2), the popup or the icon
-- [ ] Tab sound recorded along (optional) and keeps playing for the user during recording
-- [ ] 30-minute recordings without blowing up memory (video saved in chunks, not accumulated)
-- [ ] Reference thumbnail every 5s captured in the offscreen document and saved to `frames/` in OPFS (same format as desktop)
-- [ ] Optional microphone, synced to within 40ms of the video; the permission is requested on a visible extension page before the first recording with a microphone
+> Checked against the code and the unit tests on 2026-11-05 (steps 12–15). There is no automated end-to-end test of the extension in Chrome, and real `tabCapture` was never exercised in automation: _(Chrome)_ marks what only a real recording can confirm.
+- [x] Records the current tab at up to 1080p30 (or the tab's resolution, if smaller) — `captureSize` (CSS size × devicePixelRatio, fit in 1920×1080, even sides) and `maxFrameRate: 30`; the real track size is read back (`shared/capture.ts`, tested)
+- [x] The video comes out without the cursor (the cursor is redrawn by `core`, as on desktop) — tab capture renders the page, not the OS cursor _(Chrome)_
+- [ ] 3-2-1 countdown overlaid on the tab and removed before the first recorded frame; Esc cancels — overlay removed before `start`, then the recorder waits for fresh frames; Esc cancels only from the open popup (the page gets no key listener, rule 2, and the popup closes when the page is clicked)
+- [x] During recording, **nothing is injected into the page** (it would appear in the video): the icon shows the time on the badge, the popup becomes the control (timecode, pause, stop) — only the mouse listener, which draws nothing
+- [ ] Stop via the shortcut (⌘⇧2 / Ctrl+Shift+2), the popup or the icon — shortcut and popup done; the icon opens the popup (where Stop is), it does not stop by itself
+- [x] Tab sound recorded along (optional) and keeps playing for the user during recording — played back through an `AudioContext` _(Chrome)_
+- [ ] 30-minute recordings without blowing up memory (video saved in chunks, not accumulated) — 1s `MediaRecorder` chunks written to OPFS by a worker; no 30-minute run measured yet
+- [x] Reference thumbnail every 5s captured in the offscreen document and saved to `frames/` in OPFS (same format as desktop) — 480px JPEG, desktop naming (tested)
+- [ ] Optional microphone, synced to within 40ms of the video; the permission is requested on a visible extension page before the first recording with a microphone — permission page and start offset (with latency) done; the 40ms is not measured yet
 
 **Edge cases**
 - `chrome://` tab or Chrome Web Store → Record button disabled with an explanation
@@ -351,13 +352,13 @@
 **Behavior:** a content script enters only the recorded tab (via `activeTab`) and sends the mouse events to the offscreen document, already converted to video pixels. Never reads the keyboard or the page content.
 
 **Acceptance criteria**
-- [ ] Logs move (~60Hz), down, up and scroll, in the same format as desktop (`events.jsonl`)
-- [ ] Converts CSS px × devicePixelRatio, accounting for browser zoom, to exact video coordinates
-- [ ] Offset between event and video: at most 1 frame (33ms)
-- [ ] Keeps capturing when the page navigates within the same site (reinjects the script)
-- [ ] Navigation to another domain: keeps capturing if the user granted the optional sites permission; if not, the video keeps recording without clicks from that point on, and the editor warns "clicks not captured after X:XX"
-- [ ] The content script has no keyboard listener nor any DOM reading beyond the coordinates (verifiable in the code)
-- [ ] The script is removed when the recording stops
+- [x] Logs move (~60Hz), down, up and scroll, in the same format as desktop (`events.jsonl`) — written with core's `formatEvent` (tested, snapshot)
+- [x] Converts CSS px × devicePixelRatio, accounting for browser zoom, to exact video coordinates — normalized by the viewport, so DPR and zoom fold in (tested) _(Chrome: check at 125% zoom on a HiDPI screen)_
+- [ ] Offset between event and video: at most 1 frame (33ms) — page time mapped through the recording clock; not measured yet
+- [x] Keeps capturing when the page navigates within the same site (reinjects the script) — `tabs.onUpdated` → inject again, guarded against doubles _(Chrome)_
+- [x] Navigation to another domain: keeps capturing if the user granted the optional sites permission; if not, the video keeps recording without clicks from that point on, and the editor warns "clicks not captured after X:XX" — `eventsLostAtMs` in the project, notice with "Follow every site next time" _(Chrome)_
+- [x] The content script has no keyboard listener nor any DOM reading beyond the coordinates (verifiable in the code) — a test scans its source, and `guard:keyboard` runs in CI
+- [x] The script is removed when the recording stops (tested)
 
 **Edge cases**
 - Click inside an iframe from another domain → may not be captured in the MVP; the camera simply does not zoom there
@@ -370,11 +371,11 @@
 **Behavior:** when stopped, the editor (the same one from `packages/ui`) opens in an extension tab. Projects live in OPFS and appear in the popup and on the "All projects" page.
 
 **Acceptance criteria**
-- [ ] All features F-05 to F-10 work identically to desktop
-- [ ] The editor opens in at most 3s for a 2-minute recording
-- [ ] Projects listed with thumbnail, name, duration and date; rename and delete
-- [ ] Shows the space used by projects and warns when it passes 2GB
-- [ ] Visible notice that projects stay in the browser
+- [x] All features F-05 to F-10 work identically to desktop — the same `Editor` from `packages/ui`, zooms generated on first open, autosave to OPFS _(Chrome: side-by-side check with desktop)_
+- [ ] The editor opens in at most 3s for a 2-minute recording — not measured yet
+- [x] Projects listed with thumbnail, name, duration and date; rename and delete — delete is for good (no trash in a browser)
+- [x] Shows the space used by projects and warns when it passes 2GB (tested)
+- [x] Visible notice that projects stay in the browser
 
 **Edge cases**
 - Browser with no storage space available → warns before recording
@@ -386,10 +387,12 @@
 **Behavior:** the same Formats screen as desktop. The export uses the `core` WebCodecs encoder and the file goes to the downloads folder via `chrome.downloads`.
 
 **Acceptance criteria**
-- [ ] Same formats and rules as F-11 (MP4 1080p30, 16:9 and 1:1, no watermark)
-- [ ] The rendered frames (before encoding) are identical to desktop's for the same project; the final file may vary slightly because of each machine's encoder
-- [ ] Closing the editor tab during export asks for confirmation
-- [ ] Exporting 1 minute at 1080p30 in under a minute and a half on an average machine
+- [x] Same formats and rules as F-11 (MP4 1080p30, 16:9 and 1:1, no watermark) — the same Formats sheet and core pipeline, saved through `chrome.downloads` _(Chrome)_
+- [ ] The rendered frames (before encoding) are identical to desktop's for the same project; the final file may vary slightly because of each machine's encoder — same core renderer, but no extension-vs-desktop frame comparison exists yet
+- [x] Closing the editor tab during export asks for confirmation — `beforeunload` while exporting _(Chrome)_
+- [ ] Exporting 1 minute at 1080p30 in under a minute and a half on an average machine — not measured in the extension (the CI benchmark covers the desktop app)
+
+Edge-case status: the software-encoder fallback works, but its "slower" notice shows only when the export ends, not before; "Download again" keeps the file so no re-export is needed _(Chrome)_.
 
 **Edge cases**
 - Machine without hardware acceleration for H.264 → falls back to the software encoder, with a warning that it will take longer
@@ -399,22 +402,22 @@
 
 ## E-05 — Welcome and clear limits
 **Acceptance criteria**
-- [ ] On install, opens a welcome tab with Kamo, what the extension does and how to pin the icon to the toolbar
-- [ ] Makes it clear in one line that the extension records tabs, and that full screen and other apps are in the desktop app, with a download link
-- [ ] No extension screen requires an account to record, edit or export (the account only appears to use Kamo Cloud)
+- [x] On install, opens a welcome tab with Kamo, what the extension does and how to pin the icon to the toolbar
+- [x] Makes it clear in one line that the extension records tabs, and that full screen and other apps are in the desktop app, with a download link
+- [x] No extension screen requires an account to record, edit or export (the account only appears to use Kamo Cloud) — there is no login code nor `identity` permission yet
 
 ---
 
 ## E-06 — Chrome Web Store publication
 **Acceptance criteria**
-- [ ] Manifest with only the permissions listed in `integrations.md`, no permanent `<all_urls>`
-- [ ] Justification for each permission written for the store form
-- [ ] Privacy statement: nothing leaves the browser unless the user sends it to the cloud; uploaded videos stay in their account (from v0.3)
-- [ ] Extension package ≤ 5MB, with the popup at ≤ 150KB and opening in under 200ms (without loading `core` or the editor); verified in CI
-- [ ] Store page with 5 screenshots, a short video made with Kamo itself and a description in all v0.2 languages (English, Portuguese, Spanish, Simplified Chinese, Japanese, German, French and Korean)
-- [ ] Extension name and short description translated via `_locales/<language>/messages.json`, the Chrome standard
-- [ ] Publication automated by CI on each release (via the Chrome Web Store API)
-- [ ] Same package published later to Edge Add-ons
+- [x] Manifest with only the permissions listed in `integrations.md`, no permanent `<all_urls>` — `<all_urls>` is optional only, no host permission (tested); integrations.md now lists `alarms` and marks `identity` and the cloud hosts as step 17
+- [x] Justification for each permission written for the store form — `docs/store/permissions.md`, kept in step with the manifest by a test
+- [x] Privacy statement: nothing leaves the browser unless the user sends it to the cloud; uploaded videos stay in their account (from v0.3) — `docs/store/privacy.md`; still to be published at a URL for the store form
+- [ ] Extension package ≤ 5MB, with the popup at ≤ 150KB and opening in under 200ms (without loading `core` or the editor); verified in CI — the sizes are checked in CI and on release (1.79MB, popup 118KB gzipped on 2026-11-05); the 200ms open time is not measured
+- [ ] Store page with 5 screenshots, a short video made with Kamo itself and a description in all v0.2 languages (English, Portuguese, Spanish, Simplified Chinese, Japanese, German, French and Korean) — descriptions in the 5 app languages (`docs/store/listing.md`); German, French, Korean, the screenshots and the video are missing
+- [x] Extension name and short description translated via `_locales/<language>/messages.json`, the Chrome standard — generated from `packages/i18n` at build time, in the 5 app languages (tested)
+- [ ] Publication automated by CI on each release (via the Chrome Web Store API) — the `chrome-web-store` job in `release.yml` exists but has not run (needs the CWS secrets and a stable tag)
+- [ ] Same package published later to Edge Add-ons — not started
 
 ---
 
@@ -475,7 +478,7 @@
 > Export side built and checked on 2026-11-04 (Windows): real exports of an 18s recording at 4K30 (3840×2160, `avc1.640033`, 30.00fps, 12.5s to export) and 1080p60 in 16:9 and 9:16 (`avc1.64002a`, 60.00fps, with their `.srt`).
 - [x] 4K only appears if the original recording has enough resolution; otherwise, the option is disabled with an explanation — "enough" = a side 25% past 1080p (longest > 2400px or shortest > 1350px: ultrawide 2560×1080, 1440p, Retina, 4K); the hint says the recording's size
 - [x] The H.264 level follows the size and rate (4.0 for 1080p30, 4.2 for 1080p60, 5.1 for 4K30, 5.2 for 4K60) and the encoder is asked first (`VideoEncoder.isConfigSupported`, hardware then software); when it refuses, the sheet says so before exporting and the file falls back to 4K30, then 1080p at the asked rate, then 1080p30, with a notice at the end and the real setting in the file name
-- [ ] 60fps requires recording at 60fps: the 60fps recording option appears on the Home — the export offers 60fps for any recording: camera, cursor and captions are computed for every 60fps frame, a 30fps recording's frames repeat (nothing interpolated) and the sheet explains it. The 60fps recording option on Home is not built
+- [x] 60fps requires recording at 60fps: the 60fps recording option appears on the Home — the export offers 60fps for any recording: camera, cursor and captions are computed for every 60fps frame, a 30fps recording's frames repeat (nothing interpolated) and the sheet explains it. Home has a "Record at 60 fps" switch next to Record (remembered as `recordingFps` in settings.json); the helpers record at that rate (Windows: WGC + Media Foundation at 60 constant-rate slots per second; Mac: ScreenCaptureKit `minimumFrameInterval` 1/60), with the bitrate ×1.5 at 60fps, and `project.source.fps` is 60; the sheet then starts at 60fps and every exported frame is a recorded one. Checked on 2026-11-05 (Windows): a 2.2s 3440×1440 recording through the app gave `source.fps: 60` and a 60.00fps MP4 (130 frames), exported as 1080p60 16:9 with 131 frames, 60.00fps, chosen by default with no repeat notice _(Mac compiled in CI only; the extension still records tabs at 30fps)_
 
 ## A-02 — Vertical 9:16 crop and GIF
 - [x] 9:16 with framing that follows the virtual camera and the cursor (the important content never leaves the frame)

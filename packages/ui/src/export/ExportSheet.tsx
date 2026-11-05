@@ -112,9 +112,12 @@ export function ExportSheet({
   const [captions, setCaptions] = useState<CaptionExport>(() =>
     hasCaptions && projectCaptions(project).enabled ? 'burn' : 'none',
   )
-  // A-01 / A-02: resolution and frame rate (MP4), or a GIF at 10 or 15fps.
-  const [settings, setSettings] =
-    useState<Omit<ExportSettings, 'captions'>>(DEFAULT_EXPORT_SETTINGS)
+  // A-01 / A-02: resolution and frame rate (MP4), or a GIF at 10 or 15fps. A 60fps recording
+  // starts at 60fps: every exported frame is a recorded one, none repeated.
+  const [settings, setSettings] = useState<Omit<ExportSettings, 'captions'>>(() => ({
+    ...DEFAULT_EXPORT_SETTINGS,
+    fps: project.source.fps >= 60 ? 60 : DEFAULT_EXPORT_SETTINGS.fps,
+  }))
   const gif = settings.format === 'gif'
   const allow4k = canExport4k(project.source)
   // What this machine's encoder will really make (4K60 is beyond many): said before exporting.

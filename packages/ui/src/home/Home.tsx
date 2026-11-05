@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
 import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
@@ -14,6 +14,7 @@ import {
 import { recordTarget, shortTitle } from './captureSource.ts'
 import type { DisplayOption } from './pickDisplay.ts'
 import { ProjectList, type ProjectListProps } from './ProjectList.tsx'
+import { SourceSwitch } from './SourceSwitch.tsx'
 
 export interface HomeProps {
   displays: readonly DisplayOption[]
@@ -41,6 +42,8 @@ export interface HomeProps {
    * `onSelect` stay the display picker (Select records part of the selected display).
    */
   capture?: CaptureSourceProps
+  /** A-01: "Record at 60 fps" next to the Record button. Omitted: no switch (30 fps). */
+  recordingFps?: { value: 30 | 60; onChange(fps: 30 | 60): void }
 }
 
 /** Home (flows.md §2): displays → toggles → Record → recent projects. */
@@ -58,6 +61,7 @@ export function Home({
   onFixPermission,
   banner,
   capture,
+  recordingFps,
 }: HomeProps) {
   const t = useT()
   const kind = capture?.kind ?? 'display'
@@ -184,7 +188,7 @@ export function Home({
 
         {audio && <AudioSources {...audio} {...(camera ? { camera } : {})} />}
 
-        <div>
+        <div className="flex flex-wrap items-center gap-lg">
           <button
             type="button"
             disabled={!canRecord}
@@ -195,6 +199,7 @@ export function Home({
             <span aria-hidden className="size-[10px] rounded-full bg-recording" />
             {recordLabel}
           </button>
+          {recordingFps && <RecordingFpsSwitch {...recordingFps} />}
         </div>
 
         {projects && <ProjectList {...projects} />}
@@ -209,6 +214,24 @@ const NOTICE_TONE = {
   warning: 'bg-surface-raised text-warning',
   error: 'bg-surface-raised text-error',
 } as const
+
+/** A-01: 60fps exports need 60fps recordings; the choice is remembered (settings). */
+function RecordingFpsSwitch({ value, onChange }: NonNullable<HomeProps['recordingFps']>) {
+  const t = useT()
+  const labelId = useId()
+  const on = value === 60
+  return (
+    <div className="flex max-w-[360px] items-center gap-sm">
+      <SourceSwitch on={on} labelId={labelId} onClick={() => onChange(on ? 30 : 60)} />
+      <div className="flex flex-col">
+        <span id={labelId} className="text-body">
+          {t('home.recordingFps.label')}
+        </span>
+        <span className="text-label text-on-surface-muted">{t('home.recordingFps.hint')}</span>
+      </div>
+    </div>
+  )
+}
 
 interface DisplayCardProps {
   display: DisplayOption

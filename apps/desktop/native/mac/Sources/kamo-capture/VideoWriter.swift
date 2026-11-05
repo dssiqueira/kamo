@@ -35,8 +35,11 @@ final class VideoWriter: @unchecked Sendable {
         // finishWriting() turns it into a regular MP4.
         writer.movieFragmentInterval = CMTime(seconds: 2, preferredTimescale: 600)
 
-        // Screen content is mostly static; ~0.08 bit per pixel per frame keeps text sharp.
-        let bitrate = Int(min(max(Double(width * height * fps) * 0.08, 4_000_000), 50_000_000))
+        // Screen content is mostly static; ~0.08 bit per pixel per frame at 30fps keeps text
+        // sharp. 60fps frames differ less from each other, so ×1.5, not ×2 (as on Windows, A-01).
+        let base = Double(width * height * 30) * 0.08
+        let rate = fps >= 60 ? base * 1.5 : base
+        let bitrate = Int(min(max(rate, 4_000_000), 60_000_000))
         var settings: [String: Any] = [
             AVVideoCodecKey: AVVideoCodecType.h264,
             AVVideoWidthKey: width,

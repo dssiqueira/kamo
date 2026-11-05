@@ -136,6 +136,23 @@ export function DesktopHome() {
       cancelled = true
     }
   }, [])
+  // A-01: the frame rate Home records at, remembered in settings.json.
+  const [recordingFps, setRecordingFps] = useState<30 | 60>(30)
+  useEffect(() => {
+    let cancelled = false
+    void window.kamo
+      .getSettings()
+      .then((settings) => !cancelled && setRecordingFps(settings.recordingFps ?? 30))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  const changeRecordingFps = (fps: 30 | 60) => {
+    setRecordingFps(fps)
+    void window.kamo.updateSettings({ recordingFps: fps }).catch(() => {})
+  }
+
   const selectHomePlaylist = (playlistId: string | null) => {
     setHomePlaylistId(playlistId)
     void window.kamo.updateSettings({ homePlaylistId: playlistId ?? '' }).catch(() => {})
@@ -337,6 +354,7 @@ export function DesktopHome() {
       notice={actionError ?? notice(status, t)}
       needsPermission={screenAccess !== 'granted'}
       projects={projects}
+      recordingFps={{ value: recordingFps, onChange: changeRecordingFps }}
       {...(audio ? { audio } : {})}
       {...(capture.props ? { capture: capture.props } : {})}
       {...(camera ? { camera } : {})}
