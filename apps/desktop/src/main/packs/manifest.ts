@@ -8,12 +8,18 @@ export const MANIFEST_SCHEMA = 1
  * A path inside the pack folder: relative, `/`-separated, plain names only, so a manifest can
  * never write outside `packs/<id>/<version>/`.
  */
-const PackPath = z
+export const PackPath = z
   .string()
   .min(1)
   .max(200)
   .regex(/^[A-Za-z0-9_][A-Za-z0-9._-]*(?:\/[A-Za-z0-9_][A-Za-z0-9._-]*)*$/)
   .refine((path) => !path.split('/').some((part) => part === '.' || part === '..'))
+
+/**
+ * A pack version. It names a folder (`packs/<id>/<version>/`), so it starts with a letter or
+ * a digit and has no separator: `.`, `..` and anything with a slash or a backslash are refused.
+ */
+export const PackVersion = z.string().regex(/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/)
 
 export const PackFile = z.object({
   path: PackPath,
@@ -34,7 +40,7 @@ export type PackPlatform = z.infer<typeof PackPlatform>
 
 export const ManifestPack = z.object({
   id: z.string().min(1).max(64),
-  version: z.string().regex(/^[0-9A-Za-z.+-]{1,64}$/),
+  version: PackVersion,
   kind: z.literal('transcription'),
   /** The model inside the pack: its name for transcript.json and its file. */
   model: z.object({ name: z.string().min(1).max(64), path: PackPath }),

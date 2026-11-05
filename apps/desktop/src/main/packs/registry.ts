@@ -3,21 +3,24 @@
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { writeFileAtomic } from '../storage/atomic.ts'
+import { PackPath, PackVersion } from './manifest.ts'
 
 export const REGISTRY_VERSION = 1
 
+// packs.json is a local file any program running as the user can edit: versions and paths
+// follow the manifest's rules again, so they can never point outside the pack folder.
 const InstalledFile = z.object({
-  path: z.string().min(1),
+  path: PackPath,
   size: z.number().int().nonnegative(),
   sha256: z.string(),
 })
 
 export const InstalledPack = z.object({
-  version: z.string().min(1),
+  version: PackVersion,
   installedAt: z.string(),
   /** Program to run, relative to the pack folder. */
-  entry: z.string().min(1),
-  model: z.object({ name: z.string().min(1), path: z.string().min(1) }),
+  entry: PackPath,
+  model: z.object({ name: z.string().min(1), path: PackPath }),
   files: z.array(InstalledFile),
 })
 export type InstalledPack = z.infer<typeof InstalledPack>

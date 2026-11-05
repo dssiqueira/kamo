@@ -3,7 +3,7 @@
 // into app-data/packs/<id>/<version>/. Updates are installed only on request, and replace the
 // old version once the new one is complete. No timer, no background check, no telemetry.
 import { chmod, mkdir, readdir, rm, stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import {
   PACK_IDS,
   type PackErrorCode,
@@ -14,7 +14,7 @@ import {
 } from '../../shared/packs.ts'
 import { renameWithRetry } from '../storage/atomic.ts'
 import { DISK_MARGIN_BYTES, KNOWN_PACKS } from './config.ts'
-import { DownloadError, downloadFile, partialSize, type FetchLike } from './download.ts'
+import { DownloadError, downloadFile, partialSize, sha256File, type FetchLike } from './download.ts'
 import {
   ManifestError,
   parseManifest,
@@ -99,6 +99,14 @@ export class PackManager {
   private readonly busy = new Map<PackId, number>()
   private readonly listeners = new Set<(status: PacksStatus) => void>()
   private lastProgressEmit = 0
+  /**
+   * Models whose SHA-256 was checked, by path, with the size and mtime they had then: the
+   * model (150–500MB) is hashed again only when either changes. Programs are always hashed.
+   */
+  private readonly verifiedModels = new Map<
+    string,
+    { size: number; mtimeMs: number; sha256: string }
+  >()
 
   constructor(private readonly options: PackManagerOptions) {}
 
@@ -235,6 +243,12 @@ export class PackManager {
         this.options.log.warn('packs.files_missing', { id })
         continue
       }
+      // Before every run: the program and its libraries must still be the files that were
+      // downloaded and checked, so nothing swapped into the pack folder runs as Kamo.
+      if (!(await this.filesIntact(dir, pack))) {
+        this.options.log.warn('packs.files_changed', { id })
+        continue
+      }
       return {
         id,
         version: pack.version,
@@ -311,6 +325,17 @@ export class PackManager {
       const next = { ...installed, [id]: entry }
       await writeRegistry(this.options.registryFile, next)
       this.installed = Promise.resolve(next)
+      // The model was just checked while downloading: the first run need not hash it again.
+      const modelFile = platform.files.find((file) => file.path === pack.model.path)
+      if (modelFile) {
+        const path = join(target, ...modelFile.path.split('/'))
+        const info = await stat(path)
+        this.verifiedModels.set(path, {
+          size: info.size,
+          mtimeMs: info.mtimeMs,
+          sha256: modelFile.sha256,
+        })
+      }
       await this.removeOtherVersions(id, pack.version)
       this.options.log.info('packs.installed', { id, version: pack.version })
     } catch (error) {
@@ -445,12 +470,54 @@ export class PackManager {
     return this.installed
   }
 
+  /**
+   * True when every file of an installed pack still has its recorded size and SHA-256. The
+   * model is hashed only when its size or mtime changed since the last check.
+   */
+  private async filesIntact(dir: string, pack: InstalledPack): Promise<boolean> {
+    const listed = pack.files.map((file) => file.path.toLowerCase())
+    if (!listed.includes(pack.entry.toLowerCase())) return false
+    try {
+      for (const file of pack.files) {
+        const path = join(dir, ...file.path.split('/'))
+        const info = await stat(path)
+        if (!info.isFile() || info.size !== file.size) return false
+        const isModel = file.path === pack.model.path
+        if (isModel) {
+          const known = this.verifiedModels.get(path)
+          if (
+            known?.size === info.size &&
+            known.mtimeMs === info.mtimeMs &&
+            known.sha256 === file.sha256
+          ) {
+            continue
+          }
+        }
+        if ((await sha256File(path)) !== file.sha256) {
+          this.verifiedModels.delete(path)
+          return false
+        }
+        if (isModel) {
+          this.verifiedModels.set(path, {
+            size: info.size,
+            mtimeMs: info.mtimeMs,
+            sha256: file.sha256,
+          })
+        }
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** `packs/<id>/<version>`, provably inside `packs/<id>` (the version is validated too). */
   private packDir(id: PackId, version: string): string {
-    return join(this.options.dir, id, version)
+    return inside(join(this.options.dir, id), version)
   }
 
   private stagingDir(id: PackId, version: string): string {
-    return join(this.options.dir, STAGING_DIR, `${id}-${version}`)
+    return inside(join(this.options.dir, STAGING_DIR), `${id}-${version}`)
   }
 
   private async bytesOnDisk(staging: string, platform: PackPlatform): Promise<number> {
@@ -495,6 +562,19 @@ export function isPackId(value: unknown): value is PackId {
 
 function assertPackId(value: unknown): asserts value is PackId {
   if (!isPackId(value)) throw new PackError('unknown_pack')
+}
+
+/**
+ * `parent/name` for a single plain folder name: anything that would resolve to `parent`
+ * itself or outside it (`.`, `..`, separators, an absolute path) throws.
+ */
+function inside(parent: string, name: string): string {
+  const target = join(parent, name)
+  const rel = relative(resolve(parent), resolve(target))
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel) || /[\\/]/.test(rel)) {
+    throw new PackError('install_failed')
+  }
+  return target
 }
 
 async function exists(path: string): Promise<boolean> {

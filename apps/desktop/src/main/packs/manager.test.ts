@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -94,6 +94,13 @@ describe('parseManifest', () => {
     expect(escape.packs).toEqual([])
   })
 
+  it('refuses a version that is not a plain folder name', () => {
+    for (const version of ['.', '..', '../x', 'a/b', String.raw`a\b`, '-1', '']) {
+      const bad = { ...pack([file('bin/w'), file('models/m.bin')]), version }
+      expect(parseManifest({ schema: 1, packs: [bad] }, url).packs).toEqual([])
+    }
+  })
+
   it('rejects what is not a manifest', () => {
     expect(() => parseManifest({ schema: 2, packs: [] }, url)).toThrow()
     expect(() => parseManifest([], url)).toThrow()
@@ -116,6 +123,47 @@ describe('PackManager', () => {
       ['transcribe-accurate', 'not_installed', false],
     ])
     expect(calls).toBe(0)
+  })
+
+  it('never runs a pack whose program changed after the install', async () => {
+    server = await startFakePackServer({ packs: [fakeTranscriptionPack()] })
+    const packs = manager(server.manifestUrl)
+    await packs.install('transcribe-light')
+    const transcriber = await packs.transcriber()
+    expect(transcriber).not.toBeNull()
+    const original = await readFile(transcriber!.entry)
+    // Same size, other bytes: only the hash can tell.
+    const swapped = Buffer.from(original)
+    swapped[0] = swapped[0] === 0x20 ? 0x21 : 0x20
+    await writeFile(transcriber!.entry, swapped)
+    expect(await packs.transcriber()).toBeNull()
+    await writeFile(transcriber!.entry, original)
+    expect(await packs.transcriber()).not.toBeNull()
+    // The model too, once its size or mtime changes.
+    const model = await readFile(transcriber!.model.path)
+    const other = Buffer.from(model)
+    other[0] = (other[0]! + 1) % 256
+    await writeFile(transcriber!.model.path, other)
+    expect(await packs.transcriber()).toBeNull()
+  })
+
+  it('ignores an installed pack whose recorded version would leave the pack folder', async () => {
+    const registry = {
+      version: 1,
+      packs: {
+        'transcribe-light': {
+          version: '..',
+          installedAt: new Date().toISOString(),
+          entry: 'bin/w',
+          model: { name: 'whisper-base', path: 'models/m.bin' },
+          files: [],
+        },
+      },
+    }
+    await writeFile(join(dir, 'packs.json'), JSON.stringify(registry))
+    const packs = manager('http://127.0.0.1:1/packs-manifest.json')
+    expect(light(await packs.status()).installedVersion).toBeNull()
+    expect(await packs.transcriber()).toBeNull()
   })
 
   it('reports an offline list and lets the user try again', async () => {
