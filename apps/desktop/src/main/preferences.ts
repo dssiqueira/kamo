@@ -288,9 +288,21 @@ export function registerPreferences(deps: PreferencesDeps): Preferences {
     if (!isPermissionKind(kind)) throw new PreferenceError('invalid_argument')
     await openPermissionSettings(kind)
   })
-  handle(IpcChannel.openOnboarding, async () => {
+  handle(IpcChannel.openOnboarding, async (options) => {
     const main = deps.mainWindow()
-    if (main) await loadPage(main, 'onboarding')
+    if (!main) return
+    // F-13: Settings replays the welcome tour alone, in front of everything.
+    const tour =
+      typeof options === 'object' &&
+      options !== null &&
+      (options as { tour?: unknown }).tour === true
+    // Never swap the page under a recording or an export.
+    if (tour && isBusy()) throw new PreferenceError('busy')
+    await loadPage(main, 'onboarding', tour ? { tour: '1' } : {})
+    if (tour) {
+      main.show()
+      main.focus()
+    }
   })
   handle(IpcChannel.relaunch, () => {
     if (isBusy()) throw new PreferenceError('busy')

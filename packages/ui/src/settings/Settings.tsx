@@ -7,7 +7,15 @@ import { useLocale, useT, type Translate } from '../i18n.tsx'
 import { Switch } from '../primitives/controls.tsx'
 import { ExternalIcon, FolderIcon } from '../primitives/icons.tsx'
 import { TextDialog } from './TextDialog.tsx'
-import { InlineNotice, Row, Section, SecondaryButton, Segmented, StatusPill } from './parts.tsx'
+import {
+  InlineNotice,
+  LinkButton,
+  Row,
+  Section,
+  SecondaryButton,
+  Segmented,
+  StatusPill,
+} from './parts.tsx'
 import { ShortcutRecorder } from './ShortcutRecorder.tsx'
 import { PacksSection, type PacksSectionProps } from '../packs/PacksSection.tsx'
 import { AgentSection } from './AgentSection.tsx'
@@ -66,6 +74,9 @@ export interface SettingsProps {
    * projects folder an MCP server could read (the extension).
    */
   agent?: { devServerPath: string | null; onOpenDocs(): void }
+
+  /** Replays the welcome tour (F-13). Omitted where there is none (the extension). */
+  onShowTour?(): void
 }
 
 const FOLDER_ERRORS: Record<string, string> = {
@@ -164,6 +175,11 @@ export function Settings(props: SettingsProps) {
               {t('settings.help.openIssue')}
             </SecondaryButton>
           </div>
+          {props.onShowTour && (
+            <div>
+              <LinkButton onClick={props.onShowTour}>{t('settings.help.tour')}</LinkButton>
+            </div>
+          )}
         </Section>
 
         <Section id="settings-about" title={t('settings.about.title')}>

@@ -423,7 +423,8 @@
       "title": "Ajuda",
       "description": "Algo deu errado? O Kamo não tem telemetria, então os detalhes só saem daqui se você enviar.",
       "copyDiagnostics": "Copiar diagnóstico",
-      "openIssue": "Abrir issue no GitHub"
+      "openIssue": "Abrir issue no GitHub",
+      "tour": "Ver o tour de boas-vindas"
     },
     "about": {
       "title": "Sobre",
@@ -470,6 +471,30 @@
       "title": "Oi, eu sou o Kamo.",
       "body": "Antes da primeira tomada, vamos ver o que o seu computador precisa liberar para eu gravar. Leva cerca de um minuto.",
       "start": "Vamos lá"
+    },
+    "intro": {
+      "label": "Tour de boas-vindas",
+      "record": {
+        "eyebrow": "Oi, eu sou o Kamo.",
+        "title": "Aperte Gravar.",
+        "body": "Escolha uma tela, uma janela ou só um pedaço dela. Microfone, som do computador e câmera são opcionais: ligue o que precisar."
+      },
+      "click": {
+        "eyebrow": "Meu truque é este.",
+        "title": "Clique como sempre.",
+        "body": "Cada clique vira um zoom no ponto exato. Eu pego com a língua. O cursor sai suave, e a barrinha pausa e para."
+      },
+      "edit": {
+        "eyebrow": "Depois, a parte fácil.",
+        "title": "Ajuste e exporte.",
+        "body": "Mexa nos zooms na linha do tempo, ponha legendas, um fundo, 16:9, 1:1 ou 9:16. Sai um MP4 ou um GIF. Tudo fica no seu computador, de graça."
+      },
+      "skip": "Pular o tour",
+      "back": "Voltar",
+      "next": "Próximo",
+      "setup": "Vamos configurar",
+      "finish": "Entendi",
+      "goTo": "Slide {current} de {total}"
     },
     "screen": {
       "title": "Deixe o Kamo ver a sua tela",

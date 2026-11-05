@@ -423,7 +423,8 @@
       "title": "Help",
       "description": "Something went wrong? Kamo has no telemetry, so the details only travel if you send them.",
       "copyDiagnostics": "Copy diagnostics",
-      "openIssue": "Open issue on GitHub"
+      "openIssue": "Open issue on GitHub",
+      "tour": "Show the welcome tour"
     },
     "about": {
       "title": "About",
@@ -470,6 +471,30 @@
       "title": "Hi, I'm Kamo.",
       "body": "Before your first take, let's check what your computer needs to let me record. It takes about a minute.",
       "start": "Let's go"
+    },
+    "intro": {
+      "label": "Welcome tour",
+      "record": {
+        "eyebrow": "Hi, I'm Kamo.",
+        "title": "Hit Record.",
+        "body": "Pick a screen, a window or just a slice of it. Mic, computer sound and camera are optional: turn on what you need."
+      },
+      "click": {
+        "eyebrow": "Here's my trick.",
+        "title": "Click as usual.",
+        "body": "Every click becomes a zoom right on the spot. I catch it with my tongue. Your cursor comes out smooth, and the little bar pauses and stops."
+      },
+      "edit": {
+        "eyebrow": "Then the easy part.",
+        "title": "Tweak it, export it.",
+        "body": "Nudge the zooms on the timeline, add captions, a background, 16:9, 1:1 or 9:16. Out comes an MP4 or a GIF. It all stays on your computer, free."
+      },
+      "skip": "Skip the tour",
+      "back": "Back",
+      "next": "Next",
+      "setup": "Let's set up",
+      "finish": "Got it",
+      "goTo": "Slide {current} of {total}"
     },
     "screen": {
       "title": "Let Kamo see your screen",

@@ -255,7 +255,7 @@
 ---
 
 ## F-13 — Permissions onboarding
-**Behavior:** on first use, guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
+**Behavior:** on first use, Kamo first explains the app in a three-slide welcome tour (record → click → edit and export), then guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
 
 **Acceptance criteria**
 - [x] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone _(Mac untested; whether Input Monitoring is needed is still open, so it is off for now)_
@@ -264,6 +264,9 @@
 - [x] On Mac, if Input Monitoring is required, makes it clear that it is only for the mouse and that the app never reads the keyboard _(Mac untested)_
 - [x] Screen Recording is mandatory; the rest can be skipped
 - [x] The permissions also appear in Settings, with status and a shortcut to the system settings
+- [x] Welcome tour before the permissions: three slides with Kamo explaining from a speech bubble, each with a small drawn vignette; dots, Back, Next and "Skip the tour"; → / Enter / ← / Esc inside Kamo's window; spring transitions, still with reduced motion
+- [x] The tour shows only until the onboarding is finished once; opening the onboarding again for a missing permission skips it
+- [x] Settings → Help → "Show the welcome tour" replays it (not during a recording or an export) _(desktop only; the extension keeps its own welcome page, E-05)_
 
 ---
 

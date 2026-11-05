@@ -181,8 +181,11 @@ export interface KamoApi {
   /** Mac, not decided yet: shows the OS prompt. Returns the fresh statuses. */
   requestPermission(kind: PermissionKind): Promise<PermissionInfo[]>
   openPermissionSettings(kind: PermissionKind): Promise<void>
-  /** Shows the onboarding in the main window (e.g. from Home's missing-permission notice). */
-  openOnboarding(): Promise<void>
+  /**
+   * Shows the onboarding in the main window (e.g. from Home's missing-permission notice).
+   * `tour`: only the welcome tour, replayed from Settings (F-13).
+   */
+  openOnboarding(options?: { tour?: boolean }): Promise<void>
   /** Restarts Kamo (macOS may need it after Screen Recording is granted). `busy` while recording. */
   relaunch(): Promise<void>
 

@@ -89,6 +89,7 @@ function DesktopSettings() {
         devServerPath: agentDevServer,
         onOpenDocs: () => void window.kamo.openAgentDocs().catch(() => {}),
       }}
+      onShowTour={() => void window.kamo.openOnboarding({ tour: true }).catch(() => {})}
       {...(packs.status
         ? {
             packs: {

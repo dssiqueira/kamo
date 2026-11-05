@@ -4,7 +4,7 @@
 
 ## Screen map
 ```
-First use → Permissions onboarding → Home
+First use → Welcome tour (3 slides) → Permissions onboarding → Home
 Home → Countdown → Recording → Editor → Export (Formats) → file saved
 Home → Recent project → Editor
 Export → (optional) Send to cloud → Sign in (if needed) → link copied
@@ -30,6 +30,10 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 ## Screens
 
 ### 1. Permissions onboarding (first use only)
+- **Welcome tour first:** three slides where Kamo explains the app from a paper speech bubble (Kamo on one side, the bubble with a short title, one or two lines and a small CSS-drawn vignette on the other): 1. **Hit Record** (screen, window or selection; mic, computer sound and camera optional; Kamo standing, looking at you) · 2. **Click as usual** (every click becomes a zoom, the cursor comes out smooth, the bar pauses and stops; Kamo with its tongue out, catching the click) · 3. **Tweak it, export it** (zooms on the timeline, captions, background, 16:9 / 1:1 / 9:16, MP4 or GIF, all local and free; Kamo winking)
+  - Navigation: dots (click to jump), Back, Next (the last one says "Let's set up" and goes on to the permissions), "Skip the tour" (straight to the permissions). Keys inside Kamo's window only: → and Enter next, ← back, Esc skip. Slides enter from the side they came from on the Kamo spring; reduced motion shows them still
+  - It stands in for the welcome screen on first run and shows until the onboarding is finished once (`onboardingDone`); opened again from Home's missing-permission notice, the onboarding starts at the welcome screen without the tour
+  - Settings → Help → "Show the welcome tour" replays it alone in the main window (never during a recording or an export) and goes back to Home at the end
 - **Hierarchy:** one permission per screen → why it is needed → status → "Open Settings" button
 - **Mac:** Screen Recording, Microphone and, if still required for the mouse tap, Input Monitoring (camera only when the webcam is turned on, in v0.4)
 - **Windows:** Microphone only
