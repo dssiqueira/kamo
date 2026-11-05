@@ -4,14 +4,15 @@ import {
   type CaptionSize,
   type Transcript,
 } from '@kamo/core'
-import { formatFileSize, resolveLocale } from '@kamo/i18n'
 import type { ReactNode, RefObject } from 'react'
-import { useLocale, useT } from '../i18n.tsx'
+import { useT } from '../i18n.tsx'
 import { DesktopAppCard, useDesktopAppUrl } from '../extension/DesktopAppCard.tsx'
 import { TranscriptStatus } from '../packs/CardTranscription.tsx'
 import type { CardTranscriptState, PackView } from '../packs/types.ts'
 import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
+import { CaptionsOffer } from './CaptionsOffer.tsx'
 import { CaptionStyleGallery } from './CaptionStyleGallery.tsx'
+import type { PlaybackClock } from './playback-clock.ts'
 
 /**
  * The editor's door to local transcription (A-05) for the captions (A-06). The app decides
@@ -39,8 +40,11 @@ export interface CaptionsSectionProps {
   onTranscribeAgain(): void
   /** the editor's video, for the style gallery's thumbnails (the frame at the playhead) */
   video?: RefObject<HTMLVideoElement | null> | undefined
-  /** the playhead, ms of video time: the gallery samples the caption there */
-  timeMs?: number | undefined
+  /**
+   * the playhead at rest (ms of video time), not moved by the frames of playback: the
+   * gallery samples the caption there
+   */
+  time?: PlaybackClock | undefined
 }
 const POSITIONS: readonly CaptionPosition[] = ['bottom', 'middle']
 const POSITION_KEY: Record<CaptionPosition, string> = {
@@ -72,34 +76,17 @@ export function CaptionsSection({
   onCaptions,
   onTranscribeAgain,
   video,
-  timeMs,
+  time,
 }: CaptionsSectionProps) {
   const t = useT()
-  const locale = resolveLocale([useLocale()])
   const running =
     transcription?.state.state === 'running' || transcription?.state.state === 'queued'
-  const pack = transcription?.pack
-  const packSize = pack
-    ? pack.sizeExact
-      ? formatFileSize(locale, pack.sizeBytes)
-      : t('packs.sizeApprox', { size: formatFileSize(locale, pack.sizeBytes) })
-    : null
 
   if (!transcript) {
     if (!transcription) return null
     return (
       <Section title={t('editor.captions.title')}>
-        <p className="text-body text-on-surface-muted">{t('editor.captions.fromTranscript')}</p>
-        {!transcription.hasPack && !running && packSize && (
-          <p className="text-label text-on-surface-muted" data-testid="captions-needs-pack">
-            {t('editor.captions.needsPack', { size: packSize })}
-          </p>
-        )}
-        {/* "Transcribed" without a transcript file says nothing useful: leave it out. */}
-        {transcription.state.state !== 'done' && (
-          <TranscriptStatus transcript={transcription.state} />
-        )}
-        <TranscribeAction transcription={transcription} onTranscribe={transcription.onTranscribe} />
+        <CaptionsOffer transcription={transcription} />
       </Section>
     )
   }
@@ -121,7 +108,7 @@ export function CaptionsSection({
             transcript={transcript}
             position={settings.position}
             video={video}
-            timeMs={timeMs}
+            time={time}
           />
           <Group label={t('editor.captions.position')}>
             <div className="grid grid-cols-2 gap-xs">
