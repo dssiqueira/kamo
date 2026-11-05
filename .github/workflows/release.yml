@@ -9,7 +9,8 @@ name: Release
 # Secrets and the manual checks per release: docs/release-checklist.md.
 # Platforms: Windows always; Mac only when the repository variable RELEASE_MAC is "true"
 # (Settings > Secrets and variables > Actions > Variables). Until then the Mac app is
-# "coming soon" in the README and the release ships Windows only.
+# "coming soon" in the README and the release ships Windows only. The same goes for the
+# Chrome extension: its zip and the Chrome Web Store upload need RELEASE_EXTENSION "true".
 on:
   push:
     tags: ['v*']
@@ -267,6 +268,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.version }}
       PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
       MAC: ${{ needs.prepare.outputs.mac }}
+      EXTENSION: ${{ vars.RELEASE_EXTENSION }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -311,6 +313,11 @@ jobs:
             echo "Release $TAG exists; replacing its assets."
           else
             gh release create "$TAG" "${flags[@]}"
+          fi
+          # The extension is "coming soon": its zip stays out until RELEASE_EXTENSION is "true".
+          if [ "$EXTENSION" != true ]; then
+            rm -f assets/kamo-extension-*.zip
+            echo "::notice::RELEASE_EXTENSION is not true: the extension zip is left out of the release."
           fi
           gh release upload "$TAG" assets/* --clobber
           gh release view "$TAG" --json isDraft,assets --jq '{isDraft, assets: [.assets[].name]}'
@@ -389,7 +396,7 @@ jobs:
   # release asset and submits it for review. Stable tags only; skipped without the secrets.
   chrome-web-store:
     needs: [prepare, github-release]
-    if: needs.prepare.outputs.prerelease == 'false'
+    if: needs.prepare.outputs.prerelease == 'false' && vars.RELEASE_EXTENSION == 'true'
     runs-on: ubuntu-latest
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
