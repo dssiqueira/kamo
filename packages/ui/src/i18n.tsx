@@ -1,4 +1,4 @@
-import type { createI18n } from '@kamo/i18n'
+import { changeLocale, loadMessages, type createI18n, type Locale } from '@kamo/i18n'
 import { createContext, useContext, useEffect, useSyncExternalStore, type ReactNode } from 'react'
 
 /** The i18next instance created by `createI18n` from `@kamo/i18n`. */
@@ -54,4 +54,21 @@ export function useT(): Translate {
 /** Returns the current UI language (BCP 47). */
 export function useLocale(): string {
   return useI18n().language
+}
+
+// The latest language asked per instance, so quick picks never land out of order.
+const requested = new WeakMap<I18n, Locale>()
+
+/**
+ * Switches this window's UI language right away, without saving it (the onboarding's language
+ * screen saves on Continue). Every `useT` consumer re-renders in the new language.
+ */
+export function useSetLocale(): (locale: Locale) => Promise<void> {
+  const i18n = useI18n()
+  return async (locale) => {
+    requested.set(i18n, locale)
+    await loadMessages(locale)
+    if (requested.get(i18n) !== locale) return
+    await changeLocale(i18n, locale)
+  }
 }

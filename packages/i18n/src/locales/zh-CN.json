@@ -471,6 +471,12 @@
   },
   "onboarding": {
     "progress": "第 {current} 步，共 {total} 步",
+    "language": {
+      "hello": "你好",
+      "title": "我该说哪种语言？",
+      "body": "之后随时可以在设置中更改。",
+      "system": "与你的系统相同"
+    },
     "welcome": {
       "title": "你好，我是 Kamo。",
       "body": "第一次录制之前，先看看你的电脑需要开放哪些权限让我录制。大约只需一分钟。",

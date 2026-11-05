@@ -255,7 +255,7 @@
 ---
 
 ## F-13 — Permissions onboarding
-**Behavior:** on first use, Kamo first explains the app in a three-slide welcome tour (record → click → edit and export), then guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
+**Behavior:** on first use, Kamo first asks which language to speak, then explains the app in a three-slide welcome tour (record → click → edit and export), then guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
 
 **Acceptance criteria**
 - [x] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone _(Mac untested; whether Input Monitoring is needed is still open, so it is off for now)_
@@ -267,6 +267,7 @@
 - [x] Welcome tour before the permissions: three slides with Kamo explaining from a speech bubble, each with a small drawn vignette; dots, Back, Next and "Skip the tour"; → / Enter / ← / Esc inside Kamo's window; spring transitions, still with reduced motion
 - [x] The tour shows only until the onboarding is finished once; opening the onboarding again for a missing permission skips it
 - [x] Settings → Help → "Show the welcome tour" replays it (not during a recording or an export) _(desktop only; the extension keeps its own welcome page, E-05)_
+- [x] Language screen before the tour on first run: the five languages by their own names (each with its own `lang`), the OS language preselected with "Same as your system" (else English); a pick switches the window at once; arrows / Enter, radio group; saved as Settings' language (`system` if the system's was kept) and main rebuilds its menus. Not on the permission reopen or the tour replay _(desktop only; the extension follows Chrome's language)_
 
 ---
 

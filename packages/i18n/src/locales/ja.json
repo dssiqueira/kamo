@@ -471,6 +471,12 @@
   },
   "onboarding": {
     "progress": "ステップ {current}/{total}",
+    "language": {
+      "hello": "こんにちは",
+      "title": "何語で話しましょうか？",
+      "body": "あとから設定でいつでも変更できます。",
+      "system": "システムと同じ"
+    },
     "welcome": {
       "title": "こんにちは、Kamo です。",
       "body": "最初の録画の前に、録画に必要な許可を確認しましょう。1 分ほどで終わります。",

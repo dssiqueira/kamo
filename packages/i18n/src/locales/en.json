@@ -471,6 +471,12 @@
   },
   "onboarding": {
     "progress": "Step {current} of {total}",
+    "language": {
+      "hello": "Hi",
+      "title": "Which language should I speak?",
+      "body": "You can change it any time in Settings.",
+      "system": "Same as your system"
+    },
     "welcome": {
       "title": "Hi, I'm Kamo.",
       "body": "Before your first take, let's check what your computer needs to let me record. It takes about a minute.",

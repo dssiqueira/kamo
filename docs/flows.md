@@ -4,7 +4,7 @@
 
 ## Screen map
 ```
-First use → Welcome tour (3 slides) → Permissions onboarding → Home
+First use → Language → Welcome tour (3 slides) → Permissions onboarding → Home
 Home → Countdown → Recording → Editor → Export (Formats) → file saved
 Home → Recent project → Editor
 Export → (optional) Send to cloud → Sign in (if needed) → link copied
@@ -30,6 +30,10 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 ## Screens
 
 ### 1. Permissions onboarding (first use only)
+- **Language first:** Kamo (happy head) says hi in the five launch languages ("Hi Oi Hola 你好 こんにちは", each in its own font stack, the one on screen highlighted) and asks which language to speak. The five languages are large rows, each with its name in its own language and `lang` (English, Português (Brasil), Español, 简体中文, 日本語), never translated
+  - The OS language is preselected when Kamo speaks it (else English) and says "Same as your system". Picking a row switches the whole window at once (the screen's own texts and `<html lang>`), so the tour already speaks it
+  - Accessible radio group: arrows (and Home / End) move the choice, Enter or Continue goes on to the tour. Continue saves it as Settings' language: `system` when the system's language was kept, otherwise the locale; main then rebuilds its tray and app menus in that language
+  - First run only (until `onboardingDone`): not when the onboarding opens again for a missing permission, nor on "Show the welcome tour". The extension follows Chrome's language and has no such screen
 - **Welcome tour first:** three slides where Kamo explains the app from a paper speech bubble (Kamo on one side, the bubble with a short title, one or two lines and a small CSS-drawn vignette on the other): 1. **Hit Record** (screen, window or selection; mic, computer sound and camera optional; Kamo standing, looking at you) · 2. **Click as usual** (every click becomes a zoom, the cursor comes out smooth, the bar pauses and stops; Kamo with its tongue out, catching the click) · 3. **Tweak it, export it** (zooms on the timeline, captions, background, 16:9 / 1:1 / 9:16, MP4 or GIF, all local and free; Kamo winking)
   - Navigation: dots (click to jump), Back, Next (the last one says "Let's set up" and goes on to the permissions), "Skip the tour" (straight to the permissions). Keys inside Kamo's window only: → and Enter next, ← back, Esc skip. Slides enter from the side they came from on the Kamo spring; reduced motion shows them still
   - It stands in for the welcome screen on first run and shows until the onboarding is finished once (`onboardingDone`); opened again from Home's missing-permission notice, the onboarding starts at the welcome screen without the tour

@@ -471,6 +471,12 @@
   },
   "onboarding": {
     "progress": "Paso {current} de {total}",
+    "language": {
+      "hello": "Hola",
+      "title": "¿En qué idioma te hablo?",
+      "body": "Puedes cambiarlo cuando quieras en Ajustes.",
+      "system": "El mismo que tu sistema"
+    },
     "welcome": {
       "title": "Hola, soy Kamo.",
       "body": "Antes de la primera toma, veamos qué necesita permitir tu equipo para que yo grabe. Tarda más o menos un minuto.",

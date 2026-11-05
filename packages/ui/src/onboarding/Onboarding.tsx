@@ -1,13 +1,15 @@
-// Permissions onboarding (flows.md §1, F-13): the welcome tour on first run (or the welcome
-// screen when opened again) → one permission per screen → done. Each screen says why, shows the
+// Permissions onboarding (flows.md §1, F-13): on first run, the language screen and then the
+// welcome tour (or the welcome screen when opened again) → one permission per screen → done. Each screen says why, shows the
 // live status and opens the right system settings page. Screen Recording is mandatory; the
 // others can be skipped. Kamo greets and says goodbye.
+import type { Locale } from '@kamo/i18n'
 import { useCallback, useState } from 'react'
 import { useT } from '../i18n.tsx'
 import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { useSpring } from '../motion/useSpring.ts'
 import { IntroSlides } from './IntroSlides.tsx'
+import { LanguagePicker } from './LanguagePicker.tsx'
 import { ExternalIcon } from '../primitives/icons.tsx'
 import {
   InlineNotice,
@@ -40,9 +42,15 @@ export interface OnboardingProps {
    * when the onboarding is opened again for a missing permission.
    */
   intro?: boolean
+  /**
+   * First run only: the language screen comes before the tour, so the tour speaks the chosen
+   * language. `onChoose` saves it (the window already shows it).
+   */
+  language?: { system: Locale | undefined; onChoose(choice: Locale): void }
 }
 
 type Step =
+  | { kind: 'language' }
   | { kind: 'intro' }
   | { kind: 'welcome' }
   | { kind: 'permission'; permission: PermissionKind }
@@ -56,6 +64,7 @@ export function Onboarding({
   onRelaunch,
   onFinish,
   intro = false,
+  language,
 }: OnboardingProps) {
   const t = useT()
   const [index, setIndex] = useState(0)
@@ -66,16 +75,34 @@ export function Onboarding({
   }
 
   const steps: Step[] = [
+    ...(intro && language ? [{ kind: 'language' as const }] : []),
     intro ? { kind: 'intro' } : { kind: 'welcome' },
     ...(kinds ?? []).map((permission) => ({ kind: 'permission' as const, permission })),
     { kind: 'done' },
   ]
   const step = steps[Math.min(index, steps.length - 1)] ?? { kind: 'welcome' }
   const next = () => setIndex((i) => Math.min(i + 1, steps.length - 1))
-  const leaveIntro = useCallback(() => setIndex(1), [])
+  const leaveIntro = useCallback(() => setIndex((i) => i + 1), [])
+  const onLanguage = language?.onChoose
+  const leaveLanguage = useCallback(
+    (choice: Locale) => {
+      onLanguage?.(choice)
+      setIndex((i) => i + 1)
+    },
+    [onLanguage],
+  )
 
   // Each screen eases in with the Kamo spring; reduced motion shows it at once.
   const progress = useSpring(1, 0, index)
+
+  if (step.kind === 'language') {
+    return (
+      <main className="relative flex min-h-screen items-center justify-center bg-background p-xl font-sans text-on-surface">
+        <CornerDecor />
+        <LanguagePicker system={language?.system} onContinue={leaveLanguage} />
+      </main>
+    )
+  }
 
   if (step.kind === 'intro') {
     return (
@@ -87,7 +114,7 @@ export function Onboarding({
   }
 
   // Past the tour, the next screens wait for the permission list (it arrives in a moment).
-  if (index > 0 && kinds === null) {
+  if (step.kind !== 'welcome' && kinds === null) {
     return <main className="relative min-h-screen bg-background" />
   }
 

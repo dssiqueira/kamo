@@ -471,6 +471,12 @@
   },
   "onboarding": {
     "progress": "Etapa {current} de {total}",
+    "language": {
+      "hello": "Oi",
+      "title": "Em que idioma eu falo?",
+      "body": "Dá para trocar quando quiser nas Configurações.",
+      "system": "Igual ao do seu sistema"
+    },
     "welcome": {
       "title": "Oi, eu sou o Kamo.",
       "body": "Antes da primeira tomada, vamos ver o que o seu computador precisa liberar para eu gravar. Leva cerca de um minuto.",
