@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "description": "Kamo engine: project format, auto zoom, virtual camera, smooth cursor, frame rendering and WebCodecs export. Platform-agnostic.",
   "license": "MIT",
+  "sideEffects": false,
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
@@ -39,6 +40,7 @@
     "fixtures": "node fixtures/write.ts"
   },
   "dependencies": {
+    "gifenc": "1.0.3",
     "zod": "^4.6.7"
   },
   "peerDependencies": {

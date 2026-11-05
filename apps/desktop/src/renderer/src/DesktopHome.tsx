@@ -2,7 +2,6 @@ import {
   Home,
   pickDisplay,
   useT,
-  type DisplayOption,
   type HomeProps,
   type PlaylistsProps,
   type ProjectListProps,
@@ -10,6 +9,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ipcErrorCode,
+  type DisplayInfo,
   type PlaylistInfo,
   type ProjectListing,
   type RecordingStatus,
@@ -20,6 +20,7 @@ import type { CameraWarning } from '../../shared/camera.ts'
 import { DesktopInterruptedRecordings } from './DesktopInterruptedRecordings.tsx'
 import { DesktopUpdateBanner } from './preferences/DesktopUpdateBanner.tsx'
 import { useHomeAudio } from './useHomeAudio.ts'
+import { useHomeCapture } from './useHomeCapture.ts'
 import { useHomeCamera } from './useHomeCamera.ts'
 import { useHomeTranscription } from './transcription/useHomeTranscription.tsx'
 
@@ -30,9 +31,11 @@ const ERROR_KEYS: Record<string, string> = {
   display_not_found: 'recording.errors.displayNotFound',
   permission_denied: 'recording.errors.permissionDenied',
   too_short: 'recording.errors.tooShort',
+  window_not_found: 'recording.errors.windowNotFound',
 }
 const WARNING_KEYS = {
   display_lost: 'recording.errors.displayLost',
+  window_lost: 'recording.errors.windowLost',
   disk_full: 'recording.errors.diskFull',
 } as const
 // F-04: audio problems of a saved recording.
@@ -73,7 +76,7 @@ type Notice = NonNullable<HomeProps['notice']>
 
 /** Wires the platform-agnostic Home to the desktop: displays, projects and settings. */
 export function DesktopHome() {
-  const [displays, setDisplays] = useState<DisplayOption[]>([])
+  const [displays, setDisplays] = useState<DisplayInfo[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [screenAccess, setScreenAccess] = useState<ScreenAccess>('granted')
   const [status, setStatus] = useState<RecordingStatus | null>(null)
@@ -84,6 +87,8 @@ export function DesktopHome() {
   const t = useT()
   // F-04: microphone and computer sound toggles, meters and devices.
   const audio = useHomeAudio()
+  // A-08: Screen · Window · Region, remembered like the display.
+  const capture = useHomeCapture(displays, selectedId)
   // A-03: webcam toggle, camera picker and live preview.
   const camera = useHomeCamera()
   // A-05: "Transcribe" on the cards and the pack download offer.
@@ -322,15 +327,18 @@ export function DesktopHome() {
       selectedId={selectedId}
       onSelect={selectDisplay}
       onRecord={() => {
-        if (!selectedId) return
+        // A-08: what the button names; before settings load, the selected display.
+        const target = capture.props ? capture.target : selectedId
+        if (!target) return
         setStatus(null)
         setActionError(null)
-        void window.kamo.startRecording(selectedId)
+        void window.kamo.startRecording(target)
       }}
       notice={actionError ?? notice(status, t)}
       needsPermission={screenAccess !== 'granted'}
       projects={projects}
       {...(audio ? { audio } : {})}
+      {...(capture.props ? { capture: capture.props } : {})}
       {...(camera ? { camera } : {})}
     />
   )

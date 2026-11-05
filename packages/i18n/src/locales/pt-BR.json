@@ -66,6 +66,22 @@
   },
   "home": {
     "displays": "Tela pra gravar",
+    "capture": {
+      "title": "O que gravar",
+      "screen": "Tela",
+      "window": "Janela",
+      "region": "Região",
+      "searchWindows": "Buscar janelas",
+      "loadingWindows": "Procurando janelas abertas…",
+      "noWindows": "Nenhuma janela para gravar. Abra o app que você quer gravar e ele aparece aqui.",
+      "noMatch": "Nenhuma janela corresponde a “{query}”.",
+      "pickRegion": "Selecionar a área",
+      "pickAgain": "Selecionar de novo",
+      "noRegion": "Arraste um retângulo na tela para gravar só essa parte.",
+      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} em {display}",
+      "regionHint": "Arraste para selecionar a parte da tela a gravar. Esc cancela.",
+      "regionTooSmall": "Pequena demais: arraste pelo menos {width, number, ::group-off} × {height, number, ::group-off}. Esc cancela."
+    },
     "displayName": "Tela {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
     "primary": "Principal",
@@ -83,7 +99,8 @@
       "micDenied": "O Kamo não tem acesso ao microfone. Libere nas configurações do sistema; até lá, as gravações saem sem voz.",
       "micUnavailable": "Nenhum microfone encontrado. As gravações vão sair sem voz.",
       "systemUnavailable": "O Kamo não consegue captar o som do computador agora. As gravações vão sair sem ele.",
-      "systemSoon": "Em breve no Mac."
+      "systemSoon": "Requer macOS 13 ou mais recente.",
+      "systemWithVideo": "Gravado junto com o vídeo. Sem medidor de nível no Mac."
     },
     "camera": {
       "sectionTitle": "Som e câmera",
@@ -96,7 +113,9 @@
       "unavailable": "Nenhuma câmera encontrada, ou outro app está usando a câmera. As gravações ficarão sem câmera."
     },
     "fixPermission": "Configurar",
-    "recordDisplay": "Gravar · {display}"
+    "recordDisplay": "Gravar · {display}",
+    "recordWindow": "Gravar · {window}",
+    "recordRegion": "Gravar · Área {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc pra cancelar",
@@ -112,9 +131,11 @@
       "helperMissing": "A gravação ainda não está disponível nesta versão: falta o helper de captura.",
       "lowDisk": "Menos de 1 GB livre neste disco. Libere espaço e tente de novo.",
       "displayNotFound": "Essa tela não está mais conectada. Escolha outra.",
+      "windowNotFound": "Essa janela foi fechada ou minimizada. Escolha-a de novo e grave.",
       "permissionDenied": "O Kamo precisa de permissão pra gravar a tela.",
       "tooShort": "Foi menos de um segundo, então nada foi salvo.",
       "displayLost": "A tela foi desconectada. O Kamo salvou o que gravou.",
+      "windowLost": "A janela foi fechada. O Kamo salvou o que gravou.",
       "diskFull": "O disco encheu. O Kamo salvou o que gravou.",
       "failed": "A gravação parou de repente. O Kamo vai tentar recuperar na próxima vez."
     },
@@ -230,6 +251,16 @@
       "clean": "Limpo",
       "bold": "Forte",
       "kamo": "Kamo",
+      "minimal": "Minimalista",
+      "soft": "Suave",
+      "neon": "Neon",
+      "typewriter": "Datilografado",
+      "caps": "Maiúsculas",
+      "cinema": "Cinema",
+      "marker": "Marca-texto",
+      "classic": "Clássico",
+      "duo": "Duo",
+      "sample": "Suas palavras aqui",
       "position": "Posição",
       "bottom": "Embaixo",
       "middle": "No meio",
@@ -378,6 +409,19 @@
       "version": "Kamo {version}",
       "license": "Gratuito e de código aberto, sob a licença MIT.",
       "notices": "Avisos de terceiros"
+    },
+    "agent": {
+      "title": "Conectar a um agente",
+      "description": "Deixe o Claude Code ou outro agente de IA conversar com as suas gravações: nomes, transcrições, cliques, zooms e uma captura de tela a cada 5 segundos.",
+      "claudeCode": "Claude Code",
+      "otherClients": "Outros clientes MCP",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "readOnly": "Somente leitura e local: o servidor roda neste computador, só lê a sua pasta de projetos e não faz nenhuma chamada de rede. O que o agente faz com as respostas depende do agente.",
+      "node": "Precisa do Node.js 20 ou mais recente.",
+      "docs": "Instruções para outros clientes MCP",
+      "devTitle": "Usando uma versão de desenvolvimento?",
+      "devHint": "Roda o servidor compilado neste repositório (pnpm --filter @kamo/mcp build) em vez do pacote do npm."
     }
   },
   "diagnostics": {
@@ -449,7 +493,6 @@
     "frameRate": "Taxa de quadros",
     "fileFormat": "Formato",
     "fps": "{fps} fps",
-    "laterNote": "4K, 60 fps e GIF chegam numa próxima versão, grátis como todo o resto.",
     "folder": "Salva em",
     "changeFolder": "Alterar",
     "pickOne": "Escolha pelo menos um formato.",
@@ -477,7 +520,8 @@
       "audio_unreadable": "Uma faixa de som não pôde ser lida e ficou de fora.",
       "audio_encoder_unavailable": "Este computador não consegue codificar som AAC, então o vídeo saiu sem som.",
       "webcam_unreadable": "Não deu pra ler a gravação da webcam, então o vídeo saiu sem a bolha da webcam.",
-      "background_unreadable": "Não foi possível ler a imagem de fundo, então o vídeo usa um fundo liso."
+      "background_unreadable": "Não foi possível ler a imagem de fundo, então o vídeo usa um fundo liso.",
+      "settings_fallback": "O codificador de vídeo deste computador não conseguiu gerar a resolução ou a taxa de quadros escolhida, então usou uma menor. O nome do arquivo diz qual."
     },
     "closeDialog": {
       "title": "Exportação em andamento",
@@ -492,8 +536,15 @@
       "srt": "Arquivo .srt",
       "srtHint": "Um arquivo .srt ao lado de cada vídeo, com o tempo do corte.",
       "burnHint": "Na imagem, com o estilo do painel Legendas.",
-      "srtFile": "+ {name}"
-    }
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "Um GIF só aceita legendas gravadas na imagem."
+    },
+    "needs4kSource": "O 4K precisa de uma gravação maior que 1080p; esta tem {size}.",
+    "fps60From30": "Esta gravação tem {fps} fps: os zooms e o cursor se movem a 60 fps, mas a tela em si continua mudando {fps} vezes por segundo.",
+    "gifHint": "Sem som, com até 1280 px de largura.",
+    "gifEstimate": "Tamanho estimado: cerca de {size}.",
+    "gifLarge": "Muitos sites e apps de conversa recusam GIFs acima de {limit}: corte o vídeo, escolha 10 fps ou exporte um MP4.",
+    "encoderFallback": "O codificador de vídeo deste computador não consegue gerar {wanted}, então o Kamo vai exportar em {actual}."
   },
   "recovery": {
     "found": "Encontramos uma gravação interrompida de {date}.",
@@ -523,7 +574,9 @@
       "noRecent": "Suas gravações aparecem aqui.",
       "projectMeta": "{duration} · {date}",
       "desktopOnly": "Transcrição e legendas estão no app Kamo para computador.",
-      "getDesktop": "Baixar o app"
+      "getDesktop": "Baixar o app",
+      "allProjects": "Todos os projetos",
+      "lowSpace": "O navegador está quase sem espaço. Apague projetos antigos antes de gravar."
     },
     "microphone": {
       "title": "Use seu microfone",
@@ -548,6 +601,48 @@
     "notices": {
       "micFallback": "O microfone escolhido não foi encontrado, então o Kamo usou o padrão.",
       "cameraFallback": "A câmera escolhida não foi encontrada, então o Kamo usou a padrão."
+    },
+    "desktopCard": {
+      "title": "Quer legendas?",
+      "body": "Transcrição e legendas rodam no seu computador, no app Kamo para desktop, que é grátis.",
+      "action": "Baixar o app",
+      "dismiss": "Ocultar esta dica"
+    },
+    "projects": {
+      "title": "Todos os projetos",
+      "notice": "Seus projetos ficam neste navegador. Limpar os dados da extensão apaga todos eles.",
+      "storage": "Projetos usam {size}",
+      "storageWarning": "Seus projetos passam de {limit}. Exporte o que quer guardar e apague o resto.",
+      "deleteHint": "Apagar um projeto na extensão remove ele de vez."
+    },
+    "editor": {
+      "clicksLost": "Os cliques não foram capturados depois de {time}: a aba foi para um site que o Kamo não conseguiu acompanhar.",
+      "allowSites": "Acompanhar qualquer site da próxima vez",
+      "allowedSites": "Pronto. Da próxima vez o Kamo continua capturando cliques em outros sites.",
+      "downloadBlocked": "O navegador não salvou {name}.",
+      "downloadAgain": "Baixar de novo",
+      "dismiss": "Dispensar"
+    },
+    "welcome": {
+      "title": "Oi, eu sou o Kamo.",
+      "body": "Grave qualquer aba e receba um vídeo com cara de editado: zoom em cada clique, cursor suave e um fundo bonito. Grátis, sem conta.",
+      "tabsOnly": "O Kamo grava abas do navegador. Para gravar a tela inteira ou outros apps, baixe o app para desktop.",
+      "pinTitle": "Fixe o Kamo na barra de ferramentas",
+      "pinSteps": "Clique na peça de quebra-cabeça ao lado da barra de endereço e depois no alfinete ao lado do Kamo.",
+      "stepsTitle": "Como funciona",
+      "step1": "Abra a aba que você quer gravar.",
+      "step2": "Clique no Kamo na barra de ferramentas e aperte Gravar.",
+      "step3": "Pare: o editor abre com os zooms prontos. Exporte, e o vídeo vai para os seus downloads.",
+      "micTitle": "Quer sua voz também?",
+      "micBody": "Libere o microfone uma vez aqui e ligue no popup do Kamo sempre que quiser narrar.",
+      "micAllow": "Usar microfone",
+      "micGranted": "Microfone liberado.",
+      "micDenied": "O Chrome bloqueou o microfone. Você pode liberar depois nas configurações de site do Chrome para o Kamo.",
+      "sitesTitle": "Continuar capturando cliques em outros sites",
+      "sitesBody": "O Kamo só enxerga a aba que você grava. Se essa página for para outro site durante a gravação, o Chrome precisa do seu ok para o Kamo continuar capturando os cliques lá. Opcional: o vídeo grava de qualquer jeito.",
+      "sitesAllow": "Permitir",
+      "sitesGranted": "Permitido. Você pode revogar quando quiser nas configurações de extensões do Chrome.",
+      "privacy": "Suas gravações ficam neste navegador. Nada sai dele a menos que você envie."
     }
   },
   "menu": {

@@ -22,6 +22,7 @@ import type {
   RecorderCommand,
 } from '../shared/audio.ts'
 import type { CameraAccess, CameraCommand } from '../shared/camera.ts'
+import type { CaptureRect, WindowInfo } from '../shared/capture.ts'
 
 /** Subscribes to one fixed channel; the renderer never receives the IPC event object. */
 function subscribe<T>(channel: string, listener: (value: T) => void): () => void {
@@ -38,7 +39,17 @@ const api: KamoApi = {
   listDisplays: () => invoke(IpcChannel.listDisplays) as Promise<DisplayInfo[]>,
   onDisplaysChanged: (listener) => subscribe(IpcChannel.displaysChanged, () => listener()),
   getScreenAccess: () => invoke(IpcChannel.getScreenAccess) as Promise<ScreenAccess>,
-  startRecording: (displayId) => invoke(IpcChannel.startRecording, displayId) as Promise<void>,
+  startRecording: (target) => invoke(IpcChannel.startRecording, target) as Promise<void>,
+  listWindows: () => invoke(IpcChannel.listWindows) as Promise<WindowInfo[]>,
+  pickRegion: (displayId) =>
+    invoke(IpcChannel.pickRegion, displayId) as Promise<CaptureRect | null>,
+  getRegionPicker: () =>
+    invoke(IpcChannel.getRegionPicker) as Promise<{
+      width: number
+      height: number
+      scaleFactor: number
+    } | null>,
+  finishRegionPicker: (rect) => invoke(IpcChannel.finishRegionPicker, rect) as Promise<void>,
   cancelCountdown: () => invoke(IpcChannel.cancelCountdown) as Promise<void>,
   countdownDone: () => invoke(IpcChannel.countdownDone) as Promise<void>,
   pauseRecording: () => invoke(IpcChannel.pauseRecording) as Promise<void>,
@@ -117,6 +128,8 @@ const api: KamoApi = {
   copyText: (text) => invoke(IpcChannel.copyText, text),
   openIssue: (diagnostics) => invoke(IpcChannel.openIssue, diagnostics),
   getThirdPartyNotices: () => invoke(IpcChannel.getThirdPartyNotices),
+  getAgentSetup: () => invoke(IpcChannel.getAgentSetup),
+  openAgentDocs: () => invoke(IpcChannel.openAgentDocs),
   getUpdateStatus: () => invoke(IpcChannel.getUpdateStatus),
   checkForUpdates: () => invoke(IpcChannel.checkForUpdates),
   restartToUpdate: () => invoke(IpcChannel.restartToUpdate),

@@ -113,9 +113,13 @@ APPLE_APP_SPECIFIC_PASSWORD=
 APPLE_TEAM_ID=
 CSC_LINK=
 CSC_KEY_PASSWORD=
-GH_TOKEN=
+WIN_CSC_LINK=           # optional; Windows is unsigned in v0.1
+WIN_CSC_KEY_PASSWORD=
+NPM_TOKEN=
+GH_TOKEN=               # GITHUB_TOKEN in Actions
 
-# extension publishing (CI)
+# extension publishing (CI, Chrome Web Store API v2)
+CWS_PUBLISHER_ID=
 CWS_EXTENSION_ID=
 CWS_CLIENT_ID=
 CWS_CLIENT_SECRET=

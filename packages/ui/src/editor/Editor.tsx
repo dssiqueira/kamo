@@ -567,6 +567,8 @@ export function Editor({
                   transcription,
                   onCaptions: (patch) => edit((p) => setCaptions(p, patch)),
                   onTranscribeAgain: transcribeAgain,
+                  video,
+                  timeMs: playback.timeMs,
                 }
               : undefined
           }

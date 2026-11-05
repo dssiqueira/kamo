@@ -39,7 +39,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 
 ### 2. Home
 - **Hierarchy:** displays (live thumbnail) → toggles → Record button → recent projects
-- **What to record:** full screen (v0.1); window or region (v0.4)
+- **What to record:** full screen (v0.1); window or region (v0.4, A-08): a Screen · Window · Region switch. Window: open windows with thumbnails and a search box. Region: pick the display, then "Select the area" covers it with an overlay where the user drags a rectangle (at least 320×240; Esc cancels). The choice is remembered and the Record button says what it records ("Record · Notes", "Record · Area 1280 × 720")
 - **Toggles:** microphone, computer sound, webcam (v0.4), show cursor
 - **States:**
   - empty (no projects): only the recording block, with an encouraging line

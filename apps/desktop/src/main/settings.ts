@@ -15,6 +15,18 @@ export const SETTINGS_VERSION = 1
 export const SETTINGS_FILE = 'settings.json'
 
 const DisplayId = z.string().min(1).max(256)
+// A-08: what Home records (display, window or region), the last region and the last window.
+const CaptureKind = z.enum(['display', 'window', 'region'])
+const LastRegion = z.strictObject({
+  displayId: DisplayId,
+  rect: z.strictObject({
+    x: z.number().finite(),
+    y: z.number().finite(),
+    width: z.number().finite().positive(),
+    height: z.number().finite().positive(),
+  }),
+})
+const WindowId = z.string().regex(/^[0-9]{1,20}$/)
 // F-15. Light is the default (DESIGN.md), so a missing theme means light.
 const Theme = z.enum(['light', 'dark', 'system'])
 // 'system' follows the OS language (D-021); a locale pins the UI language.
@@ -36,6 +48,9 @@ const HomePlaylistId = z.union([z.literal(''), z.uuid()])
 // `.catch(undefined)`: one broken field never resets the others.
 const StoredSettings = z.looseObject({
   lastDisplayId: DisplayId.optional().catch(undefined),
+  lastCaptureKind: CaptureKind.optional().catch(undefined),
+  lastRegion: LastRegion.optional().catch(undefined),
+  lastWindowId: WindowId.optional().catch(undefined),
   lastStyle: Style.optional().catch(undefined),
   lastCursor: CursorSettings.optional().catch(undefined),
   theme: Theme.optional().catch(undefined),
@@ -67,6 +82,9 @@ const StoredSettings = z.looseObject({
  */
 export const SettingsUpdateSchema = z.strictObject({
   lastDisplayId: DisplayId.optional(),
+  lastCaptureKind: CaptureKind.optional(),
+  lastRegion: LastRegion.optional(),
+  lastWindowId: WindowId.optional(),
   lastStyle: Style.optional(),
   lastCursor: CursorSettings.optional(),
   theme: Theme.optional(),
@@ -152,6 +170,9 @@ export function mergeSettings(
 
 const PUBLIC_KEYS = [
   'lastDisplayId',
+  'lastCaptureKind',
+  'lastRegion',
+  'lastWindowId',
   'lastStyle',
   'lastCursor',
   'theme',

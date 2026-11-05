@@ -66,6 +66,22 @@
   },
   "home": {
     "displays": "Screen to record",
+    "capture": {
+      "title": "What to record",
+      "screen": "Screen",
+      "window": "Window",
+      "region": "Region",
+      "searchWindows": "Search windows",
+      "loadingWindows": "Looking for open windows…",
+      "noWindows": "No window to record. Open the app you want to record and it shows up here.",
+      "noMatch": "No window matches “{query}”.",
+      "pickRegion": "Select the area",
+      "pickAgain": "Select again",
+      "noRegion": "Drag a rectangle on the screen to record only that part.",
+      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} on {display}",
+      "regionHint": "Drag to select the part of the screen to record. Esc cancels.",
+      "regionTooSmall": "Too small: drag at least {width, number, ::group-off} × {height, number, ::group-off}. Esc cancels."
+    },
     "displayName": "Display {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
     "primary": "Main",
@@ -83,7 +99,8 @@
       "micDenied": "Kamo can't use the microphone. Allow it in your system settings; until then, recordings have no voice.",
       "micUnavailable": "No microphone found. Recordings will have no voice.",
       "systemUnavailable": "Kamo can't capture the computer sound right now. Recordings will have no computer sound.",
-      "systemSoon": "Coming soon on Mac."
+      "systemSoon": "Needs macOS 13 or later.",
+      "systemWithVideo": "Recorded with the video. No level meter on Mac."
     },
     "camera": {
       "sectionTitle": "Sound and camera",
@@ -96,7 +113,9 @@
       "unavailable": "No camera found, or another app is using it. Recordings will have no camera."
     },
     "fixPermission": "Set it up",
-    "recordDisplay": "Record · {display}"
+    "recordDisplay": "Record · {display}",
+    "recordWindow": "Record · {window}",
+    "recordRegion": "Record · Area {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc to cancel",
@@ -112,9 +131,11 @@
       "helperMissing": "Recording isn't available in this build yet: the capture helper is missing.",
       "lowDisk": "Less than 1 GB free on this disk. Free up some space and try again.",
       "displayNotFound": "That display isn't connected anymore. Pick another one.",
+      "windowNotFound": "That window was closed or minimized. Pick it again and record.",
       "permissionDenied": "Kamo needs permission to record the screen.",
       "tooShort": "That was less than a second, so nothing was saved.",
       "displayLost": "The display was disconnected. Kamo saved what it recorded.",
+      "windowLost": "The window was closed. Kamo saved what it recorded.",
       "diskFull": "The disk filled up. Kamo saved what it recorded.",
       "failed": "Recording stopped unexpectedly. Kamo will try to recover it next time."
     },
@@ -230,6 +251,16 @@
       "clean": "Clean",
       "bold": "Bold",
       "kamo": "Kamo",
+      "minimal": "Minimal",
+      "soft": "Soft",
+      "neon": "Neon",
+      "typewriter": "Typewriter",
+      "caps": "Caps",
+      "cinema": "Cinema",
+      "marker": "Marker",
+      "classic": "Classic",
+      "duo": "Duo",
+      "sample": "Your words here",
       "position": "Position",
       "bottom": "Bottom",
       "middle": "Middle",
@@ -378,6 +409,19 @@
       "version": "Kamo {version}",
       "license": "Free and open source, under the MIT License.",
       "notices": "Third-party notices"
+    },
+    "agent": {
+      "title": "Connect to an agent",
+      "description": "Let Claude Code or another AI agent talk to your recordings: names, transcripts, clicks, zooms and a screenshot every 5 seconds.",
+      "claudeCode": "Claude Code",
+      "otherClients": "Other MCP clients",
+      "copy": "Copy",
+      "copied": "Copied",
+      "readOnly": "Read-only and local: the server runs on this computer, only reads your projects folder and makes no network calls. What the agent does with the answers is up to the agent.",
+      "node": "Needs Node.js 20 or newer.",
+      "docs": "Instructions for other MCP clients",
+      "devTitle": "Using a development build?",
+      "devHint": "Runs the server built in this repository (pnpm --filter @kamo/mcp build) instead of the npm package."
     }
   },
   "diagnostics": {
@@ -449,7 +493,6 @@
     "frameRate": "Frame rate",
     "fileFormat": "Format",
     "fps": "{fps} fps",
-    "laterNote": "4K, 60 fps and GIF arrive in a coming version, free like everything else.",
     "folder": "Saves to",
     "changeFolder": "Change",
     "pickOne": "Pick at least one format.",
@@ -477,7 +520,8 @@
       "audio_unreadable": "A sound track could not be read, so it was left out.",
       "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound.",
       "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble.",
-      "background_unreadable": "The background image could not be read, so the video uses a plain background."
+      "background_unreadable": "The background image could not be read, so the video uses a plain background.",
+      "settings_fallback": "This computer's video encoder couldn't make the resolution or frame rate you picked, so a lower one was used. The file name says which."
     },
     "closeDialog": {
       "title": "Export in progress",
@@ -492,8 +536,15 @@
       "srt": ".srt file",
       "srtHint": "An .srt file next to each video, timed to the trim.",
       "burnHint": "In the picture, with the style from the Captions panel.",
-      "srtFile": "+ {name}"
-    }
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "A GIF can only have captions burned in."
+    },
+    "needs4kSource": "4K needs a recording larger than 1080p; this one is {size}.",
+    "fps60From30": "This recording is {fps} fps: zooms and the cursor move at 60 fps, while the screen itself still changes {fps} times a second.",
+    "gifHint": "No sound, up to 1280 px wide.",
+    "gifEstimate": "Estimated size: about {size}.",
+    "gifLarge": "Many sites and chat apps refuse GIFs over {limit}: trim the video, pick 10 fps or export an MP4.",
+    "encoderFallback": "This computer's video encoder can't make {wanted}, so Kamo will export {actual}."
   },
   "recovery": {
     "found": "We found an interrupted recording from {date}.",
@@ -523,7 +574,9 @@
       "noRecent": "Your recordings show up here.",
       "projectMeta": "{duration} · {date}",
       "desktopOnly": "Transcription and captions are in the Kamo desktop app.",
-      "getDesktop": "Get the app"
+      "getDesktop": "Get the app",
+      "allProjects": "All projects",
+      "lowSpace": "The browser is almost out of space. Delete old projects before recording."
     },
     "microphone": {
       "title": "Use your microphone",
@@ -548,6 +601,48 @@
     "notices": {
       "micFallback": "The microphone you chose wasn't found, so Kamo used the default one.",
       "cameraFallback": "The camera you chose wasn't found, so Kamo used the default one."
+    },
+    "desktopCard": {
+      "title": "Want captions?",
+      "body": "Transcription and captions run on your computer, in the free Kamo desktop app.",
+      "action": "Get the desktop app",
+      "dismiss": "Hide this tip"
+    },
+    "projects": {
+      "title": "All projects",
+      "notice": "Your projects stay in this browser. Clearing the extension's data deletes them.",
+      "storage": "Projects use {size}",
+      "storageWarning": "Your projects use more than {limit}. Export what you want to keep and delete the rest.",
+      "deleteHint": "Deleting a project in the extension removes it for good."
+    },
+    "editor": {
+      "clicksLost": "Clicks weren't captured after {time}: the tab went to a site Kamo couldn't follow.",
+      "allowSites": "Follow every site next time",
+      "allowedSites": "Done. Next time Kamo keeps capturing clicks on other sites.",
+      "downloadBlocked": "The browser didn't save {name}.",
+      "downloadAgain": "Download again",
+      "dismiss": "Dismiss"
+    },
+    "welcome": {
+      "title": "Hi, I'm Kamo.",
+      "body": "Record any tab and get a video that looks edited: a zoom on every click, a smooth cursor and a nice background. Free, no account.",
+      "tabsOnly": "Kamo records browser tabs. To record the whole screen or other apps, get the desktop app.",
+      "pinTitle": "Pin Kamo to the toolbar",
+      "pinSteps": "Click the puzzle piece next to the address bar, then the pin next to Kamo.",
+      "stepsTitle": "How it works",
+      "step1": "Open the tab you want to record.",
+      "step2": "Click Kamo in the toolbar and hit Record.",
+      "step3": "Stop: the editor opens with the zooms ready. Export, and the video lands in your downloads.",
+      "micTitle": "Want your voice too?",
+      "micBody": "Allow the microphone once here, and turn it on in Kamo's popup whenever you want narration.",
+      "micAllow": "Use microphone",
+      "micGranted": "Microphone allowed.",
+      "micDenied": "Chrome blocked the microphone. You can allow it later in Chrome's site settings for Kamo.",
+      "sitesTitle": "Keep capturing clicks on other sites",
+      "sitesBody": "Kamo only sees the tab you record. If that page moves to another site during a recording, Chrome needs your OK for Kamo to keep capturing clicks there. Optional: the video records either way.",
+      "sitesAllow": "Allow",
+      "sitesGranted": "Allowed. You can take it back anytime in Chrome's extension settings.",
+      "privacy": "Your recordings stay in this browser. Nothing leaves it unless you send it."
     }
   },
   "menu": {

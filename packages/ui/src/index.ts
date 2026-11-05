@@ -10,6 +10,9 @@ export { MAX_PLAYLIST_NAME_LENGTH } from './home/Playlists.tsx'
 export type { PlaylistData, PlaylistsProps } from './home/Playlists.tsx'
 export { pickDisplay } from './home/pickDisplay.ts'
 export type { DisplayOption } from './home/pickDisplay.ts'
+export { filterWindows, pickWindow } from './home/captureSource.ts'
+export type { CaptureKind, RegionOption, WindowOption } from './home/captureSource.ts'
+export type { CaptureSourceProps } from './home/CaptureSource.tsx'
 export { InterruptedRecordings } from './home/InterruptedRecordings.tsx'
 export type {
   InterruptedRecordingData,
@@ -28,6 +31,8 @@ export type {
 export { levelFromRms, rmsOf, smoothLevel, METER_FLOOR_DB } from './home/audioLevel.ts'
 export { Countdown } from './recording/Countdown.tsx'
 export type { CountdownProps } from './recording/Countdown.tsx'
+export { RegionOverlay } from './recording/RegionOverlay.tsx'
+export type { RegionOverlayProps } from './recording/RegionOverlay.tsx'
 export { RecordingBar } from './recording/RecordingBar.tsx'
 export type { RecordingBarProps, RecordingClock } from './recording/RecordingBar.tsx'
 export { useSpring } from './motion/useSpring.ts'
@@ -70,6 +75,15 @@ export type {
   PopupTab,
 } from './extension/ExtensionPopup.tsx'
 export { DevicePermission } from './extension/DevicePermission.tsx'
+export { DesktopAppCard, DesktopAppProvider } from './extension/DesktopAppCard.tsx'
+export type { DesktopAppCardProps } from './extension/DesktopAppCard.tsx'
+// Extension pages (E-03, E-05): All projects, the welcome tab, notices over the editor.
+export { ExtensionProjects } from './extension/ExtensionProjects.tsx'
+export type { ExtensionProjectsProps } from './extension/ExtensionProjects.tsx'
+export { ExtensionWelcome } from './extension/ExtensionWelcome.tsx'
+export type { ExtensionWelcomeProps, WelcomeAskStatus } from './extension/ExtensionWelcome.tsx'
+export { FloatingNotices } from './extension/FloatingNotice.tsx'
+export type { FloatingNoticeItem, FloatingNoticesProps } from './extension/FloatingNotice.tsx'
 export type {
   DevicePermissionProps,
   PermissionDevice,

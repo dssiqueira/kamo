@@ -243,14 +243,15 @@ On the `kamo` side: nothing beyond keeping the contract and `@kamo/i18n` publish
 - Tests: no writes, no network (block `net`/`fetch` in the test), 500 recordings in < 1s, `get_frame` < 500ms, package < 5MB
 - `@kamo/mcp` publishing; test with MCP Inspector
 
-### Step 26 — "Connect to an agent" panel (not started; `@kamo/mcp` already prints the command in its help)
+### Step 26 — "Connect to an agent" panel ✅ (2026-11-04)
+> Done: Settings → Connect to an agent (`packages/ui/src/settings/AgentSection.tsx`, commands built in `agent.ts`): the `claude mcp add` command and the `mcpServers` JSON with the projects folder as `--dir` (through `cmd /c` on Windows), Copy buttons, what the agent reads, a link to `apps/mcp/README.md`; unpackaged builds add a development command running `apps/mcp/dist/cli.js`. Checked in the Electron build. Pending: the npx command needs `@kamo/mcp` on npm (step 25); the cloud MCP option comes with step 32.
 - Ready-made command with the current folder, Copy button, instructions for other clients
 
 ### Steps 27–30 — Advanced (A-01, A-02, A-03, A-04, A-08)
-- 27 (not started; the Formats sheet shows 4K and 60fps as coming soon, never locked): 60fps recording on Home + 4K/60 export when the source allows
-- 28 ⏳ (2026-11-04: 9:16 in progress; GIF not started): 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
+- 27 ⏳ (2026-11-04: export done — 1080p/4K and 30/60fps in the Formats sheet, AVC level per size and rate, encoder probe with fallback 4K60 → 4K30 → 1080p and a notice, 4K only for recordings above 1080p; checked with real 4K30 and 1080p60 exports. The 60fps recording option on Home is not built): 60fps recording on Home + 4K/60 export when the source allows
+- 28 ✅ (2026-11-04: 9:16 done; GIF done — 10/15fps, ≤ 1280px, estimated size and a warning over 10 MB, captions burned in with their colors kept in every palette, `gifenc` in a worker; checked with real GIFs in 16:9, 1:1 and 9:16): 9:16 following camera and cursor; GIF ≤ 15fps and ≤ 1280px with estimated size
 - 29 ✅ (2026-11-04, built ahead of order: 48517e3, e1c5319, cf42d40, 57f94d0, 0c38467, 7d0fa3c): webcam in a separate file, bubble (4 corners, 3 sizes), shrinks on zoom, hidden per segment; camera requested only here. Also square, 16:9 and 9:16 shapes and free drag. Not yet tried by the user in a full real flow on a Mac
-- 30 ⏳ (2026-11-04: wallpaper with own image done on desktop, A-04; window and region not started): wallpaper with own image copied into the project; record a window and a region (`source.kind`)
+- 30 ⏳ (2026-11-04: wallpaper with own image done on desktop, A-04; window and region done on Windows, Mac written and untested): wallpaper with own image copied into the project; record a window and a region (`source.kind`). Done: helper protocol `listWindows`/`windows`, `start.windowId` / `start.region`, `window_not_found` / `window_lost` (PROTOCOL.md); Rust helper (WGC for an HWND, fitted into the video when resized; region as a GPU crop of the monitor; mouse mapped to the window or region, clicks outside dropped); Swift helper (desktop-independent window filter, `sourceRect`); Home's Screen · Window · Region switch, window list with thumbnails (desktopCapturer) and search, region overlay (Esc cancels), choice remembered, Record button names it. Verified on Windows 11 with short real window and region recordings (move, resize, close, clicks inside and outside). Pending: a real Mac test; on Mac, a window covering the recorded one is not treated as outside. Also in this step, D-024's Mac computer sound in the Swift helper (ScreenCaptureKit audio → `system.m4a`), untested on a Mac
 
 ---
 

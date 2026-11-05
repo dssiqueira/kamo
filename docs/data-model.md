@@ -40,7 +40,7 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | name | string | default: i18n key `project.defaultName` ("Recording {date}"), with the date formatted by `Intl` in the UI language |
 | createdAt | ISO date | |
 | durationMs | number | |
-| source | `{ kind: display \| window \| region \| tab, displayId?, windowTitle?, rect?: { x, y, width, height }, width, height, scaleFactor, fps }` | from the capture; `tab` = recorded by the extension; `window` and `region` from v0.4 (A-08) |
+| source | `{ kind: display \| window \| region \| tab, displayId?, windowTitle?, rect?: { x, y, width, height }, width, height, scaleFactor, fps }` | from the capture; `tab` = recorded by the extension; `window` and `region` from v0.4 (A-08): `window` keeps the window's title (`windowTitle`, ≤ 200 chars) and `displayId` of the display it was on; `region` keeps `rect`, the part of `displayId` recorded, in DIP (points on Mac) from the display's top left. `width`/`height` are always the video's |
 | style | Style | |
 | zooms | Zoom[] | sorted by startMs, no overlap |
 | cursor | CursorSettings | |
@@ -53,8 +53,9 @@ The `core` reads and writes projects only through the `ProjectStore` interface. 
 | cloud | CloudLink[] | videos from this project uploaded to the cloud; empty if never uploaded |
 | trim | `{ startMs, endMs }` | trim of the start and end (F-16); does not alter the raw video |
 | audio | `{ mic: { enabled, volume, offsetMs? }, system: { enabled, volume, offsetMs? } }` | recorded tracks and the volume of each in the export. `enabled` is true when the track's file exists. `offsetMs` (optional, missing = 0, so older version 1 files stay valid): where the track's first sample sits on the video timeline; negative when the audio started before the first video frame (export skips its first `-offsetMs`), positive when it started later (export adds silence first). Measured at recording time from the MediaRecorder `start` of each track and the helper's `started` (D-024). Pauses stop audio and video together, so one offset covers the whole take. A microphone unplugged mid-recording leaves silence in the file from that point on. If AAC/MP4 recording is ever unavailable, the desktop falls back to Opus in `audio.webm` / `system.webm` |
-| exports | `{ aspect, resolution, fps, format, path, createdAt }[]` | history of local exports (used by the MCP and by "Show in folder") |
+| exports | `{ aspect, resolution, fps, format, path, createdAt }[]` | history of local exports (used by the MCP and by "Show in folder"); `resolution`/`fps` are what the file really has (after an encoder fallback, A-01); a GIF is `720p` at 10 or 15 |
 | pendingUpload | `{ uploadId, aspect, partsDone: number[], totalParts, startedAt } \| null` | state of the in-progress multipart upload, to resume after closing the app (C-02) |
+| eventsLostAtMs | number (optional) | extension only (E-02): the recorded tab went to a site the extension could not follow (no optional host permission), so events.jsonl has no mouse events after this time of the video; the editor says "clicks not captured after X:XX". Absent = every click was captured |
 | version | number | schema version, for migration |
 
 ### Playlists (playlists.json)
@@ -110,11 +111,11 @@ Lines are parsed tolerantly: an invalid or truncated line (crash mid-recording) 
 | Field | Type | Rule |
 |---|---|---|
 | enabled | boolean | shown in the preview, and burned in by default on export |
-| preset | `clean` \| `bold` \| `kamo` | clean: white on a soft dark pill; bold: bigger white letters with a dark outline, no box; kamo: very dark green on sage |
+| preset | `clean` \| `bold` \| `kamo` \| `minimal` \| `soft` \| `neon` \| `typewriter` \| `caps` \| `cinema` \| `marker` \| `classic` \| `duo` | the style gallery (`CAPTION_LOOKS` in `core/render/captions.ts`, data drawn by one renderer). clean: white on a soft dark pill; bold: bigger white letters with a dark outline, no box; kamo: very dark green on sage; minimal: lighter white letters with a close shadow; soft: white on a wide dark halo; neon: mint letters glowing on a dark sign; typewriter: JetBrains Mono ink on a cream card; caps: spaced capitals on a dark tag per line; cinema: Instrument Serif on a translucent band across the frame; marker: dark ink on a butter highlighter band per line; classic: yellow letters with a thin dark outline; duo: dark green on a white tag per line over a sage offset. The first three paint exactly as before the gallery |
 | position | `bottom` \| `middle` | inside the screen frame (the video in 16:9, the crop in 1:1 and 9:16, the screen card in the 9:16 split, never over the camera card); 9:16 keeps the bottom 13% free |
-| size | `small` \| `medium` \| `large` | font size as a share of the output's short side (1080p: 39, 48, 59px; bold ×1.22) |
+| size | `small` \| `medium` \| `large` | font size as a share of the output's short side (1080p: 39, 48, 59px), times the preset's scale (bold ×1.22, cinema ×1.2, caps ×0.86…) |
 
-Cues are computed, never stored: each segment is wrapped into at most 2 lines (a Latin letter counts 1, a CJK character 2; Chinese and Japanese break between characters, never before closing punctuation or after opening punctuation) and split into several cues when longer, each starting on its first word's time (`segments[].words`). Font: Inter, then the system CJK stack of the transcript's language.
+Cues are computed, never stored: each segment is wrapped into at most 2 lines (a Latin letter counts 1, a CJK character 2; Chinese and Japanese break between characters, never before closing punctuation or after opening punctuation) and split into several cues when longer, each starting on its first word's time (`segments[].words`). The lines depend on the format and the size, not on the style (only bold breaks for its 1.22× size, as before the gallery): a style whose line comes out wider than the frame (capitals, letter spacing, a bigger font) shrinks the font instead of rewrapping. Font: the preset's bundled family (Inter; Instrument Serif for cinema; JetBrains Mono for typewriter), then the system CJK stack of the transcript's language.
 
 ### CursorSettings
 | Field | Type | Rule |
@@ -131,8 +132,8 @@ Cues are computed, never stored: each segment is wrapped into at most 2 lines (a
 |---|---|---|
 | projectId | string | |
 | aspects | (`16:9` \| `1:1` \| `9:16`)[] | `9:16` from v0.4 |
-| resolution | `1080p` \| `4k` | `4k` from v0.4 |
-| fps | 30 \| 60 | 60 from v0.4 |
+| resolution | `1080p` \| `4k` | `4k` from v0.4, only for recordings above 1080p; MP4 only (a GIF is `720p`: 1280×720, 720×720 or 720×1280) |
+| fps | 30 \| 60 (MP4) · 10 \| 15 (GIF) | 60 from v0.4; when the encoder cannot make the asked resolution and rate, falls back to 4K30, then 1080p, then 1080p30 |
 | format | `mp4` \| `gif` | `gif` from v0.4 |
 | uploadToCloud | boolean | if checked, uploads to Kamo Cloud when finished (requires login) |
 | captions | `none` \| `burn` \| `srt` | captions burned into the video, an `.srt` file alongside, or nothing; only with a transcript that has speech (A-06). The `.srt` (UTF-8 SubRip) takes the MP4's final name (`Demo 16x9 1080p30 (2).srt`), is wrapped like that format's burned-in captions and is timed from the trim start |

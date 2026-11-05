@@ -24,6 +24,7 @@ import type {
   StoredSettingsUpdate,
 } from '../shared/api.ts'
 import { IpcChannel } from '../shared/api.ts'
+import { findDevMcpServer, MCP_DOCS_URL } from './agent-setup.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import { isBusy, registerBusyCheck } from './busy.ts'
 import { closeToTrayDefault } from './close-to-tray.ts'
@@ -315,6 +316,13 @@ export function registerPreferences(deps: PreferencesDeps): Preferences {
     const url = buildIssueUrl(text)
     if (!isIssueUrl(url)) throw new PreferenceError('invalid_argument')
     await shell.openExternal(url)
+  })
+  // Connect to an agent (M-01): a fixed docs URL, never one from the renderer.
+  handle(IpcChannel.getAgentSetup, () => ({
+    devServerPath: findDevMcpServer(app.getAppPath(), app.isPackaged),
+  }))
+  handle(IpcChannel.openAgentDocs, async () => {
+    await shell.openExternal(MCP_DOCS_URL)
   })
   handle(IpcChannel.getThirdPartyNotices, async () => {
     try {

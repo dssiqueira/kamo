@@ -92,6 +92,8 @@ export default defineConfig({
           onboarding: resolve(import.meta.dirname, 'src/renderer/onboarding.html'),
           // Hidden window that decodes a voice track for local transcription (A-05).
           'transcribe-audio': resolve(import.meta.dirname, 'src/renderer/transcribe-audio.html'),
+          // Overlay where the user drags the region to record (A-08).
+          'region-picker': resolve(import.meta.dirname, 'src/renderer/region-picker.html'),
         },
       },
     },

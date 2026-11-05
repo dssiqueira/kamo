@@ -26,7 +26,7 @@ import {
 } from '@kamo/core'
 import { createI18n, formatProjectDate } from '@kamo/i18n'
 import { createHelperBackend } from './capture/backend.ts'
-import { resolveHelperPath } from './capture/helper-path.ts'
+import { captureHelperPath, registerCapture, windowTitle } from './capture-ipc.ts'
 import { IPC_ERROR_PREFIX, IpcChannel, type AppSettings } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 import { MEDIA_SCHEME, serveMedia } from './media.ts'
@@ -45,7 +45,12 @@ import {
   uiLocale,
   windowBackground,
 } from './preferences.ts'
-import { installAudioPermissions, recordingAudio, setupAudio } from './audio/index.ts'
+import {
+  AUDIO_SUPPORT,
+  installAudioPermissions,
+  recordingAudio,
+  setupAudio,
+} from './audio/index.ts'
 import { runAudioSelfTest } from './audio/self-test.ts'
 import { recordingCamera, setupCamera } from './camera/index.ts'
 import { RecordingController, type RecordingBackend } from './recording-controller.ts'
@@ -453,13 +458,10 @@ app.on('web-contents-created', (_event, contents) => {
 handle(IpcChannel.getLocale, () => [...app.getPreferredSystemLanguages(), app.getLocale()])
 handle(IpcChannel.listDisplays, () => listDisplays())
 handle(IpcChannel.getScreenAccess, () => getScreenAccess())
-handle(IpcChannel.startRecording, (displayId) => {
-  if (typeof displayId !== 'string') throw new Error('displayId must be a string')
-  recording.start(displayId)
-  // F-01: the chosen display is remembered for the next recording.
-  void getServices()
-    .settings.update({ lastDisplayId: displayId })
-    .catch((error: unknown) => getServices().log.warn('settings.save.failed', { error }))
+// F-01, A-08: record a display, a window or a region; the choice is remembered.
+registerCapture(handle, {
+  start: (target) => recording.start(target),
+  mainWindow: () => mainWindow,
 })
 
 // Projects (F-12). Ids and data come from the renderer: the store and the schema check them.
@@ -717,12 +719,11 @@ async function createBackend(): Promise<RecordingBackend> {
       }
     },
     projectName: (date) => i18n.t('project.defaultName', { date }),
-    helperPath: () =>
-      resolveHelperPath({
-        packaged: app.isPackaged,
-        resourcesPath: process.resourcesPath,
-        appPath: app.getAppPath(),
-      }),
+    helperPath: captureHelperPath,
+    // D-024: on Mac the helper records the computer sound (ScreenCaptureKit), when it is on.
+    systemAudio: async () =>
+      AUDIO_SUPPORT.systemInHelper === true && (await settings.get()).systemAudioEnabled === true,
+    windowTitle,
   })
 }
 

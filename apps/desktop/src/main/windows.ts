@@ -14,6 +14,7 @@ export type Page =
   | 'settings'
   | 'onboarding'
   | 'transcribe-audio'
+  | 'region-picker'
 const PAGES: readonly Page[] = [
   'index',
   'countdown',
@@ -24,6 +25,7 @@ const PAGES: readonly Page[] = [
   'settings',
   'onboarding',
   'transcribe-audio',
+  'region-picker',
 ]
 
 const devServerUrl = app.isPackaged ? undefined : process.env['ELECTRON_RENDERER_URL']

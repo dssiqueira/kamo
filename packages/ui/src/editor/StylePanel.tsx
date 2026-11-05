@@ -16,7 +16,11 @@ import { useT } from '../i18n.tsx'
 import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
 import { PlusIcon } from '../timeline/icons.tsx'
 import type { BackgroundImageErrorCode } from './background-image.ts'
-import { CaptionsSection, type CaptionsSectionProps } from './CaptionsSection.tsx'
+import {
+  CaptionsElsewhere,
+  CaptionsSection,
+  type CaptionsSectionProps,
+} from './CaptionsSection.tsx'
 
 export interface StylePanelProps {
   style: Style
@@ -201,7 +205,7 @@ export function StylePanel(props: StylePanelProps) {
           onSplitLayout={props.onSplitLayout}
         />
       )}
-      {props.captions && <CaptionsSection {...props.captions} />}
+      {props.captions ? <CaptionsSection {...props.captions} /> : <CaptionsElsewhere />}
     </aside>
   )
 }

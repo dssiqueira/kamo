@@ -107,7 +107,7 @@
 
 **Acceptance criteria**
 - [x] Shows a level meter for each source on the Home before recording
-- [ ] Computer sound: ScreenCaptureKit on Mac (macOS 13+), WASAPI loopback on Windows — Windows done (Chromium loopback through `getDisplayMedia`, D-024); Mac waits for the Swift helper (`capturesAudio` is still off)
+- [ ] Computer sound: ScreenCaptureKit on Mac (macOS 13+), WASAPI loopback on Windows — Windows done (Chromium loopback through `getDisplayMedia`, D-024); Mac written in the Swift helper (`capturesAudio`, AAC `system.m4a` on the video clock, offset in `stopped`) and builds in CI, not tried on a Mac yet; no level meter on Mac (Home says so)
 - [x] Kamo plays no sound of its own during recording, so computer sound never captures the app (Windows loopback records the whole system, including Kamo; excluding only its own process would require a native module and Windows 10 2004+, which is not worth it)
 - [ ] Offset between audio and video: at most 40ms in the exported video — offsets are recorded per track (`offsetMs`), not measured yet
 - [x] Lets the user choose the microphone when there is more than one
@@ -469,12 +469,14 @@
 ---
 
 ## A-01 — 4K and 60fps export
-- [ ] 4K only appears if the original recording has enough resolution; otherwise, the option is disabled with an explanation
-- [ ] 60fps requires recording at 60fps: the 60fps recording option appears on the Home
+> Export side built and checked on 2026-11-04 (Windows): real exports of an 18s recording at 4K30 (3840×2160, `avc1.640033`, 30.00fps, 12.5s to export) and 1080p60 in 16:9 and 9:16 (`avc1.64002a`, 60.00fps, with their `.srt`).
+- [x] 4K only appears if the original recording has enough resolution; otherwise, the option is disabled with an explanation — "enough" = a side 25% past 1080p (longest > 2400px or shortest > 1350px: ultrawide 2560×1080, 1440p, Retina, 4K); the hint says the recording's size
+- [x] The H.264 level follows the size and rate (4.0 for 1080p30, 4.2 for 1080p60, 5.1 for 4K30, 5.2 for 4K60) and the encoder is asked first (`VideoEncoder.isConfigSupported`, hardware then software); when it refuses, the sheet says so before exporting and the file falls back to 4K30, then 1080p at the asked rate, then 1080p30, with a notice at the end and the real setting in the file name
+- [ ] 60fps requires recording at 60fps: the 60fps recording option appears on the Home — the export offers 60fps for any recording: camera, cursor and captions are computed for every 60fps frame, a 30fps recording's frames repeat (nothing interpolated) and the sheet explains it. The 60fps recording option on Home is not built
 
 ## A-02 — Vertical 9:16 crop and GIF
 - [x] 9:16 with framing that follows the virtual camera and the cursor (the important content never leaves the frame)
-- [ ] GIF at up to 15fps and up to 1280px wide, with an estimated file size warning before exporting
+- [x] GIF at up to 15fps and up to 1280px wide, with an estimated file size warning before exporting — 10 or 15fps, 1280×720 / 720×720 / 720×1280 (`Demo 16x9 720p15.gif`), looping, no sound; same scene and renderer as the MP4 (webcam, background, captions burned in, with every color the caption style paints kept in each palette); palette quantization + LZW with `gifenc` in a worker, only changed pixels per frame; estimated size under the options, in warning color over 10 MB. Checked with real exports of an 18s recording in the three formats (decoded by Chromium: 275 frames, 18.33s, captions legible); the estimate came within about ±40% per file (it is an order of magnitude: screen content varies)
 
 ## A-03 — Webcam bubble
 > Built on 2026-11-04, ahead of the step order; not yet tried by the user in a full real flow on a Mac. Beyond the criteria: square, 16:9 and 9:16 shapes and free drag in the preview.
@@ -489,11 +491,11 @@
 - [x] Automatic crop to cover the frame in any format (16:9, 1:1, 9:16), the same in the preview, the format previews and the export
 
 ## A-08 — Record a window or a region
-- [ ] On the Home, besides "Full screen": **Window** (list of open windows, with thumbnail) and **Region** (drag a rectangle)
-- [ ] Window: ScreenCaptureKit on Mac, Windows Graphics Capture on Windows; if the window changes size or position, the recording follows
-- [ ] Region: display crop, with a minimum size of 320×240
-- [ ] Clicks outside the window or region do not generate a zoom
-- [ ] Event coordinates stay in recorded-video pixels (`core` does not need to know whether it was screen, window or region)
+- [x] On the Home, besides "Full screen": **Window** (list of open windows, with thumbnail) and **Region** (drag a rectangle) — Screen · Window · Region switch, window list with thumbnails and search, Region overlay on the chosen display (Esc cancels); the choice is remembered and the Record button names it _(Mac untested)_
+- [x] Window: ScreenCaptureKit on Mac, Windows Graphics Capture on Windows; if the window changes size or position, the recording follows — verified on Windows (moved and resized mid-recording: the video keeps its size, the window is scaled in centered; closing it stops and saves with a notice); Mac code builds in CI, untested
+- [x] Region: display crop, with a minimum size of 320×240 _(Mac untested)_
+- [x] Clicks outside the window or region do not generate a zoom — no `down` is sent outside (nor over a window covering the recorded one, on Windows); moves there are `outside` _(Mac untested; on Mac a window in front is not detected yet)_
+- [x] Event coordinates stay in recorded-video pixels (`core` does not need to know whether it was screen, window or region) _(Mac untested)_
 
 ---
 
@@ -540,7 +542,7 @@
 - [x] Generated from `transcript.json` (A-05), without transcribing again — the same core code draws them in the preview, the format previews and the export (rule 11); a transcription started from the editor turns them on when it finishes
 - [x] Without the transcription package installed, the Captions button explains that the package is needed and offers to download it (with the size) — the side panel says the pack's size and opens the same download offer as Home (checked in the Electron build; the real `packs` release is not published yet)
 - [ ] Captions editable on the timeline (text and timing); the edit also corrects the transcript — a captions lane with one block per segment: double-click or Enter edits the text inline, Delete removes it, dragging moves it or its edges; every edit is undoable with the rest of the editor and saved to `transcript.json` with `edited: true`. Text fixes, undo and redo checked in the Electron build; the timing drags are covered by core tests but not yet tried by hand
-- [x] Style: 3 presets (position at the bottom or middle), in the app font — Clean, Bold and Kamo, bottom or middle, 3 sizes; Inter with the system CJK fonts of the transcript's language; inside the screen frame in every format, above the camera card in the 9:16 split; spring fade in and out; a webcam bubble dragged under them (e.g. bottom middle) pushes them clear (above it, or below when shorter), following its size on zoom and its fade
+- [x] Style: 3 presets (position at the bottom or middle), in the app font — a gallery of 12 styles (Clean, Bold, Kamo, Minimal, Soft, Neon, Typewriter, Caps, Cinema, Marker, Classic, Duo), each thumbnail painted by the core renderer over the video at the playhead with the start of the caption there (a sample sentence without speech), a radio group with arrow keys, Home and End; Clean, Bold and Kamo look exactly as before; bottom or middle, 3 sizes; only the bundled fonts (Inter, Instrument Serif, JetBrains Mono) with the system CJK fonts of the transcript's language; switching styles never changes the line breaks, except to and from Bold, which keeps its own as before (a wider style shrinks the font); inside the screen frame in every format, above the camera card in the 9:16 split; spring fade in and out; a webcam bubble dragged under them (e.g. bottom middle) pushes them clear (above it, or below when shorter), following its size on zoom and its fade
 - [x] On export, three options: no captions, captions burned into the video, or an `.srt` file next to the MP4 (timings adjusted to the F-16 trim) — checked with real exports (9:16 burned in, 16:9 with its `.srt`)
 
 ---
@@ -562,8 +564,8 @@
 
 **Acceptance criteria**
 - [ ] Installs and runs with one command, without configuring anything: finds the projects folder by reading the app's `settings.json` (local file, no network), falls back to `~/Kamo` if not found, or receives the path as an argument — folder discovery done (`--dir`, then `settings.json`, then `~/Kamo/projects`, I-1); `@kamo/mcp` is not on npm yet
-- [ ] The command shown in the app panel already includes the current folder path as an argument
-- [ ] In the app, Settings → "Connect to an agent" shows the ready-to-copy command, already with the current folder (`claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`), and instructions for other MCP clients
+- [x] The command shown in the app panel already includes the current folder path as an argument
+- [x] In the app, Settings → "Connect to an agent" shows the ready-to-copy command, already with the current folder (`claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"`), and instructions for other MCP clients — with Copy buttons, the `mcpServers` JSON, what the agent can read (read-only, local, no network), Node 20+ and a link to the README; on Windows both go through `cmd /c npx`. Unpackaged builds also show a "Using a development build?" command that runs `apps/mcp/dist/cli.js` with Node. Checked in the Electron build; the npx command works once `@kamo/mcp` is on npm
 - [x] No tool modifies, deletes or creates files
 - [x] No network calls (verifiable in the code and the tests)
 - [x] `search_recordings` responds in under 1s with 500 recordings

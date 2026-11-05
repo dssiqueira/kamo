@@ -11,6 +11,7 @@ import type {
   RecorderReport,
 } from './audio.ts'
 import type { CameraAccess, CameraCommand, CameraReport, CameraWarning } from './camera.ts'
+import type { CaptureKind, CaptureRect, CaptureTarget, WindowInfo } from './capture.ts'
 import type {
   PackId,
   PacksStatus,
@@ -35,7 +36,19 @@ export interface KamoApi {
   getScreenAccess(): Promise<ScreenAccess>
 
   // Recording (F-01, F-02). Home starts it; the countdown and the floating bar drive it.
-  startRecording(displayId: string): Promise<void>
+  /** A display (or its id), a window or a region (A-08). */
+  startRecording(target: CaptureTarget | string): Promise<void>
+  /** A-08: the windows that can be recorded, front to back, with thumbnails. */
+  listWindows(): Promise<WindowInfo[]>
+  /**
+   * A-08: covers the display with the region overlay; resolves with the rectangle the user
+   * dragged (DIP, display-local, at least 320×240 pixels), or null on Esc. Saved as lastRegion.
+   */
+  pickRegion(displayId: string): Promise<CaptureRect | null>
+  /** Region overlay page only: its display's size and scale. */
+  getRegionPicker(): Promise<{ width: number; height: number; scaleFactor: number } | null>
+  /** Region overlay page only: the rectangle (DIP, page coordinates), or null to cancel. */
+  finishRegionPicker(rect: CaptureRect | null): Promise<void>
   cancelCountdown(): Promise<void>
   countdownDone(): Promise<void>
   pauseRecording(): Promise<void>
@@ -174,6 +187,12 @@ export interface KamoApi {
   /** The THIRD_PARTY_NOTICES bundled with the app. */
   getThirdPartyNotices(): Promise<string>
 
+  // Connect to an agent (M-01, step 26).
+  /** apps/mcp/dist/cli.js in an unpackaged build (to try the MCP before npm); null otherwise. */
+  getAgentSetup(): Promise<{ devServerPath: string | null }>
+  /** Opens the local MCP instructions (apps/mcp/README.md) in the browser. */
+  openAgentDocs(): Promise<void>
+
   // Updates (F-14).
   getUpdateStatus(): Promise<UpdateStatus>
   checkForUpdates(): Promise<UpdateStatus>
@@ -299,6 +318,12 @@ export interface AppSettings {
   version: 1
   /** Display picked last time (F-01). */
   lastDisplayId?: string
+  /** A-08: Screen, Window or Region, as picked last time. Absent: display. */
+  lastCaptureKind?: CaptureKind
+  /** A-08: the region dragged last time, on its display. */
+  lastRegion?: { displayId: string; rect: CaptureRect }
+  /** A-08: the window picked last time (reselected while it is still open). */
+  lastWindowId?: string
   /** Style and cursor used last: defaults for new recordings (F-08). */
   lastStyle?: Style
   lastCursor?: CursorSettings
@@ -422,7 +447,7 @@ export type RecordingStatus =
   | {
       kind: 'saved'
       projectId: string
-      warning?: 'display_lost' | 'disk_full'
+      warning?: 'display_lost' | 'disk_full' | 'window_lost'
       /** The video was saved but some audio is missing or cut short (F-04). */
       audioWarnings?: AudioWarning[]
       /** The video was saved but the camera is missing or cut short (A-03). */
@@ -452,6 +477,10 @@ export const IpcChannel = {
   displaysChanged: 'kamo:displays-changed',
   getScreenAccess: 'kamo:get-screen-access',
   startRecording: 'kamo:recording-start',
+  listWindows: 'kamo:capture-windows',
+  pickRegion: 'kamo:capture-region-pick',
+  getRegionPicker: 'kamo:capture-region-info',
+  finishRegionPicker: 'kamo:capture-region-done',
   cancelCountdown: 'kamo:countdown-cancel',
   countdownDone: 'kamo:countdown-done',
   pauseRecording: 'kamo:recording-pause',
@@ -510,6 +539,8 @@ export const IpcChannel = {
   copyText: 'kamo:clipboard-copy',
   openIssue: 'kamo:diagnostics-open-issue',
   getThirdPartyNotices: 'kamo:third-party-notices',
+  getAgentSetup: 'kamo:agent-setup-get',
+  openAgentDocs: 'kamo:agent-docs-open',
   getUpdateStatus: 'kamo:update-status-get',
   checkForUpdates: 'kamo:update-check',
   restartToUpdate: 'kamo:update-restart',

@@ -66,6 +66,22 @@
   },
   "home": {
     "displays": "録画する画面",
+    "capture": {
+      "title": "録画する対象",
+      "screen": "画面",
+      "window": "ウィンドウ",
+      "region": "範囲",
+      "searchWindows": "ウィンドウを検索",
+      "loadingWindows": "開いているウィンドウを探しています…",
+      "noWindows": "録画できるウィンドウがありません。録画したいアプリを開くと、ここに表示されます。",
+      "noMatch": "「{query}」に一致するウィンドウはありません。",
+      "pickRegion": "範囲を選択",
+      "pickAgain": "選択し直す",
+      "noRegion": "画面上で四角形をドラッグすると、その部分だけを録画します。",
+      "regionSize": "{display} の {width, number, ::group-off} × {height, number, ::group-off}",
+      "regionHint": "ドラッグして録画する範囲を選択します。Esc でキャンセル。",
+      "regionTooSmall": "小さすぎます。{width, number, ::group-off} × {height, number, ::group-off} 以上をドラッグしてください。Esc でキャンセル。"
+    },
     "displayName": "ディスプレイ {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
     "primary": "メイン",
@@ -83,7 +99,8 @@
       "micDenied": "Kamo はマイクを使えません。システム設定で許可してください。それまでは録画に声は入りません。",
       "micUnavailable": "マイクが見つかりません。録画に声は入りません。",
       "systemUnavailable": "Kamo は今パソコンの音を取り込めません。録画にパソコンの音は入りません。",
-      "systemSoon": "Mac には近日対応予定です。"
+      "systemSoon": "macOS 13 以降が必要です。",
+      "systemWithVideo": "動画と一緒に録音されます。Mac ではレベルメーターは表示されません。"
     },
     "camera": {
       "sectionTitle": "サウンドとカメラ",
@@ -96,7 +113,9 @@
       "unavailable": "カメラが見つからないか、別のアプリが使用中です。録画にカメラは含まれません。"
     },
     "fixPermission": "設定する",
-    "recordDisplay": "録画 · {display}"
+    "recordDisplay": "録画 · {display}",
+    "recordWindow": "録画 · {window}",
+    "recordRegion": "録画 · 範囲 {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "Esc でキャンセル",
@@ -112,9 +131,11 @@
       "helperMissing": "このビルドではまだ録画できません：キャプチャヘルパーがありません。",
       "lowDisk": "このディスクの空き容量が 1 GB 未満です。空き容量を確保してからもう一度お試しください。",
       "displayNotFound": "そのディスプレイは接続されていません。別のディスプレイを選んでください。",
+      "windowNotFound": "そのウィンドウは閉じられたか最小化されました。もう一度選んで録画してください。",
       "permissionDenied": "Kamo には画面収録の許可が必要です。",
       "tooShort": "1 秒未満だったため、保存されませんでした。",
       "displayLost": "ディスプレイが切断されました。録画済みの部分は保存されています。",
+      "windowLost": "ウィンドウが閉じられました。録画済みの部分は保存されています。",
       "diskFull": "ディスクがいっぱいになりました。録画済みの部分は保存されています。",
       "failed": "録画が予期せず停止しました。次回起動時に復元を試みます。"
     },
@@ -230,6 +251,16 @@
       "clean": "シンプル",
       "bold": "太字",
       "kamo": "Kamo",
+      "minimal": "ミニマル",
+      "soft": "ソフト",
+      "neon": "ネオン",
+      "typewriter": "タイプライター",
+      "caps": "大文字",
+      "cinema": "シネマ",
+      "marker": "マーカー",
+      "classic": "クラシック",
+      "duo": "デュオ",
+      "sample": "ここに字幕",
       "position": "位置",
       "bottom": "下",
       "middle": "中央",
@@ -378,6 +409,19 @@
       "version": "Kamo {version}",
       "license": "MIT ライセンスの無料オープンソースソフトウェアです。",
       "notices": "サードパーティの通知"
+    },
+    "agent": {
+      "title": "エージェントに接続",
+      "description": "Claude Code などの AI エージェントが録画を参照できるようにします：名前、文字起こし、クリック、ズーム、5 秒ごとのスクリーンショット。",
+      "claudeCode": "Claude Code",
+      "otherClients": "その他の MCP クライアント",
+      "copy": "コピー",
+      "copied": "コピーしました",
+      "readOnly": "読み取り専用でローカル：サーバーはこのコンピューター上で動作し、プロジェクトフォルダーを読み取るだけで、ネットワーク通信は一切行いません。回答をどう使うかはエージェント次第です。",
+      "node": "Node.js 20 以降が必要です。",
+      "docs": "その他の MCP クライアントの設定方法",
+      "devTitle": "開発ビルドを使っていますか？",
+      "devHint": "npm パッケージの代わりに、このリポジトリでビルドしたサーバー（pnpm --filter @kamo/mcp build）を実行します。"
     }
   },
   "diagnostics": {
@@ -449,7 +493,6 @@
     "frameRate": "フレームレート",
     "fileFormat": "ファイル形式",
     "fps": "{fps} fps",
-    "laterNote": "4K、60 fps、GIF は今後のバージョンで追加されます。ほかの機能と同じく無料です。",
     "folder": "保存先",
     "changeFolder": "変更",
     "pickOne": "形式を1つ以上選んでください。",
@@ -477,7 +520,8 @@
       "audio_unreadable": "読み込めない音声トラックがあったため、除外しました。",
       "audio_encoder_unavailable": "このコンピュータは AAC 音声をエンコードできないため、動画に音声はありません。",
       "webcam_unreadable": "Webカメラの録画を読み込めなかったため、動画に Webカメラのバブルはありません。",
-      "background_unreadable": "背景画像を読み込めなかったため、無地の背景で書き出しました。"
+      "background_unreadable": "背景画像を読み込めなかったため、無地の背景で書き出しました。",
+      "settings_fallback": "このコンピューターのビデオエンコーダーは選んだ解像度またはフレームレートを作成できなかったため、低い設定を使いました。ファイル名に実際の設定が入っています。"
     },
     "closeDialog": {
       "title": "書き出し中です",
@@ -492,8 +536,15 @@
       "srt": ".srt ファイル",
       "srtHint": "各動画の横に .srt ファイルを保存します。タイミングはトリムに合わせます。",
       "burnHint": "映像の中に、字幕パネルのスタイルで表示します。",
-      "srtFile": "+ {name}"
-    }
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "GIF では字幕を映像に焼き込む形でのみ使えます。"
+    },
+    "needs4kSource": "4K には 1080p より大きい録画が必要です。この録画は {size} です。",
+    "fps60From30": "この録画は {fps} fps です。ズームとカーソルは 60 fps で動きますが、画面そのものは 1 秒間に {fps} 回しか変わりません。",
+    "gifHint": "音声なし、幅は最大 1280 px です。",
+    "gifEstimate": "推定サイズ：約 {size}",
+    "gifLarge": "多くのサイトやチャットアプリは {limit} を超える GIF を受け付けません。動画をトリミングするか、10 fps を選ぶか、MP4 で書き出してください。",
+    "encoderFallback": "このコンピューターのビデオエンコーダーは {wanted} を作成できないため、{actual} で書き出します。"
   },
   "recovery": {
     "found": "{date} に中断された録画が見つかりました。",
@@ -523,7 +574,9 @@
       "noRecent": "録画はここに表示されます。",
       "projectMeta": "{duration} · {date}",
       "desktopOnly": "文字起こしと字幕は Kamo のデスクトップアプリで使えます。",
-      "getDesktop": "アプリを入手"
+      "getDesktop": "アプリを入手",
+      "allProjects": "すべてのプロジェクト",
+      "lowSpace": "ブラウザの空き容量がほとんどありません。録画の前に古いプロジェクトを削除してください。"
     },
     "microphone": {
       "title": "マイクを使う",
@@ -548,6 +601,48 @@
     "notices": {
       "micFallback": "選んだマイクが見つからなかったため、Kamo はデフォルトのマイクを使いました。",
       "cameraFallback": "選んだカメラが見つからなかったため、Kamo はデフォルトのカメラを使いました。"
+    },
+    "desktopCard": {
+      "title": "字幕を付けたいですか？",
+      "body": "文字起こしと字幕は、無料の Kamo デスクトップアプリであなたのコンピューター上で動きます。",
+      "action": "デスクトップアプリを入手",
+      "dismiss": "このヒントを隠す"
+    },
+    "projects": {
+      "title": "すべてのプロジェクト",
+      "notice": "プロジェクトはこのブラウザに保存されます。拡張機能のデータを消去すると削除されます。",
+      "storage": "プロジェクトの使用量: {size}",
+      "storageWarning": "プロジェクトが {limit} を超えています。残したいものを書き出して、ほかは削除してください。",
+      "deleteHint": "拡張機能でプロジェクトを削除すると、完全に消去されます。"
+    },
+    "editor": {
+      "clicksLost": "{time} 以降のクリックは記録されていません。タブが Kamo の追えないサイトに移動しました。",
+      "allowSites": "次回からすべてのサイトで追う",
+      "allowedSites": "完了しました。次回から Kamo はほかのサイトでもクリックを記録し続けます。",
+      "downloadBlocked": "ブラウザが {name} を保存しませんでした。",
+      "downloadAgain": "もう一度ダウンロード",
+      "dismiss": "閉じる"
+    },
+    "welcome": {
+      "title": "こんにちは、Kamo です。",
+      "body": "どのタブでも録画すると、編集済みのような動画になります。クリックごとのズーム、なめらかなカーソル、きれいな背景。無料、アカウント不要。",
+      "tabsOnly": "Kamo はブラウザのタブを録画します。画面全体やほかのアプリを録画するには、デスクトップアプリを入手してください。",
+      "pinTitle": "Kamo をツールバーに固定",
+      "pinSteps": "アドレスバーの横のパズルのアイコンをクリックし、Kamo の横のピンをクリックします。",
+      "stepsTitle": "使い方",
+      "step1": "録画したいタブを開きます。",
+      "step2": "ツールバーの Kamo をクリックして、録画を押します。",
+      "step3": "停止すると、ズーム済みのエディターが開きます。書き出すと、動画がダウンロードフォルダーに保存されます。",
+      "micTitle": "声も入れますか？",
+      "micBody": "ここでマイクを一度許可しておけば、ナレーションしたいときに Kamo のポップアップでオンにできます。",
+      "micAllow": "マイクを使う",
+      "micGranted": "マイクを許可しました。",
+      "micDenied": "Chrome がマイクをブロックしました。あとで Chrome のサイト設定から Kamo に許可できます。",
+      "sitesTitle": "ほかのサイトでもクリックを記録し続ける",
+      "sitesBody": "Kamo が見えるのは録画中のタブだけです。録画中にそのページが別のサイトに移動した場合、Kamo がそこでもクリックを記録し続けるには Chrome での許可が必要です。任意です。動画はどちらでも録画されます。",
+      "sitesAllow": "許可",
+      "sitesGranted": "許可しました。Chrome の拡張機能の設定からいつでも取り消せます。",
+      "privacy": "録画はこのブラウザに保存されます。あなたが送らない限り、外に出ることはありません。"
     }
   },
   "menu": {

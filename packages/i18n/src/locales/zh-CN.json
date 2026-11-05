@@ -66,6 +66,22 @@
   },
   "home": {
     "displays": "要录制的屏幕",
+    "capture": {
+      "title": "录制内容",
+      "screen": "屏幕",
+      "window": "窗口",
+      "region": "区域",
+      "searchWindows": "搜索窗口",
+      "loadingWindows": "正在查找打开的窗口…",
+      "noWindows": "没有可录制的窗口。打开你要录制的应用，它就会出现在这里。",
+      "noMatch": "没有与“{query}”匹配的窗口。",
+      "pickRegion": "选择区域",
+      "pickAgain": "重新选择",
+      "noRegion": "在屏幕上拖出一个矩形，只录制这一部分。",
+      "regionSize": "{display} 上的 {width, number, ::group-off} × {height, number, ::group-off}",
+      "regionHint": "拖动以选择要录制的屏幕部分。按 Esc 取消。",
+      "regionTooSmall": "太小了：至少拖出 {width, number, ::group-off} × {height, number, ::group-off}。按 Esc 取消。"
+    },
     "displayName": "显示器 {index}",
     "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
     "primary": "主显示器",
@@ -83,7 +99,8 @@
       "micDenied": "Kamo 无法使用麦克风。请在系统设置中允许；在此之前，录制将没有人声。",
       "micUnavailable": "未找到麦克风。录制将没有人声。",
       "systemUnavailable": "Kamo 目前无法捕获电脑声音。录制将不包含电脑声音。",
-      "systemSoon": "Mac 版即将推出。"
+      "systemSoon": "需要 macOS 13 或更高版本。",
+      "systemWithVideo": "与视频一起录制。Mac 上没有音量指示。"
     },
     "camera": {
       "sectionTitle": "声音和摄像头",
@@ -96,7 +113,9 @@
       "unavailable": "未找到摄像头，或其他应用正在使用它。录制内容将不包含摄像头画面。"
     },
     "fixPermission": "去设置",
-    "recordDisplay": "录制 · {display}"
+    "recordDisplay": "录制 · {display}",
+    "recordWindow": "录制 · {window}",
+    "recordRegion": "录制 · 区域 {width, number, ::group-off} × {height, number, ::group-off}"
   },
   "countdown": {
     "cancelHint": "按 Esc 取消",
@@ -112,9 +131,11 @@
       "helperMissing": "此版本暂不支持录制：缺少屏幕捕获助手。",
       "lowDisk": "此磁盘可用空间不足 1 GB。请释放空间后重试。",
       "displayNotFound": "该显示器已断开连接。请选择其他显示器。",
+      "windowNotFound": "该窗口已关闭或最小化。请重新选择后再录制。",
       "permissionDenied": "Kamo 需要屏幕录制权限。",
       "tooShort": "录制不到一秒，因此没有保存。",
       "displayLost": "显示器已断开连接。Kamo 已保存录制的内容。",
+      "windowLost": "窗口已关闭。Kamo 已保存录制的内容。",
       "diskFull": "磁盘已满。Kamo 已保存录制的内容。",
       "failed": "录制意外停止。Kamo 会在下次启动时尝试恢复。"
     },
@@ -230,6 +251,16 @@
       "clean": "简洁",
       "bold": "醒目",
       "kamo": "Kamo",
+      "minimal": "极简",
+      "soft": "柔和",
+      "neon": "霓虹",
+      "typewriter": "打字机",
+      "caps": "大写",
+      "cinema": "电影",
+      "marker": "荧光笔",
+      "classic": "经典",
+      "duo": "双色",
+      "sample": "字幕示例",
       "position": "位置",
       "bottom": "底部",
       "middle": "中间",
@@ -378,6 +409,19 @@
       "version": "Kamo {version}",
       "license": "免费开源，采用 MIT 许可证。",
       "notices": "第三方声明"
+    },
+    "agent": {
+      "title": "连接到智能体",
+      "description": "让 Claude Code 或其他 AI 智能体读取你的录制：名称、转录、点击、缩放，以及每 5 秒一张的屏幕截图。",
+      "claudeCode": "Claude Code",
+      "otherClients": "其他 MCP 客户端",
+      "copy": "复制",
+      "copied": "已复制",
+      "readOnly": "只读且在本地运行：服务器在这台电脑上运行，只读取你的项目文件夹，不进行任何网络连接。智能体如何使用这些回答由智能体决定。",
+      "node": "需要 Node.js 20 或更高版本。",
+      "docs": "其他 MCP 客户端的设置说明",
+      "devTitle": "使用开发版本？",
+      "devHint": "运行在此仓库中构建的服务器（pnpm --filter @kamo/mcp build），而不是 npm 包。"
     }
   },
   "diagnostics": {
@@ -449,7 +493,6 @@
     "frameRate": "帧率",
     "fileFormat": "文件格式",
     "fps": "{fps} fps",
-    "laterNote": "4K、60 fps 和 GIF 将在后续版本推出，和其他功能一样免费。",
     "folder": "保存到",
     "changeFolder": "更改",
     "pickOne": "请至少选择一种格式。",
@@ -477,7 +520,8 @@
       "audio_unreadable": "有一条音轨无法读取，已被略过。",
       "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。",
       "webcam_unreadable": "无法读取摄像头录像，因此视频中没有摄像头气泡。",
-      "background_unreadable": "无法读取背景图片，因此视频使用纯色背景。"
+      "background_unreadable": "无法读取背景图片，因此视频使用纯色背景。",
+      "settings_fallback": "这台电脑的视频编码器无法生成你选择的分辨率或帧率，因此使用了较低的设置。文件名中注明了实际设置。"
     },
     "closeDialog": {
       "title": "正在导出",
@@ -492,8 +536,15 @@
       "srt": ".srt 文件",
       "srtHint": "每个视频旁边一个 .srt 文件，时间与剪辑一致。",
       "burnHint": "显示在画面中，使用字幕面板的样式。",
-      "srtFile": "+ {name}"
-    }
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "GIF 只能使用烧录到画面中的字幕。"
+    },
+    "needs4kSource": "4K 需要大于 1080p 的录制；此录制为 {size}。",
+    "fps60From30": "此录制为 {fps} fps：缩放和光标以 60 fps 运动，但屏幕画面本身仍每秒变化 {fps} 次。",
+    "gifHint": "无声音，宽度最多 1280 像素。",
+    "gifEstimate": "预计大小：约 {size}。",
+    "gifLarge": "许多网站和聊天应用不接受超过 {limit} 的 GIF：请裁剪视频、选择 10 fps 或导出 MP4。",
+    "encoderFallback": "这台电脑的视频编码器无法生成 {wanted}，Kamo 将以 {actual} 导出。"
   },
   "recovery": {
     "found": "发现一段于 {date} 中断的录制。",
@@ -523,7 +574,9 @@
       "noRecent": "你的录制会显示在这里。",
       "projectMeta": "{duration} · {date}",
       "desktopOnly": "转写和字幕功能在 Kamo 桌面应用中提供。",
-      "getDesktop": "下载应用"
+      "getDesktop": "下载应用",
+      "allProjects": "全部项目",
+      "lowSpace": "浏览器的存储空间快用完了。录制前请删除旧项目。"
     },
     "microphone": {
       "title": "使用麦克风",
@@ -548,6 +601,48 @@
     "notices": {
       "micFallback": "未找到你选择的麦克风，Kamo 已改用默认麦克风。",
       "cameraFallback": "未找到你选择的摄像头，Kamo 已改用默认摄像头。"
+    },
+    "desktopCard": {
+      "title": "想要字幕？",
+      "body": "转写和字幕在你的电脑上运行，使用免费的 Kamo 桌面应用。",
+      "action": "下载桌面应用",
+      "dismiss": "隐藏此提示"
+    },
+    "projects": {
+      "title": "全部项目",
+      "notice": "你的项目保存在此浏览器中。清除扩展程序数据会将其删除。",
+      "storage": "项目占用 {size}",
+      "storageWarning": "你的项目已超过 {limit}。请导出想保留的内容，并删除其余项目。",
+      "deleteHint": "在扩展程序中删除项目会将其永久移除。"
+    },
+    "editor": {
+      "clicksLost": "{time} 之后的点击未被捕获：该标签页跳转到了 Kamo 无法跟随的网站。",
+      "allowSites": "下次跟随所有网站",
+      "allowedSites": "完成。下次 Kamo 会在其他网站上继续捕获点击。",
+      "downloadBlocked": "浏览器没有保存 {name}。",
+      "downloadAgain": "重新下载",
+      "dismiss": "关闭"
+    },
+    "welcome": {
+      "title": "你好，我是 Kamo。",
+      "body": "录制任意标签页，得到一段像剪辑过的视频：每次点击自动缩放、平滑的光标和好看的背景。免费，无需账号。",
+      "tabsOnly": "Kamo 录制浏览器标签页。要录制整个屏幕或其他应用，请下载桌面应用。",
+      "pinTitle": "把 Kamo 固定到工具栏",
+      "pinSteps": "点击地址栏旁的拼图图标，然后点击 Kamo 旁边的图钉。",
+      "stepsTitle": "使用方法",
+      "step1": "打开你想录制的标签页。",
+      "step2": "点击工具栏中的 Kamo，然后点击录制。",
+      "step3": "停止后，编辑器会打开并准备好缩放。导出后，视频会保存到你的下载文件夹。",
+      "micTitle": "也想录下你的声音？",
+      "micBody": "在这里允许一次麦克风，之后需要旁白时在 Kamo 弹出窗口中打开即可。",
+      "micAllow": "使用麦克风",
+      "micGranted": "已允许麦克风。",
+      "micDenied": "Chrome 阻止了麦克风。你可以稍后在 Chrome 的网站设置中为 Kamo 允许。",
+      "sitesTitle": "在其他网站上继续捕获点击",
+      "sitesBody": "Kamo 只能看到你录制的标签页。如果录制期间该页面跳转到其他网站，需要你在 Chrome 中同意，Kamo 才能继续在那里捕获点击。可选：无论如何视频都会继续录制。",
+      "sitesAllow": "允许",
+      "sitesGranted": "已允许。你可以随时在 Chrome 的扩展程序设置中撤销。",
+      "privacy": "你的录制内容保存在此浏览器中。除非你主动发送，否则不会离开浏览器。"
     }
   },
   "menu": {

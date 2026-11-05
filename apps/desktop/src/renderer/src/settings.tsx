@@ -14,6 +14,7 @@ function DesktopSettings() {
   const [info, setInfo] = useState<AppInfo | null>(null)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [folders, setFolders] = useState<Folders | null>(null)
+  const [agentDevServer, setAgentDevServer] = useState<string | null>(null)
   const [permissions] = usePermissions()
   const update = useUpdateStatus()
   // A-07: the list of packs loads when the Packs section comes into view.
@@ -23,6 +24,10 @@ function DesktopSettings() {
     void window.kamo.getAppInfo().then(setInfo)
     void window.kamo.getSettings().then(setSettings)
     void window.kamo.getFolders().then(setFolders)
+    void window.kamo
+      .getAgentSetup()
+      .then((setup) => setAgentDevServer(setup.devServerPath))
+      .catch(() => {})
     // Changes from this window or any other (e.g. the theme set elsewhere).
     return window.kamo.onSettingsChanged(setSettings)
   }, [])
@@ -80,6 +85,10 @@ function DesktopSettings() {
       onCopy={(text) => attempt(() => window.kamo.copyText(text))}
       onOpenIssue={(text) => attempt(() => window.kamo.openIssue(text))}
       onLoadNotices={() => window.kamo.getThirdPartyNotices()}
+      agent={{
+        devServerPath: agentDevServer,
+        onOpenDocs: () => void window.kamo.openAgentDocs().catch(() => {}),
+      }}
       {...(packs.status
         ? {
             packs: {

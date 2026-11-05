@@ -1,17 +1,17 @@
 import {
-  CAPTION_LOOKS,
   type CaptionPosition,
-  type CaptionPreset,
   type CaptionSettings,
   type CaptionSize,
   type Transcript,
 } from '@kamo/core'
 import { formatFileSize, resolveLocale } from '@kamo/i18n'
-import type { ReactNode } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
+import { DesktopAppCard, useDesktopAppUrl } from '../extension/DesktopAppCard.tsx'
 import { TranscriptStatus } from '../packs/CardTranscription.tsx'
 import type { CardTranscriptState, PackView } from '../packs/types.ts'
 import { FOCUS_RING, Switch } from '../primitives/controls.tsx'
+import { CaptionStyleGallery } from './CaptionStyleGallery.tsx'
 
 /**
  * The editor's door to local transcription (A-05) for the captions (A-06). The app decides
@@ -37,13 +37,10 @@ export interface CaptionsSectionProps {
   onCaptions(patch: Partial<CaptionSettings>): void
   /** "Transcribe again": the editor asks first when the transcript was corrected */
   onTranscribeAgain(): void
-}
-
-const PRESETS: readonly CaptionPreset[] = ['clean', 'bold', 'kamo']
-const PRESET_KEY: Record<CaptionPreset, string> = {
-  clean: 'editor.captions.clean',
-  bold: 'editor.captions.bold',
-  kamo: 'editor.captions.kamo',
+  /** the editor's video, for the style gallery's thumbnails (the frame at the playhead) */
+  video?: RefObject<HTMLVideoElement | null> | undefined
+  /** the playhead, ms of video time: the gallery samples the caption there */
+  timeMs?: number | undefined
 }
 const POSITIONS: readonly CaptionPosition[] = ['bottom', 'middle']
 const POSITION_KEY: Record<CaptionPosition, string> = {
@@ -66,7 +63,7 @@ const option = (selected: boolean) =>
 
 /**
  * Captions (A-06) in the side panel: before a transcript, what captions need (the pack and
- * its size, or the Transcribe button); after, on/off, the 3 presets, position and size.
+ * its size, or the Transcribe button); after, on/off, the style gallery, position and size.
  */
 export function CaptionsSection({
   settings,
@@ -74,6 +71,8 @@ export function CaptionsSection({
   transcription,
   onCaptions,
   onTranscribeAgain,
+  video,
+  timeMs,
 }: CaptionsSectionProps) {
   const t = useT()
   const locale = resolveLocale([useLocale()])
@@ -115,27 +114,15 @@ export function CaptionsSection({
             checked={settings.enabled}
             onChange={(enabled) => onCaptions({ enabled })}
           />
-          <Group label={t('editor.captions.style')}>
-            <div className="grid grid-cols-3 gap-xs">
-              {PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  role="radio"
-                  aria-checked={settings.preset === preset}
-                  disabled={!settings.enabled}
-                  data-testid={`captions-preset-${preset}`}
-                  onClick={() => onCaptions({ preset })}
-                  className={`flex h-[52px] p-[4px] ${option(settings.preset === preset)}`}
-                >
-                  {/* A tiny video frame with the preset's name drawn in its look. */}
-                  <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-sm bg-on-surface-muted">
-                    <PresetSample preset={preset}>{t(PRESET_KEY[preset])}</PresetSample>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Group>
+          <CaptionStyleGallery
+            value={settings.preset}
+            onChange={(preset) => onCaptions({ preset })}
+            disabled={!settings.enabled}
+            transcript={transcript}
+            position={settings.position}
+            video={video}
+            timeMs={timeMs}
+          />
           <Group label={t('editor.captions.position')}>
             <div className="grid grid-cols-2 gap-xs">
               {POSITIONS.map((position) => (
@@ -238,27 +225,6 @@ function TranscribeAction({
   )
 }
 
-/** The preset's name drawn in its own look (colors from the core renderer). */
-function PresetSample({ preset, children }: { preset: CaptionPreset; children: ReactNode }) {
-  const look = CAPTION_LOOKS[preset]
-  const outline = look.stroke
-    ? [-1, 1].flatMap((x) => [-1, 1].map((y) => `${x}px ${y}px 0 ${look.stroke?.color}`)).join(', ')
-    : undefined
-  return (
-    <span
-      className="max-w-full truncate px-[6px] py-[1px] text-[13px] leading-tight font-semibold"
-      style={{
-        color: look.color,
-        background: look.box ?? 'transparent',
-        borderRadius: look.box ? `${look.radius}em` : undefined,
-        textShadow: outline,
-      }}
-    >
-      {children}
-    </span>
-  )
-}
-
 /** A tiny frame with a bar at the bottom or in the middle. */
 function PositionIcon({ position, selected }: { position: CaptionPosition; selected: boolean }) {
   return (
@@ -290,5 +256,20 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h2 className="text-title">{title}</h2>
       {children}
     </section>
+  )
+}
+
+/**
+ * The Captions section where the app cannot transcribe (the extension): the same section, with
+ * the pointer to the desktop app instead of the controls. Nothing when the app set no address.
+ */
+export function CaptionsElsewhere() {
+  const t = useT()
+  const url = useDesktopAppUrl()
+  if (!url) return null
+  return (
+    <Section title={t('editor.captions.title')}>
+      <DesktopAppCard url={url} variant="section" />
+    </Section>
   )
 }

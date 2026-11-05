@@ -1,6 +1,6 @@
 // Settings (flows.md §7, F-15): appearance, language, folders, shortcuts, permissions, updates,
-// help (F-17), optional packs and transcription (A-07, A-05) and about. Kamo Cloud and MCP
-// sections arrive with their own steps.
+// help (F-17), optional packs and transcription (A-07, A-05), connect to an agent (M-01) and
+// about. The Kamo Cloud section arrives with its own step.
 import { LOCALES, type Locale } from '@kamo/i18n'
 import { useEffect, useState } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
@@ -10,6 +10,7 @@ import { TextDialog } from './TextDialog.tsx'
 import { InlineNotice, Row, Section, SecondaryButton, Segmented, StatusPill } from './parts.tsx'
 import { ShortcutRecorder } from './ShortcutRecorder.tsx'
 import { PacksSection, type PacksSectionProps } from '../packs/PacksSection.tsx'
+import { AgentSection } from './AgentSection.tsx'
 import type { ShortcutPlatform } from './shortcut.ts'
 import type {
   ActionResult,
@@ -59,6 +60,12 @@ export interface SettingsProps {
 
   /** Optional packs and transcription (A-07, A-05). Omitted where packs do not exist yet. */
   packs?: PacksSectionProps
+
+  /**
+   * Connect to an agent (M-01, step 26): the local MCP command. Omitted where there is no
+   * projects folder an MCP server could read (the extension).
+   */
+  agent?: { devServerPath: string | null; onOpenDocs(): void }
 }
 
 const FOLDER_ERRORS: Record<string, string> = {
@@ -130,6 +137,16 @@ export function Settings(props: SettingsProps) {
         </Section>
 
         {props.packs && <PacksSection {...props.packs} />}
+
+        {props.agent && (
+          <AgentSection
+            platform={props.platform}
+            projectsDir={props.folders?.projectsDir ?? null}
+            devServerPath={props.agent.devServerPath}
+            onCopy={props.onCopy}
+            onOpenDocs={props.agent.onOpenDocs}
+          />
+        )}
 
         <Section id="settings-updates" title={t('settings.updates.title')}>
           <UpdatesRow {...props} />

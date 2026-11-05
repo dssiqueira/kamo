@@ -145,8 +145,24 @@ export const DEFAULT_WEBCAM: WebcamSettings = {
   hidden: [],
 }
 
-/** Caption look (A-06): see render/captions.ts for what each preset paints. */
-export const CaptionPreset = z.enum(['clean', 'bold', 'kamo'])
+/**
+ * Caption look (A-06): see render/captions.ts for what each preset paints. The first three
+ * came first and keep painting the same; the rest were added with the style gallery.
+ */
+export const CaptionPreset = z.enum([
+  'clean',
+  'bold',
+  'kamo',
+  'minimal',
+  'soft',
+  'neon',
+  'typewriter',
+  'caps',
+  'cinema',
+  'marker',
+  'classic',
+  'duo',
+])
 export type CaptionPreset = z.infer<typeof CaptionPreset>
 
 /** Where the captions sit in the screen frame. */
@@ -207,8 +223,10 @@ export type CloudLink = z.infer<typeof CloudLink>
 
 export const ExportRecord = z.object({
   aspect: Aspect,
-  resolution: z.enum(['1080p', '4k']),
-  fps: Fps,
+  /** `720p` only for a GIF (A-02: 1280×720, 720×720 or 720×1280) */
+  resolution: z.enum(['1080p', '4k', '720p']),
+  /** 30 or 60 for an MP4 (A-01); 10 or 15 for a GIF (A-02) */
+  fps: z.union([Fps, z.literal(10), z.literal(15)]),
   format: z.enum(['mp4', 'gif']),
   path: z.string().min(1),
   createdAt: isoDate,
@@ -266,6 +284,12 @@ export const Project = z
     audio: z.object({ mic: AudioTrack, system: AudioTrack }),
     exports: z.array(ExportRecord),
     pendingUpload: PendingUpload.nullable(),
+    /**
+     * Extension (E-02): the recorded tab went to a site the extension had no access to, so mouse
+     * events stop at this time of the video; the editor warns "clicks not captured after X:XX".
+     * Absent = every click was captured.
+     */
+    eventsLostAtMs: nonNegative.optional(),
   })
   .superRefine((project, ctx) => {
     const { trim, durationMs, zooms } = project
