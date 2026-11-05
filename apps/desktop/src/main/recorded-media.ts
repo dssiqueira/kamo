@@ -4,7 +4,6 @@
 // fragments, and junk when it is only the header (a 757-byte webcam.mp4 with no frame).
 // Nothing is attached to a project, at the end of a recording or by recovery, unless it
 // passes `checkRecordedMedia`.
-import { ALL_FORMATS, CustomSource, Input } from 'mediabunny'
 import { open, stat, truncate } from 'node:fs/promises'
 
 /** Below this, a file cannot hold a header plus a single frame of audio or video. */
@@ -68,6 +67,8 @@ export function isMp4MimeType(mimeType: string): boolean {
 
 /** Reads the first `length` bytes as media: the duration of its first `kind` track, or null. */
 async function probeTrack(path: string, length: number, kind: MediaKind): Promise<number | null> {
+  // Loaded on first use: mediabunny is most of the main bundle and startup never needs it.
+  const { ALL_FORMATS, CustomSource, Input } = await import('mediabunny')
   const handle = await open(path, 'r')
   const input = new Input({
     source: new CustomSource({

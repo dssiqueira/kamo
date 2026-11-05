@@ -24,7 +24,6 @@ import {
   type Project,
   type Style,
 } from '@kamo/core'
-import { CustomSource, Input, MP4, QTFF } from 'mediabunny'
 import { open, rm, stat, truncate } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { AudioTrackName, AudioWarning } from '../shared/audio.ts'
@@ -227,6 +226,8 @@ export interface VideoInfo {
 /** Reads the first `length` bytes of the file as an MP4: size, duration and frame rate. */
 export async function probeVideo(path: string, length: number): Promise<VideoInfo | null> {
   if (length <= 0) return null
+  // Loaded on first use: mediabunny is most of the main bundle and startup never needs it.
+  const { CustomSource, Input, MP4, QTFF } = await import('mediabunny')
   const handle = await open(path, 'r')
   const input = new Input({
     source: new CustomSource({

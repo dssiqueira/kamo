@@ -18,8 +18,6 @@ import {
   ExportError,
   exportErrorCode,
   exportFileName,
-  exportGif,
-  exportVideo,
   GIF_RESOLUTION,
   resolveVideoSettings,
   type ExportAudioTrack,
@@ -251,6 +249,8 @@ export function useExportRun({
               update(index, { progress: fraction })
             }
           }
+          // Before any file is opened: a pipeline that fails to load leaves nothing behind.
+          const { exportGif, exportVideo } = await import('./pipeline.ts')
           let result: ExportResult
           let record: Pick<ExportRecord, 'resolution' | 'fps' | 'format'>
           if (gif) {

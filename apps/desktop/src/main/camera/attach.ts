@@ -2,15 +2,6 @@
 // docs/data-model.md) and turns the bubble on in project.json with its sync offset (A-03). The
 // video is never at risk: any failure here only costs the camera.
 import { DEFAULT_WEBCAM, loadProject, saveProject, type ProjectStore } from '@kamo/core'
-import {
-  ALL_FORMATS,
-  Conversion,
-  FilePathSource,
-  FilePathTarget,
-  Input,
-  Mp4OutputFormat,
-  Output,
-} from 'mediabunny'
 import { copyFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { CameraWarning } from '../../shared/camera.ts'
@@ -84,6 +75,16 @@ export async function attachWebcam(
  * VP9 is valid in MP4, so the project always has `webcam.mp4`.
  */
 async function remuxToMp4(from: string, to: string): Promise<void> {
+  // Loaded on first use: mediabunny is most of the main bundle and startup never needs it.
+  const {
+    ALL_FORMATS,
+    Conversion,
+    FilePathSource,
+    FilePathTarget,
+    Input,
+    Mp4OutputFormat,
+    Output,
+  } = await import('mediabunny')
   const input = new Input({ source: new FilePathSource(from), formats: ALL_FORMATS })
   try {
     const output = new Output({ format: new Mp4OutputFormat(), target: new FilePathTarget(to) })
