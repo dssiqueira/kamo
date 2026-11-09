@@ -105,8 +105,14 @@ function failureOf(error: unknown): 'denied' | 'unavailable' {
 }
 
 async function openMic(deviceId: string | null): Promise<void> {
+  // Chromium's voice-call processing is on by default. Automatic gain control pumped the
+  // noise floor of a quiet (Bluetooth) microphone up and down, heard as clicks and seen as a
+  // jumping meter while nobody spoke; the Windows meter of the same mic stayed flat. Echo
+  // cancellation adds artifacts while the computer sound is captured too, and Kamo plays no
+  // sound of its own. Noise suppression stays: it removes hiss without pumping.
+  const processing = { autoGainControl: false, echoCancellation: false, noiseSuppression: true }
   const constraints = (id: string | null): MediaStreamConstraints => ({
-    audio: id ? { deviceId: { exact: id } } : true,
+    audio: id ? { deviceId: { exact: id }, ...processing } : processing,
     video: false,
   })
   let stream: MediaStream
