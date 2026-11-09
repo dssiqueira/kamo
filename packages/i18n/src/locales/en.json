@@ -345,6 +345,8 @@
     "open": "Settings",
     "appearance": {
       "title": "Appearance",
+      "headline": "Easy on the eyes",
+      "intro": "Pick the theme for every Kamo window. Your videos keep the look you give them in the editor.",
       "theme": "Theme",
       "light": "Light",
       "dark": "Dark",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "Language",
+      "headline": "Kamo speaks your language",
+      "intro": "Menus, buttons and messages change right away. Dates and numbers follow along.",
       "label": "App language",
       "system": "Same as the system"
     },
     "window": {
       "title": "Window",
+      "headline": "Always within reach",
+      "intro": "Choose what happens when you close Kamo's main window.",
       "closeToTray": "Keep Kamo in the tray when the window is closed",
       "closeToTrayHint": "Closing the window leaves Kamo running in the system tray. To quit, right-click its icon and choose Quit Kamo.",
       "closeToTrayHintMac": "Closing the window leaves Kamo running with an icon in the menu bar. To quit, choose Quit Kamo there or press ⌘Q."
     },
     "recording": {
       "title": "Recording",
+      "headline": "A gentle 3, 2, 1",
+      "intro": "Kamo counts down before every recording, so you have a moment to get ready.",
       "countdownSound": "Play a soft tick during the 3-2-1 countdown",
       "countdownSoundHint": "It stops before recording begins, so it never ends up in your video."
     },
     "folders": {
       "title": "Folders",
+      "headline": "Where your recordings live",
+      "intro": "Everything stays on this computer, in the folders you choose.",
       "projects": "Projects folder",
       "projectsHint": "New recordings are saved here. Projects you already have stay where they are.",
       "export": "Export folder",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "Shortcuts",
+      "headline": "Stop from anywhere",
+      "intro": "End a recording without coming back to Kamo.",
       "stop": "Stop recording",
       "stopHint": "Works from any app while Kamo is recording. Kamo never reads what you type.",
       "change": "Change",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "Permissions",
+      "headline": "What Kamo may use",
+      "intro": "Your system decides what an app may record. You can change it at any time in its settings.",
       "none": "Kamo doesn't need any system permission on this computer.",
       "openSystemSettings": "Open System Settings",
       "openWindowsSettings": "Open Windows Settings",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "Updates",
+      "headline": "Always the newest Kamo",
+      "intro": "Fixes and new features arrive as new versions, free like everything in Kamo.",
       "version": "Version {version}",
       "check": "Check now",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "Help",
+      "headline": "Here to help",
       "description": "Something went wrong? Kamo has no telemetry, so the details only travel if you send them.",
       "copyDiagnostics": "Copy diagnostics",
       "openIssue": "Open issue on GitHub",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "About",
+      "headline": "Made in the open",
       "version": "Kamo {version}",
       "license": "Free and open source, under the MIT License.",
       "notices": "Third-party notices"
     },
     "agent": {
       "title": "Connect to an agent",
+      "headline": "Your recordings, as context for AI",
       "description": "Let Claude Code or another AI agent talk to your recordings: names, transcripts, clicks, zooms and a screenshot every 5 seconds.",
       "claudeCode": "Claude Code",
       "otherClients": "Other MCP clients",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "Transcription",
+    "headline": "Transcripts, the way you like them",
+    "intro": "Choose when Kamo transcribes and which language it listens for.",
     "auto": "Transcribe new recordings automatically",
     "autoHint": "In the background, on your computer, after each recording.",
     "language": "Spoken language",

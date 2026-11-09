@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
 import { useSpringTo } from '../motion/useSpring.ts'
 import { CheckIcon } from '../primitives/icons.tsx'
-import { SecondaryButton } from '../settings/parts.tsx'
+import { Chip, SecondaryButton, SettingCard, type ChipTone } from '../settings/parts.tsx'
 import { OfflineArt, PackArt } from './illustrations.tsx'
 import { METER_MAX, packMeters } from './offer-state.ts'
 import type { PackActions, PackView } from './types.ts'
@@ -116,9 +116,9 @@ export function ProgressBar({
 /** A pack's size as a small chip: "~148 MB". */
 export function SizeChip({ pack }: { pack: Pick<PackView, 'sizeBytes'> }) {
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full bg-surface-raised px-[10px] py-[3px] text-label tabular-nums text-on-surface-muted">
+    <Chip>
       <PackSize pack={pack} />
-    </span>
+    </Chip>
   )
 }
 
@@ -167,21 +167,18 @@ export function PackMeters({
 
 /** What a pack is doing, as a chip: installed in green, moving in water, the rest quiet. */
 function StatusChip({ pack, text }: { pack: PackView; text: string }) {
-  const tone =
+  const tone: ChipTone =
     pack.state === 'installed'
-      ? 'bg-primary-container text-success'
+      ? 'success'
       : pack.state === 'failed'
-        ? 'bg-surface-raised text-error'
+        ? 'error'
         : pack.state === 'downloading' || pack.state === 'verifying'
-          ? 'bg-tertiary-container text-on-surface'
-          : 'bg-surface-raised text-on-surface-muted'
+          ? 'active'
+          : 'neutral'
   return (
-    <span
-      className={`inline-flex shrink-0 items-center gap-xs rounded-full px-[10px] py-[3px] text-label tabular-nums ${tone}`}
-    >
-      {pack.state === 'installed' && <CheckIcon size={12} />}
+    <Chip tone={tone} icon={pack.state === 'installed' ? <CheckIcon size={12} /> : undefined}>
       {text}
-    </span>
+    </Chip>
   )
 }
 
@@ -256,29 +253,8 @@ export function PackRow({
     }
   })()
 
-  return (
-    <div
-      className="flex flex-col gap-sm rounded-md border border-border p-sm"
-      data-testid={`pack-row-${pack.id}`}
-      data-state={pack.state}
-    >
-      <div className="flex flex-wrap items-center gap-x-md gap-y-sm">
-        <div className="flex min-w-[260px] flex-1 items-center gap-md">
-          <span className="flex size-[56px] shrink-0 items-center justify-center rounded-md bg-surface-raised">
-            <PackArt quality={pack.quality} size={34} />
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-xs">
-            <div className="flex flex-wrap items-center gap-x-sm gap-y-xs">
-              <p className="text-body font-medium">{name}</p>
-              <SizeChip pack={pack} />
-              <StatusChip pack={pack} text={statusText(t, pack)} />
-            </div>
-            {showHint && <p className="text-label text-on-surface-muted">{packHint(t, pack)}</p>}
-            <PackMeters pack={pack} compact />
-          </div>
-        </div>
-        {buttons && <div className="ms-auto flex flex-wrap items-center gap-sm">{buttons}</div>}
-      </div>
+  const footer = (
+    <>
       {(busy || pack.state === 'paused') && pack.progress && (
         <ProgressBar value={fraction(pack)} label={t('packs.progressLabel', { name })} />
       )}
@@ -322,7 +298,27 @@ export function PackRow({
           </div>
         </div>
       )}
-    </div>
+    </>
+  )
+
+  return (
+    <SettingCard
+      testId={`pack-row-${pack.id}`}
+      state={pack.state}
+      art={<PackArt quality={pack.quality} size={34} />}
+      title={name}
+      chips={
+        <>
+          <SizeChip pack={pack} />
+          <StatusChip pack={pack} text={statusText(t, pack)} />
+        </>
+      }
+      description={showHint ? packHint(t, pack) : undefined}
+      controls={buttons}
+      footer={footer}
+    >
+      <PackMeters pack={pack} compact />
+    </SettingCard>
   )
 }
 

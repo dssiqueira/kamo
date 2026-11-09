@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
-import { InlineNotice, Row, SecondaryButton } from './parts.tsx'
+import { KeycapIcon } from '../primitives/icons.tsx'
+import { InlineNotice, SecondaryButton, SettingCard } from './parts.tsx'
 import { acceleratorFromKeyPress, formatAccelerator, type ShortcutPlatform } from './shortcut.ts'
 import type { ActionResult } from './types.ts'
 
@@ -56,69 +57,80 @@ export function ShortcutRecorder({
   }
 
   return (
-    <div className="flex flex-col gap-xs">
-      <Row label={t('settings.shortcuts.stop')} description={t('settings.shortcuts.stopHint')}>
-        <button
-          ref={field}
-          type="button"
-          aria-label={
-            recording
-              ? t('settings.shortcuts.recording')
-              : `${t('settings.shortcuts.stop')}: ${formatAccelerator(value, platform)}`
-          }
-          aria-describedby={recording ? 'shortcut-recording-hint' : undefined}
-          onClick={() => {
-            setMessage(null)
-            setRecording(true)
-          }}
-          onBlur={() => setRecording(false)}
-          onKeyDown={(event) => {
-            if (!recording) return
-            event.preventDefault()
-            event.stopPropagation()
-            if (event.key === 'Escape') {
-              setRecording(false)
-              return
+    <SettingCard
+      icon={<KeycapIcon size={20} />}
+      title={t('settings.shortcuts.stop')}
+      description={t('settings.shortcuts.stopHint')}
+      notice={
+        (recording || message) && (
+          <>
+            {recording && (
+              <p id="shortcut-recording-hint" className="text-label text-on-surface-muted">
+                {t('settings.shortcuts.recordingHint')}
+              </p>
+            )}
+            {message && <InlineNotice tone={message.tone}>{message.text}</InlineNotice>}
+          </>
+        )
+      }
+      controls={
+        <>
+          <button
+            ref={field}
+            type="button"
+            aria-label={
+              recording
+                ? t('settings.shortcuts.recording')
+                : `${t('settings.shortcuts.stop')}: ${formatAccelerator(value, platform)}`
             }
-            const result = acceleratorFromKeyPress(event, platform)
-            if (result.kind === 'pending') return
-            if (result.kind === 'shortcut') {
-              if (result.accelerator === value) setRecording(false)
-              else save(result.accelerator)
-              return
-            }
-            setMessage({ tone: 'error', text: t(ERRORS[result.kind] ?? ERRORS['unsupported']!) })
-          }}
-          className={`min-w-[140px] rounded-md border px-[12px] py-[6px] text-center font-mono text-timecode transition-colors duration-[120ms] ${
-            recording
-              ? 'border-tertiary bg-tertiary-container text-on-surface'
-              : 'border-border bg-surface-raised text-on-surface hover:border-tertiary-container'
-          } ${FOCUS_RING}`}
-        >
-          {recording ? t('settings.shortcuts.recording') : formatAccelerator(value, platform)}
-        </button>
-        {!recording && (
-          <SecondaryButton
+            aria-describedby={recording ? 'shortcut-recording-hint' : undefined}
             onClick={() => {
               setMessage(null)
               setRecording(true)
             }}
+            onBlur={() => setRecording(false)}
+            onKeyDown={(event) => {
+              if (!recording) return
+              event.preventDefault()
+              event.stopPropagation()
+              if (event.key === 'Escape') {
+                setRecording(false)
+                return
+              }
+              const result = acceleratorFromKeyPress(event, platform)
+              if (result.kind === 'pending') return
+              if (result.kind === 'shortcut') {
+                if (result.accelerator === value) setRecording(false)
+                else save(result.accelerator)
+                return
+              }
+              setMessage({ tone: 'error', text: t(ERRORS[result.kind] ?? ERRORS['unsupported']!) })
+            }}
+            className={`min-w-[140px] rounded-md border px-[12px] py-[6px] text-center font-mono text-timecode transition-colors duration-[120ms] ${
+              recording
+                ? 'border-tertiary bg-tertiary-container text-on-surface'
+                : 'border-border bg-surface-raised text-on-surface hover:border-tertiary-container'
+            } ${FOCUS_RING}`}
           >
-            {t('settings.shortcuts.change')}
-          </SecondaryButton>
-        )}
-        {value !== defaultValue && (
-          <SecondaryButton onClick={() => save(null)}>
-            {t('settings.shortcuts.reset')}
-          </SecondaryButton>
-        )}
-      </Row>
-      {recording && (
-        <p id="shortcut-recording-hint" className="text-label text-on-surface-muted">
-          {t('settings.shortcuts.recordingHint')}
-        </p>
-      )}
-      {message && <InlineNotice tone={message.tone}>{message.text}</InlineNotice>}
-    </div>
+            {recording ? t('settings.shortcuts.recording') : formatAccelerator(value, platform)}
+          </button>
+          {!recording && (
+            <SecondaryButton
+              onClick={() => {
+                setMessage(null)
+                setRecording(true)
+              }}
+            >
+              {t('settings.shortcuts.change')}
+            </SecondaryButton>
+          )}
+          {value !== defaultValue && (
+            <SecondaryButton onClick={() => save(null)}>
+              {t('settings.shortcuts.reset')}
+            </SecondaryButton>
+          )}
+        </>
+      }
+    />
   )
 }

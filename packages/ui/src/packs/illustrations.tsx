@@ -4,9 +4,9 @@
 import type { ReactNode } from 'react'
 
 /** The soft drop shadow under each paper piece. */
-const SHADOW = 'fill-[rgb(43_42_38/0.10)]'
+export const SHADOW = 'fill-[rgb(43_42_38/0.10)]'
 
-function Art({
+export function Art({
   width,
   height,
   size,
@@ -35,7 +35,7 @@ function Art({
 }
 
 /** A paper piece and its shadow, offset down and to the end. */
-function Paper({ d, className }: { d: string; className: string }) {
+export function Paper({ d, className }: { d: string; className: string }) {
   return (
     <>
       <path d={d} transform="translate(1.5 2.5)" className={SHADOW} />

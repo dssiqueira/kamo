@@ -345,6 +345,8 @@
     "open": "Réglages",
     "appearance": {
       "title": "Apparence",
+      "headline": "Doux pour les yeux",
+      "intro": "Choisissez le thème de toutes les fenêtres de Kamo. Vos vidéos gardent le style que vous leur donnez dans l'éditeur.",
       "theme": "Thème",
       "light": "Clair",
       "dark": "Sombre",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "Langue",
+      "headline": "Kamo parle votre langue",
+      "intro": "Les menus, boutons et messages changent tout de suite. Les dates et les nombres suivent.",
       "label": "Langue de l'app",
       "system": "Comme le système"
     },
     "window": {
       "title": "Fenêtre",
+      "headline": "Toujours à portée de main",
+      "intro": "Choisissez ce qui se passe quand vous fermez la fenêtre principale de Kamo.",
       "closeToTray": "Garder Kamo dans la zone de notification quand la fenêtre est fermée",
       "closeToTrayHint": "Fermer la fenêtre laisse Kamo ouvert dans la zone de notification. Pour quitter, faites un clic droit sur son icône et choisissez Quitter Kamo.",
       "closeToTrayHintMac": "Fermer la fenêtre laisse Kamo ouvert avec une icône dans la barre des menus. Pour quitter, choisissez Quitter Kamo à cet endroit ou appuyez sur ⌘Q."
     },
     "recording": {
       "title": "Enregistrement",
+      "headline": "Un 3, 2, 1 tout en douceur",
+      "intro": "Kamo fait un compte à rebours avant chaque enregistrement, pour vous laisser le temps de vous préparer.",
       "countdownSound": "Jouer un petit tic pendant le compte à rebours 3-2-1",
       "countdownSoundHint": "Il s'arrête avant le début de l'enregistrement : il n'apparaît jamais dans la vidéo."
     },
     "folders": {
       "title": "Dossiers",
+      "headline": "Là où vivent vos enregistrements",
+      "intro": "Tout reste sur cet ordinateur, dans les dossiers que vous choisissez.",
       "projects": "Dossier des projets",
       "projectsHint": "Les nouveaux enregistrements sont sauvegardés ici. Les projets existants restent où ils sont.",
       "export": "Dossier d'export",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "Raccourcis",
+      "headline": "Arrêtez depuis n'importe où",
+      "intro": "Terminez un enregistrement sans revenir à Kamo.",
       "stop": "Arrêter l'enregistrement",
       "stopHint": "Fonctionne depuis n'importe quelle app pendant que Kamo enregistre. Kamo ne lit jamais ce que vous tapez.",
       "change": "Modifier",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "Autorisations",
+      "headline": "Ce que Kamo peut utiliser",
+      "intro": "Votre système décide de ce qu'une app peut enregistrer. Vous pouvez le changer à tout moment dans ses réglages.",
       "none": "Kamo n'a besoin d'aucune autorisation système sur cet ordinateur.",
       "openSystemSettings": "Ouvrir Réglages Système",
       "openWindowsSettings": "Ouvrir les Paramètres Windows",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "Mises à jour",
+      "headline": "Toujours le Kamo le plus récent",
+      "intro": "Les corrections et nouveautés arrivent avec les nouvelles versions, gratuites comme tout dans Kamo.",
       "version": "Version {version}",
       "check": "Vérifier",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "Aide",
+      "headline": "Là pour vous aider",
       "description": "Un problème ? Kamo n'a aucune télémétrie, les détails ne partent donc que si vous les envoyez.",
       "copyDiagnostics": "Copier le diagnostic",
       "openIssue": "Ouvrir un ticket sur GitHub",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "À propos",
+      "headline": "Conçu au grand jour",
       "version": "Kamo {version}",
       "license": "Gratuit et open source, sous licence MIT.",
       "notices": "Mentions de tiers"
     },
     "agent": {
       "title": "Connecter un agent",
+      "headline": "Vos enregistrements, comme contexte pour l'IA",
       "description": "Laissez Claude Code ou un autre agent IA dialoguer avec vos enregistrements : noms, transcriptions, clics, zooms et une capture d'écran toutes les 5 secondes.",
       "claudeCode": "Claude Code",
       "otherClients": "Autres clients MCP",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "Transcription",
+    "headline": "Des transcriptions à votre façon",
+    "intro": "Choisissez quand Kamo transcrit et quelle langue il écoute.",
     "auto": "Transcrire automatiquement les nouveaux enregistrements",
     "autoHint": "En arrière-plan, sur votre ordinateur, après chaque enregistrement.",
     "language": "Langue parlée",

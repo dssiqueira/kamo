@@ -208,6 +208,9 @@ Light by default, with a Light / Dark / System selector in Settings.
 - **cloud-badge:** small pill with a cloud icon next to everything that uses Kamo Cloud ("Send to cloud", link, playlist). Never appears on record, edit or export functions, because those are free. Clicking opens a popover explaining the cloud, never a modal.
 - **timecode:** always mono, always `hh:mm:ss:ff`.
 - **recording-bar:** floating, draggable, with the `recording-dot` pulsing (opacity 1 → 0.4 over 1.2s).
+- **settings-section:** panel with a `text-title` title, a hero (paper-cut art on a shared 120×56 canvas, Instrument Serif headline at 24px, one muted line, on `tertiary-container` at 35%), then **setting-card**s and an optional footnote with a 14px icon. In `packages/ui/src/settings/parts.tsx` (`Section`, `SettingCard`, `SwitchCard`, `Chip`, `SectionNote`).
+- **setting-card:** thin border, medium corners; a 40px `surface-raised` tile with a water stroke icon (56px with art for packs), the name with its **chip**s, a muted line, controls at the end (they wrap under the text when narrow).
+- **chip:** pill, `label` size, tones neutral / success (with a check) / error / warning / active (`tertiary-container`).
 - **focus-ring:** water color, 2px, on every keyboard-focusable element.
 
 ## Mascot: Kamo

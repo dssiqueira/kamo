@@ -2,9 +2,15 @@
 // models are listed from what the app knows (nothing is fetched to show them); a download
 // starts only from a Download click.
 import { useLocale, useT } from '../i18n.tsx'
-import { LockIcon } from '../primitives/icons.tsx'
-import { Switch } from '../primitives/controls.tsx'
-import { Row, SecondaryButton, Section } from '../settings/parts.tsx'
+import { CaptionsIcon, GlobeIcon, LockIcon, SlidersIcon } from '../primitives/icons.tsx'
+import {
+  SELECT_CLASS,
+  SecondaryButton,
+  Section,
+  SettingCard,
+  SwitchCard,
+} from '../settings/parts.tsx'
+import { CaptionArt } from '../settings/illustrations.tsx'
 import { ParcelArt, WaveToTextArt } from './illustrations.tsx'
 import { PackRow, packName } from './PackList.tsx'
 import type { PackActions, PackViewId, PacksView, TranscriptionLanguageChoice } from './types.ts'
@@ -43,9 +49,6 @@ export function languageName(code: string, locale: string): string {
   }
 }
 
-const SELECT =
-  'min-w-[200px] rounded-md border border-border bg-surface px-[12px] py-[7px] text-body text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary'
-
 export function PacksSection(props: PacksSectionProps) {
   const t = useT()
   const locale = useLocale()
@@ -54,90 +57,95 @@ export function PacksSection(props: PacksSectionProps) {
 
   return (
     <>
-      <Section id="settings-packs" title={t('packs.title')}>
-        <div className="flex flex-col gap-md">
-          <div className="flex items-center gap-md rounded-lg bg-tertiary-container/35 p-md">
-            <WaveToTextArt size={44} />
+      <Section
+        id="settings-packs"
+        title={t('packs.title')}
+        hero={{
+          art: <WaveToTextArt size={40} />,
+          headline: t('packs.headline'),
+          description: t('packs.description'),
+        }}
+        note={{ icon: <LockIcon size={14} />, text: t('packs.local') }}
+      >
+        {programMissing && (
+          <div
+            role="status"
+            data-testid="packs-program-missing"
+            className="flex items-center gap-md rounded-md border border-dashed border-border p-md"
+          >
+            <ParcelArt size={52} />
             <div className="flex min-w-0 flex-1 flex-col gap-xs">
-              <p className="font-serif text-[24px] leading-tight">{t('packs.headline')}</p>
-              <p className="text-body text-on-surface-muted">{t('packs.description')}</p>
+              <p className="text-body font-medium">{t('packs.program.title')}</p>
+              <p className="text-label text-on-surface-muted">{t('packs.program.body')}</p>
             </div>
           </div>
-          {programMissing && (
-            <div
-              role="status"
-              data-testid="packs-program-missing"
-              className="flex items-center gap-md rounded-md border border-dashed border-border p-md"
-            >
-              <ParcelArt size={52} />
-              <div className="flex min-w-0 flex-1 flex-col gap-xs">
-                <p className="text-body font-medium">{t('packs.program.title')}</p>
-                <p className="text-label text-on-surface-muted">{t('packs.program.body')}</p>
-              </div>
-            </div>
-          )}
-          {props.packs.packs.map((pack) => (
-            <PackRow key={pack.id} pack={pack} actions={props} programMissing={programMissing} />
-          ))}
-          <p className="flex items-start gap-xs text-label text-on-surface-muted">
-            <span className="flex shrink-0">
-              <LockIcon size={14} />
-            </span>
-            <span className="min-w-0">{t('packs.local')}</span>
-          </p>
-        </div>
+        )}
+        {props.packs.packs.map((pack) => (
+          <PackRow key={pack.id} pack={pack} actions={props} programMissing={programMissing} />
+        ))}
       </Section>
 
       {installed.length > 0 && (
-        <Section id="settings-transcription" title={t('transcription.title')}>
+        <Section
+          id="settings-transcription"
+          title={t('transcription.title')}
+          hero={{
+            art: <CaptionArt size={48} />,
+            headline: t('transcription.headline'),
+            description: t('transcription.intro'),
+          }}
+        >
           {props.autoTranscribe === undefined && (
             <AutoTranscribeQuestion onAnswer={props.onAutoTranscribeChange} />
           )}
-          <div className="flex flex-col gap-xs">
-            <Switch
-              label={t('transcription.auto')}
-              checked={props.autoTranscribe === true}
-              onChange={props.onAutoTranscribeChange}
-            />
-            <p className="text-label text-on-surface-muted">{t('transcription.autoHint')}</p>
-          </div>
-          <Row
-            label={
+          <SwitchCard
+            icon={<CaptionsIcon size={20} />}
+            label={t('transcription.auto')}
+            hint={t('transcription.autoHint')}
+            checked={props.autoTranscribe === true}
+            onChange={props.onAutoTranscribeChange}
+          />
+          <SettingCard
+            icon={<GlobeIcon size={20} />}
+            title={
               <label htmlFor="settings-transcription-language">{t('transcription.language')}</label>
             }
-          >
-            <select
-              id="settings-transcription-language"
-              value={props.language}
-              onChange={(event) =>
-                props.onLanguageChange(event.target.value as TranscriptionLanguageChoice)
-              }
-              className={SELECT}
-            >
-              {TRANSCRIPTION_LANGUAGE_CHOICES.map((code) => (
-                <option key={code} value={code}>
-                  {code === 'auto' ? t('transcription.languageAuto') : languageName(code, locale)}
-                </option>
-              ))}
-            </select>
-          </Row>
-          {installed.length > 1 && (
-            <Row
-              label={<label htmlFor="settings-transcription-pack">{t('transcription.pack')}</label>}
-            >
+            controls={
               <select
-                id="settings-transcription-pack"
-                value={props.activePack ?? installed[0]!.id}
-                onChange={(event) => props.onActivePackChange(event.target.value as PackViewId)}
-                className={SELECT}
+                id="settings-transcription-language"
+                value={props.language}
+                onChange={(event) =>
+                  props.onLanguageChange(event.target.value as TranscriptionLanguageChoice)
+                }
+                className={SELECT_CLASS}
               >
-                {installed.map((pack) => (
-                  <option key={pack.id} value={pack.id}>
-                    {packName(t, pack)}
+                {TRANSCRIPTION_LANGUAGE_CHOICES.map((code) => (
+                  <option key={code} value={code}>
+                    {code === 'auto' ? t('transcription.languageAuto') : languageName(code, locale)}
                   </option>
                 ))}
               </select>
-            </Row>
+            }
+          />
+          {installed.length > 1 && (
+            <SettingCard
+              icon={<SlidersIcon size={20} />}
+              title={<label htmlFor="settings-transcription-pack">{t('transcription.pack')}</label>}
+              controls={
+                <select
+                  id="settings-transcription-pack"
+                  value={props.activePack ?? installed[0]!.id}
+                  onChange={(event) => props.onActivePackChange(event.target.value as PackViewId)}
+                  className={SELECT_CLASS}
+                >
+                  {installed.map((pack) => (
+                    <option key={pack.id} value={pack.id}>
+                      {packName(t, pack)}
+                    </option>
+                  ))}
+                </select>
+              }
+            />
           )}
         </Section>
       )}

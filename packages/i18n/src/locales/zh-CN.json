@@ -345,6 +345,8 @@
     "open": "设置",
     "appearance": {
       "title": "外观",
+      "headline": "看着舒服就好",
+      "intro": "为 Kamo 的所有窗口选择主题。视频会保留你在编辑器里设置的样式。",
       "theme": "主题",
       "light": "浅色",
       "dark": "深色",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "语言",
+      "headline": "Kamo 说你的语言",
+      "intro": "菜单、按钮和提示会立即切换，日期和数字也会随之改变。",
       "label": "应用语言",
       "system": "与系统相同"
     },
     "window": {
       "title": "窗口",
+      "headline": "随时就在手边",
+      "intro": "选择关闭 Kamo 主窗口时会发生什么。",
       "closeToTray": "关闭窗口时将 Kamo 保留在托盘中",
       "closeToTrayHint": "关闭窗口后，Kamo 会继续在系统托盘中运行。要退出，请右键点击其图标并选择“退出 Kamo”。",
       "closeToTrayHintMac": "关闭窗口后，Kamo 会继续运行，并在菜单栏中显示图标。要退出，请在那里选择“退出 Kamo”或按 ⌘Q。"
     },
     "recording": {
       "title": "录制",
+      "headline": "轻柔的 3、2、1",
+      "intro": "每次录制前，Kamo 都会倒计时，让你有片刻准备。",
       "countdownSound": "3-2-1 倒计时时播放轻柔的提示音",
       "countdownSoundHint": "提示音在录制开始前结束，不会出现在视频里。"
     },
     "folders": {
       "title": "文件夹",
+      "headline": "你的录制放在哪里",
+      "intro": "所有内容都留在这台电脑上，放在你选择的文件夹里。",
       "projects": "项目文件夹",
       "projectsHint": "新的录制会保存在这里。已有的项目保留在原位置。",
       "export": "导出文件夹",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "快捷键",
+      "headline": "随时随地停止",
+      "intro": "无需切回 Kamo 就能结束录制。",
       "stop": "停止录制",
       "stopHint": "Kamo 录制时在任何应用中都可用。Kamo 从不读取你输入的内容。",
       "change": "更改",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "权限",
+      "headline": "Kamo 可以使用什么",
+      "intro": "由系统决定应用可以录制什么。你可以随时在系统设置中更改。",
       "none": "在这台电脑上，Kamo 不需要任何系统权限。",
       "openSystemSettings": "打开系统设置",
       "openWindowsSettings": "打开 Windows 设置",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "更新",
+      "headline": "始终是最新的 Kamo",
+      "intro": "修复和新功能会随新版本推出，和 Kamo 的一切一样免费。",
       "version": "版本 {version}",
       "check": "立即检查",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "帮助",
+      "headline": "我们随时帮忙",
       "description": "遇到问题？Kamo 没有遥测，只有你主动发送，详细信息才会离开这台电脑。",
       "copyDiagnostics": "复制诊断信息",
       "openIssue": "在 GitHub 上提交问题",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "关于",
+      "headline": "公开打造",
       "version": "Kamo {version}",
       "license": "免费开源，采用 MIT 许可证。",
       "notices": "第三方声明"
     },
     "agent": {
       "title": "连接到智能体",
+      "headline": "让录制成为 AI 的上下文",
       "description": "让 Claude Code 或其他 AI 智能体读取你的录制：名称、转录、点击、缩放，以及每 5 秒一张的屏幕截图。",
       "claudeCode": "Claude Code",
       "otherClients": "其他 MCP 客户端",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "转录",
+    "headline": "按你的方式转写",
+    "intro": "选择 Kamo 何时转写，以及要听哪种语言。",
     "auto": "自动转录新的录制",
     "autoHint": "每次录制后在你的电脑上后台进行。",
     "language": "讲话语言",

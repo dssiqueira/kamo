@@ -1,9 +1,16 @@
 // Settings → Connect to an agent (flows.md §7, M-01, step 26): the ready-to-copy command that
 // adds the local MCP server to Claude Code, the JSON for other MCP clients, what the agent can
 // read and a link to the full instructions.
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
-import { CheckIcon, ExternalIcon } from '../primitives/icons.tsx'
+import {
+  BracesIcon,
+  CheckIcon,
+  ExternalIcon,
+  InfoIcon,
+  LockIcon,
+  TerminalIcon,
+} from '../primitives/icons.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
 import {
   canUseNpx,
@@ -14,7 +21,8 @@ import {
   unsafeForCmd,
   type AgentSetupInput,
 } from './agent.ts'
-import { LinkButton, Section, SecondaryButton } from './parts.tsx'
+import { AgentArt } from './illustrations.tsx'
+import { LinkButton, Section, SectionNote, SecondaryButton, SettingCard } from './parts.tsx'
 import type { ShortcutPlatform } from './shortcut.ts'
 import type { ActionResult } from './types.ts'
 
@@ -54,24 +62,29 @@ export function AgentSection({
   const fromSource = needsSourceBuild(input)
 
   return (
-    <Section id="settings-agent" title={t('settings.agent.title')}>
-      <p className="text-body text-on-surface-muted">{t('settings.agent.description')}</p>
-
+    <Section
+      id="settings-agent"
+      title={t('settings.agent.title')}
+      hero={{
+        art: <AgentArt size={48} />,
+        headline: t('settings.agent.headline'),
+        description: t('settings.agent.description'),
+      }}
+    >
       {!npx && (
         <p className="text-body text-on-surface-muted" data-testid="agent-not-published">
           {t(fromSource ? 'settings.agent.fromSource' : 'settings.agent.notPublished')}
         </p>
       )}
       {fromSource && (
-        <>
-          <Snippet
-            id="agent-source"
-            label={t('settings.agent.sourceBuild')}
-            text={sourceBuildCommands(input)}
-            onCopy={onCopy}
-          />
-          <p className="text-label text-on-surface-muted">{t('settings.agent.sourceHint')}</p>
-        </>
+        <Snippet
+          id="agent-source"
+          icon={<TerminalIcon size={20} />}
+          label={t('settings.agent.sourceBuild')}
+          hint={t('settings.agent.sourceHint')}
+          text={sourceBuildCommands(input)}
+          onCopy={onCopy}
+        />
       )}
       {!npx && devServerPath && (
         <p className="text-label text-on-surface-muted">{t('settings.agent.devHint')}</p>
@@ -86,12 +99,14 @@ export function AgentSection({
         <>
           <Snippet
             id="agent-claude"
+            icon={<TerminalIcon size={20} />}
             label={t('settings.agent.claudeCode')}
             text={claudeCommand(input)}
             onCopy={onCopy}
           />
           <Snippet
             id="agent-json"
+            icon={<BracesIcon size={20} />}
             label={t('settings.agent.otherClients')}
             text={mcpClientJson(input)}
             onCopy={onCopy}
@@ -99,10 +114,10 @@ export function AgentSection({
         </>
       )}
 
-      <ul className="flex list-disc flex-col gap-xs ps-[20px] text-label text-on-surface-muted">
-        <li>{t('settings.agent.readOnly')}</li>
-        <li>{t('settings.agent.node')}</li>
-      </ul>
+      <div className="flex flex-col gap-xs">
+        <SectionNote icon={<LockIcon size={14} />}>{t('settings.agent.readOnly')}</SectionNote>
+        <SectionNote icon={<InfoIcon size={14} />}>{t('settings.agent.node')}</SectionNote>
+      </div>
 
       <div>
         <LinkButton onClick={onOpenDocs}>
@@ -122,6 +137,7 @@ export function AgentSection({
             <p className="text-label text-on-surface-muted">{t('settings.agent.devHint')}</p>
             <Snippet
               id="agent-dev-claude"
+              icon={<TerminalIcon size={20} />}
               label={t('settings.agent.claudeCode')}
               text={claudeCommand(input, true)}
               onCopy={onCopy}
@@ -133,15 +149,22 @@ export function AgentSection({
   )
 }
 
-/** A label, the text in a mono box and a Copy button that says "Copied" for a moment. */
+/**
+ * A command card: its name, a Copy button that says "Copied" for a moment and the text in a
+ * mono box under it.
+ */
 function Snippet({
   id,
+  icon,
   label,
+  hint,
   text,
   onCopy,
 }: {
   id: string
+  icon: ReactNode
   label: string
+  hint?: string
   text: string
   onCopy(text: string): ActionResult
 }) {
@@ -154,11 +177,11 @@ function Snippet({
   }, [copied])
 
   return (
-    <div className="flex flex-col gap-xs">
-      <div className="flex items-center justify-between gap-sm">
-        <span id={`${id}-label`} className="text-body font-medium">
-          {label}
-        </span>
+    <SettingCard
+      icon={icon}
+      title={<span id={`${id}-label`}>{label}</span>}
+      description={hint}
+      controls={
         <SecondaryButton
           onClick={() =>
             void onCopy(text).then((error) => {
@@ -169,14 +192,16 @@ function Snippet({
           {copied ? <CheckIcon size={16} /> : null}
           {copied ? t('settings.agent.copied') : t('settings.agent.copy')}
         </SecondaryButton>
-      </div>
-      <pre
-        aria-labelledby={`${id}-label`}
-        data-testid={id}
-        className="overflow-x-auto whitespace-pre-wrap break-all rounded-md border border-border bg-surface-raised p-sm font-mono text-label text-on-surface select-all"
-      >
-        {text}
-      </pre>
-    </div>
+      }
+      footer={
+        <pre
+          aria-labelledby={`${id}-label`}
+          data-testid={id}
+          className="overflow-x-auto rounded-md border border-border bg-surface-raised p-sm font-mono text-label break-all whitespace-pre-wrap text-on-surface select-all"
+        >
+          {text}
+        </pre>
+      }
+    />
   )
 }

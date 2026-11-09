@@ -1,21 +1,53 @@
 // Settings (flows.md §7, F-15): appearance, language, folders, shortcuts, permissions, updates,
 // help (F-17), optional packs and transcription (A-07, A-05), connect to an agent (M-01) and
-// about. The Kamo Cloud section arrives with its own step.
+// about. The Kamo Cloud section arrives with its own step. Every section has the same shape: a
+// title, a hero (paper-cut art, serif headline, one line) and its settings as cards.
 import { LOCALES, type Locale } from '@kamo/i18n'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
-import { Switch } from '../primitives/controls.tsx'
-import { ExternalIcon, FolderIcon } from '../primitives/icons.tsx'
+import { Mascot } from '../mascot/Mascot.tsx'
+import {
+  AppWindowIcon,
+  ClipboardIcon,
+  DocumentIcon,
+  ExportIcon,
+  ExternalIcon,
+  FolderIcon,
+  GlobeIcon,
+  MicIcon,
+  MonitorIcon,
+  MoonIcon,
+  MouseIcon,
+  RefreshIcon,
+  SunIcon,
+  ThemeIcon,
+  TimerIcon,
+  VideoCameraIcon,
+} from '../primitives/icons.tsx'
 import { TextDialog } from './TextDialog.tsx'
 import {
   InlineNotice,
   LinkButton,
-  Row,
+  SELECT_CLASS,
   Section,
   SecondaryButton,
   Segmented,
+  SettingCard,
   StatusPill,
+  SwitchCard,
 } from './parts.tsx'
+import {
+  CountdownArt,
+  FolderArt,
+  HelpArt,
+  KeysArt,
+  LanguageArt,
+  OpenArt,
+  ShieldArt,
+  ThemeArt,
+  TrayArt,
+  UpdateArt,
+} from './illustrations.tsx'
 import { ShortcutRecorder } from './ShortcutRecorder.tsx'
 import { PacksSection, type PacksSectionProps } from '../packs/PacksSection.tsx'
 import { AgentSection } from './AgentSection.tsx'
@@ -94,6 +126,11 @@ const FOLDER_ERRORS: Record<string, string> = {
   folder_not_writable: 'settings.folders.errors.notWritable',
 }
 
+/** The hero art's height: every scene shares one canvas, so the headlines line up. */
+const ART = 48
+/** A card's icon, on its 40px tile. */
+const ICON = 20
+
 export function Settings(props: SettingsProps) {
   const t = useT()
   const [dialog, setDialog] = useState<'diagnostics' | 'notices' | null>(null)
@@ -103,63 +140,113 @@ export function Settings(props: SettingsProps) {
       <div className="mx-auto flex w-full max-w-[720px] flex-col gap-md p-lg">
         <h1 className="font-serif text-headline">{t('settings.title')}</h1>
 
-        <Section id="settings-appearance" title={t('settings.appearance.title')}>
-          <Row label={t('settings.appearance.theme')}>
-            <Segmented
-              label={t('settings.appearance.theme')}
-              value={props.theme}
-              onChange={props.onThemeChange}
-              options={[
-                { value: 'light', label: t('settings.appearance.light') },
-                { value: 'dark', label: t('settings.appearance.dark') },
-                { value: 'system', label: t('settings.appearance.system') },
-              ]}
-            />
-          </Row>
+        <Section
+          id="settings-appearance"
+          title={t('settings.appearance.title')}
+          hero={{
+            art: <ThemeArt size={ART} />,
+            headline: t('settings.appearance.headline'),
+            description: t('settings.appearance.intro'),
+          }}
+        >
+          <SettingCard
+            icon={<ThemeIcon size={ICON} />}
+            title={t('settings.appearance.theme')}
+            controls={
+              <Segmented
+                label={t('settings.appearance.theme')}
+                value={props.theme}
+                onChange={props.onThemeChange}
+                options={[
+                  { value: 'light', label: t('settings.appearance.light'), icon: <SunIcon /> },
+                  { value: 'dark', label: t('settings.appearance.dark'), icon: <MoonIcon /> },
+                  {
+                    value: 'system',
+                    label: t('settings.appearance.system'),
+                    icon: <MonitorIcon />,
+                  },
+                ]}
+              />
+            }
+          />
         </Section>
 
-        <Section id="settings-language" title={t('settings.language.title')}>
-          <LanguageRow value={props.language} onChange={props.onLanguageChange} />
+        <Section
+          id="settings-language"
+          title={t('settings.language.title')}
+          hero={{
+            art: <LanguageArt size={ART} />,
+            headline: t('settings.language.headline'),
+            description: t('settings.language.intro'),
+          }}
+        >
+          <LanguageCard value={props.language} onChange={props.onLanguageChange} />
         </Section>
 
-        <Section id="settings-window" title={t('settings.window.title')}>
-          <div className="flex flex-col gap-xs">
-            <Switch
-              label={t('settings.window.closeToTray')}
-              checked={props.closeToTray}
-              onChange={props.onCloseToTrayChange}
-            />
-            <p className="text-label text-on-surface-muted">
-              {t(
-                props.platform === 'mac'
-                  ? 'settings.window.closeToTrayHintMac'
-                  : 'settings.window.closeToTrayHint',
-              )}
-            </p>
-          </div>
+        <Section
+          id="settings-window"
+          title={t('settings.window.title')}
+          hero={{
+            art: <TrayArt size={ART} />,
+            headline: t('settings.window.headline'),
+            description: t('settings.window.intro'),
+          }}
+        >
+          <SwitchCard
+            icon={<AppWindowIcon size={ICON} />}
+            label={t('settings.window.closeToTray')}
+            hint={t(
+              props.platform === 'mac'
+                ? 'settings.window.closeToTrayHintMac'
+                : 'settings.window.closeToTrayHint',
+            )}
+            checked={props.closeToTray}
+            onChange={props.onCloseToTrayChange}
+          />
         </Section>
 
         {props.countdownSound && (
-          <Section id="settings-recording" title={t('settings.recording.title')}>
-            <div className="flex flex-col gap-xs">
-              <Switch
-                label={t('settings.recording.countdownSound')}
-                checked={props.countdownSound.enabled}
-                onChange={props.countdownSound.onChange}
-              />
-              <p className="text-label text-on-surface-muted">
-                {t('settings.recording.countdownSoundHint')}
-              </p>
-            </div>
+          <Section
+            id="settings-recording"
+            title={t('settings.recording.title')}
+            hero={{
+              art: <CountdownArt size={ART} />,
+              headline: t('settings.recording.headline'),
+              description: t('settings.recording.intro'),
+            }}
+          >
+            <SwitchCard
+              icon={<TimerIcon size={ICON} />}
+              label={t('settings.recording.countdownSound')}
+              hint={t('settings.recording.countdownSoundHint')}
+              checked={props.countdownSound.enabled}
+              onChange={props.countdownSound.onChange}
+            />
           </Section>
         )}
 
-        <Section id="settings-folders" title={t('settings.folders.title')}>
-          <FolderRow kind="projects" {...props} />
-          <FolderRow kind="export" {...props} />
+        <Section
+          id="settings-folders"
+          title={t('settings.folders.title')}
+          hero={{
+            art: <FolderArt size={ART} />,
+            headline: t('settings.folders.headline'),
+            description: t('settings.folders.intro'),
+          }}
+        >
+          <FolderCard kind="projects" {...props} />
+          <FolderCard kind="export" {...props} />
         </Section>
 
-        <Section id="settings-shortcuts" title={t('settings.shortcuts.title')}>
+        <Section
+          id="settings-shortcuts"
+          title={t('settings.shortcuts.title')}
+          hero={{
+            art: <KeysArt size={ART} />,
+            headline: t('settings.shortcuts.headline'),
+            description: t('settings.shortcuts.intro'),
+          }}
+        >
           <ShortcutRecorder
             platform={props.platform}
             value={props.stopShortcut}
@@ -168,8 +255,16 @@ export function Settings(props: SettingsProps) {
           />
         </Section>
 
-        <Section id="settings-permissions" title={t('settings.permissions.title')}>
-          <PermissionRows
+        <Section
+          id="settings-permissions"
+          title={t('settings.permissions.title')}
+          hero={{
+            art: <ShieldArt size={ART} />,
+            headline: t('settings.permissions.headline'),
+            description: t('settings.permissions.intro'),
+          }}
+        >
+          <PermissionCards
             permissions={props.permissions}
             onOpen={props.onOpenPermissionSettings}
             platform={props.platform}
@@ -190,22 +285,43 @@ export function Settings(props: SettingsProps) {
           />
         )}
 
-        <Section id="settings-updates" title={t('settings.updates.title')}>
-          <UpdatesRow {...props} />
+        <Section
+          id="settings-updates"
+          title={t('settings.updates.title')}
+          hero={{
+            art: <UpdateArt size={ART} />,
+            headline: t('settings.updates.headline'),
+            description: t('settings.updates.intro'),
+          }}
+        >
+          <UpdatesCard {...props} />
         </Section>
 
-        <Section id="settings-help" title={t('settings.help.title')}>
-          <p className="text-body text-on-surface-muted">{t('settings.help.description')}</p>
+        <Section
+          id="settings-help"
+          title={t('settings.help.title')}
+          hero={{
+            art: <HelpArt size={ART} />,
+            headline: t('settings.help.headline'),
+            description: t('settings.help.description'),
+          }}
+        >
           {/* Both show the text first (F-17); the dialog has Copy and Open issue. */}
-          <div className="flex flex-wrap gap-sm">
-            <SecondaryButton onClick={() => setDialog('diagnostics')}>
-              {t('settings.help.copyDiagnostics')}
-            </SecondaryButton>
-            <SecondaryButton onClick={() => setDialog('diagnostics')}>
-              <ExternalIcon />
-              {t('settings.help.openIssue')}
-            </SecondaryButton>
-          </div>
+          <SettingCard
+            icon={<ClipboardIcon size={ICON} />}
+            title={t('diagnostics.title')}
+            controls={
+              <>
+                <SecondaryButton onClick={() => setDialog('diagnostics')}>
+                  {t('settings.help.copyDiagnostics')}
+                </SecondaryButton>
+                <SecondaryButton onClick={() => setDialog('diagnostics')}>
+                  <ExternalIcon />
+                  {t('settings.help.openIssue')}
+                </SecondaryButton>
+              </>
+            }
+          />
           {props.onShowTour && (
             <div>
               <LinkButton onClick={props.onShowTour}>{t('settings.help.tour')}</LinkButton>
@@ -213,15 +329,25 @@ export function Settings(props: SettingsProps) {
           )}
         </Section>
 
-        <Section id="settings-about" title={t('settings.about.title')}>
-          <Row
-            label={t('settings.about.version', { version: props.version })}
-            description={t('settings.about.license')}
-          >
-            <SecondaryButton onClick={() => setDialog('notices')}>
-              {t('settings.about.notices')}
-            </SecondaryButton>
-          </Row>
+        <Section
+          id="settings-about"
+          title={t('settings.about.title')}
+          hero={{
+            art: <OpenArt size={ART} />,
+            headline: t('settings.about.headline'),
+            description: t('settings.about.license'),
+          }}
+        >
+          <SettingCard
+            icon={<Mascot pose="icon" size={28} />}
+            title={t('settings.about.version', { version: props.version })}
+            controls={
+              <SecondaryButton onClick={() => setDialog('notices')}>
+                <DocumentIcon />
+                {t('settings.about.notices')}
+              </SecondaryButton>
+            }
+          />
         </Section>
       </div>
 
@@ -257,7 +383,7 @@ export function localeName(locale: Locale): string {
   }
 }
 
-function LanguageRow({
+function LanguageCard({
   value,
   onChange,
 }: {
@@ -266,25 +392,29 @@ function LanguageRow({
 }) {
   const t = useT()
   return (
-    <Row label={<label htmlFor="settings-language-select">{t('settings.language.label')}</label>}>
-      <select
-        id="settings-language-select"
-        value={value}
-        onChange={(event) => onChange(event.target.value as LanguageChoice)}
-        className="min-w-[200px] rounded-md border border-border bg-surface px-[12px] py-[7px] text-body text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tertiary"
-      >
-        <option value="system">{t('settings.language.system')}</option>
-        {LOCALES.map((locale) => (
-          <option key={locale} value={locale} lang={locale}>
-            {localeName(locale)}
-          </option>
-        ))}
-      </select>
-    </Row>
+    <SettingCard
+      icon={<GlobeIcon size={ICON} />}
+      title={<label htmlFor="settings-language-select">{t('settings.language.label')}</label>}
+      controls={
+        <select
+          id="settings-language-select"
+          value={value}
+          onChange={(event) => onChange(event.target.value as LanguageChoice)}
+          className={SELECT_CLASS}
+        >
+          <option value="system">{t('settings.language.system')}</option>
+          {LOCALES.map((locale) => (
+            <option key={locale} value={locale} lang={locale}>
+              {localeName(locale)}
+            </option>
+          ))}
+        </select>
+      }
+    />
   )
 }
 
-function FolderRow({
+function FolderCard({
   kind,
   folders,
   onChangeFolder,
@@ -295,36 +425,37 @@ function FolderRow({
   const path = folders ? (kind === 'projects' ? folders.projectsDir : folders.exportDir) : null
   const prefix = kind === 'projects' ? 'settings.folders.projects' : 'settings.folders.export'
   return (
-    <div className="flex flex-col gap-xs">
-      <Row
-        label={t(prefix)}
-        description={
-          <>
-            <span className="block break-all font-mono text-on-surface">{path ?? '…'}</span>
-            <span className="block">{t(`${prefix}Hint`)}</span>
-          </>
-        }
-      >
-        <SecondaryButton
-          disabled={!folders}
-          onClick={() => {
-            setError(null)
-            void onChangeFolder(kind).then(
-              (code) =>
-                setError(code ? (FOLDER_ERRORS[code] ?? 'settings.folders.errors.failed') : null),
-              () => setError('settings.folders.errors.failed'),
-            )
-          }}
-        >
-          {t('settings.folders.change')}
-        </SecondaryButton>
-        <SecondaryButton disabled={!folders} onClick={() => onShowFolder(kind)}>
-          <FolderIcon />
-          {t('settings.folders.show')}
-        </SecondaryButton>
-      </Row>
-      {error && <InlineNotice tone="error">{t(error)}</InlineNotice>}
-    </div>
+    <SettingCard
+      icon={kind === 'projects' ? <FolderIcon size={ICON} /> : <ExportIcon size={ICON} />}
+      title={t(prefix)}
+      description={t(`${prefix}Hint`)}
+      controls={
+        <>
+          <SecondaryButton
+            disabled={!folders}
+            onClick={() => {
+              setError(null)
+              void onChangeFolder(kind).then(
+                (code) =>
+                  setError(code ? (FOLDER_ERRORS[code] ?? 'settings.folders.errors.failed') : null),
+                () => setError('settings.folders.errors.failed'),
+              )
+            }}
+          >
+            {t('settings.folders.change')}
+          </SecondaryButton>
+          <SecondaryButton disabled={!folders} onClick={() => onShowFolder(kind)}>
+            <FolderIcon />
+            {t('settings.folders.show')}
+          </SecondaryButton>
+        </>
+      }
+      notice={error && <InlineNotice tone="error">{t(error)}</InlineNotice>}
+    >
+      <span className="block rounded-sm bg-surface-raised px-xs py-[2px] font-mono text-label break-all text-on-surface">
+        {path ?? '…'}
+      </span>
+    </SettingCard>
   )
 }
 
@@ -332,7 +463,14 @@ export function permissionStatusLabel(t: Translate, status: PermissionItem['stat
   return t(`settings.permissions.status.${status}`)
 }
 
-function PermissionRows({
+const PERMISSION_ICON: Record<PermissionKind, ReactNode> = {
+  screen: <MonitorIcon size={ICON} />,
+  microphone: <MicIcon size={ICON} />,
+  camera: <VideoCameraIcon size={ICON} />,
+  inputMonitoring: <MouseIcon size={ICON} />,
+}
+
+function PermissionCards({
   permissions,
   onOpen,
   platform,
@@ -347,32 +485,32 @@ function PermissionRows({
     return <p className="text-body text-on-surface-muted">{t('settings.permissions.none')}</p>
   }
   return (
-    <div className="flex flex-col gap-md">
+    <>
       {permissions.map((permission) => (
-        <Row
+        <SettingCard
           key={permission.kind}
-          label={
-            <span className="flex flex-wrap items-center gap-sm">
-              {t(`settings.permissions.${permission.kind}`)}
-              <StatusPill
-                status={permission.status}
-                label={permissionStatusLabel(t, permission.status)}
-              />
-            </span>
+          icon={PERMISSION_ICON[permission.kind]}
+          title={t(`settings.permissions.${permission.kind}`)}
+          chips={
+            <StatusPill
+              status={permission.status}
+              label={permissionStatusLabel(t, permission.status)}
+            />
           }
           description={t(`settings.permissions.${permission.kind}Hint`)}
-        >
-          <SecondaryButton onClick={() => onOpen(permission.kind)}>
-            <ExternalIcon />
-            {t(openSystemSettingsKey(platform))}
-          </SecondaryButton>
-        </Row>
+          controls={
+            <SecondaryButton onClick={() => onOpen(permission.kind)}>
+              <ExternalIcon />
+              {t(openSystemSettingsKey(platform))}
+            </SecondaryButton>
+          }
+        />
       ))}
-    </div>
+    </>
   )
 }
 
-function UpdatesRow({ version, update, onCheckUpdates, onRestartToUpdate }: SettingsProps) {
+function UpdatesCard({ version, update, onCheckUpdates, onRestartToUpdate }: SettingsProps) {
   const t = useT()
   const locale = useLocale()
   const [busy, setBusy] = useState(false)
@@ -405,9 +543,12 @@ function UpdatesRow({ version, update, onCheckUpdates, onRestartToUpdate }: Sett
   })()
 
   return (
-    <div className="flex flex-col gap-xs">
-      <Row label={t('settings.updates.version', { version })} description={status}>
-        {update.state === 'ready' ? (
+    <SettingCard
+      icon={<RefreshIcon size={ICON} />}
+      title={t('settings.updates.version', { version })}
+      description={status}
+      controls={
+        update.state === 'ready' ? (
           <SecondaryButton
             onClick={() => {
               void onRestartToUpdate().then((code) => setBusy(code === 'busy'))
@@ -427,9 +568,9 @@ function UpdatesRow({ version, update, onCheckUpdates, onRestartToUpdate }: Sett
           >
             {t('settings.updates.check')}
           </SecondaryButton>
-        )}
-      </Row>
-      {busy && <InlineNotice tone="warning">{t('updates.busy')}</InlineNotice>}
-    </div>
+        )
+      }
+      notice={busy && <InlineNotice tone="warning">{t('updates.busy')}</InlineNotice>}
+    />
   )
 }

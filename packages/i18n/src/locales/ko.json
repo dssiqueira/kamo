@@ -345,6 +345,8 @@
     "open": "설정",
     "appearance": {
       "title": "모양",
+      "headline": "눈이 편안하게",
+      "intro": "Kamo의 모든 창에 쓸 테마를 골라요. 동영상은 편집기에서 정한 모습 그대로예요.",
       "theme": "테마",
       "light": "라이트",
       "dark": "다크",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "언어",
+      "headline": "Kamo가 내 언어로 말해요",
+      "intro": "메뉴, 버튼, 메시지가 바로 바뀌어요. 날짜와 숫자 표기도 함께 바뀌어요.",
       "label": "앱 언어",
       "system": "시스템과 같게"
     },
     "window": {
       "title": "창",
+      "headline": "언제나 가까이에",
+      "intro": "Kamo 메인 창을 닫을 때 어떻게 할지 골라요.",
       "closeToTray": "창을 닫아도 Kamo를 트레이에 유지",
       "closeToTrayHint": "창을 닫아도 Kamo는 시스템 트레이에서 계속 실행돼요. 종료하려면 아이콘을 마우스 오른쪽 버튼으로 클릭하고 Kamo 종료를 선택하세요.",
       "closeToTrayHintMac": "창을 닫아도 Kamo는 메뉴 막대에 아이콘으로 계속 실행돼요. 종료하려면 거기서 Kamo 종료를 선택하거나 ⌘Q를 누르세요."
     },
     "recording": {
       "title": "녹화",
+      "headline": "부드러운 3, 2, 1",
+      "intro": "Kamo는 녹화할 때마다 카운트다운을 해서 준비할 시간을 줘요.",
       "countdownSound": "3-2-1 카운트다운에서 작은 소리 내기",
       "countdownSoundHint": "소리는 녹화가 시작되기 전에 끝나서 영상에는 들어가지 않아요."
     },
     "folders": {
       "title": "폴더",
+      "headline": "녹화가 머무는 곳",
+      "intro": "모든 것은 이 컴퓨터의, 내가 고른 폴더에 남아요.",
       "projects": "프로젝트 폴더",
       "projectsHint": "새 녹화는 여기에 저장돼요. 기존 프로젝트는 그대로 있어요.",
       "export": "내보내기 폴더",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "단축키",
+      "headline": "어디서든 멈추기",
+      "intro": "Kamo로 돌아오지 않고도 녹화를 끝낼 수 있어요.",
       "stop": "녹화 중지",
       "stopHint": "Kamo가 녹화하는 동안 어떤 앱에서든 작동해요. Kamo는 입력하는 내용을 절대 읽지 않아요.",
       "change": "변경",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "권한",
+      "headline": "Kamo가 쓸 수 있는 것",
+      "intro": "앱이 무엇을 녹화할 수 있는지는 시스템이 정해요. 시스템 설정에서 언제든 바꿀 수 있어요.",
       "none": "이 컴퓨터에서는 Kamo에 시스템 권한이 필요하지 않아요.",
       "openSystemSettings": "시스템 설정 열기",
       "openWindowsSettings": "Windows 설정 열기",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "업데이트",
+      "headline": "언제나 최신 Kamo로",
+      "intro": "수정 사항과 새 기능은 새 버전으로 찾아와요. Kamo의 모든 것처럼 무료예요.",
       "version": "버전 {version}",
       "check": "지금 확인",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "도움말",
+      "headline": "도와드릴게요",
       "description": "문제가 생겼나요? Kamo에는 원격 측정이 없어서, 직접 보내지 않으면 정보가 어디로도 가지 않아요.",
       "copyDiagnostics": "진단 정보 복사",
       "openIssue": "GitHub에 이슈 열기",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "정보",
+      "headline": "모두에게 열린 채로 만들어요",
       "version": "Kamo {version}",
       "license": "MIT 라이선스에 따른 무료 오픈 소스예요.",
       "notices": "타사 고지"
     },
     "agent": {
       "title": "에이전트 연결",
+      "headline": "내 녹화를 AI의 맥락으로",
       "description": "Claude Code나 다른 AI 에이전트가 내 녹화를 다룰 수 있게 하세요. 이름, 대본, 클릭, 줌, 5초마다 찍은 스크린샷까지요.",
       "claudeCode": "Claude Code",
       "otherClients": "다른 MCP 클라이언트",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "받아쓰기",
+    "headline": "원하는 방식으로 전사하기",
+    "intro": "Kamo가 언제 전사할지, 어떤 언어를 들을지 골라요.",
     "auto": "새 녹화 자동으로 받아쓰기",
     "autoHint": "녹화가 끝날 때마다 내 컴퓨터에서 백그라운드로 처리해요.",
     "language": "말하는 언어",

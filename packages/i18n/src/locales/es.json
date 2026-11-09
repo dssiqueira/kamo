@@ -345,6 +345,8 @@
     "open": "Ajustes",
     "appearance": {
       "title": "Apariencia",
+      "headline": "A gusto de tus ojos",
+      "intro": "Elige el tema de todas las ventanas de Kamo. Tus videos conservan el aspecto que les des en el editor.",
       "theme": "Tema",
       "light": "Claro",
       "dark": "Oscuro",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "Idioma",
+      "headline": "Kamo habla tu idioma",
+      "intro": "Los menús, botones y mensajes cambian al instante. Las fechas y los números también.",
       "label": "Idioma de la app",
       "system": "El mismo que el sistema"
     },
     "window": {
       "title": "Ventana",
+      "headline": "Siempre a mano",
+      "intro": "Elige qué pasa cuando cierras la ventana principal de Kamo.",
       "closeToTray": "Mantener Kamo en la bandeja al cerrar la ventana",
       "closeToTrayHint": "Al cerrar la ventana, Kamo sigue funcionando en la bandeja del sistema. Para salir, haz clic derecho en su icono y elige Salir de Kamo.",
       "closeToTrayHintMac": "Al cerrar la ventana, Kamo sigue funcionando con un icono en la barra de menús. Para salir, elige Salir de Kamo allí o pulsa ⌘Q."
     },
     "recording": {
       "title": "Grabación",
+      "headline": "Un 3, 2, 1 tranquilo",
+      "intro": "Kamo hace una cuenta atrás antes de cada grabación, para que tengas un momento para prepararte.",
       "countdownSound": "Sonar un tic suave en la cuenta 3-2-1",
       "countdownSoundHint": "Termina antes de que empiece la grabación, así que nunca queda en el video."
     },
     "folders": {
       "title": "Carpetas",
+      "headline": "Donde viven tus grabaciones",
+      "intro": "Todo se queda en esta computadora, en las carpetas que elijas.",
       "projects": "Carpeta de proyectos",
       "projectsHint": "Las grabaciones nuevas se guardan aquí. Los proyectos que ya tienes se quedan donde están.",
       "export": "Carpeta de exportación",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "Atajos",
+      "headline": "Detén desde cualquier lugar",
+      "intro": "Termina una grabación sin volver a Kamo.",
       "stop": "Detener la grabación",
       "stopHint": "Funciona desde cualquier app mientras Kamo graba. Kamo nunca lee lo que escribes.",
       "change": "Cambiar",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "Permisos",
+      "headline": "Lo que Kamo puede usar",
+      "intro": "Tu sistema decide qué puede grabar una app. Puedes cambiarlo cuando quieras en su configuración.",
       "none": "Kamo no necesita ningún permiso del sistema en este equipo.",
       "openSystemSettings": "Abrir Ajustes del Sistema",
       "openWindowsSettings": "Abrir Configuración de Windows",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "Actualizaciones",
+      "headline": "Siempre el Kamo más nuevo",
+      "intro": "Las correcciones y novedades llegan en nuevas versiones, gratis como todo en Kamo.",
       "version": "Versión {version}",
       "check": "Buscar ahora",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "Ayuda",
+      "headline": "Aquí para ayudarte",
       "description": "¿Algo salió mal? Kamo no tiene telemetría, así que los detalles solo salen de aquí si tú los envías.",
       "copyDiagnostics": "Copiar diagnóstico",
       "openIssue": "Abrir issue en GitHub",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "Acerca de",
+      "headline": "Hecho a la vista de todos",
       "version": "Kamo {version}",
       "license": "Gratis y de código abierto, bajo la licencia MIT.",
       "notices": "Avisos de terceros"
     },
     "agent": {
       "title": "Conectar con un agente",
+      "headline": "Tus grabaciones como contexto para la IA",
       "description": "Deja que Claude Code u otro agente de IA hable con tus grabaciones: nombres, transcripciones, clics, zooms y una captura de pantalla cada 5 segundos.",
       "claudeCode": "Claude Code",
       "otherClients": "Otros clientes MCP",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "Transcripción",
+    "headline": "Transcripciones a tu manera",
+    "intro": "Elige cuándo transcribe Kamo y qué idioma escucha.",
     "auto": "Transcribir automáticamente las grabaciones nuevas",
     "autoHint": "En segundo plano, en tu computadora, después de cada grabación.",
     "language": "Idioma hablado",

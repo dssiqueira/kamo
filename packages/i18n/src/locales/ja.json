@@ -345,6 +345,8 @@
     "open": "設定",
     "appearance": {
       "title": "外観",
+      "headline": "目にやさしく",
+      "intro": "Kamo のすべてのウィンドウのテーマを選べます。動画はエディターで設定した見た目のままです。",
       "theme": "テーマ",
       "light": "ライト",
       "dark": "ダーク",
@@ -352,22 +354,30 @@
     },
     "language": {
       "title": "言語",
+      "headline": "Kamo はあなたの言葉で",
+      "intro": "メニュー、ボタン、メッセージがすぐに切り替わります。日付や数字の表記も合わせて変わります。",
       "label": "アプリの言語",
       "system": "システムと同じ"
     },
     "window": {
       "title": "ウィンドウ",
+      "headline": "いつでもすぐそばに",
+      "intro": "Kamo のメインウィンドウを閉じたときの動作を選べます。",
       "closeToTray": "ウィンドウを閉じても Kamo をトレイに残す",
       "closeToTrayHint": "ウィンドウを閉じても、Kamo はシステムトレイで動作し続けます。終了するには、アイコンを右クリックして「Kamo を終了」を選びます。",
       "closeToTrayHintMac": "ウィンドウを閉じても、Kamo はメニューバーのアイコンとして動作し続けます。終了するには、そこで「Kamo を終了」を選ぶか ⌘Q を押します。"
     },
     "recording": {
       "title": "録画",
+      "headline": "やさしい 3、2、1",
+      "intro": "Kamo は録画の前に毎回カウントダウンするので、準備する時間があります。",
       "countdownSound": "3-2-1 のカウントダウンで小さな音を鳴らす",
       "countdownSoundHint": "音は録画が始まる前に終わるので、動画には入りません。"
     },
     "folders": {
       "title": "フォルダ",
+      "headline": "録画の置き場所",
+      "intro": "すべてこのコンピューターの、あなたが選んだフォルダーに保存されます。",
       "projects": "プロジェクトフォルダ",
       "projectsHint": "新しい録画はここに保存されます。既存のプロジェクトは今の場所に残ります。",
       "export": "書き出しフォルダ",
@@ -382,6 +392,8 @@
     },
     "shortcuts": {
       "title": "ショートカット",
+      "headline": "どこからでも停止",
+      "intro": "Kamo に戻らなくても録画を終了できます。",
       "stop": "録画を停止",
       "stopHint": "Kamo の録画中はどのアプリからでも使えます。Kamo が入力内容を読むことはありません。",
       "change": "変更",
@@ -398,6 +410,8 @@
     },
     "permissions": {
       "title": "アクセス許可",
+      "headline": "Kamo が使えるもの",
+      "intro": "アプリが何を録画できるかはシステムが決めます。システムの設定でいつでも変更できます。",
       "none": "このコンピュータでは、Kamo にシステムのアクセス許可は必要ありません。",
       "openSystemSettings": "システム設定を開く",
       "openWindowsSettings": "Windows の設定を開く",
@@ -418,6 +432,8 @@
     },
     "updates": {
       "title": "アップデート",
+      "headline": "いつも最新の Kamo を",
+      "intro": "修正や新機能は新しいバージョンで届きます。Kamo のほかの機能と同じく無料です。",
       "version": "バージョン {version}",
       "check": "今すぐ確認",
       "status": {
@@ -433,6 +449,7 @@
     },
     "help": {
       "title": "ヘルプ",
+      "headline": "お手伝いします",
       "description": "問題が起きましたか？Kamo にはテレメトリがないため、詳細はあなたが送ったときだけ外に出ます。",
       "copyDiagnostics": "診断情報をコピー",
       "openIssue": "GitHub で Issue を作成",
@@ -440,12 +457,14 @@
     },
     "about": {
       "title": "Kamo について",
+      "headline": "オープンに作られています",
       "version": "Kamo {version}",
       "license": "MIT ライセンスの無料オープンソースソフトウェアです。",
       "notices": "サードパーティの通知"
     },
     "agent": {
       "title": "エージェントに接続",
+      "headline": "録画を AI のコンテキストに",
       "description": "Claude Code などの AI エージェントが録画を参照できるようにします：名前、文字起こし、クリック、ズーム、5 秒ごとのスクリーンショット。",
       "claudeCode": "Claude Code",
       "otherClients": "その他の MCP クライアント",
@@ -801,6 +820,8 @@
   },
   "transcription": {
     "title": "文字起こし",
+    "headline": "文字起こしを好みに合わせて",
+    "intro": "Kamo がいつ文字起こしをするか、どの言語を聞き取るかを選べます。",
     "auto": "新しい録画を自動で文字起こしする",
     "autoHint": "録画のたびに、お使いのコンピューター上でバックグラウンドで行います。",
     "language": "話している言語",

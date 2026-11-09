@@ -12,6 +12,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 - Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
 
 ### Changed
+- Settings: every section follows the same look (an illustrated header, cards with an icon, chips and status pills), like Optional packs.
 - Transcription works out of the box: the whisper.cpp program now ships inside the app (a few MB), and the Light or Accurate model downloads straight from Hugging Face, the official home of the whisper.cpp models, only when you ask (pinned to one version and checked byte for byte). Nothing depends on a Kamo download server anymore.
 - Recording starts sooner after the countdown: the capture helper gets ready during the 3-2-1.
 - Long labels in German and French, and Chinese, Japanese and Korean text, fit their screens (tooltips on cut-off names, caption styles on two lines).
