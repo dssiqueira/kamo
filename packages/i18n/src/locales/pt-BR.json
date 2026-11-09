@@ -392,6 +392,7 @@
       "title": "Permissões",
       "none": "O Kamo não precisa de nenhuma permissão do sistema neste computador.",
       "openSystemSettings": "Abrir Ajustes do Sistema",
+      "openWindowsSettings": "Abrir Configurações do Windows",
       "screen": "Gravação de Tela",
       "screenHint": "Obrigatória para gravar a tela.",
       "microphone": "Microfone",

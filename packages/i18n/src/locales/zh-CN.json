@@ -392,6 +392,7 @@
       "title": "权限",
       "none": "在这台电脑上，Kamo 不需要任何系统权限。",
       "openSystemSettings": "打开系统设置",
+      "openWindowsSettings": "打开 Windows 设置",
       "screen": "屏幕录制",
       "screenHint": "录制屏幕所必需。",
       "microphone": "麦克风",

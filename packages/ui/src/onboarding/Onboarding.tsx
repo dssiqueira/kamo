@@ -21,6 +21,7 @@ import {
 import type { ShortcutPlatform } from '../settings/shortcut.ts'
 import {
   ONBOARDING_SKIPS,
+  openSystemSettingsKey,
   type ActionResult,
   type PermissionItem,
   type PermissionKind,
@@ -243,13 +244,13 @@ function PermissionScreen({
             </PrimaryButton>
             <SecondaryButton onClick={openSettings}>
               <ExternalIcon />
-              {t('settings.permissions.openSystemSettings')}
+              {t(openSystemSettingsKey(platform))}
             </SecondaryButton>
           </>
         ) : (
           <PrimaryButton onClick={openSettings}>
             <ExternalIcon />
-            {t('settings.permissions.openSystemSettings')}
+            {t(openSystemSettingsKey(platform))}
           </PrimaryButton>
         )}
       </div>

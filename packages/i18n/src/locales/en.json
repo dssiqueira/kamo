@@ -392,6 +392,7 @@
       "title": "Permissions",
       "none": "Kamo doesn't need any system permission on this computer.",
       "openSystemSettings": "Open System Settings",
+      "openWindowsSettings": "Open Windows Settings",
       "screen": "Screen Recording",
       "screenHint": "Required to record your screen.",
       "microphone": "Microphone",

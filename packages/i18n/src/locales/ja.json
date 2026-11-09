@@ -392,6 +392,7 @@
       "title": "アクセス許可",
       "none": "このコンピュータでは、Kamo にシステムのアクセス許可は必要ありません。",
       "openSystemSettings": "システム設定を開く",
+      "openWindowsSettings": "Windows の設定を開く",
       "screen": "画面収録",
       "screenHint": "画面の録画に必要です。",
       "microphone": "マイク",

@@ -20,6 +20,7 @@ import { ShortcutRecorder } from './ShortcutRecorder.tsx'
 import { PacksSection, type PacksSectionProps } from '../packs/PacksSection.tsx'
 import { AgentSection } from './AgentSection.tsx'
 import type { ShortcutPlatform } from './shortcut.ts'
+import { openSystemSettingsKey } from './types.ts'
 import type {
   ActionResult,
   FolderKind,
@@ -144,7 +145,11 @@ export function Settings(props: SettingsProps) {
         </Section>
 
         <Section id="settings-permissions" title={t('settings.permissions.title')}>
-          <PermissionRows permissions={props.permissions} onOpen={props.onOpenPermissionSettings} />
+          <PermissionRows
+            permissions={props.permissions}
+            onOpen={props.onOpenPermissionSettings}
+            platform={props.platform}
+          />
         </Section>
 
         {props.packs && <PacksSection {...props.packs} />}
@@ -305,9 +310,11 @@ export function permissionStatusLabel(t: Translate, status: PermissionItem['stat
 function PermissionRows({
   permissions,
   onOpen,
+  platform,
 }: {
   permissions: readonly PermissionItem[] | null
   onOpen(kind: PermissionKind): void
+  platform: ShortcutPlatform
 }) {
   const t = useT()
   if (!permissions) return null
@@ -332,7 +339,7 @@ function PermissionRows({
         >
           <SecondaryButton onClick={() => onOpen(permission.kind)}>
             <ExternalIcon />
-            {t('settings.permissions.openSystemSettings')}
+            {t(openSystemSettingsKey(platform))}
           </SecondaryButton>
         </Row>
       ))}

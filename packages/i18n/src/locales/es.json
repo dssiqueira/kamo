@@ -392,6 +392,7 @@
       "title": "Permisos",
       "none": "Kamo no necesita ningún permiso del sistema en este equipo.",
       "openSystemSettings": "Abrir Ajustes del Sistema",
+      "openWindowsSettings": "Abrir Configuración de Windows",
       "screen": "Grabación de pantalla",
       "screenHint": "Necesario para grabar la pantalla.",
       "microphone": "Micrófono",

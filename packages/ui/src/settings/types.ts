@@ -6,6 +6,13 @@ export type ThemeChoice = 'light' | 'dark' | 'system'
 export type LanguageChoice = 'system' | Locale
 export type FolderKind = 'projects' | 'export'
 
+/** The button that opens the OS permission page: each OS names its settings app differently. */
+export function openSystemSettingsKey(platform: 'mac' | 'windows' | 'linux'): string {
+  return platform === 'windows'
+    ? 'settings.permissions.openWindowsSettings'
+    : 'settings.permissions.openSystemSettings'
+}
+
 export type PermissionKind = 'screen' | 'microphone' | 'camera' | 'inputMonitoring'
 
 /**
