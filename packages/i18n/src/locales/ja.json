@@ -358,6 +358,11 @@
       "closeToTrayHint": "ウィンドウを閉じても、Kamo はシステムトレイで動作し続けます。終了するには、アイコンを右クリックして「Kamo を終了」を選びます。",
       "closeToTrayHintMac": "ウィンドウを閉じても、Kamo はメニューバーのアイコンとして動作し続けます。終了するには、そこで「Kamo を終了」を選ぶか ⌘Q を押します。"
     },
+    "recording": {
+      "title": "録画",
+      "countdownSound": "3-2-1 のカウントダウンで小さな音を鳴らす",
+      "countdownSoundHint": "音は録画が始まる前に終わるので、動画には入りません。"
+    },
     "folders": {
       "title": "フォルダ",
       "projects": "プロジェクトフォルダ",

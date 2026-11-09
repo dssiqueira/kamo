@@ -5,6 +5,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ## [Unreleased]
 
 ### Added
+- A soft tick on each number of the 3-2-1 countdown (Settings → Recording turns it off); it ends before recording starts.
 - Chrome extension: a small recording bar (time, pause, stop) in its own window, never part of the video; clicking the toolbar icon while recording stops it.
 - Video compatibility pack (optional, FFmpeg): when this computer's video encoder is missing or fails, the export offers to download it and try again.
 - A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.

@@ -1,4 +1,4 @@
-import { Countdown, formatAccelerator } from '@kamo/ui'
+import { Countdown, formatAccelerator, playCountdownTick } from '@kamo/ui'
 import { useEffect, useState } from 'react'
 import { boot } from './boot.tsx'
 
@@ -10,14 +10,21 @@ const DEFAULT_STOP_SHORTCUT = 'CommandOrControl+Shift+2'
 function DesktopCountdown() {
   const [value, setValue] = useState(3)
   const [stopShortcut, setStopShortcut] = useState<string>()
+  // Off until the settings say otherwise, so a "sound off" choice never plays a first tick.
+  const [sound, setSound] = useState(false)
 
   // Shown under the numbers: the bar may be on another monitor, the shortcut always works.
   useEffect(() => {
     void window.kamo.getSettings().then((settings) => {
       const platform = navigator.userAgent.includes('Mac') ? 'mac' : 'windows'
       setStopShortcut(formatAccelerator(settings.stopShortcut ?? DEFAULT_STOP_SHORTCUT, platform))
+      setSound(settings.countdownSound ?? true)
     })
   }, [])
+
+  useEffect(() => {
+    if (sound) playCountdownTick(value)
+  }, [sound, value])
 
   useEffect(() => {
     if (value === 0) {

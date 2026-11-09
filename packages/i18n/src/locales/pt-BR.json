@@ -358,6 +358,11 @@
       "closeToTrayHint": "Fechar a janela deixa o Kamo rodando na bandeja do sistema. Para sair, clique com o botão direito no ícone e escolha Sair do Kamo.",
       "closeToTrayHintMac": "Fechar a janela deixa o Kamo rodando com um ícone na barra de menus. Para sair, escolha Sair do Kamo nele ou use ⌘Q."
     },
+    "recording": {
+      "title": "Gravação",
+      "countdownSound": "Tocar um tique suave na contagem 3-2-1",
+      "countdownSoundHint": "Ele termina antes de a gravação começar, então nunca aparece no vídeo."
+    },
     "folders": {
       "title": "Pastas",
       "projects": "Pasta de projetos",

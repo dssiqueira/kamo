@@ -61,7 +61,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
   - missing permission: warning at the top with a link to the onboarding
 
 ### 3. Countdown
-- Large 3-2-1 in the center of the chosen display
+- Large 3-2-1 in the center of the chosen display, Kamo perched on the circle looking at the number, and a soft tick on each number (higher on the 1) unless Settings → Recording turns it off
 - Esc cancels and returns to Home
 
 ### 4. Recording

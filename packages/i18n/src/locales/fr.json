@@ -358,6 +358,11 @@
       "closeToTrayHint": "Fermer la fenêtre laisse Kamo ouvert dans la zone de notification. Pour quitter, faites un clic droit sur son icône et choisissez Quitter Kamo.",
       "closeToTrayHintMac": "Fermer la fenêtre laisse Kamo ouvert avec une icône dans la barre des menus. Pour quitter, choisissez Quitter Kamo à cet endroit ou appuyez sur ⌘Q."
     },
+    "recording": {
+      "title": "Enregistrement",
+      "countdownSound": "Jouer un petit tic pendant le compte à rebours 3-2-1",
+      "countdownSoundHint": "Il s'arrête avant le début de l'enregistrement : il n'apparaît jamais dans la vidéo."
+    },
     "folders": {
       "title": "Dossiers",
       "projects": "Dossier des projets",

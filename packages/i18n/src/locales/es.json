@@ -358,6 +358,11 @@
       "closeToTrayHint": "Al cerrar la ventana, Kamo sigue funcionando en la bandeja del sistema. Para salir, haz clic derecho en su icono y elige Salir de Kamo.",
       "closeToTrayHintMac": "Al cerrar la ventana, Kamo sigue funcionando con un icono en la barra de menús. Para salir, elige Salir de Kamo allí o pulsa ⌘Q."
     },
+    "recording": {
+      "title": "Grabación",
+      "countdownSound": "Sonar un tic suave en la cuenta 3-2-1",
+      "countdownSoundHint": "Termina antes de que empiece la grabación, así que nunca queda en el video."
+    },
     "folders": {
       "title": "Carpetas",
       "projects": "Carpeta de proyectos",

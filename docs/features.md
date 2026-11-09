@@ -58,6 +58,7 @@
 - [x] Thumbnails update at least once per second
 - [x] The chosen display and the toggles are remembered for the next recording (display, microphone, computer sound and camera; there is no "show cursor" toggle on Home: cursor visibility lives in the editor, F-07)
 - [x] Esc during the countdown cancels and returns to the Home without creating a project
+- [x] A soft tick on each number of the 3-2-1 (higher on the 1), made with an oscillator, ending ~0.9s before recording starts so computer sound never captures it; Settings → Recording turns it off _(desktop; the extension countdown is silent)_
 - [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s) — measured 4.0s and 4.7s on Windows (2026-11-08, i5-9400F): the helper was only spawned when the countdown ended (~0.6s to `ready`, then ~0.8s from `start` to `started`). The helper now starts and reaches `ready` during the countdown; to measure again
 
 **Edge cases**

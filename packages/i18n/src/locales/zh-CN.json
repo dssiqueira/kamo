@@ -358,6 +358,11 @@
       "closeToTrayHint": "关闭窗口后，Kamo 会继续在系统托盘中运行。要退出，请右键点击其图标并选择“退出 Kamo”。",
       "closeToTrayHintMac": "关闭窗口后，Kamo 会继续运行，并在菜单栏中显示图标。要退出，请在那里选择“退出 Kamo”或按 ⌘Q。"
     },
+    "recording": {
+      "title": "录制",
+      "countdownSound": "3-2-1 倒计时时播放轻柔的提示音",
+      "countdownSoundHint": "提示音在录制开始前结束，不会出现在视频里。"
+    },
     "folders": {
       "title": "文件夹",
       "projects": "项目文件夹",

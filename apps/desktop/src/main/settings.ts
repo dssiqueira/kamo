@@ -71,6 +71,7 @@ const StoredSettings = z.looseObject({
   cameraDeviceId: DeviceId.optional().catch(undefined),
   // F-15 close to tray, and whether its one-time notice was shown (main only).
   closeToTray: z.boolean().optional().catch(undefined),
+  countdownSound: z.boolean().optional().catch(undefined),
   trayNoticeShown: z.boolean().optional().catch(undefined),
   // A-05 local transcription: automatic mode, language and which installed pack.
   autoTranscribe: z.boolean().optional().catch(undefined),
@@ -100,6 +101,7 @@ export const SettingsUpdateSchema = z.strictObject({
   cameraEnabled: z.boolean().optional(),
   cameraDeviceId: DeviceId.optional(),
   closeToTray: z.boolean().optional(),
+  countdownSound: z.boolean().optional(),
   autoTranscribe: z.boolean().optional(),
   transcriptionLanguage: TranscriptionLanguageSchema.optional(),
   transcriptionPack: PackIdSchema.optional(),
@@ -192,6 +194,7 @@ const PUBLIC_KEYS = [
   'cameraEnabled',
   'cameraDeviceId',
   'closeToTray',
+  'countdownSound',
   'trayNoticeShown',
   'autoTranscribe',
   'transcriptionLanguage',

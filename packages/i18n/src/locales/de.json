@@ -358,6 +358,11 @@
       "closeToTrayHint": "Wenn du das Fenster schließt, läuft Kamo im Infobereich der Taskleiste weiter. Zum Beenden klick mit der rechten Maustaste auf das Symbol und wähl Kamo beenden.",
       "closeToTrayHintMac": "Wenn du das Fenster schließt, läuft Kamo mit einem Symbol in der Menüleiste weiter. Zum Beenden wähl dort Kamo beenden oder drück ⌘Q."
     },
+    "recording": {
+      "title": "Aufnahme",
+      "countdownSound": "Beim 3-2-1-Countdown leise ticken",
+      "countdownSoundHint": "Das Ticken endet, bevor die Aufnahme beginnt – es landet nie im Video."
+    },
     "folders": {
       "title": "Ordner",
       "projects": "Projektordner",

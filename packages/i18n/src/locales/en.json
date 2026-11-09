@@ -358,6 +358,11 @@
       "closeToTrayHint": "Closing the window leaves Kamo running in the system tray. To quit, right-click its icon and choose Quit Kamo.",
       "closeToTrayHintMac": "Closing the window leaves Kamo running with an icon in the menu bar. To quit, choose Quit Kamo there or press ⌘Q."
     },
+    "recording": {
+      "title": "Recording",
+      "countdownSound": "Play a soft tick during the 3-2-1 countdown",
+      "countdownSoundHint": "It stops before recording begins, so it never ends up in your video."
+    },
     "folders": {
       "title": "Folders",
       "projects": "Projects folder",

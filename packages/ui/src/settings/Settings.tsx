@@ -44,6 +44,9 @@ export interface SettingsProps {
   closeToTray: boolean
   onCloseToTrayChange(closeToTray: boolean): void
 
+  /** A soft tick on each number of the 3-2-1 (F-01). Omitted where there is no setting. */
+  countdownSound?: { enabled: boolean; onChange(enabled: boolean): void }
+
   /** Null while loading. */
   folders: { projectsDir: string; exportDir: string } | null
   onChangeFolder(kind: FolderKind): ActionResult
@@ -135,6 +138,21 @@ export function Settings(props: SettingsProps) {
             </p>
           </div>
         </Section>
+
+        {props.countdownSound && (
+          <Section id="settings-recording" title={t('settings.recording.title')}>
+            <div className="flex flex-col gap-xs">
+              <Switch
+                label={t('settings.recording.countdownSound')}
+                checked={props.countdownSound.enabled}
+                onChange={props.countdownSound.onChange}
+              />
+              <p className="text-label text-on-surface-muted">
+                {t('settings.recording.countdownSoundHint')}
+              </p>
+            </div>
+          </Section>
+        )}
 
         <Section id="settings-folders" title={t('settings.folders.title')}>
           <FolderRow kind="projects" {...props} />

@@ -384,6 +384,8 @@ export interface AppSettings {
    * Absent: AppInfo.closeToTrayDefault (on everywhere but Mac).
    */
   closeToTray?: boolean
+  /** F-01: a soft tick on each number of the countdown. Absent: on. */
+  countdownSound?: boolean
   /** Set by main once the "Kamo is still running in the tray" notice was shown. */
   trayNoticeShown?: boolean
   /**

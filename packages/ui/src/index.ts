@@ -15,6 +15,7 @@ export type { CameraOption, CameraSourceProps, CameraStatus } from './home/Camer
 export type { AudioSourcesProps } from './home/AudioSources.tsx'
 export { levelFromRms, rmsOf, smoothLevel } from './home/audioLevel.ts'
 export { Countdown } from './recording/Countdown.tsx'
+export { playCountdownTick } from './recording/countdown-sound.ts'
 export { SelectionBorder, SelectionFrame } from './recording/SelectionFrame.tsx'
 export { RecordingBar } from './recording/RecordingBar.tsx'
 export type { RecordingClock } from './recording/RecordingBar.tsx'

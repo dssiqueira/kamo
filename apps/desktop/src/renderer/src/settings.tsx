@@ -47,6 +47,7 @@ function DesktopSettings() {
     theme?: ThemeChoice
     language?: LanguageChoice
     closeToTray?: boolean
+    countdownSound?: boolean
     autoTranscribe?: boolean
     transcriptionLanguage?: TranscriptionLanguage
     transcriptionPack?: TranscriptionPackId
@@ -67,6 +68,10 @@ function DesktopSettings() {
       onLanguageChange={(language) => save({ language })}
       closeToTray={settings.closeToTray ?? info.closeToTrayDefault}
       onCloseToTrayChange={(closeToTray) => save({ closeToTray })}
+      countdownSound={{
+        enabled: settings.countdownSound ?? true,
+        onChange: (countdownSound) => save({ countdownSound }),
+      }}
       folders={folders}
       onChangeFolder={(kind) =>
         attempt(async () => {
