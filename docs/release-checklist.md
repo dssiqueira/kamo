@@ -47,7 +47,7 @@ list into the release's tracking issue and tick it there.
 - [ ] Cancel an export midway: no `.partial` file is left
 
 ## 5. Captions and transcription with a real pack (A-05, A-06, A-07)
-- [ ] Settings → Packs lists the Light and Accurate packs from the `packs` release; download Light with pause/resume
+- [ ] Settings → Optional packs lists the Light and Accurate packs from the `packs` release; download Light with pause/resume
 - [ ] Mac: the downloaded `whisper-cli` runs (no Gatekeeper block on the ad-hoc signed binary)
 - [ ] Transcribe a 10-minute recording in Portuguese and one in English with Light: well under 5 minutes on an M1 / recent i5
 - [ ] Captions show in the preview, can be edited, are burned into the export, and `.srt` export opens in a player

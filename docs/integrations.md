@@ -47,7 +47,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 - The URL lives in one module (`apps/desktop/src/main/packs/config.ts`); `KAMO_PACKS_MANIFEST_URL` overrides it in development runs only, never in a release (https, or a local http server in an unpackaged build: `node scripts/fake-pack-server.ts` serves a fake pack whose "whisper" is a Node script). Before every transcription the installed program and its libraries are hashed again against `packs.json` (the model only when its size or mtime changed), and pack versions must be plain folder names
 - The app downloads directly from GitHub with Electron's `net` in main (HTTP Range to resume after a pause, a lost connection or a restart), checks size and SHA-256, and moves the complete folder into `app-data/packs/<id>/<version>/`. An update is downloaded only after the user confirms, and replaces the old version once it is complete
 - Whisper runs as a child process at below-normal priority, with half the cores (max 8), the app-data folder as its working directory and paths relative to it (whisper.cpp opens files with narrow-char APIs on Windows, so a user folder with accents would break absolute paths). Its audio is a 16kHz mono WAV decoded by a hidden renderer with WebCodecs (mediabunny), never FFmpeg
-- No pack downloads on its own: always from a user click. The list is fetched only when Settings → Packs comes into view or the user clicks Transcribe
+- No pack downloads on its own: always from a user click. The list is fetched only when Settings → Optional packs comes into view or the user clicks Transcribe
 - If GitHub ever imposes limits, plan B is to serve the packs from Kamo Cloud storage
 
 ## Distribution

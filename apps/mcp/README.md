@@ -125,7 +125,7 @@ Search ignores case and accents and needs every word of the query. It indexes in
 ### When something is missing
 
 - **No recordings:** the answer says which folder was read ("No recordings found in …"). Check the folder in the Kamo app and pass it with `--dir`.
-- **No transcript:** transcription is an optional pack in the Kamo desktop app (click **Transcribe** in the Editor, or **Settings → Packages**). Without it, clicks, zooms and frames still work, and search only looks at names.
+- **No transcript:** transcription is an optional pack in the Kamo desktop app (click **Transcribe** in the Editor, or **Settings → Optional packs**). Without it, clicks, zooms and frames still work, and search only looks at names.
 - **Corrupted project:** it is skipped and listed under `warnings`; everything else keeps working.
 - **Recordings from the Chrome extension** do not show up here: they live inside the browser. Upload them to Kamo Cloud and use the Kamo Cloud MCP, which reads your whole cloud library from any device.
 

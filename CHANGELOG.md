@@ -11,6 +11,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ### Fixed
 - The permissions button says *Open Windows Settings* on Windows (it said *Open System Settings*, the Mac name).
 - The command for a development build of the MCP server now starts it (Node needs `--experimental-transform-types` inside the repository).
+- The MCP docs name the *Optional packs* section of Settings correctly.
 
 ## [0.1.0] — first public release (Windows)
 

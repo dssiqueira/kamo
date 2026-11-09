@@ -510,8 +510,8 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 **Behavior:** transcription is **not in the installer**. It is an optional package (whisper.cpp binary + model) that the user downloads only if they want it. Once installed, the app transcribes recordings with audio in the background and saves to `transcript.json`. It is the basis of captions (A-06) and of the text part of the MCP (M-01, M-02).
 
 **Acceptance criteria**
-- [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the list of packs is fetched only when Settings → Packs comes into view or Transcribe is clicked (checked in the Electron build: no request before a click)
-- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Packages, and the "Connect to an agent" panel — Settings → Packs, a Transcribe button on Home's project cards and in the editor's Captions section done; the agent panel comes with step 26
+- [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the list of packs is fetched only when Settings → Optional packs comes into view or Transcribe is clicked (checked in the Electron build: no request before a click)
+- [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Optional packs, and the "Connect to an agent" panel — Settings → Optional packs, a Transcribe button on Home's project cards and in the editor's Captions section done; the agent panel comes with step 26
 - [x] Before downloading, shows the size and the quality choice: **Light** (~150MB, faster) or **Accurate** (~500MB, better in Portuguese) — exact sizes once the list loaded, "About …" before
 - [x] Download with progress, pause/cancel and integrity check (SHA-256) — resumes with HTTP Range, also after a restart
 - [x] Once installed, asks once: "Automatically transcribe the next recordings?" (yes → in the background; no → only when Transcribe is clicked)
@@ -530,7 +530,7 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 - Audio with long silent stretches → does not generate empty segments
 
 ## A-07 — Optional package manager
-**Behavior:** Settings → Packages lists what can be downloaded separately, keeping the base app light.
+**Behavior:** Settings → Optional packs lists what can be downloaded separately, keeping the base app light.
 
 | Package | Approx. size | What for |
 |---|---|---|
