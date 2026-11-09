@@ -574,7 +574,9 @@
       "write_failed": "Kamo could not write the file. The incomplete file was deleted.",
       "source_unreadable": "Kamo could not read this recording's video.",
       "encoder_unavailable": "This computer has no H.264 encoder Kamo can use.",
-      "failed": "Something went wrong while exporting. The incomplete file was deleted."
+      "failed": "Something went wrong while exporting. The incomplete file was deleted.",
+      "encoder_failed": "This computer's video encoder stopped in the middle of the export. The incomplete file was deleted.",
+      "compatibility_failed": "The compatibility package could not export this video. The incomplete file was deleted."
     },
     "warnings": {
       "software_encoder": "This computer has no hardware video encoder, so the export used the slower software one.",
@@ -582,7 +584,8 @@
       "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound.",
       "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble.",
       "background_unreadable": "The background image could not be read, so the video uses a plain background.",
-      "settings_fallback": "This computer's video encoder couldn't make the resolution or frame rate you picked, so a lower one was used. The file name says which."
+      "settings_fallback": "This computer's video encoder couldn't make the resolution or frame rate you picked, so a lower one was used. The file name says which.",
+      "compatibility_encoder": "Exported with the compatibility package (FFmpeg), because this computer's own video encoder couldn't."
     },
     "closeDialog": {
       "title": "Export in progress",
@@ -606,7 +609,13 @@
     "gifHint": "No sound, up to 1280 px wide.",
     "gifEstimate": "Estimated size: about {size}.",
     "gifLarge": "Many sites and chat apps refuse GIFs over {limit}: trim the video, pick 10 fps or export an MP4.",
-    "encoderFallback": "This computer's video encoder can't make {wanted}, so Kamo will export {actual}."
+    "encoderFallback": "This computer's video encoder can't make {wanted}, so Kamo will export {actual}.",
+    "compat": {
+      "question": "Download the compatibility package and try again?",
+      "body": "Kamo can make the MP4 with FFmpeg instead: an optional package, downloaded only if you ask, that stays on this computer.",
+      "size": "Download size: {size}",
+      "download": "Download and try again"
+    }
   },
   "recovery": {
     "found": "We found an interrupted recording from {date}.",
@@ -775,6 +784,12 @@
       "packBusy": "It's transcribing right now. Try again when it finishes.",
       "installFailed": "Couldn't install it. Try again.",
       "unknownPack": "This pack isn't available anymore."
+    },
+    "compatibility": {
+      "name": "Video compatibility",
+      "hint": "Exports MP4 with FFmpeg on computers where the system's video encoder fails.",
+      "removeConfirm": "Remove {name}? The videos you already exported stay.",
+      "busy": "It's exporting a video right now. Try again when it finishes."
     }
   },
   "transcription": {

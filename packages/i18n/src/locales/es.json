@@ -574,7 +574,9 @@
       "write_failed": "Kamo no pudo escribir el archivo. Se borró el archivo incompleto.",
       "source_unreadable": "Kamo no pudo leer el video de esta grabación.",
       "encoder_unavailable": "Este ordenador no tiene un codificador H.264 que Kamo pueda usar.",
-      "failed": "Algo salió mal al exportar. Se borró el archivo incompleto."
+      "failed": "Algo salió mal al exportar. Se borró el archivo incompleto.",
+      "encoder_failed": "El codificador de video de este ordenador se detuvo en mitad de la exportación. Se borró el archivo incompleto.",
+      "compatibility_failed": "El paquete de compatibilidad no pudo exportar este video. Se borró el archivo incompleto."
     },
     "warnings": {
       "software_encoder": "Este ordenador no tiene codificador de video por hardware, así que la exportación usó el de software, más lento.",
@@ -582,7 +584,8 @@
       "audio_encoder_unavailable": "Este ordenador no puede codificar sonido AAC, así que el video no tiene sonido.",
       "webcam_unreadable": "No se pudo leer la grabación de la cámara web, así que el video no tiene la burbuja de la cámara.",
       "background_unreadable": "No se pudo leer la imagen de fondo, así que el vídeo usa un fondo liso.",
-      "settings_fallback": "El codificador de video de este equipo no pudo generar la resolución o la velocidad de fotogramas elegida, así que usó una menor. El nombre del archivo indica cuál."
+      "settings_fallback": "El codificador de video de este equipo no pudo generar la resolución o la velocidad de fotogramas elegida, así que usó una menor. El nombre del archivo indica cuál.",
+      "compatibility_encoder": "Exportado con el paquete de compatibilidad (FFmpeg), porque el codificador de video de este ordenador no pudo."
     },
     "closeDialog": {
       "title": "Exportación en curso",
@@ -606,7 +609,13 @@
     "gifHint": "Sin sonido, de hasta 1280 px de ancho.",
     "gifEstimate": "Tamaño estimado: unos {size}.",
     "gifLarge": "Muchos sitios y apps de chat rechazan GIF de más de {limit}: recorta el video, elige 10 fps o exporta un MP4.",
-    "encoderFallback": "El codificador de video de este equipo no puede generar {wanted}, así que Kamo exportará en {actual}."
+    "encoderFallback": "El codificador de video de este equipo no puede generar {wanted}, así que Kamo exportará en {actual}.",
+    "compat": {
+      "question": "¿Descargar el paquete de compatibilidad e intentarlo de nuevo?",
+      "body": "Kamo puede crear el MP4 con FFmpeg: un paquete opcional, que solo se descarga si lo pides y se queda en este ordenador.",
+      "size": "Tamaño de la descarga: {size}",
+      "download": "Descargar e intentar de nuevo"
+    }
   },
   "recovery": {
     "found": "Encontramos una grabación interrumpida del {date}.",
@@ -775,6 +784,12 @@
       "packBusy": "Está transcribiendo ahora. Inténtalo de nuevo cuando termine.",
       "installFailed": "No se pudo instalar. Inténtalo de nuevo.",
       "unknownPack": "Este paquete ya no está disponible."
+    },
+    "compatibility": {
+      "name": "Compatibilidad de video",
+      "hint": "Exporta MP4 con FFmpeg en ordenadores donde falla el codificador de video del sistema.",
+      "removeConfirm": "¿Quitar {name}? Los videos que ya exportaste se conservan.",
+      "busy": "Está exportando un video ahora. Inténtalo de nuevo cuando termine."
     }
   },
   "transcription": {

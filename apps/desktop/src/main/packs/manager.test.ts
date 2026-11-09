@@ -6,7 +6,12 @@ import type { PacksStatus } from '../../shared/packs.ts'
 import { DEFAULT_MANIFEST_URL, manifestUrl, platformKey } from './config.ts'
 import { parseManifest } from './manifest.ts'
 import { PackManager } from './manager.ts'
-import { fakeTranscriptionPack, startFakePackServer, type FakePackServer } from './testing.ts'
+import {
+  fakeCompatibilityPack,
+  fakeTranscriptionPack,
+  startFakePackServer,
+  type FakePackServer,
+} from './testing.ts'
 
 const log = { info() {}, warn() {} }
 
@@ -121,8 +126,37 @@ describe('PackManager', () => {
     expect(status.packs.map((p) => [p.id, p.state, p.sizeExact])).toEqual([
       ['transcribe-light', 'not_installed', false],
       ['transcribe-accurate', 'not_installed', false],
+      ['video-compatibility', 'not_installed', false],
+    ])
+    expect(status.packs.map((p) => [p.kind, p.quality])).toEqual([
+      ['transcription', 'light'],
+      ['transcription', 'accurate'],
+      ['compatibility', null],
     ])
     expect(calls).toBe(0)
+  })
+
+  it('installs the compatibility pack (no model): a program, never a transcriber', async () => {
+    server = await startFakePackServer({ packs: [fakeCompatibilityPack()] })
+    const packs = manager(server.manifestUrl)
+    await packs.install('video-compatibility')
+    const compat = (await packs.status()).packs.find((p) => p.id === 'video-compatibility')!
+    expect(compat).toMatchObject({ state: 'installed', installedVersion: '1.0.0', error: null })
+    const program = await packs.program('video-compatibility')
+    expect(program?.entry).toMatch(/ffmpeg.mjs$/)
+    expect((await stat(program!.entry)).isFile()).toBe(true)
+    expect(await packs.transcriber('video-compatibility')).toBeNull()
+    const registry = JSON.parse(await readFile(join(dir, 'packs.json'), 'utf8'))
+    expect(registry.packs['video-compatibility'].model).toBeUndefined()
+    // Swapped program: refused before it can run as Kamo.
+    await writeFile(program!.entry, 'console.log("not ffmpeg")')
+    expect(await packs.program('video-compatibility')).toBeNull()
+    // Busy while an export uses it.
+    const release = packs.retain('video-compatibility')
+    await expect(packs.remove('video-compatibility')).rejects.toMatchObject({ code: 'pack_busy' })
+    release()
+    await packs.remove('video-compatibility')
+    expect(await packs.program('video-compatibility')).toBeNull()
   })
 
   it('never runs a pack whose program changed after the install', async () => {

@@ -75,7 +75,10 @@ export function PacksSection(props: PacksSectionProps) {
     return () => observer.disconnect()
   }, [onOpen])
 
-  const installed = props.packs.packs.filter((pack) => pack.installedVersion !== null)
+  // The transcription settings follow the transcription packs only (not the compatibility one).
+  const installed = props.packs.packs.filter(
+    (pack) => pack.kind === 'transcription' && pack.installedVersion !== null,
+  )
 
   return (
     <>

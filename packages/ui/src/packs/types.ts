@@ -1,14 +1,17 @@
 // What the packs and transcription screens show (A-07, A-05). The UI does not know where it
 // runs (rule 1): the desktop maps main's pack manager onto these shapes.
 
-export type PackViewId = 'transcribe-light' | 'transcribe-accurate'
+export type PackViewId = 'transcribe-light' | 'transcribe-accurate' | 'video-compatibility'
 
 export type PackViewState =
   'not_installed' | 'downloading' | 'paused' | 'verifying' | 'installed' | 'failed'
 
 export interface PackView {
   id: PackViewId
-  quality: 'light' | 'accurate'
+  /** Transcription (A-05) or the export's FFmpeg fallback (D-040). */
+  kind: 'transcription' | 'compatibility'
+  /** Transcription packs only. */
+  quality: 'light' | 'accurate' | null
   sizeBytes: number
   /** False: an estimate shown before the list of packs loaded. */
   sizeExact: boolean

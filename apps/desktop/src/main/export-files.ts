@@ -147,6 +147,14 @@ export class ExportFiles {
     }
   }
 
+  /**
+   * The `.partial` file of an open export, for a writer outside the renderer: the
+   * compatibility pack's FFmpeg writes it itself (D-040), then `commit` names it as usual.
+   */
+  partialPath(id: string): string {
+    return this.get(id).partialPath
+  }
+
   /** Renames the partial file to its final name and returns the final path. */
   async commit(id: unknown): Promise<string> {
     const file = this.get(id)

@@ -1,8 +1,9 @@
 // Test and local-check helpers for packs (A-07) and transcription (A-05): a tiny HTTP server
-// that serves a fake packs-manifest.json and a fake transcription pack (a Node script that
-// behaves like whisper-cli and writes a canned transcript). Nothing here ships in the app's
+// that serves a fake packs-manifest.json, a fake transcription pack (a Node script that
+// behaves like whisper-cli and writes a canned transcript) and a fake compatibility pack (a
+// Node script that reads frames like ffmpeg, D-040). Nothing here ships in the app's
 // flow: tests import it, and `scripts/fake-pack-server.ts` runs it for manual checks with
-// KAMO_PACKS_MANIFEST_URL. No real whisper binary or model is ever downloaded.
+// KAMO_PACKS_MANIFEST_URL. No real whisper, FFmpeg or model is ever downloaded.
 import { createHash } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -56,6 +57,38 @@ writeFileSync(out + '.json', JSON.stringify({
 }))
 `
 
+/**
+ * Behaves like the compatibility pack's ffmpeg as Kamo runs it (compat/ffmpeg.ts): raw RGBA
+ * frames of `-s WxH` on stdin, an optional `-f s16le` sound file, the encoder after `-c:v`
+ * and the output path last. A probe (`-f null -`) exits 0 unless the encoder is listed in
+ * FAKE_FFMPEG_REFUSE (comma-separated). An export writes a JSON summary to the output instead
+ * of an MP4: { encoder, frames, audioBytes, args }. FAKE_FFMPEG_FAIL=1 exits 1 after reading,
+ * FAKE_FFMPEG_DISK_FULL=1 prints FFmpeg's "No space left on device" and exits 1.
+ */
+export const FAKE_FFMPEG_SCRIPT = `
+import { statSync, writeFileSync } from 'node:fs'
+const args = process.argv.slice(2)
+const arg = (name, from = 0) => { const i = args.indexOf(name, from); return i === -1 ? undefined : args[i + 1] }
+const [w, h] = (arg('-s') ?? '0x0').split('x').map(Number)
+const encoder = arg('-c:v')
+const frameBytes = w * h * 4
+if (!frameBytes || !encoder) { console.error('usage'); process.exit(2) }
+const audioFlag = args.indexOf('s16le')
+const audio = audioFlag === -1 ? undefined : arg('-i', audioFlag)
+let bytes = 0
+process.stdin.on('data', (chunk) => { bytes += chunk.length })
+process.stdin.on('end', () => {
+  const probe = args.at(-1) === '-' && arg('-f', args.indexOf('-c:v')) === 'null'
+  const refused = (process.env.FAKE_FFMPEG_REFUSE ?? '').split(',').includes(encoder)
+  if (probe) process.exit(refused ? 1 : 0)
+  if (refused || process.env.FAKE_FFMPEG_FAIL === '1') { console.error('Error while encoding'); process.exit(1) }
+  if (process.env.FAKE_FFMPEG_DISK_FULL === '1') { console.error('av_interleaved_write_frame(): No space left on device'); process.exit(1) }
+  if (bytes % frameBytes !== 0) { console.error('partial frame'); process.exit(3) }
+  const audioBytes = audio ? statSync(audio).size : 0
+  writeFileSync(args.at(-1), JSON.stringify({ encoder, frames: bytes / frameBytes, audioBytes, args }))
+})
+`
+
 export interface FakeFile {
   path: string
   body: Uint8Array
@@ -65,8 +98,10 @@ export interface FakeFile {
 export interface FakePack {
   id: string
   version: string
-  modelName: string
-  modelPath: string
+  kind?: 'transcription' | 'compatibility'
+  /** Transcription packs only. */
+  modelName?: string
+  modelPath?: string
   entry: string
   files: FakeFile[]
 }
@@ -92,6 +127,24 @@ export function fakeTranscriptionPack(
         executable: true,
       },
       { path: 'models/fake-model.bin', body: model },
+    ],
+  }
+}
+
+/** A fake "Video compatibility" pack (D-040): the script as its ffmpeg, plus a notice file. */
+export function fakeCompatibilityPack(version = '1.0.0'): FakePack {
+  return {
+    id: 'video-compatibility',
+    version,
+    kind: 'compatibility',
+    entry: 'bin/ffmpeg.mjs',
+    files: [
+      {
+        path: 'bin/ffmpeg.mjs',
+        body: new TextEncoder().encode(FAKE_FFMPEG_SCRIPT),
+        executable: true,
+      },
+      { path: 'NOTICE.txt', body: new TextEncoder().encode('FFmpeg, LGPL-2.1-or-later') },
     ],
   }
 }
@@ -128,8 +181,10 @@ export async function startFakePackServer(options: FakePackServerOptions): Promi
     packs: options.packs.map((pack) => ({
       id: pack.id,
       version: pack.version,
-      kind: 'transcription',
-      model: { name: pack.modelName, path: pack.modelPath },
+      kind: pack.kind ?? 'transcription',
+      ...(pack.modelName && pack.modelPath
+        ? { model: { name: pack.modelName, path: pack.modelPath } }
+        : {}),
       platforms: {
         [options.platform ?? platformKey()]: {
           entry: pack.entry,

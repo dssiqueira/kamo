@@ -1,7 +1,7 @@
 import { Settings, type LanguageChoice, type ThemeChoice } from '@kamo/ui'
 import { useCallback, useEffect, useState } from 'react'
 import type { AppInfo, AppSettings, Folders } from '../../shared/api.ts'
-import type { PackId, TranscriptionLanguage } from '../../shared/packs.ts'
+import type { TranscriptionLanguage, TranscriptionPackId } from '../../shared/packs.ts'
 import { boot } from './boot.tsx'
 import { attempt } from './preferences/actions.ts'
 import { probeHardwareH264 } from './preferences/encoder-probe.ts'
@@ -49,7 +49,7 @@ function DesktopSettings() {
     closeToTray?: boolean
     autoTranscribe?: boolean
     transcriptionLanguage?: TranscriptionLanguage
-    transcriptionPack?: PackId
+    transcriptionPack?: TranscriptionPackId
   }) => {
     setSettings((current) => current && { ...current, ...update })
     void window.kamo.updateSettings(update).catch(() => {
@@ -108,7 +108,8 @@ function DesktopSettings() {
               onLanguageChange: (transcriptionLanguage: TranscriptionLanguage) =>
                 save({ transcriptionLanguage }),
               activePack: settings.transcriptionPack ?? null,
-              onActivePackChange: (id: string) => save({ transcriptionPack: id as PackId }),
+              onActivePackChange: (id: string) =>
+                save({ transcriptionPack: id as TranscriptionPackId }),
             },
           }
         : {})}

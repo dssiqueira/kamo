@@ -12,6 +12,7 @@ import {
   type MouseEventRecord,
   type Project,
   type Resolution,
+  type ExternalVideoEncoder,
   type Transcript,
 } from '@kamo/core'
 import {
@@ -19,6 +20,7 @@ import {
   exportErrorCode,
   exportFileName,
   GIF_RESOLUTION,
+  needsCompatibilityEncoder,
   resolveVideoSettings,
   type ExportAudioTrack,
   type ExportErrorCode,
@@ -28,6 +30,7 @@ import {
   type MediaFile,
 } from '@kamo/core/export'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { PackView } from '../packs/types.ts'
 
 /** The raw files of the project, as the platform reads them. */
 export interface ExportMedia {
@@ -39,6 +42,57 @@ export interface ExportMedia {
   webcam?: MediaFile | null
   /** a background image copied into the project (A-04, `style.background.value`) */
   backgroundImage?(file: string): MediaFile | null
+}
+
+/**
+ * The optional "Video compatibility" pack (A-07, D-040): FFmpeg as the encoder when this
+ * machine's WebCodecs has none or it breaks. Desktop only; the extension has no packs.
+ */
+export interface ExportCompatibility {
+  /** The pack as Settings → Packs shows it; null until the platform answered. */
+  getSnapshot(): PackView | null
+  subscribe(listener: () => void): () => void
+  /** The user asked for it: download and install (progress comes through subscribe). */
+  install(): void
+  cancel(): void
+  /** Encodes through the installed pack (refuses with `encoder_unavailable` when it is not). */
+  encoder: ExternalVideoEncoder
+}
+
+/** Installed (an update waiting still counts): exports can use it right away. */
+export function compatibilityReady(pack: PackView | null | undefined): boolean {
+  return (pack?.installedVersion ?? null) !== null
+}
+
+/**
+ * The error screen offers the download (A-07) only when it can help: the run stopped for lack
+ * of a working encoder, the pack is not installed yet and this computer has a build of it.
+ */
+export function offersCompatibility(code: ExportErrorCode, pack: PackView | null): boolean {
+  return (
+    needsCompatibilityEncoder(code) &&
+    pack !== null &&
+    !compatibilityReady(pack) &&
+    pack.error !== 'unsupported_platform'
+  )
+}
+
+/**
+ * Which encoder an MP4 goes through (D-040): WebCodecs when it has one for the settings (or
+ * their A-01 fallback) and has not broken in this sheet; the installed pack otherwise; null =
+ * none (`encoder_unavailable`, which offers the pack).
+ */
+export function mp4Encoder(options: {
+  webCodecs: boolean
+  compatReady: boolean
+}): 'webcodecs' | 'compatibility' | null {
+  if (options.webCodecs) return 'webcodecs'
+  return options.compatReady ? 'compatibility' : null
+}
+
+/** WebCodecs broke mid-file: made again through the pack, if it is installed. */
+export function retriesWithCompatibility(code: ExportErrorCode, compatReady: boolean): boolean {
+  return code === 'encoder_failed' && compatReady
 }
 
 /** What the app gives the export screen; packages/ui never knows where files go (rule 1). */
@@ -54,6 +108,8 @@ export interface ExportPlatform {
   onExported?(record: ExportRecord): void
   /** True while files are being written, so the app can ask before closing (F-11). */
   onBusyChange?(busy: boolean): void
+  /** Desktop: the compatibility pack, offered when the export fails for lack of an encoder. */
+  compatibility?: ExportCompatibility
 }
 
 /** Captions on export (A-06): none, burned into the picture, or an .srt next to the MP4. */
@@ -219,6 +275,11 @@ export function useExportRun({
   latest.current = { project, events, autoZoom, platform, transcript }
   /** The settings of the current run (kept for "Try again"). */
   const settingsRef = useRef<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
+  /**
+   * WebCodecs broke on this machine during this sheet's life: the next MP4s go straight to the
+   * compatibility pack while it is installed (D-040), instead of failing a second time.
+   */
+  const preferCompat = useRef(false)
 
   const busy = state.phase === 'exporting'
   useEffect(() => {
@@ -291,7 +352,7 @@ export function useExportRun({
             }
           }
           // Before any file is opened: a pipeline that fails to load leaves nothing behind.
-          const { exportGif, exportVideo } = await import('./pipeline.ts')
+          const { exportGif, exportVideo, exportVideoExternal } = await import('./pipeline.ts')
           let result: ExportResult
           let record: Pick<ExportRecord, 'resolution' | 'fps' | 'format'>
           if (gif) {
@@ -315,33 +376,77 @@ export function useExportRun({
               onProgress,
             })
           } else {
+            const compat = platform.compatibility
+            const compatReady = () => !!compat && compatibilityReady(compat.getSnapshot())
             // A-01: what this machine's encoder can make, best first (4K60 → 4K30 → …).
-            const resolved = await resolveVideoSettings(job.aspect, {
-              resolution: settings.resolution,
-              fps: settings.fps,
-            })
-            if (!resolved) throw new ExportError('encoder_unavailable')
-            if (resolved.fallback) warnings.add('settings_fallback')
-            record = { resolution: resolved.resolution, fps: resolved.fps, format: 'mp4' }
-            const file = await platform.sink.open(
-              exportFileName({
-                projectName: project.name,
+            const resolved =
+              preferCompat.current && compatReady()
+                ? null
+                : await resolveVideoSettings(job.aspect, {
+                    resolution: settings.resolution,
+                    fps: settings.fps,
+                  })
+            let webCodecs: { result: ExportResult; record: typeof record } | null = null
+            const route = mp4Encoder({ webCodecs: resolved !== null, compatReady: compatReady() })
+            if (!route) throw new ExportError('encoder_unavailable')
+            if (resolved) {
+              const file = await platform.sink.open(
+                exportFileName({
+                  projectName: project.name,
+                  aspect: job.aspect,
+                  resolution: resolved.resolution,
+                  fps: resolved.fps,
+                }),
+                'video/mp4',
+              )
+              update(index, { name: file.name })
+              try {
+                const done = await exportVideo({
+                  ...jobCommon,
+                  audio,
+                  aspect: job.aspect,
+                  resolution: resolved.resolution,
+                  fps: resolved.fps,
+                  sink: file,
+                  onProgress,
+                })
+                webCodecs = {
+                  result: done,
+                  record: { resolution: resolved.resolution, fps: resolved.fps, format: 'mp4' },
+                }
+              } catch (error) {
+                // D-040: the encoder broke; with the pack installed, this file is made again
+                // through it (the sink already deleted the incomplete one).
+                if (!retriesWithCompatibility(exportErrorCode(error), compatReady())) throw error
+                preferCompat.current = true
+              }
+              if (webCodecs && resolved.fallback) warnings.add('settings_fallback')
+            }
+            if (webCodecs) {
+              result = webCodecs.result
+              record = webCodecs.record
+            } else {
+              // The compatibility pack (D-040): exactly the settings asked for, painted by the
+              // same core renderer, encoded by FFmpeg in the main process.
+              shown = 0
+              update(index, { progress: 0, name: null })
+              record = { resolution: settings.resolution, fps: settings.fps, format: 'mp4' }
+              result = await exportVideoExternal({
+                ...jobCommon,
+                audio,
                 aspect: job.aspect,
-                resolution: resolved.resolution,
-                fps: resolved.fps,
-              }),
-              'video/mp4',
-            )
-            update(index, { name: file.name })
-            result = await exportVideo({
-              ...jobCommon,
-              audio,
-              aspect: job.aspect,
-              resolution: resolved.resolution,
-              fps: resolved.fps,
-              sink: file,
-              onProgress,
-            })
+                resolution: settings.resolution,
+                fps: settings.fps,
+                encoder: (compat as ExportCompatibility).encoder,
+                fileName: exportFileName({
+                  projectName: project.name,
+                  aspect: job.aspect,
+                  resolution: settings.resolution,
+                  fps: settings.fps,
+                }),
+                onProgress,
+              })
+            }
           }
           result.warnings.forEach((w) => warnings.add(w))
           // Saved: recorded right away, so a later .srt failure never loses it.

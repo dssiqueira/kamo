@@ -220,7 +220,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
           timestamp: audioDone / EXPORT_SAMPLE_RATE,
         })
         try {
-          await audioSource.add(sample)
+          await encoding(audioSource.add(sample))
         } finally {
           sample.close()
         }
@@ -232,7 +232,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     for (let i = 0; i < frames; i++) {
       checkAbort()
       await frameRenderer.render(exportFrameTimeMs(project.trim, i, fps))
-      await videoSource.add(exportFrameTimestamp(i, fps), 1 / fps)
+      await encoding(videoSource.add(exportFrameTimestamp(i, fps), 1 / fps))
       await pumpAudio((i + 1) / fps + AUDIO_LEAD_S)
       options.onProgress?.((i + 1) / frames)
     }
@@ -240,7 +240,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
     await pumpAudio(Infinity)
     checkAbort()
 
-    await output.finalize()
+    await encoding(output.finalize())
     writer.releaseLock()
     const path = await sink.commit()
     return {
@@ -265,17 +265,31 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
   }
 }
 
+/**
+ * An encoder step (adding a frame or a sound block, finishing the file): a failure that is not
+ * already an ExportError means WebCodecs' encoder broke (`encoder_failed`, D-040). A sink error
+ * still wins in the catch below (disk full stays disk full).
+ */
+async function encoding(step: Promise<void>): Promise<void> {
+  try {
+    await step
+  } catch (error) {
+    if (error instanceof ExportError) throw error
+    throw new ExportError('encoder_failed', { cause: error })
+  }
+}
+
 function now(): number {
   return globalThis.performance?.now() ?? Date.now()
 }
 
-interface AudioTrackReader {
+export interface AudioTrackReader {
   reader: TrackReader
   volume: number
 }
 
 /** Opens the audible tracks; an unreadable one is left out with a warning. */
-async function openAudioTracks(
+export async function openAudioTracks(
   tracks: readonly ExportAudioTrack[],
   trimStartS: number,
   inputs: Input[],

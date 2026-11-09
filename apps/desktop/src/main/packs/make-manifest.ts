@@ -31,6 +31,11 @@ export interface ManifestInput {
   platforms: BuiltPlatform[]
   /** One model per pack. */
   packs: Array<{ id: string; model: BuiltModel }>
+  /**
+   * The "Video compatibility" pack (D-040): an LGPL FFmpeg per platform, no model. Absent (or
+   * no platform) when CI did not build it, and then it is not listed.
+   */
+  compatibility?: { id: string; platforms: BuiltPlatform[] }
 }
 
 export function buildManifest(input: ManifestInput) {
@@ -42,22 +47,41 @@ export function buildManifest(input: ManifestInput) {
     sha256: f.sha256,
     ...(f.executable ? { executable: true } : {}),
   })
+  const compatibility =
+    input.compatibility && input.compatibility.platforms.length > 0
+      ? [
+          {
+            id: input.compatibility.id,
+            version: input.version,
+            kind: 'compatibility',
+            platforms: Object.fromEntries(
+              input.compatibility.platforms.map((platform) => [
+                platform.key,
+                { entry: platform.entry, files: platform.binaries.map(file) },
+              ]),
+            ),
+          },
+        ]
+      : []
   return {
     schema: 1,
-    packs: input.packs.map((pack) => ({
-      id: pack.id,
-      version: input.version,
-      kind: 'transcription',
-      model: { name: pack.model.name, path: pack.model.file.path },
-      platforms: Object.fromEntries(
-        input.platforms.map((platform) => [
-          platform.key,
-          {
-            entry: platform.entry,
-            files: [...platform.binaries.map(file), file(pack.model.file)],
-          },
-        ]),
-      ),
-    })),
+    packs: [
+      ...input.packs.map((pack) => ({
+        id: pack.id,
+        version: input.version,
+        kind: 'transcription',
+        model: { name: pack.model.name, path: pack.model.file.path },
+        platforms: Object.fromEntries(
+          input.platforms.map((platform) => [
+            platform.key,
+            {
+              entry: platform.entry,
+              files: [...platform.binaries.map(file), file(pack.model.file)],
+            },
+          ]),
+        ),
+      })),
+      ...compatibility,
+    ],
   }
 }

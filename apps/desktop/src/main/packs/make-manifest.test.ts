@@ -84,4 +84,69 @@ describe('buildManifest', () => {
     ])
     expect(win.files[0]!.url).toBe(`${base}/kamo-pack-whisper-1.0.0-win32-x64-whisper-cli.exe`)
   })
+
+  it('lists the compatibility pack (FFmpeg, no model) only when CI built it', () => {
+    const base = 'https://github.com/dssiqueira/kamo/releases/download/packs'
+    const common = { version: '1.1.0', baseUrl: base, platforms: [], packs: [] }
+    const ffmpeg = {
+      key: 'win32-x64',
+      entry: 'bin/ffmpeg.exe',
+      binaries: [
+        {
+          path: 'bin/ffmpeg.exe',
+          asset: 'kamo-pack-ffmpeg-1.1.0-win32-x64-ffmpeg.exe',
+          size: 20,
+          sha256: sha('f'),
+          executable: true,
+        },
+        {
+          path: 'NOTICE.txt',
+          asset: 'kamo-pack-ffmpeg-1.1.0-win32-x64-NOTICE.txt',
+          size: 2,
+          sha256: sha('0'),
+        },
+      ],
+    }
+    const withPack = buildManifest({
+      ...common,
+      compatibility: { id: 'video-compatibility', platforms: [ffmpeg] },
+    })
+    const parsed = parseManifest(withPack, `${base}/packs-manifest.json`)
+    expect(parsed.packs).toHaveLength(1)
+    const pack = parsed.packs[0]!
+    expect(pack).toMatchObject({ id: 'video-compatibility', kind: 'compatibility' })
+    expect(pack.model).toBeUndefined()
+    expect(pack.platforms['win32-x64']!.files.map((f) => f.path)).toEqual([
+      'bin/ffmpeg.exe',
+      'NOTICE.txt',
+    ])
+
+    expect(buildManifest(common).packs).toEqual([])
+    expect(
+      buildManifest({ ...common, compatibility: { id: 'video-compatibility', platforms: [] } })
+        .packs,
+    ).toEqual([])
+  })
+
+  it('refuses a transcription pack without a model and a compatibility pack with one', () => {
+    const base = 'https://example.test/packs'
+    const platform = {
+      entry: 'bin/x',
+      files: [{ path: 'bin/x', url: `${base}/x`, size: 1, sha256: sha('a') }],
+    }
+    const manifest = {
+      schema: 1,
+      packs: [
+        { id: 'transcribe-light', version: '1', kind: 'transcription', platforms: { k: platform } },
+        {
+          id: 'video-compatibility',
+          version: '1',
+          kind: 'compatibility',
+          model: { name: 'm', path: 'bin/x' },
+          platforms: { k: platform },
+        },
+      ],
+    }
+    expect(parseManifest(manifest, `${base}/packs-manifest.json`).packs).toEqual([])
+  })
 })

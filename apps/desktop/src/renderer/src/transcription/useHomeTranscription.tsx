@@ -53,7 +53,11 @@ export function useHomeTranscription(): HomeTranscription {
     }
   }, [])
 
-  const hasPack = packs.status?.packs.some((pack) => pack.installedVersion !== null) ?? false
+  // A transcription pack: the compatibility pack (D-040) does not transcribe.
+  const hasPack =
+    packs.status?.packs.some(
+      (pack) => pack.kind === 'transcription' && pack.installedVersion !== null,
+    ) ?? false
   const lightPack = packs.status?.packs.find((pack) => pack.quality === 'light') ?? null
 
   const stateOf = useCallback(

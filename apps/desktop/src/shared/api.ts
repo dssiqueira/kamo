@@ -19,6 +19,7 @@ import type {
   TranscribeAudioResult,
   TranscriptionJob,
   TranscriptionLanguage,
+  TranscriptionPackId,
 } from './packs.ts'
 
 /**
@@ -157,6 +158,18 @@ export interface KamoApi {
   abortExportFile(id: string): Promise<void>
   /** Reveals a file exported in this session. */
   showExportedFile(path: string): Promise<void>
+  // Export through the "Video compatibility" pack (A-07, D-040): the renderer paints the frames
+  // with core and mixes the sound, main runs the pack's FFmpeg into the export folder. Errors
+  // reject with `encoder_unavailable` (no pack, or no encoder it can use here),
+  // `compatibility_failed` or `disk_full`.
+  compatOpen(options: CompatOpenOptions): Promise<CompatOpenResult>
+  /** Interleaved s16le, in order, all of it before the first frame. */
+  compatWriteAudio(id: string, bytes: Uint8Array): Promise<void>
+  /** One frame: width × height × 4 bytes of RGBA. */
+  compatWriteFrame(id: string, bytes: Uint8Array): Promise<void>
+  /** Waits for FFmpeg and names the file; returns its path. */
+  compatFinish(id: string): Promise<{ path: string; codec: string; hardware: boolean }>
+  compatAbort(id: string): Promise<void>
 
   // Settings (F-01 remembered display, F-08 last style as the default).
   getSettings(): Promise<AppSettings>
@@ -381,7 +394,7 @@ export interface AppSettings {
   /** A-05. Absent: automatic detection. */
   transcriptionLanguage?: TranscriptionLanguage
   /** A-05: which installed pack transcribes. Absent: Accurate when installed, else Light. */
-  transcriptionPack?: PackId
+  transcriptionPack?: TranscriptionPackId
   /** Playlist shown on Home last time (D-028). Absent or '': All; a deleted one falls back to All. */
   homePlaylistId?: string
   /** A-01: Home's "Record at 60 fps" switch. Absent: 30. */
@@ -442,6 +455,25 @@ export type UpdateStatus =
  * Main rejects IPC calls with `Error('kamo-error:<code>')`; Electron wraps the message, so
  * the renderer finds the code with `ipcErrorCode`.
  */
+/** An export through the compatibility pack (D-040): one MP4 of this size and rate. */
+export interface CompatOpenOptions {
+  fileName: string
+  width: number
+  height: number
+  fps: number
+  bitrate: number
+  audio: { sampleRate: number; channels: number } | null
+}
+
+export interface CompatOpenResult {
+  id: string
+  /** final file name after collision handling */
+  name: string
+  /** the FFmpeg encoder picked for this machine (h264_mf, h264_videotoolbox or mpeg4) */
+  codec: string
+  hardware: boolean
+}
+
 /** Raw files the export reads (data-model.md), including the background image (A-04). */
 export type ExportMediaName =
   | 'screen.mp4'
@@ -556,6 +588,11 @@ export const IpcChannel = {
   commitExportFile: 'kamo:export-file-commit',
   abortExportFile: 'kamo:export-file-abort',
   showExportedFile: 'kamo:export-file-show',
+  compatOpen: 'kamo:compat-open',
+  compatWriteAudio: 'kamo:compat-audio',
+  compatWriteFrame: 'kamo:compat-frame',
+  compatFinish: 'kamo:compat-finish',
+  compatAbort: 'kamo:compat-abort',
   getSettings: 'kamo:settings-get',
   updateSettings: 'kamo:settings-update',
   settingsChanged: 'kamo:settings-changed',

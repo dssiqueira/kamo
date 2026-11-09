@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocale, useT } from '../i18n.tsx'
 import { Dialog, PrimaryButton, SecondaryButton } from '../settings/parts.tsx'
-import { CatalogNotice, PackRow, PackSize, packName } from './PackList.tsx'
+import { CatalogNotice, PackRow, PackSize, packHint, packName } from './PackList.tsx'
 import { AutoTranscribeQuestion } from './PacksSection.tsx'
 import type { PackActions, PackViewId, PacksView } from './types.ts'
 
@@ -33,7 +33,9 @@ export function TranscribeOffer(props: TranscribeOfferProps) {
   const [started, setStarted] = useState(false)
   const readied = useRef(false)
   const { open, onReady } = props
-  const installed = props.packs.packs.some((pack) => pack.installedVersion !== null)
+  // Only the transcription packs: the compatibility pack (D-040) does not transcribe.
+  const transcriptionPacks = props.packs.packs.filter((pack) => pack.kind === 'transcription')
+  const installed = transcriptionPacks.some((pack) => pack.installedVersion !== null)
   const asking = installed && props.autoTranscribe === undefined
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function TranscribeOffer(props: TranscribeOfferProps) {
     onReady()
   }, [open, installed, asking, onReady])
 
-  const selected = props.packs.packs.find((pack) => pack.id === choice)
+  const selected = transcriptionPacks.find((pack) => pack.id === choice)
 
   return (
     <Dialog
@@ -93,7 +95,7 @@ export function TranscribeOffer(props: TranscribeOfferProps) {
           ) : (
             <fieldset className="flex flex-col gap-sm">
               <legend className="sr-only">{t('transcription.offer.choose')}</legend>
-              {props.packs.packs.map((pack) => (
+              {transcriptionPacks.map((pack) => (
                 <label
                   key={pack.id}
                   className={`flex cursor-pointer items-start gap-sm rounded-md border p-sm ${
@@ -112,9 +114,7 @@ export function TranscribeOffer(props: TranscribeOfferProps) {
                     <span className="text-body font-medium">
                       {packName(t, pack)} · <PackSize pack={pack} />
                     </span>
-                    <span className="text-label text-on-surface-muted">
-                      {t(pack.quality === 'light' ? 'packs.light.hint' : 'packs.accurate.hint')}
-                    </span>
+                    <span className="text-label text-on-surface-muted">{packHint(t, pack)}</span>
                   </span>
                 </label>
               ))}

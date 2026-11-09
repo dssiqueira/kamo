@@ -574,7 +574,9 @@
       "write_failed": "Kamo가 파일을 쓸 수 없었어요. 완성되지 않은 파일은 삭제했어요.",
       "source_unreadable": "Kamo가 이 녹화의 영상을 읽을 수 없었어요.",
       "encoder_unavailable": "이 컴퓨터에는 Kamo가 사용할 수 있는 H.264 인코더가 없어요.",
-      "failed": "내보내는 중에 문제가 생겼어요. 완성되지 않은 파일은 삭제했어요."
+      "failed": "내보내는 중에 문제가 생겼어요. 완성되지 않은 파일은 삭제했어요.",
+      "encoder_failed": "이 컴퓨터의 비디오 인코더가 내보내는 도중에 멈췄어요. 완성되지 않은 파일은 삭제했어요.",
+      "compatibility_failed": "호환성 팩으로 이 영상을 내보내지 못했어요. 완성되지 않은 파일은 삭제했어요."
     },
     "warnings": {
       "software_encoder": "이 컴퓨터에 하드웨어 비디오 인코더가 없어서 더 느린 소프트웨어 인코더로 내보냈어요.",
@@ -582,7 +584,8 @@
       "audio_encoder_unavailable": "이 컴퓨터는 AAC 사운드를 인코딩할 수 없어서 영상에 소리가 없어요.",
       "webcam_unreadable": "웹캠 녹화를 읽을 수 없어서 영상에 웹캠 버블이 없어요.",
       "background_unreadable": "배경 이미지를 읽을 수 없어서 영상에 기본 배경을 사용했어요.",
-      "settings_fallback": "이 컴퓨터의 비디오 인코더가 선택한 해상도나 프레임 레이트를 만들 수 없어서 더 낮은 값을 사용했어요. 파일 이름에 어떤 값인지 나와 있어요."
+      "settings_fallback": "이 컴퓨터의 비디오 인코더가 선택한 해상도나 프레임 레이트를 만들 수 없어서 더 낮은 값을 사용했어요. 파일 이름에 어떤 값인지 나와 있어요.",
+      "compatibility_encoder": "이 컴퓨터의 비디오 인코더로는 내보낼 수 없어서 호환성 팩(FFmpeg)으로 내보냈어요."
     },
     "closeDialog": {
       "title": "내보내는 중",
@@ -606,7 +609,13 @@
     "gifHint": "소리 없음, 최대 너비 1280px.",
     "gifEstimate": "예상 크기: 약 {size}.",
     "gifLarge": "많은 사이트와 채팅 앱은 {limit}보다 큰 GIF를 받지 않아요. 영상을 자르거나, 10fps를 선택하거나, MP4로 내보내세요.",
-    "encoderFallback": "이 컴퓨터의 비디오 인코더는 {wanted}을(를) 만들 수 없어서 Kamo가 {actual}(으)로 내보낼게요."
+    "encoderFallback": "이 컴퓨터의 비디오 인코더는 {wanted}을(를) 만들 수 없어서 Kamo가 {actual}(으)로 내보낼게요.",
+    "compat": {
+      "question": "호환성 팩을 다운로드하고 다시 시도할까요?",
+      "body": "Kamo는 대신 FFmpeg로 MP4를 만들 수 있어요. 요청할 때만 다운로드되는 선택 팩이며, 이 컴퓨터에 남아 있어요.",
+      "size": "다운로드 크기: {size}",
+      "download": "다운로드하고 다시 시도"
+    }
   },
   "recovery": {
     "found": "{date}에 중단된 녹화를 찾았어요.",
@@ -775,6 +784,12 @@
       "packBusy": "지금 받아쓰는 중이에요. 끝나면 다시 시도하세요.",
       "installFailed": "설치하지 못했어요. 다시 시도하세요.",
       "unknownPack": "이 팩은 더 이상 사용할 수 없어요."
+    },
+    "compatibility": {
+      "name": "비디오 호환성",
+      "hint": "시스템의 비디오 인코더가 작동하지 않는 컴퓨터에서 FFmpeg로 MP4를 내보내요.",
+      "removeConfirm": "{name}을(를) 제거할까요? 이미 내보낸 영상은 그대로 남아요.",
+      "busy": "지금 영상을 내보내는 중이에요. 끝나면 다시 시도하세요."
     }
   },
   "transcription": {

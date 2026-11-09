@@ -19,12 +19,26 @@ const ERROR_KEYS: Record<string, string> = {
   unknown_pack: 'packs.errors.unknownPack',
 }
 
-export function packErrorText(t: Translate, code: string, size?: string): string {
+export function packErrorText(
+  t: Translate,
+  code: string,
+  size?: string,
+  kind: PackView['kind'] = 'transcription',
+): string {
+  // The compatibility pack is busy while an export uses it, not a transcription.
+  if (code === 'pack_busy' && kind === 'compatibility') return t('packs.compatibility.busy')
   return t(ERROR_KEYS[code] ?? 'packs.errors.installFailed', { size: size ?? '' })
 }
 
-export function packName(t: Translate, pack: Pick<PackView, 'quality'>): string {
+export function packName(t: Translate, pack: Pick<PackView, 'kind' | 'quality'>): string {
+  if (pack.kind === 'compatibility') return t('packs.compatibility.name')
   return t(pack.quality === 'light' ? 'packs.light.name' : 'packs.accurate.name')
+}
+
+/** What a pack unlocks, under its name. */
+export function packHint(t: Translate, pack: Pick<PackView, 'kind' | 'quality'>): string {
+  if (pack.kind === 'compatibility') return t('packs.compatibility.hint')
+  return t(pack.quality === 'light' ? 'packs.light.hint' : 'packs.accurate.hint')
 }
 
 function useFileSize() {
@@ -156,11 +170,7 @@ export function PackRow({
         label={name}
         description={
           <>
-            {showHint && (
-              <span className="block">
-                {t(pack.quality === 'light' ? 'packs.light.hint' : 'packs.accurate.hint')}
-              </span>
-            )}
+            {showHint && <span className="block">{packHint(t, pack)}</span>}
             <span className="block">
               <PackSize pack={pack} />
               {' · '}
@@ -176,7 +186,12 @@ export function PackRow({
       )}
       {shownError && pack.state !== 'downloading' && (
         <InlineNotice tone={shownError === 'unsupported_platform' ? 'info' : 'error'}>
-          {packErrorText(t, shownError, pack.requiredBytes ? size(pack.requiredBytes) : undefined)}
+          {packErrorText(
+            t,
+            shownError,
+            pack.requiredBytes ? size(pack.requiredBytes) : undefined,
+            pack.kind,
+          )}
         </InlineNotice>
       )}
       {confirm && (
@@ -188,7 +203,12 @@ export function PackRow({
         >
           <p className="text-label">
             {confirm === 'remove'
-              ? t('packs.removeConfirm', { name })
+              ? t(
+                  pack.kind === 'compatibility'
+                    ? 'packs.compatibility.removeConfirm'
+                    : 'packs.removeConfirm',
+                  { name },
+                )
               : t('packs.updateConfirm', {
                   version: pack.availableVersion ?? '',
                   size: size(pack.sizeBytes),

@@ -1,7 +1,7 @@
 // Where optional packs come from (A-07, D-019). The only place with a pack URL: everything
 // else gets it from here. Nothing is fetched until the user opens Settings → Packs or asks to
 // transcribe; there is no telemetry and no background check.
-import type { PackId } from '../../shared/packs.ts'
+import type { PackId, PackKind } from '../../shared/packs.ts'
 
 /**
  * `packs-manifest.json` on this repository's rolling `packs` release (a prerelease, so
@@ -45,8 +45,9 @@ export function platformKey(platform: string = process.platform, arch: string = 
 
 export interface KnownPack {
   id: PackId
-  kind: 'transcription'
-  quality: 'light' | 'accurate'
+  kind: PackKind
+  /** Transcription packs only. */
+  quality: 'light' | 'accurate' | null
   /** Shown before the list loads (features.md A-05: ~150MB / ~500MB). */
   approxBytes: number
 }
@@ -55,7 +56,8 @@ export interface KnownPack {
  * The packs Kamo knows how to use. The manifest adds versions, files and exact sizes; a pack
  * in the manifest that is not here is ignored (a newer app's pack).
  * Light: whisper `base` multilingual (148MB), Accurate: `small` multilingual (488MB) — see
- * the packs workflow for why these two.
+ * the packs workflow for why these two. Video compatibility: an LGPL FFmpeg build (D-040),
+ * only offered when an export fails for lack of an encoder (features.md A-07: ~70MB).
  */
 export const KNOWN_PACKS: readonly KnownPack[] = [
   { id: 'transcribe-light', kind: 'transcription', quality: 'light', approxBytes: 152_000_000 },
@@ -64,6 +66,12 @@ export const KNOWN_PACKS: readonly KnownPack[] = [
     kind: 'transcription',
     quality: 'accurate',
     approxBytes: 492_000_000,
+  },
+  {
+    id: 'video-compatibility',
+    kind: 'compatibility',
+    quality: null,
+    approxBytes: 70_000_000,
   },
 ]
 

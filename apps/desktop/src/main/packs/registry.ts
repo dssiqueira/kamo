@@ -20,7 +20,8 @@ export const InstalledPack = z.object({
   installedAt: z.string(),
   /** Program to run, relative to the pack folder. */
   entry: PackPath,
-  model: z.object({ name: z.string().min(1), path: PackPath }),
+  /** Transcription packs only (the compatibility pack is just a program, D-040). */
+  model: z.object({ name: z.string().min(1), path: PackPath }).optional(),
   files: z.array(InstalledFile),
 })
 export type InstalledPack = z.infer<typeof InstalledPack>

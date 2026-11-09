@@ -1,11 +1,21 @@
 // Optional packs (A-07, D-019) and local transcription (A-05): what main tells the windows.
 // Shapes only; main owns downloads, installs and the transcription queue.
 
-export type PackId = 'transcribe-light' | 'transcribe-accurate'
-export const PACK_IDS = [
+export type TranscriptionPackId = 'transcribe-light' | 'transcribe-accurate'
+/** The export's FFmpeg fallback (D-040): offered when the export fails for lack of an encoder. */
+export type CompatibilityPackId = 'video-compatibility'
+export type PackId = TranscriptionPackId | CompatibilityPackId
+export const TRANSCRIPTION_PACK_IDS = [
   'transcribe-light',
   'transcribe-accurate',
+] as const satisfies readonly TranscriptionPackId[]
+export const COMPATIBILITY_PACK_ID: CompatibilityPackId = 'video-compatibility'
+export const PACK_IDS = [
+  ...TRANSCRIPTION_PACK_IDS,
+  COMPATIBILITY_PACK_ID,
 ] as const satisfies readonly PackId[]
+
+export type PackKind = 'transcription' | 'compatibility'
 
 export type PackState =
   'not_installed' | 'downloading' | 'paused' | 'verifying' | 'installed' | 'failed'
@@ -24,8 +34,9 @@ export type PackErrorCode =
 
 export interface PackInfo {
   id: PackId
-  kind: 'transcription'
-  quality: 'light' | 'accurate'
+  kind: PackKind
+  /** Transcription packs only. */
+  quality: 'light' | 'accurate' | null
   /** Download size for this computer: exact once the list loaded, approximate before. */
   sizeBytes: number
   sizeExact: boolean

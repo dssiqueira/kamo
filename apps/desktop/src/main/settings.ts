@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises'
 import { isAbsolute, join } from 'node:path'
 import { z } from 'zod'
 import type { AppSettings, SettingsUpdate, StoredSettingsUpdate } from '../shared/api.ts'
-import { PACK_IDS, TRANSCRIPTION_LANGUAGES } from '../shared/packs.ts'
+import { TRANSCRIPTION_LANGUAGES, TRANSCRIPTION_PACK_IDS } from '../shared/packs.ts'
 import { isValidAccelerator } from './accelerator.ts'
 import { writeFileAtomic } from './storage/atomic.ts'
 
@@ -41,7 +41,8 @@ const Accelerator = z.string().refine(isValidAccelerator)
 // MediaDeviceInfo.deviceId (an opaque hash); '' means the system default device.
 const DeviceId = z.string().max(512)
 const TranscriptionLanguageSchema = z.enum(TRANSCRIPTION_LANGUAGES)
-const PackIdSchema = z.enum(PACK_IDS)
+// The pack that transcribes: only a transcription pack (not the compatibility one, D-040).
+const PackIdSchema = z.enum(TRANSCRIPTION_PACK_IDS)
 // Home's selected playlist (D-028): a playlist id, or '' for All.
 const HomePlaylistId = z.union([z.literal(''), z.uuid()])
 // A-01: the frame rate Home records at.

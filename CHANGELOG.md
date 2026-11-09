@@ -5,11 +5,14 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ## [Unreleased]
 
 ### Added
+- Video compatibility pack (optional, FFmpeg): when this computer's video encoder is missing or fails, the export offers to download it and try again.
 - A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
 - German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
 - Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
 
 ### Changed
+- Recording starts sooner after the countdown: the capture helper gets ready during the 3-2-1.
+- Long labels in German and French, and Chinese, Japanese and Korean text, fit their screens (tooltips on cut-off names, caption styles on two lines).
 - A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
 - Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.
 
@@ -23,6 +26,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 Full notes: [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
 
 ### Added
+- Video compatibility pack (optional, FFmpeg): when this computer's video encoder is missing or fails, the export offers to download it and try again.
 - A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
 - German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
 - Desktop app for Windows 10 (2004+) and 11: record the whole screen, a window or a selection, with microphone, computer sound and webcam, at 30 or 60 fps; mouse only, never the keyboard.

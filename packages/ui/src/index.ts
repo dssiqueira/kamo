@@ -23,7 +23,7 @@ export type { BackgroundImagePick, BackgroundImagePlatform } from './editor/back
 export type { EditorTranscription } from './editor/CaptionsSection.tsx'
 export { EditorStatus } from './editor/EditorStatus.tsx'
 export * from './timeline/index.ts'
-export type { ExportPlatform } from './export/useExportRun.ts'
+export type { ExportCompatibility, ExportPlatform } from './export/useExportRun.ts'
 // Settings (F-15), help (F-17), updates (F-14) and the permissions onboarding (F-13).
 export { Settings } from './settings/Settings.tsx'
 export { UpdateBanner } from './settings/UpdateBanner.tsx'

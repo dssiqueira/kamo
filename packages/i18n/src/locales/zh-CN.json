@@ -574,7 +574,9 @@
       "write_failed": "Kamo 无法写入文件。未完成的文件已删除。",
       "source_unreadable": "Kamo 无法读取此录制的视频。",
       "encoder_unavailable": "这台电脑没有 Kamo 可用的 H.264 编码器。",
-      "failed": "导出时出了问题。未完成的文件已删除。"
+      "failed": "导出时出了问题。未完成的文件已删除。",
+      "encoder_failed": "这台电脑的视频编码器在导出中途停止了。未完成的文件已删除。",
+      "compatibility_failed": "兼容性扩展包无法导出这个视频。未完成的文件已删除。"
     },
     "warnings": {
       "software_encoder": "这台电脑没有硬件视频编码器，因此导出使用了较慢的软件编码器。",
@@ -582,7 +584,8 @@
       "audio_encoder_unavailable": "这台电脑无法编码 AAC 音频，因此视频没有声音。",
       "webcam_unreadable": "无法读取摄像头录像，因此视频中没有摄像头气泡。",
       "background_unreadable": "无法读取背景图片，因此视频使用纯色背景。",
-      "settings_fallback": "这台电脑的视频编码器无法生成你选择的分辨率或帧率，因此使用了较低的设置。文件名中注明了实际设置。"
+      "settings_fallback": "这台电脑的视频编码器无法生成你选择的分辨率或帧率，因此使用了较低的设置。文件名中注明了实际设置。",
+      "compatibility_encoder": "这台电脑自带的视频编码器无法完成导出，因此使用了兼容性扩展包（FFmpeg）。"
     },
     "closeDialog": {
       "title": "正在导出",
@@ -606,7 +609,13 @@
     "gifHint": "无声音，宽度最多 1280 像素。",
     "gifEstimate": "预计大小：约 {size}。",
     "gifLarge": "许多网站和聊天应用不接受超过 {limit} 的 GIF：请裁剪视频、选择 10 fps 或导出 MP4。",
-    "encoderFallback": "这台电脑的视频编码器无法生成 {wanted}，Kamo 将以 {actual} 导出。"
+    "encoderFallback": "这台电脑的视频编码器无法生成 {wanted}，Kamo 将以 {actual} 导出。",
+    "compat": {
+      "question": "要下载兼容性扩展包并重试吗？",
+      "body": "Kamo 可以改用 FFmpeg 生成 MP4：这是一个可选扩展包，只在你要求时下载，并保留在这台电脑上。",
+      "size": "下载大小：{size}",
+      "download": "下载并重试"
+    }
   },
   "recovery": {
     "found": "发现一段于 {date} 中断的录制。",
@@ -775,6 +784,12 @@
       "packBusy": "正在转录中，请在完成后重试。",
       "installFailed": "无法安装，请重试。",
       "unknownPack": "此扩展包已不再提供。"
+    },
+    "compatibility": {
+      "name": "视频兼容性",
+      "hint": "在系统视频编码器无法工作的电脑上，用 FFmpeg 导出 MP4。",
+      "removeConfirm": "要移除{name}吗？已经导出的视频会保留。",
+      "busy": "正在导出视频，请在完成后重试。"
     }
   },
   "transcription": {

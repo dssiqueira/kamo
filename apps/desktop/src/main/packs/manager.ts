@@ -58,14 +58,18 @@ export interface PackManagerOptions {
   progressIntervalMs?: number
 }
 
-/** An installed transcription pack, ready to run. */
-export interface TranscriberPack {
+/** An installed pack's program, checked and ready to run. */
+export interface InstalledProgram {
   id: PackId
   version: string
   /** The pack folder. */
   dir: string
   /** Absolute path of the program. */
   entry: string
+}
+
+/** An installed transcription pack, ready to run. */
+export interface TranscriberPack extends InstalledProgram {
   model: { name: string; path: string }
 }
 
@@ -235,32 +239,45 @@ export class PackManager {
     ]
     for (const id of order) {
       const pack = installed[id]
-      if (!pack) continue
-      const dir = this.packDir(id, pack.version)
-      const entry = join(dir, ...pack.entry.split('/'))
-      const model = join(dir, ...pack.model.path.split('/'))
-      if (!(await exists(entry)) || !(await exists(model))) {
-        this.options.log.warn('packs.files_missing', { id })
-        continue
-      }
-      // Before every run: the program and its libraries must still be the files that were
-      // downloaded and checked, so nothing swapped into the pack folder runs as Kamo.
-      if (!(await this.filesIntact(dir, pack))) {
-        this.options.log.warn('packs.files_changed', { id })
-        continue
-      }
+      if (!pack?.model) continue
+      const program = await this.checkedProgram(id, pack)
+      if (!program) continue
       return {
-        id,
-        version: pack.version,
-        dir,
-        entry,
-        model: { name: pack.model.name, path: model },
+        ...program,
+        model: { name: pack.model.name, path: join(program.dir, ...pack.model.path.split('/')) },
       }
     }
     return null
   }
 
-  /** A transcription is using this pack: Remove waits (`pack_busy`). Returns the release. */
+  /**
+   * An installed pack's program (the compatibility pack's FFmpeg, D-040), checked like the
+   * transcriber before every run; null when it is not installed or its files changed.
+   */
+  async program(id: PackId): Promise<InstalledProgram | null> {
+    assertPackId(id)
+    const pack = (await this.loadInstalled())[id]
+    return pack ? this.checkedProgram(id, pack) : null
+  }
+
+  private async checkedProgram(id: PackId, pack: InstalledPack): Promise<InstalledProgram | null> {
+    const dir = this.packDir(id, pack.version)
+    const entry = join(dir, ...pack.entry.split('/'))
+    const model = pack.model ? join(dir, ...pack.model.path.split('/')) : null
+    if (!(await exists(entry)) || (model !== null && !(await exists(model)))) {
+      this.options.log.warn('packs.files_missing', { id })
+      return null
+    }
+    // Before every run: the program and its libraries must still be the files that were
+    // downloaded and checked, so nothing swapped into the pack folder runs as Kamo.
+    if (!(await this.filesIntact(dir, pack))) {
+      this.options.log.warn('packs.files_changed', { id })
+      return null
+    }
+    return { id, version: pack.version, dir, entry }
+  }
+
+  /** A transcription or an export is using this pack: Remove waits (`pack_busy`). Returns the release. */
   retain(id: PackId): () => void {
     this.busy.set(id, (this.busy.get(id) ?? 0) + 1)
     let released = false
@@ -319,14 +336,16 @@ export class PackManager {
         version: pack.version,
         installedAt: new Date().toISOString(),
         entry: platform.entry,
-        model: pack.model,
+        ...(pack.model ? { model: pack.model } : {}),
         files: platform.files.map(({ path, size, sha256 }) => ({ path, size, sha256 })),
       }
       const next = { ...installed, [id]: entry }
       await writeRegistry(this.options.registryFile, next)
       this.installed = Promise.resolve(next)
       // The model was just checked while downloading: the first run need not hash it again.
-      const modelFile = platform.files.find((file) => file.path === pack.model.path)
+      const modelFile = pack.model
+        ? platform.files.find((file) => file.path === pack.model?.path)
+        : undefined
       if (modelFile) {
         const path = join(target, ...modelFile.path.split('/'))
         const info = await stat(path)
@@ -482,7 +501,7 @@ export class PackManager {
         const path = join(dir, ...file.path.split('/'))
         const info = await stat(path)
         if (!info.isFile() || info.size !== file.size) return false
-        const isModel = file.path === pack.model.path
+        const isModel = file.path === pack.model?.path
         if (isModel) {
           const known = this.verifiedModels.get(path)
           if (

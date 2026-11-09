@@ -574,7 +574,9 @@
       "write_failed": "Kamo konnte die Datei nicht schreiben. Die unvollständige Datei wurde gelöscht.",
       "source_unreadable": "Kamo konnte das Video dieser Aufnahme nicht lesen.",
       "encoder_unavailable": "Dieser Computer hat keinen H.264-Encoder, den Kamo nutzen kann.",
-      "failed": "Beim Exportieren ist etwas schiefgelaufen. Die unvollständige Datei wurde gelöscht."
+      "failed": "Beim Exportieren ist etwas schiefgelaufen. Die unvollständige Datei wurde gelöscht.",
+      "encoder_failed": "Der Video-Encoder dieses Computers ist mitten im Export stehen geblieben. Die unvollständige Datei wurde gelöscht.",
+      "compatibility_failed": "Das Kompatibilitätspaket konnte dieses Video nicht exportieren. Die unvollständige Datei wurde gelöscht."
     },
     "warnings": {
       "software_encoder": "Dieser Computer hat keinen Hardware-Video-Encoder, deshalb wurde der langsamere Software-Encoder genutzt.",
@@ -582,7 +584,8 @@
       "audio_encoder_unavailable": "Dieser Computer kann keinen AAC-Ton kodieren, deshalb hat das Video keinen Ton.",
       "webcam_unreadable": "Die Webcam-Aufnahme konnte nicht gelesen werden, deshalb hat das Video keine Webcam-Blase.",
       "background_unreadable": "Das Hintergrundbild konnte nicht gelesen werden, deshalb nutzt das Video einen einfachen Hintergrund.",
-      "settings_fallback": "Der Video-Encoder dieses Computers schafft die gewählte Auflösung oder Bildrate nicht, deshalb wurde eine niedrigere genutzt. Der Dateiname verrät, welche."
+      "settings_fallback": "Der Video-Encoder dieses Computers schafft die gewählte Auflösung oder Bildrate nicht, deshalb wurde eine niedrigere genutzt. Der Dateiname verrät, welche.",
+      "compatibility_encoder": "Mit dem Kompatibilitätspaket (FFmpeg) exportiert, weil der eigene Video-Encoder dieses Computers es nicht konnte."
     },
     "closeDialog": {
       "title": "Export läuft",
@@ -606,7 +609,13 @@
     "gifHint": "Ohne Ton, bis zu 1280 px breit.",
     "gifEstimate": "Geschätzte Größe: etwa {size}.",
     "gifLarge": "Viele Websites und Chat-Apps lehnen GIFs über {limit} ab: Kürz das Video, wähl 10 fps oder exportier ein MP4.",
-    "encoderFallback": "Der Video-Encoder dieses Computers schafft {wanted} nicht, deshalb exportiert Kamo {actual}."
+    "encoderFallback": "Der Video-Encoder dieses Computers schafft {wanted} nicht, deshalb exportiert Kamo {actual}.",
+    "compat": {
+      "question": "Das Kompatibilitätspaket herunterladen und erneut versuchen?",
+      "body": "Kamo kann das MP4 stattdessen mit FFmpeg erstellen: ein optionales Paket, das nur auf deinen Wunsch heruntergeladen wird und auf diesem Computer bleibt.",
+      "size": "Downloadgröße: {size}",
+      "download": "Herunterladen und erneut versuchen"
+    }
   },
   "recovery": {
     "found": "Wir haben eine unterbrochene Aufnahme vom {date} gefunden.",
@@ -775,6 +784,12 @@
       "packBusy": "Es wird gerade transkribiert. Versuch es noch einmal, wenn es fertig ist.",
       "installFailed": "Installation fehlgeschlagen. Versuch es noch einmal.",
       "unknownPack": "Dieses Paket ist nicht mehr verfügbar."
+    },
+    "compatibility": {
+      "name": "Videokompatibilität",
+      "hint": "Exportiert MP4 mit FFmpeg auf Computern, auf denen der Video-Encoder des Systems versagt.",
+      "removeConfirm": "{name} entfernen? Deine bereits exportierten Videos bleiben erhalten.",
+      "busy": "Es wird gerade ein Video exportiert. Versuch es noch einmal, wenn es fertig ist."
     }
   },
   "transcription": {

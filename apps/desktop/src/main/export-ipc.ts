@@ -1,7 +1,8 @@
 // Export IPC (F-11): raw media reads for the renderer's decoder, the desktop FileSink
-// (export-files.ts), "Show in folder" and the "cancel the export?" question when the
-// window closes mid-export.
+// (export-files.ts), "Show in folder", the "cancel the export?" question when the
+// window closes mid-export, and exports through the compatibility pack (D-040).
 import {
+  app,
   BrowserWindow,
   dialog,
   ipcMain,
@@ -11,13 +12,17 @@ import {
 } from 'electron'
 import { join } from 'node:path'
 import { createI18n } from '@kamo/i18n'
+import { COMPATIBILITY_PACK_ID } from '../shared/packs.ts'
 import { IPC_ERROR_PREFIX, IpcChannel } from '../shared/api.ts'
 import { registerBusyCheck } from './busy.ts'
+import { CompatibilityError, CompatibilityExports } from './compat/service.ts'
 import { ExportFileError, ExportFiles } from './export-files.ts'
 import { mediaSize, readMedia, type MediaAllowance } from './export-media.ts'
 import { getExportDir, uiLocale } from './preferences.ts'
 import { getServices } from './services.ts'
 import { UnsafePathError, assertProjectId } from './storage/index.ts'
+import type { PackManager } from './packs/manager.ts'
+import { whisperCommand } from './transcription/whisper.ts'
 import { isAppUrl } from './windows.ts'
 
 /** Smoke test only: exports go inside the project, where the check can read them back. */
@@ -37,13 +42,33 @@ export interface ExportService {
 
 type Translate = (key: string) => string
 
-export function registerExport(): ExportService {
+export function registerExport(options: {
+  /** The optional packs (made after the export wiring, so asked for when used). */
+  packs(): PackManager
+}): ExportService {
   const log = {
     info: (event: string, data?: Record<string, unknown>) => getServices().log.info(event, data),
     warn: (event: string, data?: Record<string, unknown>) => getServices().log.warn(event, data),
   }
   let smokeDir: string | null = null
   const files = new ExportFiles(() => smokeDir ?? getExportDir(), log)
+  // D-040: FFmpeg from the compatibility pack, writing into the same export files.
+  const compat = new CompatibilityExports({
+    files,
+    program: () => options.packs().program(COMPATIBILITY_PACK_ID),
+    retain: () => options.packs().retain(COMPATIBILITY_PACK_ID),
+    // Unpackaged builds also run the fake pack's script (packs/testing.ts) with Electron as Node.
+    command: (entry) =>
+      whisperCommand(entry, {
+        allowScripts: !app.isPackaged,
+        execPath: process.execPath,
+        env: process.env,
+      }),
+    platform: process.platform,
+    workDir: join(app.getPath('userData'), 'export-compat'),
+    log,
+  })
+  void compat.clean()
   // F-14: never restart for an update in the middle of an export.
   registerBusyCheck(() => files.isExporting())
 
@@ -62,9 +87,13 @@ export function registerExport(): ExportService {
     // A closed, reloaded or crashed page cannot finish its files: delete them.
     sender.once('destroyed', () => {
       watched.delete(id)
+      void compat.abortAll(id)
       void files.abortAll(id)
     })
-    sender.on('did-navigate', () => void files.abortAll(id))
+    sender.on('did-navigate', () => {
+      void compat.abortAll(id)
+      void files.abortAll(id)
+    })
   }
 
   const allowSmoke: MediaAllowance = (name) => smokeDir !== null && SMOKE_EXPORT_FILE.test(name)
@@ -80,7 +109,7 @@ export function registerExport(): ExportService {
         return await listener(event.sender, ...args)
       } catch (error) {
         const code =
-          error instanceof ExportFileError
+          error instanceof ExportFileError || error instanceof CompatibilityError
             ? error.code
             : error instanceof UnsafePathError
               ? 'invalid_project_id'
@@ -112,6 +141,15 @@ export function registerExport(): ExportService {
   )
   handle(IpcChannel.commitExportFile, (_sender, id) => files.commit(id))
   handle(IpcChannel.abortExportFile, (_sender, id) => files.abort(id))
+  handle(IpcChannel.compatOpen, async (sender, request) => {
+    watchOwner(sender)
+    if (!translate) await loadTranslations().catch(() => {})
+    return compat.open(sender.id, request)
+  })
+  handle(IpcChannel.compatWriteAudio, (_sender, id, bytes) => compat.writeAudio(id, bytes))
+  handle(IpcChannel.compatWriteFrame, (_sender, id, bytes) => compat.writeFrame(id, bytes))
+  handle(IpcChannel.compatFinish, (_sender, id) => compat.finish(id))
+  handle(IpcChannel.compatAbort, (_sender, id) => compat.abort(id))
   handle(IpcChannel.showExportedFile, (_sender, path) => {
     if (typeof path !== 'string' || !files.isCommitted(path)) {
       throw new ExportFileError('export_not_found')

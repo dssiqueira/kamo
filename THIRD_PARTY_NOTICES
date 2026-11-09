@@ -42,3 +42,19 @@ gifenc (GIF export: palette quantization and LZW)
   FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
   OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
   DEALINGS IN THE SOFTWARE.
+
+
+================================================================================
+Optional packs (not in the installer: downloaded only when the user asks)
+================================================================================
+
+FFmpeg ("Video compatibility" pack, desktop export fallback, docs/decisions.md D-040)
+  Copyright (c) the FFmpeg developers (https://ffmpeg.org)
+  License: GNU Lesser General Public License 2.1 or later
+  (https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html)
+
+  Built from source by .github/workflows/packs.yml without --enable-gpl or --enable-nonfree
+  (no libx264 or other GPL parts), as a separate program that Kamo runs; Kamo does not link
+  it. The pack ships COPYING.LGPLv2.1 and a NOTICE.txt naming the exact FFmpeg source commit
+  (https://github.com/FFmpeg/FFmpeg) and the configure line, so the same binary can be rebuilt
+  or replaced.

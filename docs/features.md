@@ -540,10 +540,10 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 | Video compatibility (FFmpeg) | ~70MB | fallback export on machines where WebCodecs fails |
 
 **Acceptance criteria**
-- [x] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons — the transcription packs; FFmpeg is not listed until it exists
+- [x] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons — the transcription packs and Video compatibility (FFmpeg), which shows "Not available for this computer yet" until the `packs` release has it
 - [x] Packages live in `app-data/packs/`, outside the app folder; updating the app does not delete the packages
 - [x] Packages update separately from the app, only with user confirmation
-- [ ] FFmpeg is only offered when the export fails for lack of an encoder ("Download the compatibility package and try again?")
+- [x] FFmpeg is only offered when the export fails for lack of an encoder ("Download the compatibility package and try again?") — also when the encoder breaks mid-file; built and tested with a fake FFmpeg (D-040); the real pack waits for a Packs workflow run with an `ffmpeg` commit
 - [ ] Downloads come from versioned GitHub Releases assets, with SHA-256 verified — verified against a local fake release; `.github/workflows/packs.yml` builds the real assets but has not run yet
 
 ## A-06 — Automatic captions

@@ -4,7 +4,10 @@
 //   node scripts/make-packs-manifest.ts <in> <out> <version> <base-url>
 //
 // <in> holds one folder per platform (`win32-x64/`, `darwin-arm64/`: whisper-cli and its
-// libraries) and `models/` (ggml-base.bin, ggml-small.bin).
+// libraries), `models/` (ggml-base.bin, ggml-small.bin) and, when CI built FFmpeg for the
+// "Video compatibility" pack (D-040), `ffmpeg-win32-x64/` and `ffmpeg-darwin-arm64/` (the
+// program and its license notices). A platform without its folder is left out; with no FFmpeg
+// folder at all the manifest does not list the compatibility pack.
 import { createHash } from 'node:crypto'
 import {
   copyFileSync,
@@ -67,6 +70,33 @@ for (const key of ['win32-x64', 'darwin-arm64']) {
   })
 }
 
+// The compatibility pack (D-040): FFmpeg in bin/, its LGPL notices in licenses/.
+const ffmpegPlatforms: BuiltPlatform[] = []
+for (const key of ['win32-x64', 'darwin-arm64']) {
+  const dir = join(input, `ffmpeg-${key}`)
+  let names: string[]
+  try {
+    names = readdirSync(dir).sort()
+  } catch {
+    console.warn(`no FFmpeg for ${key}; the compatibility pack skips it`)
+    continue
+  }
+  const entry = names.find((name) => /^ffmpeg(\.exe)?$/.test(name))
+  if (!entry) throw new Error(`ffmpeg-${key}: ffmpeg missing`)
+  ffmpegPlatforms.push({
+    key,
+    entry: `bin/${entry}`,
+    binaries: names.map((name) =>
+      asset(
+        join(dir, name),
+        name === entry ? `bin/${name}` : `licenses/${name}`,
+        `kamo-pack-ffmpeg-${version}-${key}-${name}`,
+        name === entry,
+      ),
+    ),
+  })
+}
+
 const model = (file: string, name: string) => ({
   name,
   file: asset(join(input, 'models', file), `models/${file}`, `kamo-pack-model-${version}-${file}`),
@@ -79,13 +109,18 @@ const manifest = buildManifest({
     { id: 'transcribe-light', model: model('ggml-base.bin', 'whisper-base') },
     { id: 'transcribe-accurate', model: model('ggml-small.bin', 'whisper-small') },
   ],
+  compatibility: { id: 'video-compatibility', platforms: ffmpegPlatforms },
 })
 // The app's own parser must accept every platform, or the release would ship a broken list.
 const parsed = parseManifest(manifest, `${baseUrl}/packs-manifest.json`)
 for (const pack of parsed.packs) {
-  if (Object.keys(pack.platforms).length !== platforms.length) {
+  const expected = pack.kind === 'compatibility' ? ffmpegPlatforms.length : platforms.length
+  if (Object.keys(pack.platforms).length !== expected) {
     throw new Error(`${pack.id}: a platform did not pass the app's checks`)
   }
 }
 writeFileSync(join(output, 'packs-manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`)
-console.log(`packs-manifest.json: ${platforms.map((p) => p.key).join(', ')}`)
+console.log(
+  `packs-manifest.json: whisper ${platforms.map((p) => p.key).join(', ')}; ` +
+    `ffmpeg ${ffmpegPlatforms.map((p) => p.key).join(', ') || 'none'}`,
+)

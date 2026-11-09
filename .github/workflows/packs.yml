@@ -1,7 +1,8 @@
 name: Packs
 
 # Optional packs (A-07, D-019): builds whisper.cpp's CLI per platform, fetches the ggml models,
-# and publishes them with packs-manifest.json as assets of the rolling `packs` release (a
+# optionally builds an LGPL FFmpeg for the "Video compatibility" pack (D-040), and publishes
+# them with packs-manifest.json as assets of the rolling `packs` release (a
 # prerelease, so electron-updater never mistakes it for an app version). The app downloads
 # from there only when the user asks. Manual only: packs change rarely and independently of
 # the app.
@@ -17,6 +18,12 @@ on:
         description: whisper.cpp commit to build (full 40-character SHA)
         required: true
         default: a8d002cfd879315632a579e73f0148d06959de36
+      ffmpeg:
+        # The "Video compatibility" pack (D-040). Empty: not built, and the manifest does not
+        # list it. A full commit SHA of FFmpeg (a release tag's commit, e.g. n7.1.x), never a tag.
+        description: FFmpeg commit for the compatibility pack (full SHA; empty to skip it)
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -26,6 +33,20 @@ env:
   # Inputs reach the scripts as variables only, never pasted into them.
   WHISPER_COMMIT: ${{ inputs.whisper }}
   PACK_VERSION: ${{ inputs.version }}
+  FFMPEG_REPO: https://github.com/FFmpeg/FFmpeg
+  FFMPEG_COMMIT: ${{ inputs.ffmpeg }}
+  # Only what Kamo runs (apps/desktop/src/main/compat/ffmpeg.ts): raw RGBA frames and s16le
+  # sound in, MP4 out, through LGPL encoders. No --enable-gpl and no --enable-nonfree, so no
+  # libx264: the build is LGPL-2.1-or-later and can ship next to an MIT app (each job checks
+  # it with `ffmpeg -L`).
+  FFMPEG_CONFIGURE: >-
+    --disable-everything --disable-doc --disable-debug --disable-network
+    --disable-ffplay --disable-ffprobe --enable-static --disable-shared
+    --enable-protocol=file,pipe
+    --enable-demuxer=rawvideo,pcm_s16le --enable-decoder=rawvideo,pcm_s16le
+    --enable-encoder=mpeg4,aac --enable-muxer=mp4,null
+    --enable-filter=scale,format,aformat,aresample,null,anull
+    --enable-bsf=extract_extradata,h264_mp4toannexb
 
 jobs:
   inputs:
@@ -35,6 +56,7 @@ jobs:
         run: |
           [[ "$WHISPER_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::whisper must be a full commit SHA"; exit 1; }
           [[ "$PACK_VERSION" =~ ^[0-9]+(\.[0-9]+){0,3}(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]] || { echo "::error::version must look like 1.0.0"; exit 1; }
+          [[ -z "$FFMPEG_COMMIT" || "$FFMPEG_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::ffmpeg must be a full commit SHA (or empty)"; exit 1; }
 
   windows:
     needs: inputs
@@ -117,10 +139,123 @@ jobs:
           name: models
           path: models
 
+  ffmpeg-windows:
+    needs: inputs
+    if: inputs.ffmpeg != ''
+    runs-on: windows-latest
+    env:
+      MSYSTEM: MINGW64
+      CHERE_INVOKING: '1'
+    defaults:
+      run:
+        # The runner image's own MSYS2 (no third-party action): MinGW-w64 GCC builds FFmpeg.
+        shell: C:\msys64\usr\bin\bash.exe --login -eo pipefail {0}
+    steps:
+      - name: Toolchain
+        run: pacman -S --noconfirm --needed git make diffutils mingw-w64-x86_64-gcc mingw-w64-x86_64-nasm mingw-w64-x86_64-pkgconf
+      - name: Build FFmpeg (x64, LGPL, static, Media Foundation H.264)
+        run: |
+          git init -q ffmpeg
+          cd ffmpeg
+          git fetch -q --depth 1 "$FFMPEG_REPO" "$FFMPEG_COMMIT"
+          git checkout -q FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$FFMPEG_COMMIT"
+          # No autodetected libraries (a stray libiconv DLL would break the single file); only
+          # Windows' own threads and Media Foundation (h264_mf: the OS encoder, LGPL-safe).
+          ./configure $FFMPEG_CONFIGURE --disable-autodetect --enable-w32threads \
+            --enable-mediafoundation --enable-encoder=h264_mf --extra-ldflags=-static
+          make -j"$(nproc)" ffmpeg
+          mkdir -p ../pack/ffmpeg-win32-x64
+          cp ffmpeg.exe COPYING.LGPLv2.1 ../pack/ffmpeg-win32-x64/
+          {
+            echo "FFmpeg for the optional Video compatibility pack of Kamo (D-040)."
+            echo "License: GNU LGPL 2.1 or later (COPYING.LGPLv2.1). Kamo runs it as a separate program."
+            echo "Source: $FFMPEG_REPO/tree/$FFMPEG_COMMIT"
+            echo "Built by .github/workflows/packs.yml in https://github.com/$GITHUB_REPOSITORY with:"
+            ./ffmpeg.exe -hide_banner -buildconf
+          } > ../pack/ffmpeg-win32-x64/NOTICE.txt
+      - name: Check the license, the libraries and an encode
+        run: |
+          cd pack/ffmpeg-win32-x64
+          ./ffmpeg.exe -hide_banner -L | grep -q "GNU Lesser General Public" || { echo "::error::not an LGPL build"; exit 1; }
+          if ./ffmpeg.exe -hide_banner -buildconf | grep -Eq -- "--enable-(gpl|nonfree)"; then echo "::error::GPL or nonfree parts"; exit 1; fi
+          # Only Windows' own DLLs: the pack is one program plus its notices.
+          for dll in $(objdump -p ffmpeg.exe | sed -n 's/.*DLL Name: //p'); do
+            [ -f "/c/Windows/System32/$dll" ] || { echo "::error::depends on $dll"; exit 1; }
+          done
+          ./ffmpeg.exe -hide_banner -encoders | grep -q h264_mf
+          frames=$((64 * 36 * 4 * 30))
+          head -c "$frames" /dev/zero | ./ffmpeg.exe -hide_banner -loglevel error -f rawvideo \
+            -pix_fmt rgba -s 64x36 -framerate 30 -i pipe:0 -c:v mpeg4 -q:v 2 -f mp4 check.mp4
+          # The runner may have no Media Foundation H.264 encoder: a warning, not a failure.
+          head -c "$frames" /dev/zero | ./ffmpeg.exe -hide_banner -loglevel error -f rawvideo \
+            -pix_fmt rgba -s 64x36 -framerate 30 -i pipe:0 -vf format=nv12 -c:v h264_mf \
+            -f mp4 check-mf.mp4 || echo "::warning::h264_mf did not encode on the runner"
+          rm -f check.mp4 check-mf.mp4
+          ls -la
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ffmpeg-win32-x64
+          path: pack/ffmpeg-win32-x64
+
+  ffmpeg-mac:
+    needs: inputs
+    if: inputs.ffmpeg != ''
+    runs-on: macos-15
+    steps:
+      - name: Build FFmpeg (arm64, LGPL, VideoToolbox H.264)
+        run: |
+          git init -q ffmpeg
+          cd ffmpeg
+          git fetch -q --depth 1 "$FFMPEG_REPO" "$FFMPEG_COMMIT"
+          git checkout -q FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$FFMPEG_COMMIT"
+          # System frameworks only (VideoToolbox: the OS encoder, LGPL-safe), nothing from
+          # Homebrew.
+          ./configure $FFMPEG_CONFIGURE --arch=arm64 --cc=clang --enable-pthreads \
+            --enable-videotoolbox --enable-encoder=h264_videotoolbox \
+            --disable-sdl2 --disable-libxcb --disable-xlib --disable-iconv --disable-lzma \
+            --disable-bzlib --disable-zlib
+          make -j"$(sysctl -n hw.ncpu)" ffmpeg
+          mkdir -p ../pack/ffmpeg-darwin-arm64
+          cp ffmpeg COPYING.LGPLv2.1 ../pack/ffmpeg-darwin-arm64/
+          # Apple Silicon only runs signed code: ad-hoc here, like whisper-cli.
+          codesign --force --sign - ../pack/ffmpeg-darwin-arm64/ffmpeg
+          {
+            echo "FFmpeg for the optional Video compatibility pack of Kamo (D-040)."
+            echo "License: GNU LGPL 2.1 or later (COPYING.LGPLv2.1). Kamo runs it as a separate program."
+            echo "Source: $FFMPEG_REPO/tree/$FFMPEG_COMMIT"
+            echo "Built by .github/workflows/packs.yml in https://github.com/$GITHUB_REPOSITORY with:"
+            ./ffmpeg -hide_banner -buildconf
+          } > ../pack/ffmpeg-darwin-arm64/NOTICE.txt
+      - name: Check the license, the libraries and an encode
+        run: |
+          cd pack/ffmpeg-darwin-arm64
+          ./ffmpeg -hide_banner -L | grep -q "GNU Lesser General Public" || { echo "::error::not an LGPL build"; exit 1; }
+          if ./ffmpeg -hide_banner -buildconf | grep -Eq -- "--enable-(gpl|nonfree)"; then echo "::error::GPL or nonfree parts"; exit 1; fi
+          # Only the system's own libraries and frameworks.
+          if otool -L ffmpeg | tail -n +2 | grep -Ev "^[[:space:]]+(/usr/lib/|/System/Library/)"; then
+            echo "::error::links a library outside the system"; exit 1
+          fi
+          ./ffmpeg -hide_banner -encoders | grep -q h264_videotoolbox
+          frames=$((64 * 36 * 4 * 30))
+          head -c "$frames" /dev/zero | ./ffmpeg -hide_banner -loglevel error -f rawvideo \
+            -pix_fmt rgba -s 64x36 -framerate 30 -i pipe:0 -c:v mpeg4 -q:v 2 -f mp4 check.mp4
+          head -c "$frames" /dev/zero | ./ffmpeg -hide_banner -loglevel error -f rawvideo \
+            -pix_fmt rgba -s 64x36 -framerate 30 -i pipe:0 -vf format=nv12 -c:v h264_videotoolbox \
+            -allow_sw 1 -f mp4 check-vt.mp4 || echo "::warning::h264_videotoolbox did not encode on the runner"
+          rm -f check.mp4 check-vt.mp4
+          ls -la
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ffmpeg-darwin-arm64
+          path: pack/ffmpeg-darwin-arm64
+
   publish:
-    needs: [windows, mac, models]
+    needs: [windows, mac, models, ffmpeg-windows, ffmpeg-mac]
     runs-on: ubuntu-latest
-    if: github.repository == 'dssiqueira/kamo'
+    # The FFmpeg jobs are skipped without the `ffmpeg` input: publish anyway, never after a failure.
+    if: github.repository == 'dssiqueira/kamo' && !cancelled() && !failure()
     permissions:
       contents: write
     steps:
@@ -146,7 +281,7 @@ jobs:
         run: |
           gh release view packs >/dev/null 2>&1 || gh release create packs --prerelease \
             --title "Optional packs" \
-            --notes "Optional packs for the Kamo desktop app (transcription). Downloaded by the app only when you ask for them; see docs/integrations.md."
+            --notes "Optional packs for the Kamo desktop app (transcription, video compatibility). Downloaded by the app only when you ask for them; see docs/integrations.md."
           # Versioned files first, the manifest last: an app never sees a list whose files are
           # not there yet.
           find upload -type f ! -name packs-manifest.json -print0 | xargs -0 gh release upload packs --clobber

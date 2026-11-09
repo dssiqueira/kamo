@@ -38,14 +38,17 @@ export const PackPlatform = z.object({
 })
 export type PackPlatform = z.infer<typeof PackPlatform>
 
-export const ManifestPack = z.object({
-  id: z.string().min(1).max(64),
-  version: PackVersion,
-  kind: z.literal('transcription'),
-  /** The model inside the pack: its name for transcript.json and its file. */
-  model: z.object({ name: z.string().min(1).max(64), path: PackPath }),
-  platforms: z.record(z.string(), PackPlatform),
-})
+export const ManifestPack = z
+  .object({
+    id: z.string().min(1).max(64),
+    version: PackVersion,
+    /** `transcription`: whisper.cpp + a model (A-05); `compatibility`: FFmpeg (D-040). */
+    kind: z.enum(['transcription', 'compatibility']),
+    /** Transcription: the model inside the pack, its name for transcript.json and its file. */
+    model: z.object({ name: z.string().min(1).max(64), path: PackPath }).optional(),
+    platforms: z.record(z.string(), PackPlatform),
+  })
+  .refine((pack) => (pack.kind === 'transcription') === (pack.model !== undefined))
 export type ManifestPack = z.infer<typeof ManifestPack>
 
 const Manifest = z.object({
@@ -67,7 +70,8 @@ export class ManifestError extends Error {
 /**
  * Validates the manifest. Packs that do not parse (a newer format) are skipped; file URLs
  * must be on the manifest's own origin (GitHub's release downloads, or the local test
- * server), the entry and the model must be listed files, and paths must not repeat.
+ * server), the entry and the model (a transcription pack's) must be listed files, and paths
+ * must not repeat.
  */
 export function parseManifest(json: unknown, manifestUrl: string): PacksManifest {
   const top = Manifest.safeParse(json)
@@ -79,18 +83,18 @@ export function parseManifest(json: unknown, manifestUrl: string): PacksManifest
     if (!parsed.success) continue
     const pack = parsed.data
     const platforms = Object.entries(pack.platforms).filter(([, platform]) =>
-      isConsistent(platform, pack.model.path, origin),
+      isConsistent(platform, pack.model?.path ?? null, origin),
     )
     packs.push({ ...pack, platforms: Object.fromEntries(platforms) })
   }
   return { packs }
 }
 
-function isConsistent(platform: PackPlatform, modelPath: string, origin: string): boolean {
+function isConsistent(platform: PackPlatform, modelPath: string | null, origin: string): boolean {
   const paths = platform.files.map((file) => file.path.toLowerCase())
   if (new Set(paths).size !== paths.length) return false
   if (!paths.includes(platform.entry.toLowerCase())) return false
-  if (!paths.includes(modelPath.toLowerCase())) return false
+  if (modelPath !== null && !paths.includes(modelPath.toLowerCase())) return false
   return platform.files.every((file) => new URL(file.url).origin === origin)
 }
 
