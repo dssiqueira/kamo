@@ -2,6 +2,7 @@ import { useId, type ReactNode } from 'react'
 import { useT } from '../i18n.tsx'
 import { CornerDecor } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
+import { FOCUS_RING } from '../primitives/controls.tsx'
 import { SettingsButton } from '../settings/SettingsButton.tsx'
 import { AudioSources, type AudioSourcesProps } from './AudioSources.tsx'
 import type { CameraSourceProps } from './CameraSource.tsx'
@@ -23,8 +24,15 @@ export interface HomeProps {
   onRecord(): void
   /** Mac without screen recording permission: Record stays disabled (F-01). */
   needsPermission?: boolean
-  /** How the last recording ended, already translated. */
-  notice?: { tone: 'error' | 'warning' | 'success'; text: string } | null
+  /**
+   * How the last recording ended, already translated. `action` adds a button after the text,
+   * e.g. "Open in editor" for a recording saved with warnings (F-02).
+   */
+  notice?: {
+    tone: 'error' | 'warning' | 'success'
+    text: string
+    action?: { label: string; onClick(): void }
+  } | null
   /** Recent projects below the Record button (F-12). Omitted: no list at all. */
   projects?: ProjectListProps
   /** Microphone and computer sound toggles with level meters (F-04). Omitted: none. */
@@ -139,7 +147,16 @@ export function Home({
           >
             {/* A saved recording gets Kamo's smile. */}
             {notice.tone === 'success' && <Mascot pose="head-happy" size={36} />}
-            {notice.text}
+            <span className="flex-1">{notice.text}</span>
+            {notice.action && (
+              <button
+                type="button"
+                onClick={notice.action.onClick}
+                className={`shrink-0 rounded-sm font-semibold text-tertiary-strong underline underline-offset-2 ${FOCUS_RING}`}
+              >
+                {notice.action.label}
+              </button>
+            )}
           </p>
         )}
 

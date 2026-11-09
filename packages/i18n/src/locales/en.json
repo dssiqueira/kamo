@@ -141,7 +141,8 @@
       "diskFull": "The disk filled up. Kamo saved what it recorded.",
       "failed": "Recording stopped unexpectedly. Kamo will try to recover it next time."
     },
-    "saved": "Saved. The editor arrives in the next version.",
+    "saved": "Recording saved.",
+    "openInEditor": "Open in editor",
     "audio": {
       "micUnavailable": "Saved without your voice: Kamo couldn't use the microphone.",
       "micLost": "The microphone was disconnected while recording. The audio is silent from that point on.",

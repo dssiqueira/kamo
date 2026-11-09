@@ -21,7 +21,7 @@ import { IPC_ERROR_PREFIX, IpcChannel, type AppSettings } from '../shared/api.ts
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
 import { MEDIA_SCHEME, serveMedia } from './media.ts'
 import { ProjectActionError } from './projects.ts'
-import { registerProjects } from './projects-ipc.ts'
+import { openProjectInEditor, registerProjects } from './projects-ipc.ts'
 import { registerPlaylists } from './playlists-ipc.ts'
 import { PreferenceError } from './preference-error.ts'
 import {
@@ -174,6 +174,11 @@ const recording = new RecordingController(
   () => trayLabels,
   // A-03: the webcam, recorded in Electron like the audio (src/main/camera).
   recordingCamera,
+  // F-02: a clean save opens in the editor.
+  async (projectId) => {
+    if (!mainWindow || mainWindow.isDestroyed()) throw new Error('no main window')
+    await openProjectInEditor(mainWindow, projectId)
+  },
 )
 
 // Close to tray (F-15). Cached from settings.json: the close event needs an answer at once.

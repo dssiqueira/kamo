@@ -141,7 +141,8 @@
       "diskFull": "O disco encheu. O Kamo salvou o que gravou.",
       "failed": "A gravação parou de repente. O Kamo vai tentar recuperar na próxima vez."
     },
-    "saved": "Salvo. O editor chega na próxima versão.",
+    "saved": "Gravação salva.",
+    "openInEditor": "Abrir no editor",
     "audio": {
       "micUnavailable": "Salvo sem a sua voz: o Kamo não conseguiu usar o microfone.",
       "micLost": "O microfone foi desconectado durante a gravação. O áudio fica mudo a partir dali.",

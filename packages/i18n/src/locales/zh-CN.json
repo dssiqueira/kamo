@@ -141,7 +141,8 @@
       "diskFull": "磁盘已满。Kamo 已保存录制的内容。",
       "failed": "录制意外停止。Kamo 会在下次启动时尝试恢复。"
     },
-    "saved": "已保存。编辑器将在下个版本推出。",
+    "saved": "录制已保存。",
+    "openInEditor": "在编辑器中打开",
     "audio": {
       "micUnavailable": "已保存，但没有你的声音：Kamo 无法使用麦克风。",
       "micLost": "录制时麦克风断开了连接。从那一刻起音频为静音。",

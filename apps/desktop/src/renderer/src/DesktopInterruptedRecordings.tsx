@@ -10,8 +10,8 @@ function outcomeOf(error: unknown): RecoveryOutcome {
 
 export interface DesktopInterruptedRecordingsProps {
   /**
-   * The video came back but some audio or the camera did not: Home says so, and the project
-   * stays in the list instead of opening (the editor would hide the notice).
+   * The video came back but some audio or the camera did not: Home says so instead of opening
+   * the editor (it would hide the notice), and the notice offers "Open in editor" (F-02).
    */
   onRecoveredWithWarnings?(
     projectId: string,

@@ -351,7 +351,10 @@ export function DesktopHome() {
         setActionError(null)
         void window.kamo.startRecording(target)
       }}
-      notice={actionError ?? notice(status, t)}
+      notice={
+        actionError ??
+        notice(status, t, (projectId) => run(() => window.kamo.openEditor(projectId)))
+      }
       needsPermission={screenAccess !== 'granted'}
       projects={projects}
       recordingFps={{ value: recordingFps, onChange: changeRecordingFps }}
@@ -362,7 +365,11 @@ export function DesktopHome() {
   )
 }
 
-function notice(status: RecordingStatus | null, t: (key: string) => string): Notice | null {
+function notice(
+  status: RecordingStatus | null,
+  t: (key: string) => string,
+  openEditor: (projectId: string) => void,
+): Notice | null {
   if (!status) return null
   if (status.kind === 'error') {
     const tone = status.code === 'too_short' ? 'warning' : 'error'
@@ -373,10 +380,12 @@ function notice(status: RecordingStatus | null, t: (key: string) => string): Not
     ...(status.audioWarnings ?? []).map((warning) => t(AUDIO_WARNING_KEYS[warning])),
     ...(status.cameraWarnings ?? []).map((warning) => t(CAMERA_WARNING_KEYS[warning])),
   ]
+  // F-02: a clean save opens in the editor from main; with warnings Home stays, so they can be
+  // read, and the notice opens the editor. Also the fallback if the editor failed to load.
+  const action = { label: t('recording.openInEditor'), onClick: () => openEditor(status.projectId) }
   if (status.warning || audioTexts.length) {
     const texts = [...(status.warning ? [t(WARNING_KEYS[status.warning])] : []), ...audioTexts]
-    return { tone: 'warning', text: texts.join(' ') }
+    return { tone: 'warning', text: texts.join(' '), action }
   }
-  // The editor opens here once it exists; until then, Home confirms the save.
-  return { tone: 'success', text: t('recording.saved') }
+  return { tone: 'success', text: t('recording.saved'), action }
 }

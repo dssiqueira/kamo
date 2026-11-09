@@ -40,6 +40,24 @@ export interface ProjectsIpcOptions {
   playlists: PlaylistStore
 }
 
+/** Loads a project in the main window's editor (Home's Open, and F-02 after a recording). */
+export async function openProjectInEditor(
+  mainWindow: BrowserWindow,
+  projectId: string,
+): Promise<void> {
+  // A-04: background images replaced in an earlier session go; the one in use stays.
+  const { store } = getServices()
+  const current = await loadProjectById(store, projectId)
+    .then((project) => backgroundImageFile(project.style.background))
+    .catch(() => undefined)
+  if (current !== undefined) {
+    await pruneBackgroundImages(store.projectDir(projectId), current).catch((error: unknown) =>
+      getServices().log.warn('background.prune.failed', { error }),
+    )
+  }
+  await loadPage(mainWindow, 'editor', { project: projectId })
+}
+
 export function registerProjects(handle: Handle, options: ProjectsIpcOptions): void {
   const { notifyProjectsChanged, playlists } = options
 
@@ -108,17 +126,7 @@ export function registerProjects(handle: Handle, options: ProjectsIpcOptions): v
     if (!ids.includes(projectId as string)) throw new ProjectActionError('project_not_found')
     const mainWindow = options.mainWindow()
     if (!mainWindow) return
-    // A-04: background images replaced in an earlier session go; the one in use stays.
-    const { store } = getServices()
-    const current = await loadProjectById(store, projectId)
-      .then((project) => backgroundImageFile(project.style.background))
-      .catch(() => undefined)
-    if (current !== undefined) {
-      await pruneBackgroundImages(store.projectDir(projectId as string), current).catch(
-        (error: unknown) => getServices().log.warn('background.prune.failed', { error }),
-      )
-    }
-    await loadPage(mainWindow, 'editor', { project: projectId as string })
+    await openProjectInEditor(mainWindow, projectId as string)
   })
 
   // A-04: wallpaper with your own image. The renderer never sees the original path: main shows

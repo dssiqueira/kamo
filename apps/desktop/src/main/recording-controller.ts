@@ -133,6 +133,11 @@ export class RecordingController {
     trayLabels?: () => TrayLabels,
     /** Webcam (A-03). Omitted: no camera. */
     private readonly camera?: RecordingCamera,
+    /**
+     * F-02: loads a saved recording in the main window's editor. Omitted (or failing): Home
+     * shows the saved notice instead.
+     */
+    private readonly openEditor?: (projectId: string) => Promise<void>,
   ) {
     this.tray = trayLabels
       ? new RecordingTray(
@@ -368,6 +373,17 @@ export class RecordingController {
     ]
     const cameraWarnings = await this.finishCamera(cameraTake, result, videoStartedAt)
     if (result.kind === 'saved') this.onSaved(result.projectId)
+    // F-02: a clean save opens straight in the editor. Anything the user should read (cut short,
+    // audio or camera missing) stays on Home, whose notice offers "Open in editor".
+    if (
+      result.kind === 'saved' &&
+      !result.warning &&
+      !audioWarnings.length &&
+      !cameraWarnings.length &&
+      (await this.openInEditor(result.projectId))
+    ) {
+      return
+    }
     this.report(
       result.kind === 'saved'
         ? {
@@ -570,6 +586,19 @@ export class RecordingController {
   private sendClock(): void {
     if (this.state.name !== 'recording') return
     sendTo(this.state.bar, IpcChannel.recordingClock, this.state.clock)
+  }
+
+  /** Loads the editor while the window is still hidden, then shows it; false on failure. */
+  private async openInEditor(projectId: string): Promise<boolean> {
+    if (!this.openEditor) return false
+    try {
+      await this.openEditor(projectId)
+    } catch (error) {
+      this.log.error('recording.editor.failed', { error })
+      return false
+    }
+    this.showMain()
+    return true
   }
 
   private report(status: RecordingStatus): void {

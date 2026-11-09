@@ -4,6 +4,9 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Changed
+- A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
+
 ## [0.1.0] — first public release (Windows)
 
 Full notes: [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).

@@ -75,7 +75,7 @@
 - [x] The floating bar does not appear in the video _(Mac untested)_
 - [x] Pausing and resuming produces a continuous video, without the paused stretch _(Mac untested)_
 - [x] The global shortcut (⌘⇧2 / Ctrl+Shift+2) stops the recording even with another app in focus
-- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording — not measured yet
+- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording — a clean save opens the editor straight away (it loads while the window is still hidden, then the window shows); measured 0.27s from Stop to the editor with its video ready for a 2.5s recording on Windows. A 2-minute recording is not measured yet. A recording saved with warnings (cut short, audio or camera missing) stays on Home, whose notice explains them and offers "Open in editor"; the same for a recovered recording
 - [ ] 30-minute recordings work without freezing or noticeably dropping frames — not tested yet (the helpers write a fragmented MP4 to disk as they go)
 
 **Edge cases**
