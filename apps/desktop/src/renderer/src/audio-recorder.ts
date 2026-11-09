@@ -89,8 +89,8 @@ function attach(track: AudioTrackName, stream: MediaStream, deviceId: string | n
     latencyMs: typeof latency === 'number' && latency > 0 ? latency * 1000 : 0,
   }
   audioTrack?.addEventListener('ended', () => {
-    // Unplugged or taken away by the OS. The graph keeps producing silence, so a recording
-    // goes on (F-04: the audio is silent from here, and Home warns).
+    // Unplugged or taken away by the OS. The track's recorder ends here and the take keeps the
+    // audio up to this point; the video goes on (F-04: the rest is silent, and Home warns).
     if (open[track]?.stream !== stream) return
     status[track] = 'unavailable'
     pushStatus()
@@ -196,15 +196,17 @@ function recordTrack(track: AudioTrackName): TrackRecorder {
       stopped: Promise.resolve(),
     }
   }
-  const destination = audioContext().createMediaStreamDestination()
-  source.node.connect(destination)
-  const recorder = new MediaRecorder(destination.stream, {
+  // The device's own track goes straight to the encoder. Routing it through the Web Audio graph
+  // (source → MediaStreamDestination) put every sample on this hidden page's real-time audio
+  // thread, and under load (screen capture, webcam) a late render quantum was heard as a click.
+  // The graph is still used, but only for the Home meters (the analyser).
+  const recorder = new MediaRecorder(new MediaStream(source.stream.getAudioTracks()), {
     mimeType: type,
     audioBitsPerSecond: AUDIO_BITS_PER_SECOND,
   })
   const entry: TrackRecorder = {
     recorder,
-    destination,
+    destination: null,
     writes: Promise.resolve(),
     stopped: new Promise((resolve) => recorder.addEventListener('stop', () => resolve())),
   }

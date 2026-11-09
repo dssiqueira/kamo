@@ -75,6 +75,11 @@ export function createAppWindow(
       nodeIntegration: false,
       webSecurity: true,
       spellcheck: false,
+      // The hidden recorder pages capture in real time: Chromium's throttling of hidden
+      // renderers (timers, lower priority) cost audio buffers, heard as clicks (F-04).
+      ...(page === 'audio-recorder' || page === 'camera-recorder'
+        ? { backgroundThrottling: false }
+        : {}),
       // No DevTools in a release (no shortcut, no menu, no openDevTools()): nobody can poke at
       // a renderer that sees the recordings. Development keeps them.
       devTools: !app.isPackaged,
