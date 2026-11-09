@@ -58,7 +58,7 @@
 - [x] Thumbnails update at least once per second
 - [x] The chosen display and the toggles are remembered for the next recording (display, microphone, computer sound and camera; there is no "show cursor" toggle on Home: cursor visibility lives in the editor, F-07)
 - [x] Esc during the countdown cancels and returns to the Home without creating a project
-- [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s) — not measured yet
+- [ ] From the Record click to the first frame: at most 3.5s (3s of countdown + 0.5s) — measured 4.0s and 4.7s on Windows (2026-11-08, i5-9400F): the helper was only spawned when the countdown ended (~0.6s to `ready`, then ~0.8s from `start` to `started`). The helper now starts and reaches `ready` during the countdown; to measure again
 
 **Edge cases**
 - Display disconnected while the Home is open → disappears from the list; if it was the chosen one, selects the primary
@@ -75,8 +75,8 @@
 - [x] The floating bar does not appear in the video _(Mac untested)_
 - [x] Pausing and resuming produces a continuous video, without the paused stretch _(Mac untested)_
 - [x] The global shortcut (⌘⇧2 / Ctrl+Shift+2) stops the recording even with another app in focus
-- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording — a clean save opens the editor straight away (it loads while the window is still hidden, then the window shows); measured 0.27s from Stop to the editor with its video ready for a 2.5s recording on Windows. A 2-minute recording is not measured yet. A recording saved with warnings (cut short, audio or camera missing) stays on Home, whose notice explains them and offers "Open in editor"; the same for a recovered recording
-- [ ] 30-minute recordings work without freezing or noticeably dropping frames — not tested yet (the helpers write a fragmented MP4 to disk as they go)
+- [ ] When stopped, the Editor opens in at most 3s for a 2-minute recording — a clean save opens the editor straight away (it loads while the window is still hidden, then the window shows); measured 0.27s from Stop to the editor with its video ready for a 2.5s recording on Windows. A 2-minute recording is not measured yet. A recording saved with warnings (cut short, audio or camera missing) stays on Home, whose notice explains them and offers "Open in editor"; the same for a recovered recording On 15s takes (2026-11-08, Windows): editor window shown 325ms after Stop, video ready at 442ms.
+- [ ] 30-minute recordings work without freezing or noticeably dropping frames — not tested yet (the helpers write a fragmented MP4 to disk as they go) A 15s take of a 60Hz screen (2026-11-08) had 6.8% repeated frames: Windows Graphics Capture delivered ~28–29fps for a 30fps file.
 
 **Edge cases**
 - Disk with less than 1GB free → warns before starting; if it runs out during recording, stops and saves what was already recorded
@@ -92,7 +92,7 @@
 **Acceptance criteria**
 - [x] Logs move (sampled at ~60Hz), down, up and scroll, with left/right/middle button _(Mac untested)_
 - [x] Coordinates normalized to the recorded display, respecting the scale factor _(Mac untested)_
-- [ ] Offset between event and video: at most 1 frame (33ms) — not measured yet
+- [ ] Offset between event and video: at most 1 frame (33ms) — first run on Windows (2026-11-08, 5 synthetic clicks on a page that flashes on mousedown): the event leads the first frame with the flash by ~10–50ms once the page's own 16–24ms paint delay is taken out; borderline, needs 30+ clicks
 - [x] Pause events are not included (time stays aligned with the continuous video) _(Mac untested)_
 - [x] No app code calls a keyboard API (verifiable by searching the code)
 

@@ -8,7 +8,13 @@ import type { FileProjectStore } from '../storage/index.ts'
 import { linkRecordingMedia } from '../storage/recovery.ts'
 import type { CaptureLogger } from './helper-process.ts'
 import type { RegionRect } from './protocol.ts'
-import { RecordingError, startRecording, type RecordingResult } from './recording.ts'
+import {
+  RecordingError,
+  startRecording,
+  warmHelper,
+  type RecordingResult,
+  type WarmHelper,
+} from './recording.ts'
 
 /** A-01: what a recording gets when no frame rate was chosen. */
 const DEFAULT_FPS: 30 | 60 = 30
@@ -39,10 +45,33 @@ export interface HelperBackendOptions {
 }
 
 export function createHelperBackend(options: HelperBackendOptions): RecordingBackend {
+  // F-01: the helper started during the countdown; undefined when it failed (start spawns again).
+  let warming: Promise<WarmHelper | undefined> | undefined
   return {
-    async start(target) {
+    prepare() {
+      if (warming) return
       const executable = options.helperPath()
-      if (!executable) throw new RecordingError('helper_missing', 'capture helper not found')
+      if (!executable) return
+      warming = warmHelper({ helper: { executable }, logger: options.logger }).catch(
+        (error: unknown) => {
+          options.logger.warn('recording.helper_warm_failed', { error })
+          return undefined
+        },
+      )
+    },
+    discardPrepared() {
+      const pending = warming
+      warming = undefined
+      void pending?.then((warm) => warm?.helper.dispose())
+    },
+    async start(target) {
+      const warm = await warming
+      warming = undefined
+      const executable = options.helperPath()
+      if (!executable) {
+        warm?.helper.dispose()
+        throw new RecordingError('helper_missing', 'capture helper not found')
+      }
       const defaults = (await options.defaults?.().catch(() => undefined)) ?? {}
       const systemAudio = (await options.systemAudio?.().catch(() => false)) ?? false
       const fps = (await options.fps?.().catch(() => DEFAULT_FPS)) ?? DEFAULT_FPS
@@ -59,6 +88,7 @@ export function createHelperBackend(options: HelperBackendOptions): RecordingBac
           helper: { executable },
           appVersion: options.appVersion,
           now: () => now,
+          ...(warm ? { warm } : {}),
         },
         {
           displayId,

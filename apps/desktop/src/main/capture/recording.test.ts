@@ -13,6 +13,7 @@ import type { CaptureLogger } from './helper-process.ts'
 import {
   RecordingError,
   startRecording,
+  warmHelper,
   type RecordingDeps,
   type RecordingSession,
   type RecordingStatus,
@@ -245,6 +246,34 @@ describe('startRecording', () => {
     await expect(startRecording(d, request)).rejects.toMatchObject({ code: 'low_disk' })
     expect(spawnHelper).not.toHaveBeenCalled()
     expect(existsSync(store.root)).toBe(false)
+  })
+
+  it('records with a helper warmed up during the countdown (F-01), without spawning another', async () => {
+    const d = deps()
+    const warm = await warmHelper(d)
+    expect(warm.helper.hasExited).toBe(false)
+    const spawnHelper = vi.fn()
+    const session = await start({ ...d, warm, spawnHelper })
+    expect(spawnHelper).not.toHaveBeenCalled()
+    const result = await recordAndSave(session, 1500)
+    expect(result.project.source.width).toBeGreaterThan(0)
+  })
+
+  it('spawns a fresh helper when the warm one is gone, and disposes it on low disk', async () => {
+    const d = deps()
+    const gone = await warmHelper(d)
+    gone.helper.dispose()
+    await gone.helper.exited
+    const session = await start({ ...d, warm: gone })
+    expect(d.logger.warn).toHaveBeenCalledWith('recording.helper_warm_lost')
+    await recordAndSave(session, 1500)
+
+    const warm = await warmHelper(d)
+    await expect(
+      startRecording({ ...d, warm, freeSpace: async () => 1 }, request),
+    ).rejects.toMatchObject({ code: 'low_disk' })
+    await warm.helper.exited
+    expect(warm.helper.hasExited).toBe(true)
   })
 
   it('ignores event types it does not know yet', async () => {

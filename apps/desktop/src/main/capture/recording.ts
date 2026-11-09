@@ -153,6 +153,12 @@ export interface RecordingDeps {
   appVersion?: string
   /** Overridable for tests. */
   spawnHelper?: (launch: HelperLaunch, logger: CaptureLogger) => HelperProcess
+  /**
+   * A helper started during the countdown and already `ready` (F-01: spawning it after the
+   * countdown cost ~0.6s before the first frame). startRecording takes it over and disposes it
+   * on any failure; a warm helper that already exited is replaced by a fresh one.
+   */
+  warm?: WarmHelper
   newId?: () => string
   startTimeoutMs?: number
   commandTimeoutMs?: number
@@ -203,6 +209,35 @@ async function renameWithRetry(from: string, to: string): Promise<void> {
       if (!transient || attempt >= 10) throw error
       await sleep(10 * (attempt + 1))
     }
+  }
+}
+
+/** A helper process that has already said `ready`, waiting for `start`. */
+export interface WarmHelper {
+  readonly helper: HelperProcess
+  readonly version: string
+}
+
+/**
+ * Spawns the helper and waits for `ready`, without creating a project or touching the disk:
+ * safe to do during the countdown and to throw away if it is cancelled (dispose()).
+ */
+export async function warmHelper(
+  deps: Pick<RecordingDeps, 'helper' | 'logger' | 'spawnHelper' | 'startTimeoutMs'>,
+): Promise<WarmHelper> {
+  const helper = (
+    deps.spawnHelper ?? ((launch, log) => new HelperProcess(launch, { logger: log }))
+  )(deps.helper, deps.logger)
+  try {
+    const ready = await helper.waitFor('ready', {
+      timeoutMs: deps.startTimeoutMs ?? DEFAULT_START_TIMEOUT_MS,
+    })
+    deps.logger.info('recording.helper_warm', { version: ready.version, pid: helper.pid })
+    return { helper, version: ready.version }
+  } catch (error) {
+    helper.dispose()
+    await helper.exited
+    throw toRecordingError(error, 'start_timeout')
   }
 }
 
@@ -314,9 +349,13 @@ export async function startRecording(
   const projectsDir = deps.projectsDir ?? store.root
   const minFree = deps.minFreeBytes ?? MIN_FREE_BYTES
 
+  const warm = deps.warm && !deps.warm.helper.hasExited ? deps.warm : undefined
+  if (deps.warm && !warm) logger.warn('recording.helper_warm_lost')
+
   const free = await (deps.freeSpace ?? freeDiskSpace)(projectsDir)
   if (free < minFree) {
     logger.warn('recording.low_disk', { free, minFree })
+    warm?.helper.dispose()
     throw new RecordingError('low_disk', `only ${free} bytes free`)
   }
 
@@ -330,23 +369,32 @@ export async function startRecording(
   await markRecordingStarted(store, projectId, {
     startedAt: createdAt.toISOString(),
     ...(deps.appVersion ? { appVersion: deps.appVersion } : {}),
+  }).catch((error: unknown) => {
+    warm?.helper.dispose()
+    throw error
   })
 
-  let helper: HelperProcess | undefined
+  let helper: HelperProcess | undefined = warm?.helper
   let events: MouseEventsWriter | undefined
   try {
     await mkdir(framesDir, { recursive: true })
     // always created, empty when the mouse is off or unavailable: every project has one
     events = await MouseEventsWriter.open(store, projectId, logger)
-    helper = (deps.spawnHelper ?? ((launch, log) => new HelperProcess(launch, { logger: log })))(
-      deps.helper,
-      logger,
-    )
+    const startTimeoutMs = deps.startTimeoutMs ?? DEFAULT_START_TIMEOUT_MS
+    if (!helper) {
+      helper = (deps.spawnHelper ?? ((launch, log) => new HelperProcess(launch, { logger: log })))(
+        deps.helper,
+        logger,
+      )
+    }
     // subscribed before `start`: the first mouse events can share a chunk with `started`
     helper.onEvent(events.handle)
-    const startTimeoutMs = deps.startTimeoutMs ?? DEFAULT_START_TIMEOUT_MS
-    const ready = await helper.waitFor('ready', { timeoutMs: startTimeoutMs })
-    logger.info('recording.helper_ready', { version: ready.version, pid: helper.pid })
+    if (warm) {
+      logger.info('recording.helper_ready', { version: warm.version, pid: helper.pid, warm: true })
+    } else {
+      const ready = await helper.waitFor('ready', { timeoutMs: startTimeoutMs })
+      logger.info('recording.helper_ready', { version: ready.version, pid: helper.pid })
+    }
     const startedPromise = helper.waitFor('started', { timeoutMs: startTimeoutMs })
     // Warnings sent right after `started` (same stdout chunk) arrive before the Session
     // subscribes; keep them for it.

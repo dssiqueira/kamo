@@ -28,6 +28,13 @@ const SELECTION_LINE = 2
 export interface RecordingBackend {
   /** A display, a window or a region (A-08). */
   start(target: CaptureTarget): Promise<BackendSession>
+  /**
+   * F-01: called when the countdown starts, so the slow part of starting (spawning the capture
+   * helper) overlaps the 3-2-1 instead of following it. Nothing is recorded or written yet.
+   */
+  prepare?(): void
+  /** The countdown was cancelled: drop whatever prepare() started. */
+  discardPrepared?(): void
 }
 
 export interface BackendSession {
@@ -193,6 +200,7 @@ export class RecordingController {
     // Safety net if the countdown page never reports back.
     const timer = setTimeout(() => void this.countdownDone(), (COUNTDOWN_SECONDS + 2) * 1000)
     this.state = { name: 'countdown', target, controlDisplayId, window, timer }
+    this.backend.prepare?.()
     void this.audio?.prepare().catch((error: unknown) => {
       this.log.error('recording.audio.prepare.failed', { error })
     })
@@ -207,6 +215,7 @@ export class RecordingController {
     clearTimeout(this.state.timer)
     this.state.window.destroy()
     this.state = { name: 'idle' }
+    this.backend.discardPrepared?.()
     void this.audio?.cancel().catch(() => {})
     void this.camera?.cancel().catch(() => {})
     this.showMain()
