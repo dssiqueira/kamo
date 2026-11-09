@@ -68,7 +68,7 @@ jobs:
 
   mac:
     needs: inputs
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Build whisper-cli (arm64, Metal, static)
         run: |

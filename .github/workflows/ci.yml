@@ -70,7 +70,7 @@ jobs:
 
   # Swift capture helper (D-023): must build with no warnings on the Mac runner.
   mac-helper:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -105,7 +105,7 @@ jobs:
           - os: windows-latest
             installer: apps/desktop/release/*.exe
             binary: apps/desktop/release/win-unpacked/Kamo.exe
-          - os: macos-14
+          - os: macos-15
             installer: apps/desktop/release/*.dmg
             binary: apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo
     runs-on: ${{ matrix.os }}

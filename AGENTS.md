@@ -74,7 +74,7 @@ TypeScript everywhere · React + Vite · Tailwind + shadcn/ui · Canvas/WebGL fo
 - **Native capture:** manual checklist on Mac and Windows at every release (record, permissions, system sound, update)
 - **CI (GitHub Actions):** lint + typecheck + tests on every PR; size budget check (installer, extension, `@kamo/mcp`)
 - **Prereleases:** `@kamo/design-tokens` and `@kamo/core` go out as `0.0.x-next` on every merge to `main` since step 1, because `kamo-site` uses these packages since phase 0
-- **Release:** `v*` tag triggers a build on `macos-14` (signing + notarization) and `windows-latest`, publishes to GitHub Releases, publishes the extension to the Chrome Web Store and publishes to npm `@kamo/mcp`, `@kamo/core`, `@kamo/design-tokens`, `@kamo/i18n` and `@kamo/cloud-client` (used by the private repositories)
+- **Release:** `v*` tag triggers a build on `macos-15` (signing + notarization) and `windows-latest`, publishes to GitHub Releases, publishes the extension to the Chrome Web Store and publishes to npm `@kamo/mcp`, `@kamo/core`, `@kamo/design-tokens`, `@kamo/i18n` and `@kamo/cloud-client` (used by the private repositories)
 
 ## Commands
 ```bash

@@ -1,6 +1,6 @@
 name: Release
 
-# A `v*` tag (e.g. v0.1.0, v0.1.0-beta.1) builds and signs the desktop app on macos-14 and
+# A `v*` tag (e.g. v0.1.0, v0.1.0-beta.1) builds and signs the desktop app on macos-15 and
 # windows-latest, builds the extension and collects everything into a DRAFT GitHub Release
 # (installers, electron-updater's latest*.yml and blockmaps, the extension zip). A person
 # reviews the draft and publishes it: only then does electron-updater offer it. npm packages
@@ -37,7 +37,7 @@ jobs:
           RELEASE_MAC: ${{ vars.RELEASE_MAC }}
         run: |
           win='{"os":"windows-latest","binary":"apps/desktop/release/win-unpacked/Kamo.exe"}'
-          mac='{"os":"macos-14","binary":"apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo"}'
+          mac='{"os":"macos-15","binary":"apps/desktop/release/mac-arm64/Kamo.app/Contents/MacOS/Kamo"}'
           if [ "$RELEASE_MAC" = true ]; then
             echo "mac=true" >> "$GITHUB_OUTPUT"
             echo "desktop=[$mac,$win]" >> "$GITHUB_OUTPUT"
