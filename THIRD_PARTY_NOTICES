@@ -20,6 +20,18 @@ JetBrains Mono
 
 
 ================================================================================
+Sounds
+================================================================================
+
+Countdown tick (packages/ui/src/recording/countdown-tick.wav)
+  One tick cut from "Tick Sound Effect" on Pixabay (sound 336779,
+  https://pixabay.com/sound-effects/), shortened to ~85ms and converted to WAV.
+  License: Pixabay Content License (https://pixabay.com/service/license-summary/).
+  Free to use in this app; not covered by Kamo's MIT license, and not to be
+  redistributed on its own as a sound file.
+
+
+================================================================================
 JavaScript libraries bundled in the app
 ================================================================================
 
