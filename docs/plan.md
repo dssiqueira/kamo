@@ -179,12 +179,12 @@ On the `kamo` side: ensure `@kamo/design-tokens` and `@kamo/core` are stable on 
 
 ## Extension v0.2
 ### Step 12 — Popup + tab recording (E-01) ⏳ (2026-11-05, built; real-Chrome checks pending)
-> Built (e721772 and later). Open: Esc cancels the countdown only from the popup, the icon opens the popup instead of stopping, no 30-minute or microphone-sync measurement, no end-to-end run in Chrome, and German, French and Korean (D-021) are not in `packages/i18n` yet.
+> Built (e721772 and later). Open: Esc cancels the countdown only from the popup, the icon opens the popup instead of stopping, no 30-minute or microphone-sync measurement, no end-to-end run in Chrome. German, French and Korean (D-021) are in `packages/i18n` since 2026-11-08 (issue #11).
 - Vite with multiple entry points: popup (≤ 150KB, no `core`), offscreen, service worker, editor, welcome
 - `tabCapture` → offscreen → chunked `MediaRecorder` into OPFS; tab audio returned to the user; microphone with permission requested on a visible page
 - Countdown overlaid and removed before the 1st frame; badge with the time; nothing injected during recording
 - Reference frames in OPFS; recovery of interrupted recording
-- i18n: + German, French and Korean (D-021) and `_locales/`
+- i18n: + German, French and Korean (D-021) and `_locales/` (done 2026-11-08)
 
 ### Step 13 — Clicks in the tab (E-02) ⏳ (2026-11-05, built; the 33ms offset is not measured)
 - Mouse-only content script via `scripting` + `activeTab`; CSS px × DPR × zoom → video pixels

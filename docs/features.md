@@ -267,7 +267,7 @@
 - [x] Welcome tour before the permissions: three slides with Kamo explaining from a speech bubble, each with a small drawn vignette; dots, Back, Next and "Skip the tour"; → / Enter / ← / Esc inside Kamo's window; spring transitions, still with reduced motion
 - [x] The tour shows only until the onboarding is finished once; opening the onboarding again for a missing permission skips it
 - [x] Settings → Help → "Show the welcome tour" replays it (not during a recording or an export) _(desktop only; the extension keeps its own welcome page, E-05)_
-- [x] Language screen before the tour on first run: the five languages by their own names (each with its own `lang`), the OS language preselected with "Same as your system" (else English); a pick switches the window at once; arrows / Enter, radio group; saved as Settings' language (`system` if the system's was kept) and main rebuilds its menus. Not on the permission reopen or the tour replay _(desktop only; the extension follows Chrome's language)_
+- [x] Language screen before the tour on first run: the app languages by their own names (each with its own `lang`), the OS language preselected with "Same as your system" (else English); a pick switches the window at once; arrows / Enter, radio group; saved as Settings' language (`system` if the system's was kept) and main rebuilds its menus. Not on the permission reopen or the tour replay _(desktop only; the extension follows Chrome's language)_
 
 ---
 
@@ -290,7 +290,7 @@
 - [x] Global stop shortcut, editable
 - [x] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
 - [x] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), following the system language, with manual switching without restarting
-- [x] Dates, durations, numbers and file sizes formatted to each language's standard (`Intl`)
+- [x] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), plus German, French and Korean since 2026-11-08 (issue #11), following the system language, with manual switching without restarting
 - [ ] No screen breaks with text 35% longer than English (German, French) or with Chinese and Japanese characters — not reviewed yet
 - [ ] Kamo Cloud account (see C-01 and C-09) and permissions (see F-13) — permissions done; the account waits for C-01 (step 17)
 
@@ -415,7 +415,7 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 - [x] Justification for each permission written for the store form — `docs/store/permissions.md`, kept in step with the manifest by a test
 - [x] Privacy statement: nothing leaves the browser unless the user sends it to the cloud; uploaded videos stay in their account (from v0.3) — `docs/store/privacy.md`; still to be published at a URL for the store form
 - [ ] Extension package ≤ 5MB, with the popup at ≤ 150KB and opening in under 200ms (without loading `core` or the editor); verified in CI — the sizes are checked in CI and on release (1.79MB, popup 118KB gzipped on 2026-11-05); the 200ms open time is not measured
-- [ ] Store page with 5 screenshots, a short video made with Kamo itself and a description in all v0.2 languages (English, Portuguese, Spanish, Simplified Chinese, Japanese, German, French and Korean) — descriptions in the 5 app languages (`docs/store/listing.md`); German, French, Korean, the screenshots and the video are missing
+- [ ] Store page with 5 screenshots, a short video made with Kamo itself and a description in all v0.2 languages (English, Portuguese, Spanish, Simplified Chinese, Japanese, German, French and Korean) — descriptions in 5 languages (`docs/store/listing.md`); the German, French and Korean descriptions (the app itself speaks them since issue #11), the screenshots and the video are missing
 - [x] Extension name and short description translated via `_locales/<language>/messages.json`, the Chrome standard — generated from `packages/i18n` at build time, in the 5 app languages (tested)
 - [ ] Publication automated by CI on each release (via the Chrome Web Store API) — the `chrome-web-store` job in `release.yml` exists but has not run (needs the CWS secrets and a stable tag)
 - [ ] Same package published later to Edge Add-ons — not started

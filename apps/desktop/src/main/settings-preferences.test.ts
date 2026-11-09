@@ -35,7 +35,7 @@ describe('settings.json preferences', () => {
   it('drops each invalid value on its own (an old or hand-edited file keeps working)', () => {
     const text = JSON.stringify({
       theme: 'sepia',
-      language: 'de',
+      language: 'it',
       projectsDir: 'relative/path',
       exportDir: '',
       stopShortcut: 'A',
@@ -49,7 +49,7 @@ describe('settings.json preferences', () => {
     for (const theme of ['light', 'dark', 'system']) {
       expect(parseSettings(JSON.stringify({ theme }))).toEqual({ version: 1, theme })
     }
-    for (const language of ['system', 'en', 'pt-BR', 'es', 'zh-CN', 'ja']) {
+    for (const language of ['system', 'en', 'pt-BR', 'es', 'zh-CN', 'ja', 'de', 'fr', 'ko']) {
       expect(parseSettings(JSON.stringify({ language }))).toEqual({ version: 1, language })
     }
   })
@@ -78,7 +78,7 @@ describe('renderer updates', () => {
       { exportDir: folder },
       { stopShortcut: 'CommandOrControl+Shift+3' },
       { theme: 'blue' },
-      { language: 'fr' },
+      { language: 'it' },
       { onboardingDone: 1 },
     ]) {
       expect(() => parseSettingsUpdate(update)).toThrow(SettingsError)

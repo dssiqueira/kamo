@@ -232,7 +232,7 @@ pnpm check                            # lint, typecheck, tests, i18n and the key
 
 ## 语言
 
-支持 English、Português (Brasil)、Español、简体中文和日本語，默认跟随系统，随时可以切换。日期、数字和时长都会按你的语言格式显示。母语使用者们：帮忙审校翻译是最有价值的贡献之一。
+支持 English、Português (Brasil)、Español、简体中文、日本語、Deutsch、Français 和 한국어，默认跟随系统，随时可以切换。日期、数字和时长都会按你的语言格式显示。母语使用者们：帮忙审校翻译是最有价值的贡献之一。
 
 ## 路线图
 

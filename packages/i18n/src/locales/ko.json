@@ -1,0 +1,822 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "녹화하고, 클릭하고, 멈추세요. 편집은 이미 끝났어요."
+  },
+  "common": {
+    "cancel": "취소",
+    "retry": "다시 시도",
+    "close": "닫기",
+    "showInFolder": "폴더에서 보기"
+  },
+  "project": {
+    "defaultName": "녹화 {date}",
+    "count": "{count, plural, =0 {아직 프로젝트가 없어요} other {프로젝트 #개}}"
+  },
+  "projects": {
+    "title": "최근 프로젝트",
+    "empty": "아직 아무것도 없어요. 녹화를 누르면 첫 영상이 바로 여기에 나타나요.",
+    "open": "열기",
+    "openNamed": "{name} 열기",
+    "more": "더 보기",
+    "moreNamed": "{name} 더 보기",
+    "rename": "이름 바꾸기",
+    "nameLabel": "프로젝트 이름",
+    "delete": "삭제",
+    "deleteConfirm": "“{name}”을(를) 휴지통으로 옮길까요? 휴지통에서 복원할 수 있어요.",
+    "moveToTrash": "휴지통으로 이동",
+    "broken": {
+      "title": "손상된 프로젝트",
+      "unreadable": "이 프로젝트의 편집 내용을 읽을 수 없어요. 원본 영상은 괜찮을 수도 있어요.",
+      "newerVersion": "더 새로운 버전의 Kamo로 만들어졌어요. 열려면 앱을 업데이트하세요.",
+      "openRawVideo": "원본 영상 열기"
+    },
+    "errors": {
+      "invalidName": "이름은 1자 이상(최대 120자)이어야 해요.",
+      "notFound": "그 프로젝트는 더 이상 없어요.",
+      "failed": "잘 안 됐어요. 다시 시도해 주세요."
+    }
+  },
+  "playlists": {
+    "label": "재생목록",
+    "all": "전체",
+    "new": "새 재생목록",
+    "nameLabel": "재생목록 이름",
+    "count": "{count, plural, =0 {비어 있음} other {녹화 #개}}",
+    "rename": "재생목록 이름 바꾸기",
+    "delete": "재생목록 삭제",
+    "deleteConfirm": "재생목록 “{name}”을(를) 삭제할까요? 안에 있는 녹화는 Kamo에 그대로 남아요.",
+    "deleteAction": "재생목록 삭제",
+    "empty": "이 재생목록은 비어 있어요. 녹화의 재생목록 버튼을 눌러 여기에 추가하세요.",
+    "reorderHint": "녹화를 끌어 놓거나 화살표로 순서를 바꾸세요.",
+    "addTo": "재생목록에 추가",
+    "menuTitle": "“{name}”의 재생목록",
+    "none": "아직 재생목록이 없어요.",
+    "moveUp": "위로 이동",
+    "moveDown": "아래로 이동",
+    "remove": "재생목록에서 빼기",
+    "errors": {
+      "invalidName": "재생목록 이름은 1자 이상(최대 120자)이어야 해요.",
+      "notFound": "그 재생목록은 더 이상 없어요.",
+      "tooMany": "재생목록이 너무 많아요. 하나를 삭제한 뒤 새로 만드세요.",
+      "full": "이 재생목록이 가득 찼어요.",
+      "newerVersion": "재생목록이 더 새로운 버전의 Kamo로 저장됐어요. 변경하려면 앱을 업데이트하세요.",
+      "failed": "잘 안 됐어요. 다시 시도해 주세요."
+    }
+  },
+  "home": {
+    "displays": "녹화할 화면",
+    "capture": {
+      "title": "녹화 대상",
+      "screen": "화면",
+      "window": "창",
+      "region": "선택",
+      "searchWindows": "창 검색",
+      "loadingWindows": "열린 창을 찾는 중…",
+      "noWindows": "녹화할 창이 없어요. 녹화하려는 앱을 열면 여기에 나타나요.",
+      "noMatch": "“{query}”와(과) 일치하는 창이 없어요.",
+      "openSelection": "영역 선택",
+      "adjustSelection": "선택 영역 조정",
+      "noRegion": "화면 위에 프레임이 열려요. 녹화하려는 부분에 맞게 옮기고 크기를 조절하세요.",
+      "regionSize": "{display}의 {width, number, ::group-off} × {height, number, ::group-off}"
+    },
+    "displayName": "디스플레이 {index}",
+    "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
+    "primary": "기본",
+    "record": "녹화",
+    "noDisplays": "디스플레이를 찾을 수 없어요. 모니터가 연결되어 있나요?",
+    "needsPermission": "Kamo가 화면을 녹화하려면 권한이 필요해요. 시스템 설정에서 허용하세요.",
+    "audio": {
+      "title": "소리",
+      "microphone": "마이크",
+      "system": "컴퓨터 소리",
+      "chooseMicrophone": "녹음할 마이크",
+      "defaultMicrophone": "기본 마이크",
+      "microphoneName": "마이크 {index}",
+      "level": "{source} 레벨",
+      "micDenied": "Kamo가 마이크를 사용할 수 없어요. 시스템 설정에서 허용하세요. 그 전까지는 녹화에 목소리가 들어가지 않아요.",
+      "micUnavailable": "마이크를 찾을 수 없어요. 녹화에 목소리가 들어가지 않아요.",
+      "systemUnavailable": "지금은 Kamo가 컴퓨터 소리를 캡처할 수 없어요. 녹화에 컴퓨터 소리가 들어가지 않아요.",
+      "systemSoon": "macOS 13 이상이 필요해요.",
+      "systemWithVideo": "영상과 함께 녹음돼요. Mac에서는 레벨 미터가 없어요."
+    },
+    "camera": {
+      "sectionTitle": "소리와 카메라",
+      "title": "카메라",
+      "choose": "녹화할 카메라",
+      "default": "기본 카메라",
+      "name": "카메라 {index}",
+      "preview": "카메라 미리보기",
+      "denied": "Kamo가 카메라를 사용할 수 없어요. 시스템 설정에서 허용하세요. 그 전까지는 녹화에 카메라가 들어가지 않아요.",
+      "unavailable": "카메라를 찾을 수 없거나 다른 앱이 사용 중이에요. 녹화에 카메라가 들어가지 않아요."
+    },
+    "fixPermission": "설정하기",
+    "recordDisplay": "녹화 · {display}",
+    "recordWindow": "녹화 · {window}",
+    "recordRegion": "녹화 · 선택 영역 {width, number, ::group-off} × {height, number, ::group-off}",
+    "recordingFps": {
+      "label": "60fps로 녹화",
+      "hint": "스크롤과 애니메이션이 더 부드러워져요. 파일 크기는 약 1.5배 커져요."
+    }
+  },
+  "countdown": {
+    "cancelHint": "Esc를 눌러 취소",
+    "stopHint": "{shortcut}로 녹화 중지"
+  },
+  "recording": {
+    "rec": "REC",
+    "paused": "일시정지됨",
+    "pause": "일시정지",
+    "resume": "다시 시작",
+    "stop": "중지",
+    "errors": {
+      "helperMissing": "이 빌드에서는 아직 녹화할 수 없어요. 캡처 도우미가 없어요.",
+      "lowDisk": "이 디스크의 여유 공간이 1GB 미만이에요. 공간을 확보한 뒤 다시 시도하세요.",
+      "displayNotFound": "그 디스플레이는 더 이상 연결되어 있지 않아요. 다른 디스플레이를 선택하세요.",
+      "windowNotFound": "그 창이 닫혔거나 최소화됐어요. 다시 선택하고 녹화하세요.",
+      "permissionDenied": "Kamo가 화면을 녹화하려면 권한이 필요해요.",
+      "tooShort": "1초도 안 돼서 아무것도 저장하지 않았어요.",
+      "displayLost": "디스플레이 연결이 끊겼어요. Kamo가 녹화된 부분을 저장했어요.",
+      "windowLost": "창이 닫혔어요. Kamo가 녹화된 부분을 저장했어요.",
+      "diskFull": "디스크가 가득 찼어요. Kamo가 녹화된 부분을 저장했어요.",
+      "failed": "녹화가 예기치 않게 중지됐어요. 다음에 Kamo가 복구를 시도할게요."
+    },
+    "saved": "녹화를 저장했어요.",
+    "openInEditor": "편집기에서 열기",
+    "audio": {
+      "micUnavailable": "목소리 없이 저장했어요. Kamo가 마이크를 사용할 수 없었어요.",
+      "micLost": "녹화 중에 마이크 연결이 끊겼어요. 그 시점부터는 오디오가 무음이에요.",
+      "lost": "오디오 녹음이 일찍 중지됐어요. Kamo가 그때까지 녹음된 부분을 보관했어요.",
+      "systemUnavailable": "컴퓨터 소리 없이 저장했어요. Kamo가 캡처할 수 없었어요.",
+      "failed": "저장했지만 오디오 일부를 보관하지 못했어요."
+    },
+    "camera": {
+      "unavailable": "카메라 없이 저장했어요. Kamo가 카메라를 사용할 수 없었어요.",
+      "lost": "녹화 중에 카메라 연결이 끊겼어요. 카메라는 그 시점에서 멈춰요.",
+      "failed": "저장했지만 카메라 녹화를 보관하지 못했어요."
+    },
+    "tray": {
+      "recording": "녹화 중 {elapsed}",
+      "paused": "{elapsed}에서 일시정지됨"
+    }
+  },
+  "selection": {
+    "toolbar": "선택 영역",
+    "move": "끌어서 선택 영역 이동",
+    "resize": "끌어서 선택 영역 크기 조절",
+    "width": "너비(픽셀)",
+    "height": "높이(픽셀)",
+    "unit": "px",
+    "sizes": "크기",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "녹화",
+    "stopHint": "{shortcut}로 녹화 중지",
+    "close": "닫기(Esc)"
+  },
+  "tray": {
+    "open": "Kamo 열기",
+    "quit": "Kamo 종료",
+    "notice": {
+      "title": "Kamo가 계속 실행 중이에요",
+      "body": "Kamo는 시스템 트레이에 있어요. 아이콘을 클릭하면 열리고, 마우스 오른쪽 버튼으로 클릭하면 종료할 수 있어요."
+    }
+  },
+  "editor": {
+    "back": "프로젝트",
+    "format": "형식",
+    "export": "내보내기",
+    "play": "재생",
+    "pause": "일시정지",
+    "loading": "프로젝트를 여는 중…",
+    "endTrim": {
+      "question": "마지막 {seconds, plural, other {#초}}를 잘라낼까요?",
+      "apply": "잘라내기",
+      "dismiss": "닫기"
+    },
+    "errors": {
+      "load": "이 프로젝트를 열 수 없어요."
+    },
+    "panel": {
+      "background": "배경",
+      "color": "단색",
+      "frame": "프레임",
+      "padding": "여백",
+      "corners": "모서리",
+      "shadow": "그림자",
+      "cursor": "커서",
+      "cursorSize": "크기",
+      "ripple": "클릭 물결",
+      "hideCursor": "커서 숨기기",
+      "zooms": "줌",
+      "autoZoom": "자동 줌",
+      "regenerate": "줌 다시 만들기",
+      "noClicks": "클릭이 없어서 줌할 곳이 없어요.",
+      "image": "내 이미지",
+      "imageAdd": "내 이미지 추가",
+      "imageReplace": "이미지 바꾸기…",
+      "imagePickTitle": "배경 이미지 선택",
+      "imageFilter": "이미지(PNG, JPG, WebP)",
+      "imageErrors": {
+        "unsupported": "PNG, JPG, WebP 이미지 파일이 아니에요.",
+        "tooBig": "이미지가 너무 커요. 25MB 이하로 선택하세요.",
+        "unreadable": "이미지를 읽을 수 없어요. 다른 이미지를 사용해 보세요."
+      }
+    },
+    "webcam": {
+      "title": "웹캠",
+      "show": "웹캠 표시",
+      "position": "위치",
+      "dragHint": "또는 영상 속 버블을 끌어 원하는 곳에 놓으세요",
+      "shape": "모양",
+      "circle": "원형",
+      "square": "둥근 사각형",
+      "landscape": "가로 16:9",
+      "portrait": "세로 9:16",
+      "circleShort": "원형",
+      "squareShort": "사각형",
+      "landscapeShort": "16:9",
+      "portraitShort": "9:16",
+      "topLeft": "왼쪽 위",
+      "topRight": "오른쪽 위",
+      "bottomLeft": "왼쪽 아래",
+      "bottomRight": "오른쪽 아래",
+      "size": "크기",
+      "small": "작게",
+      "medium": "보통",
+      "large": "크게",
+      "shrinkOnZoom": "줌 중에는 작게",
+      "layout": "레이아웃",
+      "layoutBubble": "버블",
+      "layoutSplit": "분할",
+      "layoutHint": "분할은 세로 9:16 형식에서 화면을 카메라 위에 쌓아요.",
+      "splitHint": "영상 속 화면과 카메라 사이의 선을 끌어 크기를 조절하세요.",
+      "splitOtherFormats": "분할은 9:16에서 표시돼요. 16:9와 1:1에서는 카메라가 버블로 유지돼요.",
+      "cameraFirst": "카메라를 위에",
+      "dividerHint": "끌어서 화면과 카메라 크기 조절",
+      "track": "웹캠",
+      "hideAtPlayhead": "재생 헤드 위치에서 웹캠 숨기기",
+      "hidden": "숨김",
+      "hiddenBlock": "{start}부터 {end}까지 웹캠 숨김",
+      "hiddenHint": "끌어서 옮기고, 가장자리를 당겨 크기를 조절하세요. 화살표로 조금씩 옮기고, Delete를 누르면 웹캠이 다시 보여요."
+    },
+    "captions": {
+      "title": "자막",
+      "show": "자막 표시",
+      "style": "스타일",
+      "clean": "깔끔",
+      "bold": "굵게",
+      "kamo": "Kamo",
+      "minimal": "미니멀",
+      "soft": "부드럽게",
+      "neon": "네온",
+      "typewriter": "타자기",
+      "caps": "대문자",
+      "cinema": "시네마",
+      "marker": "마커",
+      "classic": "클래식",
+      "duo": "듀오",
+      "sample": "여기에 내 말이 나와요",
+      "position": "위치",
+      "bottom": "아래",
+      "middle": "가운데",
+      "size": "크기",
+      "small": "작게",
+      "medium": "보통",
+      "large": "크게",
+      "editHint": "타임라인에서 자막을 더블클릭해 텍스트를 고치세요. 고친 내용은 대본에도 반영돼요.",
+      "download": "다운로드하고 받아쓰기",
+      "noSpeech": "이 녹화에서 말소리를 찾지 못해서 자막이 없어요.",
+      "track": "자막",
+      "block": "{start}부터 {end}까지 자막: {text}",
+      "blockHint": "더블클릭하거나 Enter를 눌러 텍스트를 고치세요. 끌어서 옮기고, 가장자리를 당겨 타이밍을 바꾸세요. Delete를 누르면 삭제돼요.",
+      "editLabel": "자막 텍스트",
+      "editHelp": "Enter로 저장 · Esc로 취소",
+      "offer": {
+        "title": "자동 자막",
+        "local": "내 목소리로 만들어요, 내 컴퓨터에서 바로",
+        "fix": "타임라인에서 어떤 단어든 바로 고쳐요",
+        "styles": "12가지 스타일, MP4나 GIF에 입히거나 .srt로",
+        "create": "자막 만들기",
+        "transcribe": "이 녹화 받아쓰기",
+        "sizeExact": "{size} 한 번만 다운로드, 클릭할 때만",
+        "sizeApprox": "약 {size} 한 번만 다운로드, 클릭할 때만"
+      }
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "세이지",
+      "cream": "크림",
+      "blossom": "꽃",
+      "water": "물",
+      "peach": "피치",
+      "lavender": "라벤더",
+      "meadow": "초원",
+      "dawn": "새벽"
+    }
+  },
+  "timeline": {
+    "label": "타임라인",
+    "playhead": "재생 헤드",
+    "tracks": {
+      "video": "영상",
+      "zoom": "줌",
+      "mic": "마이크",
+      "system": "컴퓨터 소리"
+    },
+    "addZoom": "재생 헤드 위치에 줌 추가",
+    "mute": "{track} 음소거",
+    "volume": "{track} 볼륨",
+    "trimStart": "시작 자르기",
+    "trimEnd": "끝 자르기",
+    "trimTooShort": "영상은 최소 1초 이상 남겨야 해요.",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "{start}부터 {end}까지 줌 {scale}",
+    "zoomBlockHint": "끌어서 옮기고, 가장자리를 당겨 크기를 조절하세요. 화살표로 조금씩 옮기고, Delete로 삭제하고, Enter로 배율을 바꿔요.",
+    "scale": "줌 배율",
+    "scaleDown": "배율 낮추기",
+    "scaleUp": "배율 높이기"
+  },
+  "settings": {
+    "title": "설정",
+    "open": "설정",
+    "appearance": {
+      "title": "모양",
+      "theme": "테마",
+      "light": "라이트",
+      "dark": "다크",
+      "system": "시스템"
+    },
+    "language": {
+      "title": "언어",
+      "label": "앱 언어",
+      "system": "시스템과 같게"
+    },
+    "window": {
+      "title": "창",
+      "closeToTray": "창을 닫아도 Kamo를 트레이에 유지",
+      "closeToTrayHint": "창을 닫아도 Kamo는 시스템 트레이에서 계속 실행돼요. 종료하려면 아이콘을 마우스 오른쪽 버튼으로 클릭하고 Kamo 종료를 선택하세요.",
+      "closeToTrayHintMac": "창을 닫아도 Kamo는 메뉴 막대에 아이콘으로 계속 실행돼요. 종료하려면 거기서 Kamo 종료를 선택하거나 ⌘Q를 누르세요."
+    },
+    "folders": {
+      "title": "폴더",
+      "projects": "프로젝트 폴더",
+      "projectsHint": "새 녹화는 여기에 저장돼요. 기존 프로젝트는 그대로 있어요.",
+      "export": "내보내기 폴더",
+      "exportHint": "내보낸 영상은 여기에 저장돼요.",
+      "change": "변경…",
+      "show": "보기",
+      "errors": {
+        "busy": "프로젝트 폴더를 바꾸기 전에 녹화를 끝내세요.",
+        "notWritable": "Kamo가 그 폴더에 저장할 수 없어요. 다른 폴더를 선택하세요.",
+        "failed": "폴더를 바꾸지 못했어요. 다시 시도하세요."
+      }
+    },
+    "shortcuts": {
+      "title": "단축키",
+      "stop": "녹화 중지",
+      "stopHint": "Kamo가 녹화하는 동안 어떤 앱에서든 작동해요. Kamo는 입력하는 내용을 절대 읽지 않아요.",
+      "change": "변경",
+      "reset": "초기화",
+      "recording": "새 단축키를 누르세요…",
+      "recordingHint": "취소하려면 Esc를 누르세요.",
+      "saved": "저장했어요. 다음 녹화부터 적용돼요.",
+      "errors": {
+        "needsModifier": "키에 Ctrl, Alt 또는 ⌘를 함께 쓰세요. Shift만 쓰면 타이핑에 방해가 돼요.",
+        "unsupported": "그 키는 단축키에 쓸 수 없어요.",
+        "taken": "다른 앱이 이미 {shortcut}을(를) 쓰고 있어요. 다른 단축키를 사용해 보세요.",
+        "invalid": "그 단축키는 작동하지 않아요. 다른 단축키를 사용해 보세요."
+      }
+    },
+    "permissions": {
+      "title": "권한",
+      "none": "이 컴퓨터에서는 Kamo에 시스템 권한이 필요하지 않아요.",
+      "openSystemSettings": "시스템 설정 열기",
+      "openWindowsSettings": "Windows 설정 열기",
+      "screen": "화면 기록",
+      "screenHint": "화면을 녹화하려면 필요해요.",
+      "microphone": "마이크",
+      "microphoneHint": "목소리를 녹음하려면 필요해요. 선택 사항이에요.",
+      "camera": "카메라",
+      "cameraHint": "녹화에 웹캠을 보여 주려면 필요해요. 선택 사항이에요.",
+      "inputMonitoring": "입력 모니터링",
+      "inputMonitoringHint": "macOS는 “키”라고 표시하지만, Kamo는 마우스만 읽고 입력하는 내용은 절대 보지 않아요.",
+      "status": {
+        "granted": "허용됨",
+        "denied": "차단됨",
+        "pending": "아직 허용 안 됨",
+        "unknown": "알 수 없음"
+      }
+    },
+    "updates": {
+      "title": "업데이트",
+      "version": "버전 {version}",
+      "check": "지금 확인",
+      "status": {
+        "idle": "Kamo는 열릴 때와 하루에 한 번 업데이트를 확인해요.",
+        "checking": "확인 중…",
+        "upToDate": "최신 버전이에요({time}에 확인).",
+        "downloading": "버전 {version} 다운로드 중… {progress, number, percent}",
+        "ready": "버전 {version}이(가) 준비됐어요. 마무리하려면 Kamo를 다시 시작하세요.",
+        "error": "업데이트를 확인하지 못했어요. 인터넷에 연결되어 있나요?",
+        "unsupported": "업데이트는 설치된 앱에서만 작동해요."
+      }
+    },
+    "help": {
+      "title": "도움말",
+      "description": "문제가 생겼나요? Kamo에는 원격 측정이 없어서, 직접 보내지 않으면 정보가 어디로도 가지 않아요.",
+      "copyDiagnostics": "진단 정보 복사",
+      "openIssue": "GitHub에 이슈 열기",
+      "tour": "환영 투어 보기"
+    },
+    "about": {
+      "title": "정보",
+      "version": "Kamo {version}",
+      "license": "MIT 라이선스에 따른 무료 오픈 소스예요.",
+      "notices": "타사 고지"
+    },
+    "agent": {
+      "title": "에이전트 연결",
+      "description": "Claude Code나 다른 AI 에이전트가 내 녹화를 다룰 수 있게 하세요. 이름, 대본, 클릭, 줌, 5초마다 찍은 스크린샷까지요.",
+      "claudeCode": "Claude Code",
+      "otherClients": "다른 MCP 클라이언트",
+      "copy": "복사",
+      "copied": "복사됨",
+      "readOnly": "읽기 전용이고 로컬이에요. 서버는 이 컴퓨터에서 실행되고, 프로젝트 폴더만 읽으며, 네트워크에 접속하지 않아요. 에이전트가 받은 답으로 무엇을 할지는 에이전트에 달려 있어요.",
+      "node": "Node.js 20 이상이 필요해요.",
+      "docs": "다른 MCP 클라이언트 안내",
+      "devTitle": "개발 빌드를 쓰고 있나요?",
+      "devHint": "npm 패키지 대신 이 저장소에서 빌드한 서버(pnpm --filter @kamo/mcp build)를 실행해요.",
+      "notPublished": "@kamo/mcp npm 패키지는 아직 배포되지 않았어요. 배포되기 전까지는 Kamo 개발 빌드에 에이전트를 연결하세요(안내 참고).",
+      "fromSource": "@kamo/mcp npm 패키지는 아직 배포되지 않았어요. 배포되기 전까지는 Kamo 소스 코드로 서버를 한 번 빌드한 뒤(Git, Node.js 24 이상, pnpm 필요) 에이전트에 추가하세요.",
+      "sourceBuild": "서버 빌드(한 번만)",
+      "sourceHint": "다른 곳에 클론했나요? 명령어의 폴더를 바꾸세요. 나중에 업데이트하려면 git pull을 실행한 뒤 마지막 두 줄을 다시 실행하세요.",
+      "unsafeFolder": "프로젝트 폴더 이름에 Windows 명령줄이 바꿀 수 있는 문자(% & | < > ^)가 있어요. 에이전트를 연결하기 전에 이런 문자가 없는 폴더로 프로젝트 폴더를 옮기세요."
+    }
+  },
+  "diagnostics": {
+    "title": "진단 정보",
+    "intro": "복사될 내용이 정확히 이거예요. 자동으로 보내는 건 없어요. 어디에 붙여 넣을지는 직접 정하세요.",
+    "label": "진단 텍스트",
+    "loading": "정보를 모으는 중…",
+    "failed": "진단 정보를 모으지 못했어요. 다시 시도하세요.",
+    "copy": "복사",
+    "copied": "클립보드에 복사했어요.",
+    "copyFailed": "복사하지 못했어요. 텍스트를 선택해 직접 복사하세요.",
+    "openIssue": "GitHub에 이슈 열기",
+    "openIssueHint": "이 텍스트가 채워진 GitHub를 브라우저에서 열어요. 거기서 제출하기 전에는 아무것도 게시되지 않아요.",
+    "openIssueFailed": "브라우저를 열지 못했어요. 텍스트를 복사해 GitHub 이슈에 붙여 넣으세요."
+  },
+  "updates": {
+    "ready": "Kamo {version}이(가) 준비됐어요. 지금 다시 시작할까요?",
+    "restart": "지금 다시 시작",
+    "later": "나중에",
+    "busy": "Kamo가 녹화하거나 내보내는 중이에요. 끝나면 다시 시작하세요."
+  },
+  "onboarding": {
+    "progress": "{total}단계 중 {current}단계",
+    "language": {
+      "hello": "안녕하세요",
+      "title": "어떤 언어로 말할까요?",
+      "body": "설정에서 언제든 바꿀 수 있어요.",
+      "system": "시스템과 같게"
+    },
+    "welcome": {
+      "title": "안녕하세요, 저는 Kamo예요.",
+      "body": "첫 녹화 전에, 제가 녹화할 수 있도록 컴퓨터에 필요한 것을 확인해 볼게요. 1분 정도 걸려요.",
+      "start": "시작하기"
+    },
+    "intro": {
+      "label": "환영 투어",
+      "record": {
+        "eyebrow": "안녕하세요, 저는 Kamo예요.",
+        "title": "녹화를 누르세요.",
+        "body": "화면, 창 또는 원하는 부분만 고르세요. 마이크, 컴퓨터 소리, 카메라는 선택 사항이에요. 필요한 것만 켜세요."
+      },
+      "click": {
+        "eyebrow": "제 비법은 이거예요.",
+        "title": "평소처럼 클릭하세요.",
+        "body": "클릭할 때마다 바로 그 자리가 줌 돼요. 제가 혀로 낚아채거든요. 커서는 부드럽게 나오고, 작은 바에서 일시정지와 중지를 할 수 있어요."
+      },
+      "edit": {
+        "eyebrow": "그다음은 쉬운 부분이에요.",
+        "title": "다듬고, 내보내세요.",
+        "body": "타임라인에서 줌을 조절하고, 자막과 배경을 넣고, 16:9, 1:1, 9:16 중에 고르세요. MP4나 GIF로 나와요. 모든 건 내 컴퓨터에 남고, 무료예요."
+      },
+      "skip": "투어 건너뛰기",
+      "back": "이전",
+      "next": "다음",
+      "setup": "설정하기",
+      "finish": "알겠어요",
+      "goTo": "{total}개 중 {current}번째 슬라이드"
+    },
+    "screen": {
+      "title": "Kamo가 화면을 볼 수 있게 해 주세요",
+      "why": "macOS는 앱이 화면을 녹화하기 전에 허락을 구해요. 이 권한이 없으면 Kamo는 아무것도 녹화할 수 없어서, 유일하게 건너뛸 수 없는 단계예요."
+    },
+    "microphone": {
+      "title": "영상에 목소리를 넣을까요?",
+      "why": "마이크가 있으면 Kamo가 화면과 함께 내레이션을 녹음해요. 지금 건너뛰고 나중에 허용해도 돼요."
+    },
+    "inputMonitoring": {
+      "title": "Kamo가 클릭을 따라갈 수 있게 해 주세요",
+      "why": "Kamo는 클릭한 곳을 줌하기 때문에 마우스를 볼 수 있어야 해요.",
+      "keyboardNote": "macOS는 이것을 “키”라고 부르지만, Kamo는 마우스만 읽고 입력하는 내용은 절대 보지 않아요."
+    },
+    "allow": "허용",
+    "continue": "계속",
+    "skip": "지금은 건너뛰기",
+    "detecting": "허용하면 Kamo가 자동으로 알아차려요.",
+    "deniedHelp": {
+      "mac": "시스템 설정 → 개인정보 보호 및 보안에서 Kamo를 켠 다음 여기로 돌아오세요.",
+      "windows": "설정 → 개인 정보 및 보안 → 마이크에서 마이크 액세스와 “데스크톱 앱이 마이크에 액세스하도록 허용”을 켜세요."
+    },
+    "reopenHint": "이미 허용했나요? macOS는 Kamo를 다시 열어야 알아차릴 때가 있어요.",
+    "reopen": "Kamo 다시 열기",
+    "reopenFailed": "지금은 다시 열 수 없어요. Kamo를 닫고 다시 여세요.",
+    "done": {
+      "title": "준비 완료.",
+      "body": "화면을 고르고, 녹화를 누르고, 이리저리 클릭하세요. 줌은 Kamo가 알아서 해요.",
+      "start": "녹화 시작"
+    }
+  },
+  "export": {
+    "title": "내보내기",
+    "formats": "형식",
+    "aspect": {
+      "landscape": "가로",
+      "square": "정사각형",
+      "vertical": "세로"
+    },
+    "resolution": "해상도",
+    "frameRate": "프레임 레이트",
+    "frameRateOf": "프레임 레이트({format})",
+    "fileFormat": "형식",
+    "fps": "{fps}fps",
+    "folder": "저장 위치",
+    "changeFolder": "변경",
+    "pickOne": "형식을 하나 이상 선택하세요.",
+    "cancel": "취소",
+    "start": "{count, plural, other {파일 #개 내보내기}}",
+    "waiting": "대기 중",
+    "cancelExport": "내보내기 취소",
+    "done": {
+      "title": "{count, plural, other {파일 #개 저장됨}}",
+      "subtitle": "완료. 편집은 이미 끝났어요."
+    },
+    "showInFolder": "폴더에서 보기",
+    "close": "닫기",
+    "retry": "다시 시도",
+    "errors": {
+      "title": "내보내기가 중지됐어요",
+      "disk_full": "디스크가 가득 찼어요. 완성되지 않은 파일은 삭제했어요. 공간을 확보한 뒤 다시 시도하세요.",
+      "write_failed": "Kamo가 파일을 쓸 수 없었어요. 완성되지 않은 파일은 삭제했어요.",
+      "source_unreadable": "Kamo가 이 녹화의 영상을 읽을 수 없었어요.",
+      "encoder_unavailable": "이 컴퓨터에는 Kamo가 사용할 수 있는 H.264 인코더가 없어요.",
+      "failed": "내보내는 중에 문제가 생겼어요. 완성되지 않은 파일은 삭제했어요."
+    },
+    "warnings": {
+      "software_encoder": "이 컴퓨터에 하드웨어 비디오 인코더가 없어서 더 느린 소프트웨어 인코더로 내보냈어요.",
+      "audio_unreadable": "사운드 트랙 하나를 읽을 수 없어서 제외했어요.",
+      "audio_encoder_unavailable": "이 컴퓨터는 AAC 사운드를 인코딩할 수 없어서 영상에 소리가 없어요.",
+      "webcam_unreadable": "웹캠 녹화를 읽을 수 없어서 영상에 웹캠 버블이 없어요.",
+      "background_unreadable": "배경 이미지를 읽을 수 없어서 영상에 기본 배경을 사용했어요.",
+      "settings_fallback": "이 컴퓨터의 비디오 인코더가 선택한 해상도나 프레임 레이트를 만들 수 없어서 더 낮은 값을 사용했어요. 파일 이름에 어떤 값인지 나와 있어요."
+    },
+    "closeDialog": {
+      "title": "내보내는 중",
+      "message": "지금 닫으면 내보내기가 취소되고 완성되지 않은 파일이 삭제돼요.",
+      "stop": "내보내기 취소하고 닫기",
+      "keep": "계속 내보내기"
+    },
+    "captions": {
+      "label": "자막",
+      "none": "없음",
+      "burn": "영상에 입히기",
+      "srt": ".srt 파일",
+      "srtHint": "각 영상 옆에 자르기에 맞춘 .srt 파일을 만들어요.",
+      "burnHint": "자막 패널의 스타일로 화면에 넣어요.",
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "GIF에는 자막을 입히는 방식만 쓸 수 있어요.",
+      "gifBurnWithSrt": ".srt는 MP4와 함께 저장되고, GIF에는 자막이 입혀져요."
+    },
+    "needs4kSource": "4K로 내보내려면 1080p보다 큰 녹화가 필요해요. 이 녹화는 {size}예요.",
+    "fps60From30": "이 녹화는 {fps}fps예요. 줌과 커서는 60fps로 움직이지만, 화면 자체는 여전히 1초에 {fps}번 바뀌어요.",
+    "gifHint": "소리 없음, 최대 너비 1280px.",
+    "gifEstimate": "예상 크기: 약 {size}.",
+    "gifLarge": "많은 사이트와 채팅 앱은 {limit}보다 큰 GIF를 받지 않아요. 영상을 자르거나, 10fps를 선택하거나, MP4로 내보내세요.",
+    "encoderFallback": "이 컴퓨터의 비디오 인코더는 {wanted}을(를) 만들 수 없어서 Kamo가 {actual}(으)로 내보낼게요."
+  },
+  "recovery": {
+    "found": "{date}에 중단된 녹화를 찾았어요.",
+    "recover": "복구",
+    "recovering": "복구 중…",
+    "discard": "버리기",
+    "discarding": "휴지통으로 옮기는 중…",
+    "discardConfirm": "이 녹화를 휴지통으로 옮길까요? 휴지통에서 복원할 수 있어요.",
+    "unrecoverable": "재생할 수 있는 영상이 전혀 없어서 복구할 수 없어요.",
+    "failed": "잘 안 됐어요. 다시 시도해 주세요.",
+    "deleting": "삭제 중…",
+    "deleteConfirm": "이 녹화를 영구히 삭제할까요? 브라우저에는 휴지통이 없어요."
+  },
+  "extension": {
+    "name": "Kamo",
+    "description": "탭을 녹화하면 편집한 것 같은 영상이 나와요. 클릭할 때마다 자동 줌, 부드러운 커서. 무료, 계정 필요 없음.",
+    "actionTitle": "Kamo로 이 탭 녹화",
+    "commandStop": "녹화 중지",
+    "popup": {
+      "tabToRecord": "녹화할 탭",
+      "record": "이 탭 녹화",
+      "unrecordable": "Chrome에서는 이 페이지를 녹화할 수 없어요.",
+      "tabSound": "탭 소리",
+      "starting": "준비 중…",
+      "saving": "저장 중…",
+      "recent": "최근 녹화",
+      "noRecent": "녹화한 영상이 여기에 나타나요.",
+      "projectMeta": "{duration} · {date}",
+      "allProjects": "모든 프로젝트",
+      "lowSpace": "브라우저 저장 공간이 거의 다 찼어요. 녹화하기 전에 오래된 프로젝트를 삭제하세요."
+    },
+    "microphone": {
+      "title": "마이크 사용",
+      "body": "Kamo는 백그라운드에서 녹화하는데, 거기서는 Chrome이 마이크 권한을 요청할 수 없어요. 여기서 한 번만 허용하면, 마이크를 켠 모든 녹화에 목소리가 들어가요.",
+      "allow": "마이크 허용",
+      "granted": "완료. 도구 모음에서 Kamo를 열고 녹화를 누르세요.",
+      "denied": "Chrome이 마이크를 차단했어요. Chrome의 Kamo 사이트 설정에서 허용한 뒤 다시 시도하세요."
+    },
+    "camera": {
+      "title": "카메라 사용",
+      "body": "Kamo는 백그라운드에서 녹화하는데, 거기서는 Chrome이 카메라 권한을 요청할 수 없어요. 여기서 한 번만 허용하면, 카메라를 켠 모든 녹화에 웹캠이 들어가요.",
+      "allow": "카메라 허용",
+      "granted": "완료. 도구 모음에서 Kamo를 열고 녹화를 누르세요.",
+      "denied": "Chrome이 카메라를 차단했어요. Chrome의 Kamo 사이트 설정에서 허용한 뒤 다시 시도하세요."
+    },
+    "errors": {
+      "captureFailed": "Chrome이 Kamo의 탭 녹화를 허용하지 않았어요. 다시 시도하세요.",
+      "tabClosed": "탭이 닫혔어요. Kamo가 녹화된 부분을 저장했어요.",
+      "storageFull": "브라우저 저장 공간이 부족해요. Kamo가 녹화된 부분을 저장했어요.",
+      "writeFailed": "Kamo가 녹화를 계속 기록할 수 없었어요. 가능한 부분은 저장했어요."
+    },
+    "notices": {
+      "micFallback": "선택한 마이크를 찾을 수 없어서 Kamo가 기본 마이크를 사용했어요.",
+      "cameraFallback": "선택한 카메라를 찾을 수 없어서 Kamo가 기본 카메라를 사용했어요."
+    },
+    "desktopCard": {
+      "title": "자막이 필요한가요?",
+      "body": "받아쓰기와 자막은 무료 Kamo 데스크톱 앱에서 내 컴퓨터로 처리돼요.",
+      "action": "데스크톱 앱 받기",
+      "dismiss": "이 팁 숨기기"
+    },
+    "projects": {
+      "title": "모든 프로젝트",
+      "notice": "프로젝트는 이 브라우저에 저장돼요. 확장 프로그램 데이터를 지우면 프로젝트도 삭제돼요.",
+      "storage": "프로젝트 사용량 {size}",
+      "storageWarning": "프로젝트가 {limit}보다 많이 사용하고 있어요. 보관할 것은 내보내고 나머지는 삭제하세요.",
+      "deleteHint": "확장 프로그램에서 프로젝트를 삭제하면 영구히 사라져요."
+    },
+    "editor": {
+      "clicksLost": "{time} 이후에는 클릭이 캡처되지 않았어요. 탭이 Kamo가 따라갈 수 없는 사이트로 이동했어요.",
+      "allowSites": "다음부터 모든 사이트 따라가기",
+      "allowedSites": "완료. 다음부터는 Kamo가 다른 사이트에서도 클릭을 계속 캡처해요.",
+      "downloadBlocked": "브라우저가 {name}을(를) 저장하지 않았어요.",
+      "downloadAgain": "다시 다운로드",
+      "dismiss": "닫기"
+    },
+    "welcome": {
+      "title": "안녕하세요, 저는 Kamo예요.",
+      "body": "어떤 탭이든 녹화하면 편집한 것 같은 영상이 나와요. 클릭할 때마다 줌, 부드러운 커서, 멋진 배경까지. 무료, 계정 필요 없음.",
+      "tabsOnly": "Kamo는 브라우저 탭을 녹화해요. 전체 화면이나 다른 앱을 녹화하려면 데스크톱 앱을 받으세요.",
+      "pinTitle": "도구 모음에 Kamo 고정",
+      "pinSteps": "주소창 옆의 퍼즐 조각을 클릭한 다음, Kamo 옆의 고정 핀을 클릭하세요.",
+      "stepsTitle": "사용 방법",
+      "step1": "녹화할 탭을 여세요.",
+      "step2": "도구 모음에서 Kamo를 클릭하고 녹화를 누르세요.",
+      "step3": "중지하면 줌이 준비된 편집기가 열려요. 내보내면 영상이 다운로드 폴더에 저장돼요.",
+      "micTitle": "목소리도 넣을까요?",
+      "micBody": "여기서 마이크를 한 번만 허용하고, 내레이션이 필요할 때마다 Kamo 팝업에서 켜세요.",
+      "micAllow": "마이크 사용",
+      "micGranted": "마이크를 허용했어요.",
+      "micDenied": "Chrome이 마이크를 차단했어요. 나중에 Chrome의 Kamo 사이트 설정에서 허용할 수 있어요.",
+      "sitesTitle": "다른 사이트에서도 클릭 계속 캡처",
+      "sitesBody": "Kamo는 녹화하는 탭만 봐요. 녹화 중에 그 페이지가 다른 사이트로 이동하면, Kamo가 거기서도 클릭을 계속 캡처하려면 Chrome에서 허락이 필요해요. 선택 사항이에요. 영상은 어느 쪽이든 녹화돼요.",
+      "sitesAllow": "허용",
+      "sitesGranted": "허용했어요. Chrome 확장 프로그램 설정에서 언제든 취소할 수 있어요.",
+      "privacy": "녹화는 이 브라우저에 남아요. 직접 보내지 않으면 아무것도 밖으로 나가지 않아요."
+    }
+  },
+  "menu": {
+    "file": "파일",
+    "edit": "편집",
+    "view": "보기",
+    "window": "윈도우",
+    "settings": "설정…",
+    "about": "Kamo에 관하여",
+    "hide": "Kamo 가리기",
+    "hideOthers": "기타 가리기",
+    "showAll": "모두 보기",
+    "close": "윈도우 닫기",
+    "undo": "실행 취소",
+    "redo": "실행 복귀",
+    "cut": "잘라내기",
+    "copy": "복사하기",
+    "paste": "붙여넣기",
+    "selectAll": "전체 선택",
+    "reload": "새로고침",
+    "devTools": "개발자 도구",
+    "resetZoom": "실제 크기",
+    "zoomIn": "확대",
+    "zoomOut": "축소",
+    "fullScreen": "전체 화면",
+    "minimize": "최소화",
+    "zoom": "확대/축소",
+    "front": "모두 앞으로 가져오기"
+  },
+  "packs": {
+    "title": "선택 팩",
+    "description": "원할 때만 다운로드하는 추가 기능이에요. Kamo는 팩 없이도 녹화, 편집, 내보내기를 할 수 있어요.",
+    "local": "팩은 내 컴퓨터에서 실행돼요. 녹화한 내용은 어디로도 보내지 않아요.",
+    "light": {
+      "name": "받아쓰기 — 가벼움",
+      "hint": "더 빨라요. 자막, 검색, 에이전트(MCP)용 대본을 만들어요."
+    },
+    "accurate": {
+      "name": "받아쓰기 — 정확함",
+      "hint": "더 느리지만 더 정확해요. 포르투갈어, 중국어, 일본어에 가장 좋아요."
+    },
+    "sizeApprox": "약 {size}",
+    "progressLabel": "{name} 다운로드 중",
+    "install": "다운로드",
+    "resume": "다시 시작",
+    "pause": "일시정지",
+    "update": "업데이트",
+    "remove": "제거",
+    "removeConfirm": "{name}을(를) 제거할까요? 이미 만든 대본은 그대로 남아요.",
+    "updateConfirm": "버전 {version}({size})을(를) 다운로드할까요? 다운로드가 끝날 때까지 현재 버전은 계속 작동해요.",
+    "status": {
+      "notInstalled": "설치 안 됨",
+      "downloading": "다운로드 중… {progress, number, percent}",
+      "paused": "{progress, number, percent}에서 일시정지됨",
+      "verifying": "다운로드 확인 중…",
+      "installed": "설치됨(버전 {version})",
+      "update": "업데이트 가능: 버전 {version}",
+      "failed": "완료되지 않음"
+    },
+    "catalog": {
+      "loading": "팩 목록을 불러오는 중…"
+    },
+    "errors": {
+      "offline": "연결이 없어요. 온라인 상태일 때 다시 시도하세요. 이미 받은 부분은 보관돼요.",
+      "downloadFailed": "다운로드에 실패했어요. 다시 시도하세요.",
+      "checksumMismatch": "다운로드한 파일이 손상되어 삭제했어요. 다시 시도하세요.",
+      "diskSpace": "여유 공간이 부족해요. {size}이(가) 필요해요.",
+      "unsupportedPlatform": "이 컴퓨터에서는 아직 사용할 수 없어요.",
+      "manifestInvalid": "팩 목록을 읽을 수 없어요. Kamo를 업데이트한 뒤 다시 시도하세요.",
+      "packBusy": "지금 받아쓰는 중이에요. 끝나면 다시 시도하세요.",
+      "installFailed": "설치하지 못했어요. 다시 시도하세요.",
+      "unknownPack": "이 팩은 더 이상 사용할 수 없어요."
+    }
+  },
+  "transcription": {
+    "title": "받아쓰기",
+    "auto": "새 녹화 자동으로 받아쓰기",
+    "autoHint": "녹화가 끝날 때마다 내 컴퓨터에서 백그라운드로 처리해요.",
+    "language": "말하는 언어",
+    "languageAuto": "자동 감지",
+    "pack": "사용할 팩",
+    "action": "받아쓰기",
+    "again": "다시 받아쓰기",
+    "cancel": "받아쓰기 중지",
+    "ask": {
+      "title": "다음 녹화부터 자동으로 받아쓸까요?",
+      "body": "Kamo가 새 녹화마다 백그라운드에서 받아쓸 수 있어요. 설정에서 바꿀 수 있어요.",
+      "yes": "네, 자동으로",
+      "no": "받아쓰기를 클릭할 때만"
+    },
+    "offer": {
+      "title": "내 컴퓨터에서 받아쓰기",
+      "body": "받아쓰기는 내 컴퓨터에서 실행되는 선택 팩이에요. 다운로드할 팩을 고르세요.",
+      "choose": "받아쓰기 품질",
+      "recommendAccurate": "중국어나 일본어라면 정확함이 훨씬 좋아요.",
+      "download": "다운로드하고 받아쓰기",
+      "notNow": "나중에"
+    },
+    "status": {
+      "queued": "받아쓰기 대기 중",
+      "running": "받아쓰는 중… {progress, number, percent}",
+      "done": "받아쓰기 완료",
+      "failed": "오류로 받아쓰기가 중지됐어요. 다시 시도하세요.",
+      "noAudio": "받아쓸 오디오가 없어요"
+    },
+    "errors": {
+      "packMissing": "먼저 받아쓰기 팩을 다운로드하세요.",
+      "audioUnreadable": "Kamo가 이 녹화의 오디오를 읽을 수 없었어요.",
+      "transcriptEdited": "자막에서 고친 내용은 유지했어요. 새 받아쓰기는 저장하지 않았어요."
+    },
+    "replace": {
+      "title": "자막에서 고친 내용을 바꿀까요?",
+      "body": "이 대본은 자막을 통해 고친 적이 있어요. 다시 받아쓰면 대본이 바뀌고, 고친 내용은 사라져요.",
+      "confirm": "다시 받아쓰기",
+      "keep": "고친 내용 유지"
+    }
+  }
+}

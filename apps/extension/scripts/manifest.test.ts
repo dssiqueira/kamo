@@ -86,7 +86,16 @@ describe('manifest', () => {
 
 describe('_locales', () => {
   it('maps every UI language to a Chrome locale folder', () => {
-    expect(LOCALES.map(chromeLocale)).toEqual(['en', 'pt_BR', 'es', 'zh_CN', 'ja'])
+    expect(LOCALES.map(chromeLocale)).toEqual([
+      'en',
+      'pt_BR',
+      'es',
+      'zh_CN',
+      'ja',
+      'de',
+      'fr',
+      'ko',
+    ])
   })
 
   it('has every manifest text in every language, within the store limits', async () => {

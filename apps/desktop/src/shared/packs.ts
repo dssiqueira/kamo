@@ -52,7 +52,7 @@ export interface PacksStatus {
   catalogError: PackErrorCode | null
 }
 
-export type TranscriptionLanguage = 'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja'
+export type TranscriptionLanguage = 'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja' | 'de' | 'fr' | 'ko'
 export const TRANSCRIPTION_LANGUAGES = [
   'auto',
   'en',
@@ -60,6 +60,9 @@ export const TRANSCRIPTION_LANGUAGES = [
   'es',
   'zh',
   'ja',
+  'de',
+  'fr',
+  'ko',
 ] as const satisfies readonly TranscriptionLanguage[]
 
 export type TranscriptionJobState =

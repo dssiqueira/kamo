@@ -139,6 +139,7 @@
 - **Why:** the product is visual and simple to explain, so it translates well; serving people in their own language from the start is cheaper than adapting later
 - **Accepted cost:** about 1 extra week spread across the schedule (native reviews, store pages, localized landing page), using system fonts for Chinese, Japanese and Korean (bundling CJK fonts would blow the extension budget)
 - **Limit:** support in English and Portuguese; in mainland China, the extension and parts of the cloud are limited
+- **Update (2026-11-08):** German, French and Korean are in the app and the extension (issue #11), ahead of the Chrome Web Store page. Same rules: AI translation with a glossary, native review still pending for all seven non-English languages. Transcription also offers them as spoken languages (whisper is multilingual)
 
 ## D-022 — Three repositories: `kamo`, `kamo-cloud` and `kamo-site`
 - **Date:** 2026-11-03 · **Status:** accepted

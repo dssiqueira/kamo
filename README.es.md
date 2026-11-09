@@ -232,7 +232,7 @@ Un monorepo con pnpm, TypeScript en todas partes.
 
 ## Idiomas
 
-English, Português (Brasil), Español, 简体中文 y 日本語, elegido según tu sistema y con cambio en cualquier momento. Fechas, números y duraciones se muestran con el formato de tu idioma. Hablantes nativos: revisar las traducciones es una de las contribuciones más útiles.
+English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Français y 한국어, elegido según tu sistema y con cambio en cualquier momento. Fechas, números y duraciones se muestran con el formato de tu idioma. Hablantes nativos: revisar las traducciones es una de las contribuciones más útiles.
 
 ## Hoja de ruta
 

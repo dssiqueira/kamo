@@ -38,7 +38,8 @@ export interface PackActions {
   onRetryCatalog(): void
 }
 
-export type TranscriptionLanguageChoice = 'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja'
+export type TranscriptionLanguageChoice =
+  'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja' | 'de' | 'fr' | 'ko'
 
 /** A recording's transcription, as a project card shows it. */
 export type CardTranscriptState =

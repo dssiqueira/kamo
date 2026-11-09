@@ -1,0 +1,822 @@
+{
+  "app": {
+    "name": "Kamo",
+    "tagline": "Lancez l'enregistrement. Cliquez. Arrêtez. C'est déjà monté."
+  },
+  "common": {
+    "cancel": "Annuler",
+    "retry": "Réessayer",
+    "close": "Fermer",
+    "showInFolder": "Afficher dans le dossier"
+  },
+  "project": {
+    "defaultName": "Enregistrement {date}",
+    "count": "{count, plural, =0 {Aucun projet pour l'instant} one {# projet} other {# projets}}"
+  },
+  "projects": {
+    "title": "Projets récents",
+    "empty": "Rien ici pour l'instant. Cliquez sur Enregistrer et votre première vidéo apparaîtra ici.",
+    "open": "Ouvrir",
+    "openNamed": "Ouvrir {name}",
+    "more": "Plus d'actions",
+    "moreNamed": "Plus d'actions pour {name}",
+    "rename": "Renommer",
+    "nameLabel": "Nom du projet",
+    "delete": "Supprimer",
+    "deleteConfirm": "Placer « {name} » dans la corbeille ? Vous pourrez l'y restaurer.",
+    "moveToTrash": "Placer dans la corbeille",
+    "broken": {
+      "title": "Projet endommagé",
+      "unreadable": "Kamo n'a pas pu lire les modifications de ce projet. La vidéo brute est peut-être intacte.",
+      "newerVersion": "Créé avec une version plus récente de Kamo. Mettez l'app à jour pour l'ouvrir.",
+      "openRawVideo": "Ouvrir la vidéo brute"
+    },
+    "errors": {
+      "invalidName": "Le nom doit contenir au moins un caractère (120 au maximum).",
+      "notFound": "Ce projet n'existe plus.",
+      "failed": "Ça n'a pas marché. Réessayez."
+    }
+  },
+  "playlists": {
+    "label": "Playlists",
+    "all": "Tout",
+    "new": "Nouvelle playlist",
+    "nameLabel": "Nom de la playlist",
+    "count": "{count, plural, =0 {Vide} one {# enregistrement} other {# enregistrements}}",
+    "rename": "Renommer la playlist",
+    "delete": "Supprimer la playlist",
+    "deleteConfirm": "Supprimer la playlist « {name} » ? Ses enregistrements restent dans Kamo.",
+    "deleteAction": "Supprimer la playlist",
+    "empty": "Cette playlist est vide. Utilisez le bouton playlist d'un enregistrement pour l'ajouter ici.",
+    "reorderHint": "Faites glisser les enregistrements, ou utilisez les flèches, pour changer l'ordre.",
+    "addTo": "Ajouter à une playlist",
+    "menuTitle": "Playlists de « {name} »",
+    "none": "Aucune playlist pour l'instant.",
+    "moveUp": "Monter",
+    "moveDown": "Descendre",
+    "remove": "Retirer de la playlist",
+    "errors": {
+      "invalidName": "Le nom de la playlist doit contenir au moins un caractère (120 au maximum).",
+      "notFound": "Cette playlist n'existe plus.",
+      "tooMany": "Ça fait beaucoup de playlists. Supprimez-en une pour en créer une autre.",
+      "full": "Cette playlist est pleine.",
+      "newerVersion": "Vos playlists ont été enregistrées par une version plus récente de Kamo. Mettez l'app à jour pour les modifier.",
+      "failed": "Ça n'a pas marché. Réessayez."
+    }
+  },
+  "home": {
+    "displays": "Écran à enregistrer",
+    "capture": {
+      "title": "Quoi enregistrer",
+      "screen": "Écran",
+      "window": "Fenêtre",
+      "region": "Sélection",
+      "searchWindows": "Rechercher des fenêtres",
+      "loadingWindows": "Recherche des fenêtres ouvertes…",
+      "noWindows": "Aucune fenêtre à enregistrer. Ouvrez l'app que vous voulez enregistrer et elle apparaîtra ici.",
+      "noMatch": "Aucune fenêtre ne correspond à « {query} ».",
+      "openSelection": "Sélectionner une zone",
+      "adjustSelection": "Ajuster la sélection",
+      "noRegion": "Ouvre un cadre sur l'écran : déplacez-le et redimensionnez-le sur ce que vous voulez enregistrer.",
+      "regionSize": "{width, number, ::group-off} × {height, number, ::group-off} sur {display}"
+    },
+    "displayName": "Écran {index}",
+    "displaySize": "{width, number, ::group-off} × {height, number, ::group-off}",
+    "primary": "Principal",
+    "record": "Enregistrer",
+    "noDisplays": "Aucun écran trouvé. Un moniteur est-il branché ?",
+    "needsPermission": "Kamo a besoin d'une autorisation pour enregistrer l'écran. Autorisez-le dans Réglages Système.",
+    "audio": {
+      "title": "Son",
+      "microphone": "Micro",
+      "system": "Son de l'ordinateur",
+      "chooseMicrophone": "Micro à enregistrer",
+      "defaultMicrophone": "Micro par défaut",
+      "microphoneName": "Micro {index}",
+      "level": "Niveau : {source}",
+      "micDenied": "Kamo ne peut pas utiliser le micro. Autorisez-le dans les réglages du système ; en attendant, les enregistrements n'auront pas de voix.",
+      "micUnavailable": "Aucun micro trouvé. Les enregistrements n'auront pas de voix.",
+      "systemUnavailable": "Kamo ne peut pas capturer le son de l'ordinateur pour le moment. Les enregistrements n'auront pas de son de l'ordinateur.",
+      "systemSoon": "Nécessite macOS 13 ou une version ultérieure.",
+      "systemWithVideo": "Enregistré avec la vidéo. Pas d'indicateur de niveau sur Mac."
+    },
+    "camera": {
+      "sectionTitle": "Son et caméra",
+      "title": "Caméra",
+      "choose": "Caméra à enregistrer",
+      "default": "Caméra par défaut",
+      "name": "Caméra {index}",
+      "preview": "Aperçu de la caméra",
+      "denied": "Kamo ne peut pas utiliser la caméra. Autorisez-la dans les réglages du système ; en attendant, les enregistrements n'auront pas de caméra.",
+      "unavailable": "Aucune caméra trouvée, ou une autre app l'utilise. Les enregistrements n'auront pas de caméra."
+    },
+    "fixPermission": "Configurer",
+    "recordDisplay": "Enregistrer · {display}",
+    "recordWindow": "Enregistrer · {window}",
+    "recordRegion": "Enregistrer · Sélection {width, number, ::group-off} × {height, number, ::group-off}",
+    "recordingFps": {
+      "label": "Enregistrer à 60 fps",
+      "hint": "Défilement et animations plus fluides. Les fichiers sont environ 1,5 fois plus lourds."
+    }
+  },
+  "countdown": {
+    "cancelHint": "Échap pour annuler",
+    "stopHint": "{shortcut} arrête l'enregistrement"
+  },
+  "recording": {
+    "rec": "REC",
+    "paused": "En pause",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "stop": "Arrêter",
+    "errors": {
+      "helperMissing": "L'enregistrement n'est pas encore disponible dans cette version : l'outil de capture est manquant.",
+      "lowDisk": "Moins de 1 Go libre sur ce disque. Libérez de l'espace et réessayez.",
+      "displayNotFound": "Cet écran n'est plus branché. Choisissez-en un autre.",
+      "windowNotFound": "Cette fenêtre a été fermée ou réduite. Sélectionnez-la à nouveau et enregistrez.",
+      "permissionDenied": "Kamo a besoin d'une autorisation pour enregistrer l'écran.",
+      "tooShort": "Ça a duré moins d'une seconde, donc rien n'a été enregistré.",
+      "displayLost": "L'écran a été débranché. Kamo a gardé ce qu'il avait enregistré.",
+      "windowLost": "La fenêtre a été fermée. Kamo a gardé ce qu'il avait enregistré.",
+      "diskFull": "Le disque est plein. Kamo a gardé ce qu'il avait enregistré.",
+      "failed": "L'enregistrement s'est arrêté de façon inattendue. Kamo essaiera de le récupérer la prochaine fois."
+    },
+    "saved": "Enregistrement sauvegardé.",
+    "openInEditor": "Ouvrir dans l'éditeur",
+    "audio": {
+      "micUnavailable": "Sauvegardé sans votre voix : Kamo n'a pas pu utiliser le micro.",
+      "micLost": "Le micro a été débranché pendant l'enregistrement. L'audio est muet à partir de ce moment.",
+      "lost": "L'enregistrement audio s'est arrêté trop tôt. Kamo a gardé ce qu'il avait enregistré jusque-là.",
+      "systemUnavailable": "Sauvegardé sans le son de l'ordinateur : Kamo n'a pas pu le capturer.",
+      "failed": "Sauvegardé, mais une partie de l'audio n'a pas pu être conservée."
+    },
+    "camera": {
+      "unavailable": "Sauvegardé sans la caméra : Kamo n'a pas pu l'utiliser.",
+      "lost": "La caméra a été débranchée pendant l'enregistrement. La caméra s'arrête à ce moment-là.",
+      "failed": "Sauvegardé, mais l'enregistrement de la caméra n'a pas pu être conservé."
+    },
+    "tray": {
+      "recording": "Enregistrement {elapsed}",
+      "paused": "En pause à {elapsed}"
+    }
+  },
+  "selection": {
+    "toolbar": "Sélection",
+    "move": "Faites glisser pour déplacer la sélection",
+    "resize": "Faites glisser pour redimensionner la sélection",
+    "width": "Largeur en pixels",
+    "height": "Hauteur en pixels",
+    "unit": "px",
+    "sizes": "Tailles",
+    "preset": "{ratio} · {width, number, ::group-off} × {height, number, ::group-off}",
+    "record": "Enregistrer",
+    "stopHint": "{shortcut} arrête l'enregistrement",
+    "close": "Fermer (Échap)"
+  },
+  "tray": {
+    "open": "Ouvrir Kamo",
+    "quit": "Quitter Kamo",
+    "notice": {
+      "title": "Kamo est toujours ouvert",
+      "body": "Kamo se trouve dans la zone de notification. Cliquez sur son icône pour l'ouvrir, ou faites un clic droit pour le quitter."
+    }
+  },
+  "editor": {
+    "back": "Projets",
+    "format": "Format",
+    "export": "Exporter",
+    "play": "Lire",
+    "pause": "Pause",
+    "loading": "Ouverture du projet…",
+    "endTrim": {
+      "question": "Couper {seconds, plural, one {la dernière seconde} other {les # dernières secondes}} ?",
+      "apply": "Couper",
+      "dismiss": "Ignorer"
+    },
+    "errors": {
+      "load": "Impossible d'ouvrir ce projet."
+    },
+    "panel": {
+      "background": "Arrière-plan",
+      "color": "Couleur unie",
+      "frame": "Cadre",
+      "padding": "Marge",
+      "corners": "Coins",
+      "shadow": "Ombre",
+      "cursor": "Curseur",
+      "cursorSize": "Taille",
+      "ripple": "Onde au clic",
+      "hideCursor": "Masquer le curseur",
+      "zooms": "Zooms",
+      "autoZoom": "Zoom automatique",
+      "regenerate": "Régénérer les zooms",
+      "noClicks": "Aucun clic, rien à zoomer.",
+      "image": "Votre image",
+      "imageAdd": "Ajouter votre propre image",
+      "imageReplace": "Remplacer l'image…",
+      "imagePickTitle": "Choisir une image d'arrière-plan",
+      "imageFilter": "Images (PNG, JPG, WebP)",
+      "imageErrors": {
+        "unsupported": "Ce fichier n'est pas une image PNG, JPG ou WebP.",
+        "tooBig": "Cette image est trop lourde. Choisissez-en une de 25 Mo maximum.",
+        "unreadable": "Impossible de lire cette image. Essayez-en une autre."
+      }
+    },
+    "webcam": {
+      "title": "Webcam",
+      "show": "Afficher la webcam",
+      "position": "Position",
+      "dragHint": "Ou faites glisser la bulle dans la vidéo pour la placer où vous voulez",
+      "shape": "Forme",
+      "circle": "Ronde",
+      "square": "Carré arrondi",
+      "landscape": "Paysage 16:9",
+      "portrait": "Portrait 9:16",
+      "circleShort": "Ronde",
+      "squareShort": "Carré",
+      "landscapeShort": "16:9",
+      "portraitShort": "9:16",
+      "topLeft": "En haut à gauche",
+      "topRight": "En haut à droite",
+      "bottomLeft": "En bas à gauche",
+      "bottomRight": "En bas à droite",
+      "size": "Taille",
+      "small": "Petite",
+      "medium": "Moyenne",
+      "large": "Grande",
+      "shrinkOnZoom": "Réduire pendant le zoom",
+      "layout": "Disposition",
+      "layoutBubble": "Bulle",
+      "layoutSplit": "Partagé",
+      "layoutHint": "Partagé empile l'écran au-dessus de la caméra au format vertical 9:16.",
+      "splitHint": "Faites glisser la ligne entre l'écran et la caméra dans la vidéo pour les redimensionner.",
+      "splitOtherFormats": "Partagé s'affiche en 9:16. En 16:9 et 1:1, la caméra reste une bulle.",
+      "cameraFirst": "Caméra en haut",
+      "dividerHint": "Faites glisser pour redimensionner l'écran et la caméra",
+      "track": "Webcam",
+      "hideAtPlayhead": "Masquer la webcam à la tête de lecture",
+      "hidden": "Masquée",
+      "hiddenBlock": "Webcam masquée de {start} à {end}",
+      "hiddenHint": "Faites glisser pour déplacer, tirez un bord pour redimensionner. Les flèches le décalent, Suppr réaffiche la webcam."
+    },
+    "captions": {
+      "title": "Sous-titres",
+      "show": "Afficher les sous-titres",
+      "style": "Style",
+      "clean": "Épuré",
+      "bold": "Gras",
+      "kamo": "Kamo",
+      "minimal": "Minimal",
+      "soft": "Doux",
+      "neon": "Néon",
+      "typewriter": "Machine à écrire",
+      "caps": "Majuscules",
+      "cinema": "Cinéma",
+      "marker": "Surligneur",
+      "classic": "Classique",
+      "duo": "Duo",
+      "sample": "Vos mots ici",
+      "position": "Position",
+      "bottom": "En bas",
+      "middle": "Au milieu",
+      "size": "Taille",
+      "small": "Petite",
+      "medium": "Moyenne",
+      "large": "Grande",
+      "editHint": "Double-cliquez sur un sous-titre dans la timeline pour corriger son texte. Vos corrections corrigent aussi la transcription.",
+      "download": "Télécharger et transcrire",
+      "noSpeech": "Aucune parole n'a été détectée dans cet enregistrement, il n'y a donc pas de sous-titres.",
+      "track": "Sous-titres",
+      "block": "Sous-titre de {start} à {end} : {text}",
+      "blockHint": "Double-cliquez ou appuyez sur Entrée pour corriger le texte. Faites glisser pour déplacer, tirez un bord pour changer le minutage. Suppr le retire.",
+      "editLabel": "Texte du sous-titre",
+      "editHelp": "Entrée enregistre · Échap annule",
+      "offer": {
+        "title": "Sous-titres automatiques",
+        "local": "Créés à partir de votre voix, directement sur votre ordinateur",
+        "fix": "Corrigez n'importe quel mot directement dans la timeline",
+        "styles": "12 styles, incrustés dans le MP4 ou le GIF, ou en .srt",
+        "create": "Créer des sous-titres",
+        "transcribe": "Transcrire cet enregistrement",
+        "sizeExact": "Téléchargement unique de {size}, seulement quand vous cliquez",
+        "sizeApprox": "Téléchargement unique d'environ {size}, seulement quand vous cliquez"
+      }
+    }
+  },
+  "style": {
+    "wallpapers": {
+      "sage": "Sauge",
+      "cream": "Crème",
+      "blossom": "Fleur",
+      "water": "Eau",
+      "peach": "Pêche",
+      "lavender": "Lavande",
+      "meadow": "Prairie",
+      "dawn": "Aube"
+    }
+  },
+  "timeline": {
+    "label": "Timeline",
+    "playhead": "Tête de lecture",
+    "tracks": {
+      "video": "Vidéo",
+      "zoom": "Zoom",
+      "mic": "Micro",
+      "system": "Son de l'ordinateur"
+    },
+    "addZoom": "Ajouter un zoom à la tête de lecture",
+    "mute": "Couper {track}",
+    "volume": "Volume : {track}",
+    "trimStart": "Couper le début",
+    "trimEnd": "Couper la fin",
+    "trimTooShort": "Gardez au moins 1 seconde de vidéo.",
+    "zoomScale": "{scale}×",
+    "zoomBlock": "Zoom {scale} de {start} à {end}",
+    "zoomBlockHint": "Faites glisser pour déplacer, tirez un bord pour redimensionner. Les flèches le décalent, Suppr le retire, Entrée change le facteur.",
+    "scale": "Facteur de zoom",
+    "scaleDown": "Diminuer le facteur",
+    "scaleUp": "Augmenter le facteur"
+  },
+  "settings": {
+    "title": "Réglages",
+    "open": "Réglages",
+    "appearance": {
+      "title": "Apparence",
+      "theme": "Thème",
+      "light": "Clair",
+      "dark": "Sombre",
+      "system": "Système"
+    },
+    "language": {
+      "title": "Langue",
+      "label": "Langue de l'app",
+      "system": "Comme le système"
+    },
+    "window": {
+      "title": "Fenêtre",
+      "closeToTray": "Garder Kamo dans la zone de notification quand la fenêtre est fermée",
+      "closeToTrayHint": "Fermer la fenêtre laisse Kamo ouvert dans la zone de notification. Pour quitter, faites un clic droit sur son icône et choisissez Quitter Kamo.",
+      "closeToTrayHintMac": "Fermer la fenêtre laisse Kamo ouvert avec une icône dans la barre des menus. Pour quitter, choisissez Quitter Kamo à cet endroit ou appuyez sur ⌘Q."
+    },
+    "folders": {
+      "title": "Dossiers",
+      "projects": "Dossier des projets",
+      "projectsHint": "Les nouveaux enregistrements sont sauvegardés ici. Les projets existants restent où ils sont.",
+      "export": "Dossier d'export",
+      "exportHint": "Les vidéos exportées arrivent ici.",
+      "change": "Modifier…",
+      "show": "Afficher",
+      "errors": {
+        "busy": "Terminez l'enregistrement avant de changer le dossier des projets.",
+        "notWritable": "Kamo ne peut pas enregistrer dans ce dossier. Choisissez-en un autre.",
+        "failed": "Impossible de changer le dossier. Réessayez."
+      }
+    },
+    "shortcuts": {
+      "title": "Raccourcis",
+      "stop": "Arrêter l'enregistrement",
+      "stopHint": "Fonctionne depuis n'importe quelle app pendant que Kamo enregistre. Kamo ne lit jamais ce que vous tapez.",
+      "change": "Modifier",
+      "reset": "Réinitialiser",
+      "recording": "Appuyez sur le nouveau raccourci…",
+      "recordingHint": "Appuyez sur Échap pour annuler.",
+      "saved": "Enregistré. Il fonctionnera dès le prochain enregistrement.",
+      "errors": {
+        "needsModifier": "Ajoutez Ctrl, Alt ou ⌘ à la touche. Maj seul gênerait la saisie.",
+        "unsupported": "Cette touche ne peut pas faire partie d'un raccourci.",
+        "taken": "Une autre app utilise déjà {shortcut}. Essayez-en un autre.",
+        "invalid": "Ce raccourci ne fonctionne pas. Essayez-en un autre."
+      }
+    },
+    "permissions": {
+      "title": "Autorisations",
+      "none": "Kamo n'a besoin d'aucune autorisation système sur cet ordinateur.",
+      "openSystemSettings": "Ouvrir Réglages Système",
+      "openWindowsSettings": "Ouvrir les Paramètres Windows",
+      "screen": "Enregistrement de l'écran",
+      "screenHint": "Nécessaire pour enregistrer votre écran.",
+      "microphone": "Micro",
+      "microphoneHint": "Pour enregistrer votre voix. Facultatif.",
+      "camera": "Caméra",
+      "cameraHint": "Pour afficher votre webcam dans l'enregistrement. Facultatif.",
+      "inputMonitoring": "Surveillance de l'entrée",
+      "inputMonitoringHint": "macOS parle de « touches », mais Kamo lit seulement la souris et ne voit jamais ce que vous tapez.",
+      "status": {
+        "granted": "Autorisé",
+        "denied": "Bloqué",
+        "pending": "Pas encore autorisé",
+        "unknown": "Inconnu"
+      }
+    },
+    "updates": {
+      "title": "Mises à jour",
+      "version": "Version {version}",
+      "check": "Vérifier",
+      "status": {
+        "idle": "Kamo recherche les mises à jour à l'ouverture et une fois par jour.",
+        "checking": "Vérification…",
+        "upToDate": "Vous avez la dernière version (vérifié à {time}).",
+        "downloading": "Téléchargement de la version {version}… {progress, number, percent}",
+        "ready": "La version {version} est prête. Redémarrez Kamo pour terminer.",
+        "error": "Impossible de rechercher les mises à jour. Êtes-vous connecté à Internet ?",
+        "unsupported": "Les mises à jour ne fonctionnent que dans l'app installée."
+      }
+    },
+    "help": {
+      "title": "Aide",
+      "description": "Un problème ? Kamo n'a aucune télémétrie, les détails ne partent donc que si vous les envoyez.",
+      "copyDiagnostics": "Copier le diagnostic",
+      "openIssue": "Ouvrir un ticket sur GitHub",
+      "tour": "Revoir la visite de bienvenue"
+    },
+    "about": {
+      "title": "À propos",
+      "version": "Kamo {version}",
+      "license": "Gratuit et open source, sous licence MIT.",
+      "notices": "Mentions de tiers"
+    },
+    "agent": {
+      "title": "Connecter un agent",
+      "description": "Laissez Claude Code ou un autre agent IA dialoguer avec vos enregistrements : noms, transcriptions, clics, zooms et une capture d'écran toutes les 5 secondes.",
+      "claudeCode": "Claude Code",
+      "otherClients": "Autres clients MCP",
+      "copy": "Copier",
+      "copied": "Copié",
+      "readOnly": "En lecture seule et en local : le serveur tourne sur cet ordinateur, lit seulement votre dossier des projets et ne fait aucun appel réseau. Ce que l'agent fait des réponses dépend de l'agent.",
+      "node": "Nécessite Node.js 20 ou une version ultérieure.",
+      "docs": "Instructions pour les autres clients MCP",
+      "devTitle": "Vous utilisez une version de développement ?",
+      "devHint": "Lance le serveur compilé dans ce dépôt (pnpm --filter @kamo/mcp build) au lieu du paquet npm.",
+      "notPublished": "Le paquet npm @kamo/mcp n'est pas encore publié. En attendant, connectez un agent à une version de développement de Kamo (voir les instructions).",
+      "fromSource": "Le paquet npm @kamo/mcp n'est pas encore publié. En attendant, compilez une fois le serveur à partir du code source de Kamo (il vous faut Git, Node.js 24 ou une version ultérieure et pnpm), puis ajoutez-le à votre agent.",
+      "sourceBuild": "Compiler le serveur (une fois)",
+      "sourceHint": "Vous l'avez cloné ailleurs ? Changez le dossier dans les commandes. Pour le mettre à jour plus tard, lancez git pull puis à nouveau les deux dernières lignes.",
+      "unsafeFolder": "Le nom de votre dossier des projets contient un caractère (% & | < > ^) que les lignes de commande Windows peuvent modifier. Déplacez le dossier des projets vers un emplacement sans ces caractères avant de connecter un agent."
+    }
+  },
+  "diagnostics": {
+    "title": "Diagnostic",
+    "intro": "Voici exactement ce qui sera copié. Rien n'est envoyé automatiquement : c'est vous qui décidez où le coller.",
+    "label": "Texte du diagnostic",
+    "loading": "Collecte des détails…",
+    "failed": "Impossible de collecter le diagnostic. Réessayez.",
+    "copy": "Copier",
+    "copied": "Copié dans le presse-papiers.",
+    "copyFailed": "Impossible de copier. Sélectionnez le texte et copiez-le à la main.",
+    "openIssue": "Ouvrir un ticket sur GitHub",
+    "openIssueHint": "Ouvre GitHub dans votre navigateur avec ce texte déjà rempli. Rien n'est publié tant que vous ne l'envoyez pas là-bas.",
+    "openIssueFailed": "Impossible d'ouvrir le navigateur. Copiez le texte et collez-le dans un ticket GitHub."
+  },
+  "updates": {
+    "ready": "Kamo {version} est prêt. Redémarrer maintenant ?",
+    "restart": "Redémarrer maintenant",
+    "later": "Plus tard",
+    "busy": "Kamo enregistre ou exporte. Redémarrez quand ce sera terminé."
+  },
+  "onboarding": {
+    "progress": "Étape {current} sur {total}",
+    "language": {
+      "hello": "Bonjour",
+      "title": "Quelle langue dois-je parler ?",
+      "body": "Vous pourrez la changer à tout moment dans les Réglages.",
+      "system": "Comme votre système"
+    },
+    "welcome": {
+      "title": "Bonjour, je suis Kamo.",
+      "body": "Avant votre première prise, vérifions ce dont votre ordinateur a besoin pour me laisser enregistrer. Ça prend environ une minute.",
+      "start": "C'est parti"
+    },
+    "intro": {
+      "label": "Visite de bienvenue",
+      "record": {
+        "eyebrow": "Bonjour, je suis Kamo.",
+        "title": "Lancez l'enregistrement.",
+        "body": "Choisissez un écran, une fenêtre ou juste une partie. Micro, son de l'ordinateur et caméra sont facultatifs : activez ce dont vous avez besoin."
+      },
+      "click": {
+        "eyebrow": "Voici mon astuce.",
+        "title": "Cliquez comme d'habitude.",
+        "body": "Chaque clic devient un zoom, pile au bon endroit. Je l'attrape avec ma langue. Votre curseur devient fluide, et la petite barre met en pause et arrête."
+      },
+      "edit": {
+        "eyebrow": "Ensuite, le plus facile.",
+        "title": "Ajustez, exportez.",
+        "body": "Réglez les zooms dans la timeline, ajoutez des sous-titres, un arrière-plan, du 16:9, 1:1 ou 9:16. Il en sort un MP4 ou un GIF. Tout reste sur votre ordinateur, gratuitement."
+      },
+      "skip": "Passer la visite",
+      "back": "Retour",
+      "next": "Suivant",
+      "setup": "Configurons tout",
+      "finish": "Compris",
+      "goTo": "Diapositive {current} sur {total}"
+    },
+    "screen": {
+      "title": "Laissez Kamo voir votre écran",
+      "why": "macOS demande l'autorisation avant qu'une app enregistre l'écran. Sans elle, Kamo ne peut rien enregistrer : c'est la seule que vous ne pouvez pas passer."
+    },
+    "microphone": {
+      "title": "Votre voix dans les vidéos ?",
+      "why": "Avec le micro, Kamo enregistre votre narration en même temps que l'écran. Vous pouvez passer cette étape et l'autoriser plus tard."
+    },
+    "inputMonitoring": {
+      "title": "Laissez Kamo suivre vos clics",
+      "why": "Kamo zoome là où vous cliquez, il a donc besoin de voir la souris.",
+      "keyboardNote": "macOS parle de « touches », mais Kamo lit seulement la souris et ne voit jamais ce que vous tapez."
+    },
+    "allow": "Autoriser",
+    "continue": "Continuer",
+    "skip": "Passer pour l'instant",
+    "detecting": "Kamo remarque tout seul quand vous l'autorisez.",
+    "deniedHelp": {
+      "mac": "Activez Kamo dans Réglages Système → Confidentialité et sécurité, puis revenez ici.",
+      "windows": "Dans Paramètres → Confidentialité et sécurité → Microphone, activez l'accès au microphone et « Autoriser les applications de bureau à accéder à votre microphone »."
+    },
+    "reopenHint": "Déjà autorisé ? macOS ne le remarque parfois qu'après la réouverture de Kamo.",
+    "reopen": "Rouvrir Kamo",
+    "reopenFailed": "Impossible de rouvrir maintenant. Fermez Kamo et ouvrez-le à nouveau.",
+    "done": {
+      "title": "Tout est prêt.",
+      "body": "Choisissez un écran, cliquez sur Enregistrer et cliquez partout. Kamo s'occupe des zooms.",
+      "start": "Commencer à enregistrer"
+    }
+  },
+  "export": {
+    "title": "Exporter",
+    "formats": "Formats",
+    "aspect": {
+      "landscape": "Paysage",
+      "square": "Carré",
+      "vertical": "Vertical"
+    },
+    "resolution": "Résolution",
+    "frameRate": "Fréquence d'images",
+    "frameRateOf": "Fréquence d'images ({format})",
+    "fileFormat": "Format",
+    "fps": "{fps} fps",
+    "folder": "Enregistrer dans",
+    "changeFolder": "Modifier",
+    "pickOne": "Choisissez au moins un format.",
+    "cancel": "Annuler",
+    "start": "{count, plural, one {Exporter # fichier} other {Exporter # fichiers}}",
+    "waiting": "En attente",
+    "cancelExport": "Annuler l'export",
+    "done": {
+      "title": "{count, plural, one {# fichier enregistré} other {# fichiers enregistrés}}",
+      "subtitle": "Terminé. C'est déjà monté."
+    },
+    "showInFolder": "Afficher dans le dossier",
+    "close": "Fermer",
+    "retry": "Réessayer",
+    "errors": {
+      "title": "L'export s'est arrêté",
+      "disk_full": "Le disque est plein. Le fichier incomplet a été supprimé ; libérez de l'espace et réessayez.",
+      "write_failed": "Kamo n'a pas pu écrire le fichier. Le fichier incomplet a été supprimé.",
+      "source_unreadable": "Kamo n'a pas pu lire la vidéo de cet enregistrement.",
+      "encoder_unavailable": "Cet ordinateur n'a aucun encodeur H.264 utilisable par Kamo.",
+      "failed": "Un problème est survenu pendant l'export. Le fichier incomplet a été supprimé."
+    },
+    "warnings": {
+      "software_encoder": "Cet ordinateur n'a pas d'encodeur vidéo matériel, l'export a donc utilisé l'encodeur logiciel, plus lent.",
+      "audio_unreadable": "Une piste audio n'a pas pu être lue, elle a donc été laissée de côté.",
+      "audio_encoder_unavailable": "Cet ordinateur ne peut pas encoder le son en AAC, la vidéo n'a donc pas de son.",
+      "webcam_unreadable": "L'enregistrement de la webcam n'a pas pu être lu, la vidéo n'a donc pas de bulle webcam.",
+      "background_unreadable": "L'image d'arrière-plan n'a pas pu être lue, la vidéo utilise donc un arrière-plan uni.",
+      "settings_fallback": "L'encodeur vidéo de cet ordinateur n'a pas pu produire la résolution ou la fréquence d'images choisie, une valeur inférieure a donc été utilisée. Le nom du fichier l'indique."
+    },
+    "closeDialog": {
+      "title": "Export en cours",
+      "message": "Fermer maintenant annule l'export et supprime le fichier inachevé.",
+      "stop": "Annuler l'export et fermer",
+      "keep": "Continuer l'export"
+    },
+    "captions": {
+      "label": "Sous-titres",
+      "none": "Aucun",
+      "burn": "Incrustés",
+      "srt": "Fichier .srt",
+      "srtHint": "Un fichier .srt à côté de chaque vidéo, calé sur la coupe.",
+      "burnHint": "Dans l'image, avec le style du panneau Sous-titres.",
+      "srtFile": "+ {name}",
+      "gifBurnOnly": "Un GIF ne peut avoir que des sous-titres incrustés.",
+      "gifBurnWithSrt": "Le .srt accompagne les MP4 ; les GIF ont les sous-titres incrustés."
+    },
+    "needs4kSource": "La 4K nécessite un enregistrement plus grand que 1080p ; celui-ci est en {size}.",
+    "fps60From30": "Cet enregistrement est en {fps} fps : les zooms et le curseur bougent à 60 fps, mais l'écran lui-même ne change que {fps} fois par seconde.",
+    "gifHint": "Sans son, jusqu'à 1280 px de large.",
+    "gifEstimate": "Taille estimée : environ {size}.",
+    "gifLarge": "Beaucoup de sites et d'apps de messagerie refusent les GIF de plus de {limit} : coupez la vidéo, choisissez 10 fps ou exportez un MP4.",
+    "encoderFallback": "L'encodeur vidéo de cet ordinateur ne peut pas produire {wanted}, Kamo exportera donc en {actual}."
+  },
+  "recovery": {
+    "found": "Nous avons trouvé un enregistrement interrompu du {date}.",
+    "recover": "Récupérer",
+    "recovering": "Récupération…",
+    "discard": "Abandonner",
+    "discarding": "Placement dans la corbeille…",
+    "discardConfirm": "Placer cet enregistrement dans la corbeille ? Vous pourrez l'y restaurer.",
+    "unrecoverable": "Aucune partie de la vidéo n'est lisible, elle ne peut donc pas être récupérée.",
+    "failed": "Ça n'a pas marché. Réessayez.",
+    "deleting": "Suppression…",
+    "deleteConfirm": "Supprimer définitivement cet enregistrement ? Le navigateur n'a pas de corbeille."
+  },
+  "extension": {
+    "name": "Kamo",
+    "description": "Enregistrez un onglet, obtenez une vidéo qui semble montée : zoom auto à chaque clic, curseur fluide. Gratuit, sans compte.",
+    "actionTitle": "Enregistrer cet onglet avec Kamo",
+    "commandStop": "Arrêter l'enregistrement",
+    "popup": {
+      "tabToRecord": "Onglet à enregistrer",
+      "record": "Enregistrer cet onglet",
+      "unrecordable": "Chrome ne permet pas d'enregistrer cette page.",
+      "tabSound": "Son de l'onglet",
+      "starting": "Préparation…",
+      "saving": "Sauvegarde…",
+      "recent": "Derniers enregistrements",
+      "noRecent": "Vos enregistrements apparaissent ici.",
+      "projectMeta": "{duration} · {date}",
+      "allProjects": "Tous les projets",
+      "lowSpace": "Le navigateur n'a presque plus d'espace. Supprimez d'anciens projets avant d'enregistrer."
+    },
+    "microphone": {
+      "title": "Utiliser votre micro",
+      "body": "Kamo enregistre en arrière-plan, là où Chrome ne peut pas demander l'accès au micro. Autorisez-le ici une fois, et votre voix sera dans chaque enregistrement avec le micro activé.",
+      "allow": "Autoriser le micro",
+      "granted": "C'est fait. Ouvrez Kamo depuis la barre d'outils et cliquez sur Enregistrer.",
+      "denied": "Chrome a bloqué le micro. Autorisez-le dans les paramètres du site de Chrome pour Kamo, puis réessayez."
+    },
+    "camera": {
+      "title": "Utiliser votre caméra",
+      "body": "Kamo enregistre en arrière-plan, là où Chrome ne peut pas demander l'accès à la caméra. Autorisez-la ici une fois, et votre webcam sera dans chaque enregistrement avec la caméra activée.",
+      "allow": "Autoriser la caméra",
+      "granted": "C'est fait. Ouvrez Kamo depuis la barre d'outils et cliquez sur Enregistrer.",
+      "denied": "Chrome a bloqué la caméra. Autorisez-la dans les paramètres du site de Chrome pour Kamo, puis réessayez."
+    },
+    "errors": {
+      "captureFailed": "Chrome n'a pas laissé Kamo enregistrer cet onglet. Réessayez.",
+      "tabClosed": "L'onglet a été fermé. Kamo a gardé ce qu'il avait enregistré.",
+      "storageFull": "Le navigateur n'a plus d'espace. Kamo a gardé ce qu'il avait enregistré.",
+      "writeFailed": "Kamo n'a pas pu continuer à écrire l'enregistrement. Il a gardé ce qu'il a pu."
+    },
+    "notices": {
+      "micFallback": "Le micro choisi est introuvable, Kamo a donc utilisé celui par défaut.",
+      "cameraFallback": "La caméra choisie est introuvable, Kamo a donc utilisé celle par défaut."
+    },
+    "desktopCard": {
+      "title": "Envie de sous-titres ?",
+      "body": "La transcription et les sous-titres tournent sur votre ordinateur, dans l'app de bureau Kamo gratuite.",
+      "action": "Obtenir l'app de bureau",
+      "dismiss": "Masquer cette astuce"
+    },
+    "projects": {
+      "title": "Tous les projets",
+      "notice": "Vos projets restent dans ce navigateur. Effacer les données de l'extension les supprime.",
+      "storage": "Les projets occupent {size}",
+      "storageWarning": "Vos projets occupent plus de {limit}. Exportez ce que vous voulez garder et supprimez le reste.",
+      "deleteHint": "Supprimer un projet dans l'extension l'efface définitivement."
+    },
+    "editor": {
+      "clicksLost": "Les clics n'ont pas été capturés après {time} : l'onglet est passé sur un site que Kamo n'a pas pu suivre.",
+      "allowSites": "Suivre tous les sites la prochaine fois",
+      "allowedSites": "C'est fait. La prochaine fois, Kamo continuera à capturer les clics sur les autres sites.",
+      "downloadBlocked": "Le navigateur n'a pas enregistré {name}.",
+      "downloadAgain": "Télécharger à nouveau",
+      "dismiss": "Ignorer"
+    },
+    "welcome": {
+      "title": "Bonjour, je suis Kamo.",
+      "body": "Enregistrez n'importe quel onglet et obtenez une vidéo qui semble montée : un zoom à chaque clic, un curseur fluide et un bel arrière-plan. Gratuit, sans compte.",
+      "tabsOnly": "Kamo enregistre les onglets du navigateur. Pour enregistrer tout l'écran ou d'autres apps, installez l'app de bureau.",
+      "pinTitle": "Épinglez Kamo à la barre d'outils",
+      "pinSteps": "Cliquez sur la pièce de puzzle à côté de la barre d'adresse, puis sur l'épingle à côté de Kamo.",
+      "stepsTitle": "Comment ça marche",
+      "step1": "Ouvrez l'onglet que vous voulez enregistrer.",
+      "step2": "Cliquez sur Kamo dans la barre d'outils, puis sur Enregistrer.",
+      "step3": "Arrêtez : l'éditeur s'ouvre avec les zooms prêts. Exportez, et la vidéo arrive dans vos téléchargements.",
+      "micTitle": "Votre voix aussi ?",
+      "micBody": "Autorisez le micro une fois ici, puis activez-le dans la fenêtre de Kamo chaque fois que vous voulez commenter.",
+      "micAllow": "Utiliser le micro",
+      "micGranted": "Micro autorisé.",
+      "micDenied": "Chrome a bloqué le micro. Vous pourrez l'autoriser plus tard dans les paramètres du site de Chrome pour Kamo.",
+      "sitesTitle": "Continuer à capturer les clics sur d'autres sites",
+      "sitesBody": "Kamo ne voit que l'onglet que vous enregistrez. Si cette page passe sur un autre site pendant un enregistrement, Chrome a besoin de votre accord pour que Kamo continue à y capturer les clics. Facultatif : la vidéo s'enregistre dans tous les cas.",
+      "sitesAllow": "Autoriser",
+      "sitesGranted": "Autorisé. Vous pouvez revenir dessus à tout moment dans les paramètres des extensions de Chrome.",
+      "privacy": "Vos enregistrements restent dans ce navigateur. Rien n'en sort sans que vous l'envoyiez."
+    }
+  },
+  "menu": {
+    "file": "Fichier",
+    "edit": "Édition",
+    "view": "Présentation",
+    "window": "Fenêtre",
+    "settings": "Réglages…",
+    "about": "À propos de Kamo",
+    "hide": "Masquer Kamo",
+    "hideOthers": "Masquer les autres",
+    "showAll": "Tout afficher",
+    "close": "Fermer la fenêtre",
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "cut": "Couper",
+    "copy": "Copier",
+    "paste": "Coller",
+    "selectAll": "Tout sélectionner",
+    "reload": "Recharger",
+    "devTools": "Outils de développement",
+    "resetZoom": "Taille réelle",
+    "zoomIn": "Zoom avant",
+    "zoomOut": "Zoom arrière",
+    "fullScreen": "Plein écran",
+    "minimize": "Réduire",
+    "zoom": "Zoom",
+    "front": "Tout ramener au premier plan"
+  },
+  "packs": {
+    "title": "Packs facultatifs",
+    "description": "Des extras à télécharger seulement si vous en voulez. Kamo enregistre, monte et exporte sans eux.",
+    "local": "Les packs tournent sur votre ordinateur. Rien de ce que vous enregistrez n'est envoyé nulle part.",
+    "light": {
+      "name": "Transcription — Léger",
+      "hint": "Plus rapide. Transcriptions pour les sous-titres, la recherche et les agents (MCP)."
+    },
+    "accurate": {
+      "name": "Transcription — Précis",
+      "hint": "Plus lent et plus précis. Idéal pour le portugais, le chinois et le japonais."
+    },
+    "sizeApprox": "Environ {size}",
+    "progressLabel": "Téléchargement de {name}",
+    "install": "Télécharger",
+    "resume": "Reprendre",
+    "pause": "Pause",
+    "update": "Mettre à jour",
+    "remove": "Supprimer",
+    "removeConfirm": "Supprimer {name} ? Les transcriptions déjà faites sont conservées.",
+    "updateConfirm": "Télécharger la version {version} ({size}) ? La version actuelle continue de fonctionner jusqu'à la fin.",
+    "status": {
+      "notInstalled": "Non installé",
+      "downloading": "Téléchargement… {progress, number, percent}",
+      "paused": "En pause à {progress, number, percent}",
+      "verifying": "Vérification du téléchargement…",
+      "installed": "Installé (version {version})",
+      "update": "Mise à jour disponible : version {version}",
+      "failed": "Inachevé"
+    },
+    "catalog": {
+      "loading": "Chargement de la liste des packs…"
+    },
+    "errors": {
+      "offline": "Pas de connexion. Réessayez une fois en ligne ; ce qui a déjà été téléchargé est conservé.",
+      "downloadFailed": "Le téléchargement a échoué. Réessayez.",
+      "checksumMismatch": "Le téléchargement est arrivé endommagé et a été supprimé. Réessayez.",
+      "diskSpace": "Pas assez d'espace libre : {size} nécessaires.",
+      "unsupportedPlatform": "Pas encore disponible pour cet ordinateur.",
+      "manifestInvalid": "Impossible de lire la liste des packs. Mettez Kamo à jour et réessayez.",
+      "packBusy": "Une transcription est en cours. Réessayez quand elle sera terminée.",
+      "installFailed": "Impossible de l'installer. Réessayez.",
+      "unknownPack": "Ce pack n'est plus disponible."
+    }
+  },
+  "transcription": {
+    "title": "Transcription",
+    "auto": "Transcrire automatiquement les nouveaux enregistrements",
+    "autoHint": "En arrière-plan, sur votre ordinateur, après chaque enregistrement.",
+    "language": "Langue parlée",
+    "languageAuto": "Détecter automatiquement",
+    "pack": "Pack à utiliser",
+    "action": "Transcrire",
+    "again": "Transcrire à nouveau",
+    "cancel": "Arrêter la transcription",
+    "ask": {
+      "title": "Transcrire automatiquement vos prochains enregistrements ?",
+      "body": "Kamo peut transcrire chaque nouvel enregistrement en arrière-plan. Vous pourrez changer cela dans les Réglages.",
+      "yes": "Oui, automatiquement",
+      "no": "Seulement quand je clique sur Transcrire"
+    },
+    "offer": {
+      "title": "Transcrire sur votre ordinateur",
+      "body": "La transcription est un pack facultatif qui tourne sur votre ordinateur. Choisissez-en un à télécharger :",
+      "choose": "Qualité de transcription",
+      "recommendAccurate": "Pour le chinois ou le japonais, Précis fonctionne bien mieux.",
+      "download": "Télécharger et transcrire",
+      "notNow": "Pas maintenant"
+    },
+    "status": {
+      "queued": "En attente de transcription",
+      "running": "Transcription… {progress, number, percent}",
+      "done": "Transcrit",
+      "failed": "La transcription s'est arrêtée sur une erreur. Réessayez.",
+      "noAudio": "Aucun audio à transcrire"
+    },
+    "errors": {
+      "packMissing": "Téléchargez d'abord un pack de transcription.",
+      "audioUnreadable": "Kamo n'a pas pu lire l'audio de cet enregistrement.",
+      "transcriptEdited": "Vos corrections de sous-titres ont été conservées : la nouvelle transcription n'a pas été enregistrée."
+    },
+    "replace": {
+      "title": "Remplacer vos corrections de sous-titres ?",
+      "body": "Vous avez corrigé cette transcription via les sous-titres. Transcrire à nouveau la remplace, et vos corrections seront perdues.",
+      "confirm": "Transcrire à nouveau",
+      "keep": "Garder mes corrections"
+    }
+  }
+}

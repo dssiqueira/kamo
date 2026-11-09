@@ -389,7 +389,7 @@ export interface AppSettings {
 }
 
 export type Theme = 'light' | 'dark' | 'system'
-export type LanguageSetting = 'system' | 'en' | 'pt-BR' | 'es' | 'zh-CN' | 'ja'
+export type LanguageSetting = 'system' | 'en' | 'pt-BR' | 'es' | 'zh-CN' | 'ja' | 'de' | 'fr' | 'ko'
 
 /** What the renderer may change with `updateSettings` (folders and shortcut have their own calls). */
 export type SettingsUpdate = Partial<

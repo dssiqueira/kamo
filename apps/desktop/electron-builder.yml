@@ -14,7 +14,7 @@ files:
 asar: true
 compression: maximum
 # Only the languages Kamo supports; Electron ships ~50 locale packs otherwise.
-electronLanguages: [en, en-US, pt-BR, es, es-419, zh-CN, ja]
+electronLanguages: [en, en-US, pt-BR, es, es-419, zh-CN, ja, de, fr, ko]
 
 # Electron fuses, flipped in the binary before signing. Kamo holds the Screen Recording,
 # Microphone and Camera grants on Mac, so no other process may run its own code as Kamo:

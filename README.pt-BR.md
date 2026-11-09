@@ -232,7 +232,7 @@ Chegou agora, humano ou agente? Comece pelo [AGENTS.md](AGENTS.md). Ele aponta p
 
 ## Idiomas
 
-English, Português (Brasil), Español, 简体中文 e 日本語, escolhido a partir do seu sistema e trocável a qualquer momento. Datas, números e durações aparecem no formato do seu idioma. Falantes nativos: revisar as traduções é uma das contribuições mais úteis.
+English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Français e 한국어, escolhido a partir do seu sistema e trocável a qualquer momento. Datas, números e durações aparecem no formato do seu idioma. Falantes nativos: revisar as traduções é uma das contribuições mais úteis.
 
 ## Próximos passos
 

@@ -17,11 +17,14 @@ describe('systemLanguage', () => {
     expect(systemLanguage(['es-419'])).toBe('es')
     expect(systemLanguage(['en-GB'])).toBe('en')
     // A second preference counts too, like the UI language itself.
-    expect(systemLanguage(['de-DE', 'es-ES'])).toBe('es')
+    expect(systemLanguage(['it-IT', 'es-ES'])).toBe('es')
+    expect(systemLanguage(['de-AT'])).toBe('de')
+    expect(systemLanguage(['fr-CA'])).toBe('fr')
+    expect(systemLanguage(['ko-KR'])).toBe('ko')
   })
 
-  it('is undefined when the OS speaks none of the five', () => {
-    expect(systemLanguage(['de-DE', 'fr-FR'])).toBeUndefined()
+  it('is undefined when the OS speaks none of the app languages', () => {
+    expect(systemLanguage(['it-IT', 'nl-NL'])).toBeUndefined()
     expect(systemLanguage([])).toBeUndefined()
     expect(systemLanguage(['not a tag'])).toBeUndefined()
   })
@@ -37,8 +40,8 @@ describe('initialLanguage', () => {
   })
 
   it('falls back to English for any other system language', () => {
-    expect(initialLanguage(undefined, systemLanguage(['fr-FR', 'de-DE']))).toBe('en')
-    expect(initialLanguage(undefined, 'de')).toBe('en')
+    expect(initialLanguage(undefined, systemLanguage(['it-IT', 'nl-NL']))).toBe('en')
+    expect(initialLanguage(undefined, 'it')).toBe('en')
     expect(initialLanguage(undefined, undefined)).toBe('en')
   })
 
@@ -84,11 +87,12 @@ describe('languageKeyCommand', () => {
 
 describe('moveLanguage', () => {
   it('follows the launch languages in order and wraps around', () => {
-    expect(LOCALES).toEqual(['en', 'pt-BR', 'es', 'zh-CN', 'ja'])
+    expect(LOCALES).toEqual(['en', 'pt-BR', 'es', 'zh-CN', 'ja', 'de', 'fr', 'ko'])
     expect(moveLanguage('en', 'next')).toBe('pt-BR')
-    expect(moveLanguage('ja', 'next')).toBe('en')
-    expect(moveLanguage('en', 'previous')).toBe('ja')
+    expect(moveLanguage('ja', 'next')).toBe('de')
+    expect(moveLanguage('ko', 'next')).toBe('en')
+    expect(moveLanguage('en', 'previous')).toBe('ko')
     expect(moveLanguage('es', 'first')).toBe('en')
-    expect(moveLanguage('es', 'last')).toBe('ja')
+    expect(moveLanguage('es', 'last')).toBe('ko')
   })
 })

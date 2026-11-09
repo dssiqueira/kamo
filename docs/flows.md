@@ -30,7 +30,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 ## Screens
 
 ### 1. Permissions onboarding (first use only)
-- **Language first:** Kamo (happy head) says hi in the five launch languages ("Hi Oi Hola 你好 こんにちは", each in its own font stack, the one on screen highlighted) and asks which language to speak. The five languages are large rows, each with its name in its own language and `lang` (English, Português (Brasil), Español, 简体中文, 日本語), never translated
+- **Language first:** Kamo (happy head) says hi in the app languages ("Hi Oi Hola 你好 こんにちは Hallo Bonjour 안녕하세요", each in its own font stack, the one on screen highlighted) and asks which language to speak. The languages are large rows, each with its name in its own language and `lang` (English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Français, 한국어), never translated
   - The OS language is preselected when Kamo speaks it (else English) and says "Same as your system". Picking a row switches the whole window at once (the screen's own texts and `<html lang>`), so the tour already speaks it
   - Accessible radio group: arrows (and Home / End) move the choice, Enter or Continue goes on to the tour. Continue saves it as Settings' language: `system` when the system's language was kept, otherwise the locale; main then rebuilds its tray and app menus in that language
   - First run only (until `onboardingDone`): not when the onboarding opens again for a missing permission, nor on "Show the welcome tour". The extension follows Chrome's language and has no such screen

@@ -232,7 +232,7 @@ New here, human or agent? Start at [AGENTS.md](AGENTS.md). It points to the prod
 
 ## Languages
 
-English, Português (Brasil), Español, 简体中文 and 日本語, picked from your system and switchable any time. Dates, numbers and durations are formatted for your language. Native speakers: reviews of the translations are one of the most useful contributions.
+English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Français and 한국어, picked from your system and switchable any time. Dates, numbers and durations are formatted for your language. Native speakers: reviews of the translations are one of the most useful contributions.
 
 ## Roadmap
 

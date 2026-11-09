@@ -1,7 +1,7 @@
 // UI languages (D-021). English is the source; the others follow the same keys.
 export const SOURCE_LOCALE = 'en'
 
-export const LOCALES = ['en', 'pt-BR', 'es', 'zh-CN', 'ja'] as const
+export const LOCALES = ['en', 'pt-BR', 'es', 'zh-CN', 'ja', 'de', 'fr', 'ko'] as const
 
 export type Locale = (typeof LOCALES)[number]
 
@@ -14,6 +14,9 @@ const loaders: Record<Locale, () => Promise<{ default: Messages }>> = {
   es: () => import('./locales/es.json', { with: { type: 'json' } }),
   'zh-CN': () => import('./locales/zh-CN.json', { with: { type: 'json' } }),
   ja: () => import('./locales/ja.json', { with: { type: 'json' } }),
+  de: () => import('./locales/de.json', { with: { type: 'json' } }),
+  fr: () => import('./locales/fr.json', { with: { type: 'json' } }),
+  ko: () => import('./locales/ko.json', { with: { type: 'json' } }),
 }
 
 export async function loadMessages(locale: Locale): Promise<Messages> {

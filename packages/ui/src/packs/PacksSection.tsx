@@ -14,6 +14,9 @@ export const TRANSCRIPTION_LANGUAGE_CHOICES: readonly TranscriptionLanguageChoic
   'es',
   'zh',
   'ja',
+  'de',
+  'fr',
+  'ko',
 ]
 
 export interface PacksSectionProps extends PackActions {
