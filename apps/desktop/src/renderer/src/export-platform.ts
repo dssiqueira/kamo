@@ -105,13 +105,30 @@ const compatEncoder: ExternalVideoEncoder = {
  * The "Video compatibility" pack as the export sheet sees it (A-07): main's pack status, live,
  * loaded when the sheet first looks. Downloading starts only from the sheet's button.
  */
+export function compatibilityView(status: PacksStatus, asked: boolean): PackView | null {
+  const pack = status.packs.find((p) => p.id === COMPATIBILITY_PACK_ID) ?? null
+  // Main reports a list that failed once, for the whole app (status.catalogError); the export
+  // sheet only sees this pack, so after its Download click that is the reason it did not start.
+  if (
+    pack &&
+    asked &&
+    status.catalog === 'error' &&
+    !pack.error &&
+    pack.state === 'not_installed'
+  ) {
+    return { ...pack, error: status.catalogError }
+  }
+  return pack
+}
+
 function createDesktopCompatibility(): ExportCompatibility {
   let current: PackView | null = null
   const listeners = new Set<() => void>()
   let unsubscribe: (() => void) | null = null
+  /** The user clicked Download: a list of packs that failed to load is then this pack's error. */
+  let asked = false
   const set = (status: PacksStatus) => {
-    const pack = status.packs.find((p) => p.id === COMPATIBILITY_PACK_ID) ?? null
-    current = pack
+    current = compatibilityView(status, asked)
     for (const listener of listeners) listener()
   }
   return {
@@ -130,8 +147,14 @@ function createDesktopCompatibility(): ExportCompatibility {
         }
       }
     },
-    install: () => void window.kamo.installPack(COMPATIBILITY_PACK_ID).catch(() => {}),
-    cancel: () => void window.kamo.cancelPack(COMPATIBILITY_PACK_ID).catch(() => {}),
+    install: () => {
+      asked = true
+      void window.kamo.installPack(COMPATIBILITY_PACK_ID).catch(() => {})
+    },
+    cancel: () => {
+      asked = false
+      void window.kamo.cancelPack(COMPATIBILITY_PACK_ID).catch(() => {})
+    },
     encoder: compatEncoder,
   }
 }

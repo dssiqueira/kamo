@@ -86,7 +86,12 @@ export function PacksSection(props: PacksSectionProps) {
         <div ref={ref} className="flex flex-col gap-md">
           <p className="text-body text-on-surface-muted">{t('packs.description')}</p>
           {props.packs.packs.map((pack) => (
-            <PackRow key={pack.id} pack={pack} actions={props} />
+            <PackRow
+              key={pack.id}
+              pack={pack}
+              actions={props}
+              catalogUnavailable={props.packs.catalog === 'error'}
+            />
           ))}
           <CatalogNotice packs={props.packs} onRetry={props.onRetryCatalog} />
           <p className="text-label text-on-surface-muted">{t('packs.local')}</p>
@@ -164,10 +169,10 @@ export function AutoTranscribeQuestion({ onAnswer }: { onAnswer(auto: boolean): 
       </p>
       <p className="text-label text-on-surface-muted">{t('transcription.ask.body')}</p>
       <div className="flex flex-wrap gap-sm">
-        <SecondaryButton onClick={() => onAnswer(true)}>
+        <SecondaryButton raised onClick={() => onAnswer(true)}>
           {t('transcription.ask.yes')}
         </SecondaryButton>
-        <SecondaryButton onClick={() => onAnswer(false)}>
+        <SecondaryButton raised onClick={() => onAnswer(false)}>
           {t('transcription.ask.no')}
         </SecondaryButton>
       </div>

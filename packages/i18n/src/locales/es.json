@@ -750,11 +750,13 @@
     "local": "Los paquetes funcionan en tu computadora. Nada de lo que grabas se envía a ningún sitio.",
     "light": {
       "name": "Transcripción — Ligera",
-      "hint": "Más rápida. Transcripciones para subtítulos, búsqueda y agentes (MCP)."
+      "hint": "Más rápida. Transcripciones para subtítulos, búsqueda y agentes (MCP).",
+      "short": "Ligera"
     },
     "accurate": {
       "name": "Transcripción — Precisa",
-      "hint": "Más lenta y más precisa. Mejor para portugués, chino y japonés."
+      "hint": "Más lenta y más precisa. Mejor para portugués, chino y japonés.",
+      "short": "Precisa"
     },
     "sizeApprox": "Unos {size}",
     "progressLabel": "Descargando {name}",
@@ -772,10 +774,19 @@
       "verifying": "Comprobando la descarga…",
       "installed": "Instalado (versión {version})",
       "update": "Actualización disponible: versión {version}",
-      "failed": "No terminó"
+      "failed": "No terminó",
+      "starting": "Iniciando la descarga…"
     },
     "catalog": {
-      "loading": "Cargando la lista de paquetes…"
+      "loading": "Cargando la lista de paquetes…",
+      "unpublished": "Los paquetes aún no se han publicado. Vuelve pronto.",
+      "offline": "Parece que no tienes conexión. Revisa tu conexión e inténtalo de nuevo.",
+      "failed": "No se pudo cargar la lista de paquetes ahora. Inténtalo de nuevo en un rato.",
+      "titles": {
+        "unpublished": "Muy pronto",
+        "offline": "Sin conexión",
+        "failed": "No se pudieron cargar los paquetes"
+      }
     },
     "errors": {
       "offline": "Sin conexión. Inténtalo de nuevo cuando estés en línea; lo que ya llegó se guarda.",
@@ -793,7 +804,8 @@
       "hint": "Exporta MP4 con FFmpeg en ordenadores donde falla el codificador de video del sistema.",
       "removeConfirm": "¿Quitar {name}? Los videos que ya exportaste se conservan.",
       "busy": "Está exportando un video ahora. Inténtalo de nuevo cuando termine."
-    }
+    },
+    "progressBytes": "{received} de {total}"
   },
   "transcription": {
     "title": "Transcripción",
@@ -817,7 +829,11 @@
       "choose": "Calidad de la transcripción",
       "recommendAccurate": "Para chino o japonés, la Precisa funciona mucho mejor.",
       "download": "Descargar y transcribir",
-      "notNow": "Ahora no"
+      "notNow": "Ahora no",
+      "recommended": "Recomendado",
+      "unpublished": "Los paquetes de transcripción aún no se han publicado. Vuelve pronto; todo lo demás de Kamo funciona sin ellos.",
+      "installedTitle": "Todo listo.",
+      "installedBody": "{name} está instalado. Una pregunta rápida antes de la primera transcripción:"
     },
     "status": {
       "queued": "Esperando para transcribir",

@@ -32,6 +32,13 @@ export type PackErrorCode =
   | 'install_failed'
   | 'unknown_pack'
 
+/**
+ * Why the list of packs (packs-manifest.json) could not be loaded: not published yet (HTTP 404),
+ * no connection, a list this app cannot read, or anything else (a server error).
+ */
+export type CatalogErrorCode =
+  'catalog_unpublished' | 'offline' | 'manifest_invalid' | 'catalog_failed'
+
 export interface PackInfo {
   id: PackId
   kind: PackKind
@@ -60,7 +67,7 @@ export interface PacksStatus {
    * transcribe (never on its own).
    */
   catalog: 'idle' | 'loading' | 'ready' | 'error'
-  catalogError: PackErrorCode | null
+  catalogError: CatalogErrorCode | null
 }
 
 export type TranscriptionLanguage = 'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja' | 'de' | 'fr' | 'ko'

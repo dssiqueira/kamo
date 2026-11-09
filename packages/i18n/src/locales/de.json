@@ -750,11 +750,13 @@
     "local": "Pakete laufen auf deinem Computer. Nichts, was du aufnimmst, wird irgendwohin gesendet.",
     "light": {
       "name": "Transkription – Leicht",
-      "hint": "Schneller. Transkripte für Untertitel, Suche und Agenten (MCP)."
+      "hint": "Schneller. Transkripte für Untertitel, Suche und Agenten (MCP).",
+      "short": "Leicht"
     },
     "accurate": {
       "name": "Transkription – Genau",
-      "hint": "Langsamer und genauer. Am besten für Portugiesisch, Chinesisch und Japanisch."
+      "hint": "Langsamer und genauer. Am besten für Portugiesisch, Chinesisch und Japanisch.",
+      "short": "Genau"
     },
     "sizeApprox": "Etwa {size}",
     "progressLabel": "{name} wird heruntergeladen",
@@ -772,10 +774,19 @@
       "verifying": "Download wird geprüft…",
       "installed": "Installiert (Version {version})",
       "update": "Update verfügbar: Version {version}",
-      "failed": "Nicht abgeschlossen"
+      "failed": "Nicht abgeschlossen",
+      "starting": "Download startet…"
     },
     "catalog": {
-      "loading": "Paketliste wird geladen…"
+      "loading": "Paketliste wird geladen…",
+      "unpublished": "Die Pakete sind noch nicht veröffentlicht. Schau bald wieder vorbei.",
+      "offline": "Du scheinst offline zu sein. Prüf deine Verbindung und versuch es noch einmal.",
+      "failed": "Die Paketliste konnte gerade nicht geladen werden. Versuch es gleich noch einmal.",
+      "titles": {
+        "unpublished": "Bald verfügbar",
+        "offline": "Keine Verbindung",
+        "failed": "Pakete konnten nicht geladen werden"
+      }
     },
     "errors": {
       "offline": "Keine Verbindung. Versuch es noch einmal, wenn du online bist; was schon angekommen ist, bleibt erhalten.",
@@ -793,7 +804,8 @@
       "hint": "Exportiert MP4 mit FFmpeg auf Computern, auf denen der Video-Encoder des Systems versagt.",
       "removeConfirm": "{name} entfernen? Deine bereits exportierten Videos bleiben erhalten.",
       "busy": "Es wird gerade ein Video exportiert. Versuch es noch einmal, wenn es fertig ist."
-    }
+    },
+    "progressBytes": "{received} von {total}"
   },
   "transcription": {
     "title": "Transkription",
@@ -817,7 +829,11 @@
       "choose": "Qualität der Transkription",
       "recommendAccurate": "Für Chinesisch oder Japanisch funktioniert Genau viel besser.",
       "download": "Herunterladen und transkribieren",
-      "notNow": "Nicht jetzt"
+      "notNow": "Nicht jetzt",
+      "recommended": "Empfohlen",
+      "unpublished": "Die Transkriptionspakete sind noch nicht veröffentlicht. Schau bald wieder vorbei; alles andere in Kamo funktioniert auch ohne sie.",
+      "installedTitle": "Alles bereit.",
+      "installedBody": "{name} ist installiert. Eine kurze Frage vor dem ersten Transkript:"
     },
     "status": {
       "queued": "Wartet auf Transkription",

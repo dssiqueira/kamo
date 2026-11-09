@@ -18,6 +18,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 - Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.
 
 ### Fixed
+- The Transcribe dialog shows one clear message when the packs are not published yet or the computer is offline (it showed the same download error twice), and offers Light and Accurate as two cards with one Download and transcribe button.
 - The permissions button says *Open Windows Settings* on Windows (it said *Open System Settings*, the Mac name).
 - The command for a development build of the MCP server now starts it (Node needs `--experimental-transform-types` inside the repository).
 - The MCP docs name the *Optional packs* section of Settings correctly.

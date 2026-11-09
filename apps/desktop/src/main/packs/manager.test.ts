@@ -4,8 +4,8 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { PacksStatus } from '../../shared/packs.ts'
 import { DEFAULT_MANIFEST_URL, manifestUrl, platformKey } from './config.ts'
-import { parseManifest } from './manifest.ts'
-import { PackManager } from './manager.ts'
+import { ManifestError, parseManifest } from './manifest.ts'
+import { CatalogHttpError, PackManager, catalogErrorCode } from './manager.ts'
 import {
   fakeCompatibilityPack,
   fakeTranscriptionPack,
@@ -198,6 +198,41 @@ describe('PackManager', () => {
     const packs = manager('http://127.0.0.1:1/packs-manifest.json')
     expect(light(await packs.status()).installedVersion).toBeNull()
     expect(await packs.transcriber()).toBeNull()
+  })
+
+  it('tells a list not published yet (404) from a server error and from no connection', () => {
+    expect(catalogErrorCode(new CatalogHttpError(404))).toBe('catalog_unpublished')
+    expect(catalogErrorCode(new CatalogHttpError(500))).toBe('catalog_failed')
+    expect(catalogErrorCode(new CatalogHttpError(403))).toBe('catalog_failed')
+    expect(catalogErrorCode(new TypeError('fetch failed'))).toBe('offline')
+    expect(catalogErrorCode(new Error('net::ERR_INTERNET_DISCONNECTED'))).toBe('offline')
+    expect(catalogErrorCode(new ManifestError('not a packs manifest'))).toBe('manifest_invalid')
+    expect(catalogErrorCode(new SyntaxError('Unexpected token'))).toBe('manifest_invalid')
+  })
+
+  it('reports an unpublished list once, without failing the pack the user asked for', async () => {
+    const packs = manager('http://127.0.0.1:1/packs-manifest.json', {
+      fetch: async () => new Response('Not Found', { status: 404 }),
+    })
+    const listed = await packs.refresh()
+    expect(listed.catalog).toBe('error')
+    expect(listed.catalogError).toBe('catalog_unpublished')
+
+    await packs.install('transcribe-accurate')
+    const status = await packs.status()
+    expect(status.catalogError).toBe('catalog_unpublished')
+    for (const pack of status.packs) {
+      expect(pack.state).toBe('not_installed')
+      expect(pack.error).toBeNull()
+      expect(pack.sizeExact).toBe(false)
+    }
+  })
+
+  it('reports a server error on the list as catalog_failed', async () => {
+    const packs = manager('http://127.0.0.1:1/packs-manifest.json', {
+      fetch: async () => new Response('', { status: 502 }),
+    })
+    expect((await packs.refresh()).catalogError).toBe('catalog_failed')
   })
 
   it('reports an offline list and lets the user try again', async () => {

@@ -750,11 +750,13 @@
     "local": "Packs run on your computer. Nothing you record is sent anywhere.",
     "light": {
       "name": "Transcription — Light",
-      "hint": "Faster. Transcripts for captions, search and agents (MCP)."
+      "hint": "Faster. Transcripts for captions, search and agents (MCP).",
+      "short": "Light"
     },
     "accurate": {
       "name": "Transcription — Accurate",
-      "hint": "Slower and more accurate. Best for Portuguese, Chinese and Japanese."
+      "hint": "Slower and more accurate. Best for Portuguese, Chinese and Japanese.",
+      "short": "Accurate"
     },
     "sizeApprox": "About {size}",
     "progressLabel": "Downloading {name}",
@@ -772,10 +774,19 @@
       "verifying": "Checking the download…",
       "installed": "Installed (version {version})",
       "update": "Update available: version {version}",
-      "failed": "Didn't finish"
+      "failed": "Didn't finish",
+      "starting": "Starting the download…"
     },
     "catalog": {
-      "loading": "Loading the list of packs…"
+      "loading": "Loading the list of packs…",
+      "unpublished": "The packs aren't published yet. Check back soon.",
+      "offline": "You seem to be offline. Check your connection and try again.",
+      "failed": "Couldn't load the list of packs right now. Try again in a little while.",
+      "titles": {
+        "unpublished": "Coming soon",
+        "offline": "No connection",
+        "failed": "Couldn't load the packs"
+      }
     },
     "errors": {
       "offline": "No connection. Try again when you're online; what already arrived is kept.",
@@ -793,7 +804,8 @@
       "hint": "Exports MP4 with FFmpeg on computers where the system's video encoder fails.",
       "removeConfirm": "Remove {name}? The videos you already exported stay.",
       "busy": "It's exporting a video right now. Try again when it finishes."
-    }
+    },
+    "progressBytes": "{received} of {total}"
   },
   "transcription": {
     "title": "Transcription",
@@ -817,7 +829,11 @@
       "choose": "Transcription quality",
       "recommendAccurate": "For Chinese or Japanese, Accurate works much better.",
       "download": "Download and transcribe",
-      "notNow": "Not now"
+      "notNow": "Not now",
+      "recommended": "Recommended",
+      "unpublished": "The transcription packs aren't published yet. Check back soon; everything else in Kamo works without them.",
+      "installedTitle": "All set.",
+      "installedBody": "{name} is installed. One quick question before the first transcript:"
     },
     "status": {
       "queued": "Waiting to transcribe",

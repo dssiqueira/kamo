@@ -207,3 +207,13 @@ export function SelectionIcon() {
     </Icon>
   )
 }
+
+/** A padlock: "stays on your computer" notes. */
+export function LockIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <rect x="3.5" y="7" width="9" height="6.5" rx="1.5" />
+      <path d="M5.5 7V5.25a2.5 2.5 0 0 1 5 0V7" />
+    </Icon>
+  )
+}

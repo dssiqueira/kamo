@@ -750,11 +750,13 @@
     "local": "扩展包在你的电脑上运行。你录制的任何内容都不会被发送出去。",
     "light": {
       "name": "转录 — 轻量",
-      "hint": "速度更快。为字幕、搜索和智能体（MCP）生成转录文本。"
+      "hint": "速度更快。为字幕、搜索和智能体（MCP）生成转录文本。",
+      "short": "轻量"
     },
     "accurate": {
       "name": "转录 — 精准",
-      "hint": "速度较慢，但更准确。最适合葡萄牙语、中文和日语。"
+      "hint": "速度较慢，但更准确。最适合葡萄牙语、中文和日语。",
+      "short": "精准"
     },
     "sizeApprox": "约 {size}",
     "progressLabel": "正在下载{name}",
@@ -772,10 +774,19 @@
       "verifying": "正在校验下载内容…",
       "installed": "已安装（{version} 版）",
       "update": "有可用更新：{version} 版",
-      "failed": "未完成"
+      "failed": "未完成",
+      "starting": "正在开始下载…"
     },
     "catalog": {
-      "loading": "正在加载扩展包列表…"
+      "loading": "正在加载扩展包列表…",
+      "unpublished": "扩展包尚未发布，请稍后再来看看。",
+      "offline": "你似乎处于离线状态。请检查网络连接后重试。",
+      "failed": "暂时无法加载扩展包列表，请稍后重试。",
+      "titles": {
+        "unpublished": "即将推出",
+        "offline": "没有网络连接",
+        "failed": "无法加载扩展包"
+      }
     },
     "errors": {
       "offline": "没有网络连接。联网后请重试，已下载的部分会保留。",
@@ -793,7 +804,8 @@
       "hint": "在系统视频编码器无法工作的电脑上，用 FFmpeg 导出 MP4。",
       "removeConfirm": "要移除{name}吗？已经导出的视频会保留。",
       "busy": "正在导出视频，请在完成后重试。"
-    }
+    },
+    "progressBytes": "{received} / {total}"
   },
   "transcription": {
     "title": "转录",
@@ -817,7 +829,11 @@
       "choose": "转录质量",
       "recommendAccurate": "对于中文或日语，“精准”效果好得多。",
       "download": "下载并转录",
-      "notNow": "以后再说"
+      "notNow": "以后再说",
+      "recommended": "推荐",
+      "unpublished": "转录扩展包尚未发布，请稍后再来看看。Kamo 的其他功能无需它们也能正常使用。",
+      "installedTitle": "准备就绪。",
+      "installedBody": "{name} 已安装。第一次转录前，先问一个小问题："
     },
     "status": {
       "queued": "等待转录",

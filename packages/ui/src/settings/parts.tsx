@@ -9,17 +9,23 @@ export function SecondaryButton({
   children,
   onClick,
   disabled,
+  raised = false,
 }: {
   children: ReactNode
   onClick(): void
   disabled?: boolean
+  /** On a surface-raised panel: a surface fill with a border, so the button still shows. */
+  raised?: boolean
 }) {
+  const fill = raised
+    ? 'border border-border bg-surface hover:bg-background disabled:hover:bg-surface'
+    : 'bg-surface-raised hover:bg-border disabled:hover:bg-surface-raised'
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex shrink-0 items-center gap-xs rounded-md bg-surface-raised px-[14px] py-[7px] text-body font-semibold text-on-surface transition-colors duration-[120ms] hover:bg-border disabled:opacity-50 disabled:hover:bg-surface-raised ${FOCUS_RING}`}
+      className={`inline-flex shrink-0 items-center gap-xs rounded-md px-[14px] py-[7px] text-body font-semibold text-on-surface transition-colors duration-[120ms] disabled:opacity-50 ${fill} ${FOCUS_RING}`}
     >
       {children}
     </button>

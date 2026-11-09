@@ -6,6 +6,7 @@ import { chmod, mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import {
   PACK_IDS,
+  type CatalogErrorCode,
   type PackErrorCode,
   type PackId,
   type PackInfo,
@@ -33,6 +34,27 @@ export class PackError extends Error {
     super(code)
     this.name = 'PackError'
   }
+}
+
+/** The list of packs answered with an HTTP error. */
+export class CatalogHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`packs manifest: HTTP ${status}`)
+    this.name = 'CatalogHttpError'
+  }
+}
+
+/**
+ * Why loading packs-manifest.json failed, as the UI explains it: a 404 means the packs are not
+ * published yet (the rolling `packs` release or its manifest does not exist), a fetch that threw
+ * means no connection, an unreadable list means a newer format, anything else is a server error.
+ */
+export function catalogErrorCode(error: unknown): CatalogErrorCode {
+  if (error instanceof CatalogHttpError) {
+    return error.status === 404 || error.status === 410 ? 'catalog_unpublished' : 'catalog_failed'
+  }
+  if (error instanceof ManifestError || error instanceof SyntaxError) return 'manifest_invalid'
+  return 'offline'
 }
 
 export interface PackLogger {
@@ -91,7 +113,7 @@ const STAGING_DIR = '.downloads'
 export class PackManager {
   private manifest: PacksManifest | null = null
   private catalog: PacksStatus['catalog'] = 'idle'
-  private catalogError: PackErrorCode | null = null
+  private catalogError: CatalogErrorCode | null = null
   private catalogLoad: Promise<void> | null = null
   private installed: Promise<InstalledPacks> | null = null
   private readonly active = new Map<PackId, ActiveDownload>()
@@ -154,7 +176,12 @@ export class PackManager {
   private async startInstall(id: PackId): Promise<void> {
     this.failures.delete(id)
     if (!this.manifest) await this.refresh()
-    if (!this.manifest) return this.fail(id, this.catalogError ?? 'offline')
+    if (!this.manifest) {
+      // The list itself failed: that is the one error to show (status.catalogError), not a
+      // failed download of this pack, which never started.
+      this.options.log.warn('packs.install.refused', { id, error: this.catalogError })
+      return this.emit()
+    }
     const pack = this.manifest.packs.find((p) => p.id === id)
     if (!pack) return this.fail(id, 'unknown_pack')
     const platform = pack.platforms[this.options.platform]
@@ -388,18 +415,16 @@ export class PackManager {
     this.emit()
     try {
       const response = await this.options.fetch(this.options.manifestUrl, {})
-      if (!response.ok) throw new PackError('download_failed')
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {})
+        throw new CatalogHttpError(response.status)
+      }
       this.manifest = parseManifest(await response.json(), this.options.manifestUrl)
       this.catalog = 'ready'
       await this.findPartialDownloads()
     } catch (error) {
       this.catalog = 'error'
-      this.catalogError =
-        error instanceof PackError
-          ? error.code
-          : error instanceof ManifestError || error instanceof SyntaxError
-            ? 'manifest_invalid'
-            : 'offline'
+      this.catalogError = catalogErrorCode(error)
       this.options.log.warn('packs.manifest.failed', { code: this.catalogError, error })
     }
     this.emit()

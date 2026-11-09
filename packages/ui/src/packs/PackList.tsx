@@ -4,6 +4,7 @@
 import { formatFileSize, resolveLocale } from '@kamo/i18n'
 import { useState } from 'react'
 import { useLocale, useT, type Translate } from '../i18n.tsx'
+import { Mascot } from '../mascot/Mascot.tsx'
 import { InlineNotice, Row, SecondaryButton } from '../settings/parts.tsx'
 import type { PackActions, PackView, PacksView } from './types.ts'
 
@@ -17,6 +18,24 @@ const ERROR_KEYS: Record<string, string> = {
   pack_busy: 'packs.errors.packBusy',
   install_failed: 'packs.errors.installFailed',
   unknown_pack: 'packs.errors.unknownPack',
+  catalog_unpublished: 'packs.catalog.unpublished',
+  catalog_failed: 'packs.catalog.failed',
+}
+
+/** Why the list of packs did not load (main's `catalogError`): a calm sentence each. */
+const CATALOG_KEYS: Record<string, { title: string; body: string }> = {
+  catalog_unpublished: {
+    title: 'packs.catalog.titles.unpublished',
+    body: 'packs.catalog.unpublished',
+  },
+  offline: { title: 'packs.catalog.titles.offline', body: 'packs.catalog.offline' },
+  manifest_invalid: { title: 'packs.catalog.titles.failed', body: 'packs.errors.manifestInvalid' },
+  catalog_failed: { title: 'packs.catalog.titles.failed', body: 'packs.catalog.failed' },
+}
+
+export function catalogErrorText(t: Translate, code: string): { title: string; body: string } {
+  const keys = CATALOG_KEYS[code] ?? CATALOG_KEYS.catalog_failed!
+  return { title: t(keys.title), body: t(keys.body) }
 }
 
 export function packErrorText(
@@ -100,10 +119,13 @@ export function PackRow({
   pack,
   actions,
   showHint = true,
+  catalogUnavailable = false,
 }: {
   pack: PackView
   actions: PackActions
   showHint?: boolean
+  /** The list of packs failed to load: no Download, and no size it cannot vouch for. */
+  catalogUnavailable?: boolean
 }) {
   const t = useT()
   const size = useFileSize()
@@ -112,11 +134,12 @@ export function PackRow({
   const name = packName(t, pack)
   const busy = pack.state === 'downloading' || pack.state === 'verifying'
   const shownError = error ?? pack.error
+  const unknown = catalogUnavailable && pack.state === 'not_installed' && !pack.sizeExact
 
   const buttons = (() => {
     switch (pack.state) {
       case 'not_installed':
-        return pack.error === 'unsupported_platform' ? null : (
+        return pack.error === 'unsupported_platform' || unknown ? null : (
           <SecondaryButton onClick={() => actions.onInstall(pack.id)}>
             {t('packs.install')}
           </SecondaryButton>
@@ -172,8 +195,12 @@ export function PackRow({
           <>
             {showHint && <span className="block">{packHint(t, pack)}</span>}
             <span className="block">
-              <PackSize pack={pack} />
-              {' · '}
+              {!unknown && (
+                <>
+                  <PackSize pack={pack} />
+                  {' · '}
+                </>
+              )}
               {statusText(t, pack)}
             </span>
           </>
@@ -215,8 +242,11 @@ export function PackRow({
                 })}
           </p>
           <div className="flex gap-sm">
-            <SecondaryButton onClick={() => setConfirm(null)}>{t('common.cancel')}</SecondaryButton>
+            <SecondaryButton raised onClick={() => setConfirm(null)}>
+              {t('common.cancel')}
+            </SecondaryButton>
             <SecondaryButton
+              raised
               onClick={() => {
                 setConfirm(null)
                 setError(null)
@@ -233,17 +263,47 @@ export function PackRow({
   )
 }
 
-/** Loading / error line for the list of packs on GitHub. */
-export function CatalogNotice({ packs, onRetry }: { packs: PacksView; onRetry(): void }) {
+/**
+ * Loading line, or the one notice for a list of packs that did not load (not published yet,
+ * offline, unreadable), with its single "Try again". Calm: an unpublished list is not an error.
+ */
+export function CatalogNotice({
+  packs,
+  onRetry,
+  mascot = false,
+  body,
+}: {
+  packs: PacksView
+  onRetry(): void
+  /** Kamo looking aside, for the friendly empty state of an offer. */
+  mascot?: boolean
+  /** Replaces the default sentence (e.g. the transcription offer names its packs). */
+  body?: (code: string) => string | null
+}) {
   const t = useT()
   if (packs.catalog === 'loading') {
     return <InlineNotice tone="info">{t('packs.catalog.loading')}</InlineNotice>
   }
   if (packs.catalog !== 'error') return null
+  const code = packs.catalogError ?? 'offline'
+  const text = catalogErrorText(t, code)
   return (
-    <div className="flex flex-wrap items-center gap-sm">
-      <InlineNotice tone="error">{packErrorText(t, packs.catalogError ?? 'offline')}</InlineNotice>
-      <SecondaryButton onClick={onRetry}>{t('common.retry')}</SecondaryButton>
+    <div
+      role={code === 'catalog_unpublished' ? 'status' : 'alert'}
+      data-testid="packs-catalog-error"
+      data-code={code}
+      className="flex items-center gap-md rounded-md bg-surface-raised p-md"
+    >
+      {mascot && <Mascot pose="head-look-side" size={64} className="shrink-0" />}
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-xs">
+        <p className="text-title">{text.title}</p>
+        <p className="text-body text-on-surface-muted">{body?.(code) ?? text.body}</p>
+        <div className="pt-xs">
+          <SecondaryButton raised onClick={onRetry}>
+            {t('common.retry')}
+          </SecondaryButton>
+        </div>
+      </div>
     </div>
   )
 }
