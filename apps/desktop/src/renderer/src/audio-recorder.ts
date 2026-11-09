@@ -32,6 +32,8 @@ interface OpenSource {
   level: number
   /** Microphone only: the device asked for (null = system default). */
   deviceId: string | null
+  /** Microphone only: opened with noise suppression. */
+  noiseSuppression: boolean
   /** Input latency the browser reports for this device, in ms (0 when unknown). */
   latencyMs: number
 }
@@ -71,7 +73,12 @@ function close(track: AudioTrackName): void {
   for (const t of source.stream.getTracks()) t.stop()
 }
 
-function attach(track: AudioTrackName, stream: MediaStream, deviceId: string | null): void {
+function attach(
+  track: AudioTrackName,
+  stream: MediaStream,
+  deviceId: string | null,
+  noiseSuppression = false,
+): void {
   const ctx = audioContext()
   const node = ctx.createMediaStreamSource(stream)
   const analyser = ctx.createAnalyser()
@@ -86,6 +93,7 @@ function attach(track: AudioTrackName, stream: MediaStream, deviceId: string | n
     samples: new Float32Array(analyser.fftSize),
     level: 0,
     deviceId,
+    noiseSuppression,
     latencyMs: typeof latency === 'number' && latency > 0 ? latency * 1000 : 0,
   }
   audioTrack?.addEventListener('ended', () => {
@@ -104,13 +112,14 @@ function failureOf(error: unknown): 'denied' | 'unavailable' {
   return name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : 'unavailable'
 }
 
-async function openMic(deviceId: string | null): Promise<void> {
+async function openMic(deviceId: string | null, noiseSuppression: boolean): Promise<void> {
   // Chromium's voice-call processing is on by default. Automatic gain control pumped the
   // noise floor of a quiet (Bluetooth) microphone up and down, heard as clicks and seen as a
   // jumping meter while nobody spoke; the Windows meter of the same mic stayed flat. Echo
   // cancellation adds artifacts while the computer sound is captured too, and Kamo plays no
-  // sound of its own. Noise suppression stays: it removes hiss without pumping.
-  const processing = { autoGainControl: false, echoCancellation: false, noiseSuppression: true }
+  // sound of its own. Noise suppression removes hiss without pumping; it is on by default and
+  // the user may turn it off (Home "Audio settings") for music or a voice it muffles.
+  const processing = { autoGainControl: false, echoCancellation: false, noiseSuppression }
   const constraints = (id: string | null): MediaStreamConstraints => ({
     audio: id ? { deviceId: { exact: id }, ...processing } : processing,
     video: false,
@@ -124,7 +133,7 @@ async function openMic(deviceId: string | null): Promise<void> {
     if (!deviceId || (name !== 'OverconstrainedError' && name !== 'NotFoundError')) throw error
     stream = await navigator.mediaDevices.getUserMedia(constraints(null))
   }
-  attach('mic', stream, deviceId)
+  attach('mic', stream, deviceId, noiseSuppression)
 }
 
 async function openSystem(): Promise<void> {
@@ -160,9 +169,13 @@ async function refreshDevices(): Promise<void> {
 function configure(sources: AudioSources): Promise<void> {
   queue = queue.then(async () => {
     const wanted: Record<AudioTrackName, boolean> = { mic: sources.mic, system: sources.system }
+    const noiseSuppression = sources.micNoiseSuppression !== false
     for (const track of TRACKS) {
       const current = open[track]
-      const changed = track === 'mic' && current && current.deviceId !== sources.micDeviceId
+      const changed =
+        track === 'mic' &&
+        current &&
+        (current.deviceId !== sources.micDeviceId || current.noiseSuppression !== noiseSuppression)
       // Never swap the device under a running recorder.
       if ((!wanted[track] || changed) && !recording) close(track)
       if (!wanted[track]) {
@@ -174,7 +187,7 @@ function configure(sources: AudioSources): Promise<void> {
       status[track] = 'starting'
       pushStatus()
       try {
-        if (track === 'mic') await openMic(sources.micDeviceId)
+        if (track === 'mic') await openMic(sources.micDeviceId, noiseSuppression)
         else await openSystem()
         status[track] = 'live'
       } catch (error) {

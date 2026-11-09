@@ -40,6 +40,7 @@ describe('audioSourcesFromSettings', () => {
     expect(audioSourcesFromSettings(settings as never, { system: true })).toEqual({
       mic: true,
       micDeviceId: 'abc',
+      micNoiseSuppression: true,
       system: true,
     })
   })
@@ -50,10 +51,22 @@ describe('audioSourcesFromSettings', () => {
 
   it('is off by default, with the default microphone', () => {
     const sources = audioSourcesFromSettings({ version: 1 }, { system: true })
-    expect(sources).toEqual({ mic: false, micDeviceId: null, system: false })
+    expect(sources).toEqual({
+      mic: false,
+      micDeviceId: null,
+      micNoiseSuppression: true,
+      system: false,
+    })
     expect(hasAnySource(sources)).toBe(false)
     const fromEmpty = audioSourcesFromSettings({ version: 1, micDeviceId: '' }, { system: true })
     expect(fromEmpty.micDeviceId).toBeNull()
+  })
+
+  it('keeps noise suppression on unless it was turned off', () => {
+    const off = { version: 1, micNoiseSuppression: false } as const
+    expect(audioSourcesFromSettings(off, { system: true }).micNoiseSuppression).toBe(false)
+    const on = { version: 1, micNoiseSuppression: true } as const
+    expect(audioSourcesFromSettings(on, { system: true }).micNoiseSuppression).toBe(true)
   })
 })
 
@@ -74,6 +87,21 @@ describe('audio settings (F-01: toggles remembered)', () => {
     })
     expect(parseSettingsUpdate({ micDeviceId: '' })).toEqual({ micDeviceId: '' })
     expect(() => parseSettingsUpdate({ micEnabled: 'on' })).toThrow()
+  })
+
+  it('reads the noise suppression setting, dropping a broken value (F-04)', () => {
+    const off = parseSettings(JSON.stringify({ micNoiseSuppression: false }))
+    expect(publicSettings(off).micNoiseSuppression).toBe(false)
+    const broken = parseSettings(JSON.stringify({ micNoiseSuppression: 'no', micEnabled: true }))
+    expect(publicSettings(broken).micNoiseSuppression).toBeUndefined()
+    expect(publicSettings(broken).micEnabled).toBe(true)
+    expect(parseSettings(null).micNoiseSuppression).toBeUndefined()
+  })
+
+  it('accepts a noise suppression update and refuses wrong types', () => {
+    const update = parseSettingsUpdate({ micNoiseSuppression: false })
+    expect(mergeSettings({ version: 1 }, update)).toMatchObject({ micNoiseSuppression: false })
+    expect(() => parseSettingsUpdate({ micNoiseSuppression: 'off' })).toThrow()
   })
 })
 
@@ -112,6 +140,9 @@ describe('parseAudioSources', () => {
     expect(parseAudioSources(null)).toBeNull()
     const sources = { mic: true, micDeviceId: null, system: false }
     expect(parseAudioSources(sources)).toEqual(sources)
+    const quiet = { mic: true, micDeviceId: null, micNoiseSuppression: false, system: false }
+    expect(parseAudioSources(quiet)).toEqual(quiet)
+    expect(() => parseAudioSources({ ...quiet, micNoiseSuppression: 'no' })).toThrow()
     expect(() => parseAudioSources({ mic: true })).toThrow()
   })
 })

@@ -98,7 +98,10 @@
       "micUnavailable": "Nenhum microfone encontrado. As gravações vão sair sem voz.",
       "systemUnavailable": "O Kamo não consegue captar o som do computador agora. As gravações vão sair sem ele.",
       "systemSoon": "Requer macOS 13 ou mais recente.",
-      "systemWithVideo": "Gravado junto com o vídeo. Sem medidor de nível no Mac."
+      "systemWithVideo": "Gravado junto com o vídeo. Sem medidor de nível no Mac.",
+      "settings": "Ajustes de áudio",
+      "noiseSuppression": "Supressão de ruído",
+      "noiseSuppressionHint": "Desligue para música ou se a sua voz soar abafada."
     },
     "camera": {
       "sectionTitle": "Som e câmera",
@@ -108,7 +111,8 @@
       "name": "Câmera {index}",
       "preview": "Prévia da câmera",
       "denied": "O Kamo não consegue usar a câmera. Permita nas configurações do sistema; até lá, as gravações ficam sem câmera.",
-      "unavailable": "Nenhuma câmera encontrada, ou outro app está usando a câmera. As gravações ficarão sem câmera."
+      "unavailable": "Nenhuma câmera encontrada, ou outro app está usando a câmera. As gravações ficarão sem câmera.",
+      "offHint": "Ligue para ver a prévia"
     },
     "fixPermission": "Configurar",
     "recordDisplay": "Gravar · {display}",

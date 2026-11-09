@@ -98,7 +98,10 @@
       "micUnavailable": "Kein Mikrofon gefunden. Aufnahmen haben keine Stimme.",
       "systemUnavailable": "Kamo kann den Computerton gerade nicht aufnehmen. Aufnahmen haben keinen Computerton.",
       "systemSoon": "Benötigt macOS 13 oder neuer.",
-      "systemWithVideo": "Wird mit dem Video aufgenommen. Auf dem Mac ohne Pegelanzeige."
+      "systemWithVideo": "Wird mit dem Video aufgenommen. Auf dem Mac ohne Pegelanzeige.",
+      "settings": "Audioeinstellungen",
+      "noiseSuppression": "Rauschunterdrückung",
+      "noiseSuppressionHint": "Schalte sie für Musik aus oder wenn deine Stimme dumpf klingt."
     },
     "camera": {
       "sectionTitle": "Ton und Kamera",
@@ -108,7 +111,8 @@
       "name": "Kamera {index}",
       "preview": "Kameravorschau",
       "denied": "Kamo kann die Kamera nicht nutzen. Erlaube es in deinen Systemeinstellungen; bis dahin haben Aufnahmen keine Kamera.",
-      "unavailable": "Keine Kamera gefunden, oder eine andere App nutzt sie. Aufnahmen haben keine Kamera."
+      "unavailable": "Keine Kamera gefunden, oder eine andere App nutzt sie. Aufnahmen haben keine Kamera.",
+      "offHint": "Einschalten, um die Vorschau zu sehen"
     },
     "fixPermission": "Einrichten",
     "recordDisplay": "Aufnehmen · {display}",

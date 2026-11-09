@@ -98,7 +98,10 @@
       "micUnavailable": "마이크를 찾을 수 없어요. 녹화에 목소리가 들어가지 않아요.",
       "systemUnavailable": "지금은 Kamo가 컴퓨터 소리를 캡처할 수 없어요. 녹화에 컴퓨터 소리가 들어가지 않아요.",
       "systemSoon": "macOS 13 이상이 필요해요.",
-      "systemWithVideo": "영상과 함께 녹음돼요. Mac에서는 레벨 미터가 없어요."
+      "systemWithVideo": "영상과 함께 녹음돼요. Mac에서는 레벨 미터가 없어요.",
+      "settings": "오디오 설정",
+      "noiseSuppression": "소음 억제",
+      "noiseSuppressionHint": "음악을 녹음하거나 목소리가 먹먹하게 들리면 끄세요."
     },
     "camera": {
       "sectionTitle": "소리와 카메라",
@@ -108,7 +111,8 @@
       "name": "카메라 {index}",
       "preview": "카메라 미리보기",
       "denied": "Kamo가 카메라를 사용할 수 없어요. 시스템 설정에서 허용하세요. 그 전까지는 녹화에 카메라가 들어가지 않아요.",
-      "unavailable": "카메라를 찾을 수 없거나 다른 앱이 사용 중이에요. 녹화에 카메라가 들어가지 않아요."
+      "unavailable": "카메라를 찾을 수 없거나 다른 앱이 사용 중이에요. 녹화에 카메라가 들어가지 않아요.",
+      "offHint": "켜면 미리보기가 보여요"
     },
     "fixPermission": "설정하기",
     "recordDisplay": "녹화 · {display}",

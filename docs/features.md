@@ -112,6 +112,7 @@
 - [x] Kamo plays no sound of its own during recording, so computer sound never captures the app (Windows loopback records the whole system, including Kamo; excluding only its own process would require a native module and Windows 10 2004+, which is not worth it)
 - [ ] Offset between audio and video: at most 40ms in the exported video — offsets are recorded per track (`offsetMs`), not measured yet
 - [x] Lets the user choose the microphone when there is more than one
+- [x] Noise suppression on the microphone, on by default, can be turned off in Home's "Audio settings" (for music or a muffled voice); changing it reopens the microphone on Home, never during a recording (automatic gain and echo cancellation stay off)
 - [x] In the Editor, volume and mute per track (microphone and computer), applied on export
 
 **Edge cases**

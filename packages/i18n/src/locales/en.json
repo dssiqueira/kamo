@@ -98,7 +98,10 @@
       "micUnavailable": "No microphone found. Recordings will have no voice.",
       "systemUnavailable": "Kamo can't capture the computer sound right now. Recordings will have no computer sound.",
       "systemSoon": "Needs macOS 13 or later.",
-      "systemWithVideo": "Recorded with the video. No level meter on Mac."
+      "systemWithVideo": "Recorded with the video. No level meter on Mac.",
+      "settings": "Audio settings",
+      "noiseSuppression": "Noise suppression",
+      "noiseSuppressionHint": "Turn it off for music or if your voice sounds muffled."
     },
     "camera": {
       "sectionTitle": "Sound and camera",
@@ -108,7 +111,8 @@
       "name": "Camera {index}",
       "preview": "Camera preview",
       "denied": "Kamo can't use the camera. Allow it in your system settings; until then, recordings have no camera.",
-      "unavailable": "No camera found, or another app is using it. Recordings will have no camera."
+      "unavailable": "No camera found, or another app is using it. Recordings will have no camera.",
+      "offHint": "Turn it on to see the preview"
     },
     "fixPermission": "Set it up",
     "recordDisplay": "Record · {display}",

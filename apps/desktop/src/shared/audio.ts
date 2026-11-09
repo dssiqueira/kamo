@@ -7,6 +7,11 @@ export type AudioTrackName = 'mic' | 'system'
 export interface AudioSources {
   mic: boolean
   micDeviceId: string | null
+  /**
+   * Chromium noise suppression on the microphone (F-04, Home "Audio settings"). Absent: on.
+   * Changing it reopens the microphone, never during a recording.
+   */
+  micNoiseSuppression?: boolean
   system: boolean
 }
 

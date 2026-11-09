@@ -98,7 +98,10 @@
       "micUnavailable": "未找到麦克风。录制将没有人声。",
       "systemUnavailable": "Kamo 目前无法捕获电脑声音。录制将不包含电脑声音。",
       "systemSoon": "需要 macOS 13 或更高版本。",
-      "systemWithVideo": "与视频一起录制。Mac 上没有音量指示。"
+      "systemWithVideo": "与视频一起录制。Mac 上没有音量指示。",
+      "settings": "音频设置",
+      "noiseSuppression": "降噪",
+      "noiseSuppressionHint": "录制音乐或声音发闷时请关闭。"
     },
     "camera": {
       "sectionTitle": "声音和摄像头",
@@ -108,7 +111,8 @@
       "name": "摄像头 {index}",
       "preview": "摄像头预览",
       "denied": "Kamo 无法使用摄像头。请在系统设置中允许；在此之前，录制内容将不包含摄像头画面。",
-      "unavailable": "未找到摄像头，或其他应用正在使用它。录制内容将不包含摄像头画面。"
+      "unavailable": "未找到摄像头，或其他应用正在使用它。录制内容将不包含摄像头画面。",
+      "offHint": "打开即可查看预览"
     },
     "fixPermission": "去设置",
     "recordDisplay": "录制 · {display}",

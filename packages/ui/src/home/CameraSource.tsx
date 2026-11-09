@@ -1,7 +1,13 @@
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useT } from '../i18n.tsx'
-import { FOCUS_RING } from '../primitives/controls.tsx'
-import { SourceSwitch } from './SourceSwitch.tsx'
+import { AlertIcon, VideoCameraIcon } from '../primitives/icons.tsx'
+import {
+  DevicePicker,
+  SOURCE_CARD,
+  SourceCardHeader,
+  SourceMessageLine,
+  type SourceMessage,
+} from './SourceCard.tsx'
 
 export interface CameraOption {
   id: string
@@ -32,67 +38,86 @@ export interface CameraSourceProps {
   stream: MediaStream | null
 }
 
-/** Home webcam card (A-03): toggle, camera picker and a small round live preview. */
+/** Home webcam card (A-03): toggle, a wide live preview and the camera picker under it. */
 export function CameraSource(props: CameraSourceProps) {
   const t = useT()
-  const labelId = useId()
-  const selectId = useId()
-  const { enabled, status, cameras, cameraId, stream } = props
-  // A remembered camera that is not plugged in reads as the default.
-  const selected = cameras.some((c) => c.id === cameraId) ? (cameraId ?? '') : ''
-  const message =
-    !enabled || (status !== 'denied' && status !== 'unavailable')
-      ? null
-      : t(status === 'denied' ? 'home.camera.denied' : 'home.camera.unavailable')
+  const { enabled, status, stream } = props
+  const failed = enabled && (status === 'denied' || status === 'unavailable')
+  const message: SourceMessage = failed
+    ? {
+        tone: 'warning',
+        text: t(status === 'denied' ? 'home.camera.denied' : 'home.camera.unavailable'),
+      }
+    : null
+  const live = enabled && status === 'live' && stream !== null
 
   return (
-    <div className="flex w-[240px] flex-col gap-sm rounded-lg border-2 border-border bg-surface p-sm">
-      <div className="flex items-center justify-between gap-sm">
-        <span id={labelId} className="min-w-0 truncate text-title" title={t('home.camera.title')}>
-          {t('home.camera.title')}
-        </span>
-        <SourceSwitch on={enabled} labelId={labelId} onClick={() => props.onToggle(!enabled)} />
+    <div className={SOURCE_CARD}>
+      <SourceCardHeader
+        icon={<VideoCameraIcon size={18} />}
+        title={t('home.camera.title')}
+        on={enabled}
+        onToggle={() => props.onToggle(!enabled)}
+      />
+      <div className="relative flex aspect-[2/1] w-full items-center justify-center overflow-hidden rounded-md bg-surface-raised">
+        {live ? (
+          <StreamVideo
+            stream={stream}
+            label={t('home.camera.preview')}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className={`flex flex-col items-center gap-xs px-sm text-center ${failed ? 'text-warning' : 'text-on-surface-muted'}`}
+          >
+            {failed ? <AlertIcon size={22} /> : <VideoCameraIcon size={22} />}
+          </span>
+        )}
+        {!enabled && (
+          <span className="absolute inset-x-0 bottom-0 truncate px-sm pb-xs text-center text-label text-on-surface-muted">
+            {t('home.camera.offHint')}
+          </span>
+        )}
       </div>
       {enabled && (
-        <div className="flex justify-center">
-          <CameraPreview
-            stream={status === 'live' ? stream : null}
-            label={t('home.camera.preview')}
-          />
-        </div>
+        <DevicePicker
+          devices={props.cameras}
+          selectedId={props.cameraId}
+          label={t('home.camera.choose')}
+          defaultLabel={t('home.camera.default')}
+          nameOf={(index) => t('home.camera.name', { index })}
+          onSelect={props.onSelectCamera}
+        />
       )}
-      {enabled && cameras.length > 1 && (
-        <>
-          <label htmlFor={selectId} className="sr-only">
-            {t('home.camera.choose')}
-          </label>
-          <select
-            id={selectId}
-            value={selected}
-            onChange={(event) => props.onSelectCamera(event.target.value || null)}
-            className={`w-full truncate rounded-md border border-border bg-surface px-sm py-xs text-body ${FOCUS_RING}`}
-          >
-            <option value="">{t('home.camera.default')}</option>
-            {cameras.map((c, index) => (
-              <option key={c.id} value={c.id}>
-                {c.label || t('home.camera.name', { index: index + 1 })}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
-      {message && (
-        <p role="alert" className="text-label text-warning">
-          {message}
-        </p>
-      )}
+      <SourceMessageLine message={message} />
     </div>
   )
 }
 
+/** A muted live video of a stream (the camera stream has no audio). */
+function StreamVideo({
+  stream,
+  label,
+  className,
+}: {
+  stream: MediaStream | null
+  label: string
+  className: string
+}) {
+  const video = useRef<HTMLVideoElement>(null)
+  useEffect(() => {
+    const element = video.current
+    if (!element) return
+    element.srcObject = stream
+    if (stream) void element.play().catch(() => {})
+  }, [stream])
+  return <video ref={video} aria-label={label} muted autoPlay playsInline className={className} />
+}
+
 /**
  * Round, like the bubble it becomes in the video. Muted: the camera stream has no audio. The
- * extension popup shows it smaller.
+ * extension popup shows it.
  */
 export function CameraPreview({
   stream,
@@ -103,27 +128,13 @@ export function CameraPreview({
   label: string
   size?: number
 }) {
-  const video = useRef<HTMLVideoElement>(null)
-  useEffect(() => {
-    const element = video.current
-    if (!element) return
-    element.srcObject = stream
-    if (stream) void element.play().catch(() => {})
-  }, [stream])
   return (
     <div
       className="shrink-0 overflow-hidden rounded-full bg-surface-raised"
       style={{ width: size, height: size }}
     >
       {stream && (
-        <video
-          ref={video}
-          aria-label={label}
-          muted
-          autoPlay
-          playsInline
-          className="h-full w-full object-cover"
-        />
+        <StreamVideo stream={stream} label={label} className="h-full w-full object-cover" />
       )}
     </div>
   )

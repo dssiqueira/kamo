@@ -363,6 +363,8 @@ export interface AppSettings {
   micEnabled?: boolean
   /** Absent or '': the system default microphone. */
   micDeviceId?: string
+  /** F-04: noise suppression on the microphone (Home "Audio settings"). Absent: on. */
+  micNoiseSuppression?: boolean
   systemAudioEnabled?: boolean
   /** Home webcam toggle (A-03). Off by default. */
   cameraEnabled?: boolean

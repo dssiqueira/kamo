@@ -17,6 +17,7 @@ export function audioSourcesFromSettings(
   return {
     mic: settings.micEnabled === true,
     micDeviceId: settings.micDeviceId ? settings.micDeviceId : null,
+    micNoiseSuppression: settings.micNoiseSuppression !== false,
     system: support.system && settings.systemAudioEnabled === true,
   }
 }
@@ -51,6 +52,7 @@ const Level = z.number().min(0).max(1)
 export const AudioSourcesSchema = z.strictObject({
   mic: z.boolean(),
   micDeviceId: z.string().max(512).nullable(),
+  micNoiseSuppression: z.boolean().optional(),
   system: z.boolean(),
 })
 
@@ -95,7 +97,7 @@ export function parseAudioSources(value: unknown): AudioSources | null {
   if (value === null) return null
   const result = AudioSourcesSchema.safeParse(value)
   if (!result.success) throw new Error('invalid audio sources')
-  return result.data
+  return result.data as AudioSources
 }
 
 export function parseTrack(value: unknown): AudioTrackName {

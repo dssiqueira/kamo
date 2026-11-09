@@ -65,6 +65,7 @@ const StoredSettings = z.looseObject({
   // F-04 audio toggles and the chosen microphone (F-01: toggles are remembered).
   micEnabled: z.boolean().optional().catch(undefined),
   micDeviceId: DeviceId.optional().catch(undefined),
+  micNoiseSuppression: z.boolean().optional().catch(undefined),
   systemAudioEnabled: z.boolean().optional().catch(undefined),
   // A-03 webcam toggle and the chosen camera ('' = the system default).
   cameraEnabled: z.boolean().optional().catch(undefined),
@@ -97,6 +98,7 @@ export const SettingsUpdateSchema = z.strictObject({
   onboardingDone: z.boolean().optional(),
   micEnabled: z.boolean().optional(),
   micDeviceId: DeviceId.optional(),
+  micNoiseSuppression: z.boolean().optional(),
   systemAudioEnabled: z.boolean().optional(),
   cameraEnabled: z.boolean().optional(),
   cameraDeviceId: DeviceId.optional(),
@@ -190,6 +192,7 @@ const PUBLIC_KEYS = [
   'onboardingDone',
   'micEnabled',
   'micDeviceId',
+  'micNoiseSuppression',
   'systemAudioEnabled',
   'cameraEnabled',
   'cameraDeviceId',

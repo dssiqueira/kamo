@@ -55,6 +55,10 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
   - while recording, the line alone stays around the recorded area (never in the video, clicks go through it) and goes away on stop
 - The choice is remembered and the Record button says what it records ("Record · Notes", "Record · Selection 1280 × 720")
 - **Toggles:** microphone, computer sound, webcam (v0.4), show cursor
+- **Sound and camera:** three cards of the same height in a row (two rows when the window is narrow), each with its icon, title and switch:
+  - **Microphone:** the microphone picker (with one microphone, its name), a segmented level meter green up to the live level, and "Audio settings ›" at the bottom, which opens a small popover with **Noise suppression** (on by default; off for music or a muffled voice; changing it reopens the microphone)
+  - **Computer sound:** a waveform of rounded bars, taller in the middle with a lighter tail on the right, springing with the live level; calm dots when silent or off, a still shape with reduced motion. Mac: no waveform, a note that it is recorded with the video
+  - **Camera:** a wide live preview with rounded corners, the camera picker under it; off, denied or unavailable show a placeholder (and the warning under the picker)
 - **States:**
   - empty (no projects): only the recording block, with an encouraging line
   - with projects: list of the latest ones, with thumbnail, name, duration and date

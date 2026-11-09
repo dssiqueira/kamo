@@ -98,7 +98,10 @@
       "micUnavailable": "マイクが見つかりません。録画に声は入りません。",
       "systemUnavailable": "Kamo は今パソコンの音を取り込めません。録画にパソコンの音は入りません。",
       "systemSoon": "macOS 13 以降が必要です。",
-      "systemWithVideo": "動画と一緒に録音されます。Mac ではレベルメーターは表示されません。"
+      "systemWithVideo": "動画と一緒に録音されます。Mac ではレベルメーターは表示されません。",
+      "settings": "オーディオ設定",
+      "noiseSuppression": "ノイズ抑制",
+      "noiseSuppressionHint": "音楽を録るときや、声がこもって聞こえるときはオフにしてください。"
     },
     "camera": {
       "sectionTitle": "サウンドとカメラ",
@@ -108,7 +111,8 @@
       "name": "カメラ {index}",
       "preview": "カメラのプレビュー",
       "denied": "Kamo はカメラを使用できません。システム設定で許可してください。許可されるまで、録画にカメラは含まれません。",
-      "unavailable": "カメラが見つからないか、別のアプリが使用中です。録画にカメラは含まれません。"
+      "unavailable": "カメラが見つからないか、別のアプリが使用中です。録画にカメラは含まれません。",
+      "offHint": "オンにするとプレビューが表示されます"
     },
     "fixPermission": "設定する",
     "recordDisplay": "録画 · {display}",

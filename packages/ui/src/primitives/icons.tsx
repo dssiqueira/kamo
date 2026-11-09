@@ -217,3 +217,59 @@ export function LockIcon({ size }: { size?: number | undefined }) {
     </Icon>
   )
 }
+
+// Home's sound and camera cards (F-04, A-03).
+export function MicIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <rect x="5.75" y="1.75" width="4.5" height="7.5" rx="2.25" />
+      <path d="M3.5 7.5a4.5 4.5 0 0 0 9 0M8 12v2.25" />
+    </Icon>
+  )
+}
+
+export function SpeakerWavesIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <path d="M2 6.25v3.5h2.5L8 12.5v-9L4.5 6.25H2Z" />
+      <path d="M10.5 6a2.75 2.75 0 0 1 0 4M12.5 4a5.5 5.5 0 0 1 0 8" />
+    </Icon>
+  )
+}
+
+export function VideoCameraIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <rect x="1.75" y="4" width="9" height="8" rx="1.5" />
+      <path d="m10.75 7 3.5-2v6l-3.5-2" />
+    </Icon>
+  )
+}
+
+/** Two sliders: "settings" of one thing (Home's audio settings). */
+export function SlidersIcon({ size }: { size?: number | undefined }) {
+  return (
+    <Icon size={size}>
+      <path d="M2 5h3.5M9 5h5M2 11h7.5M13 11h1" />
+      <circle cx="7.25" cy="5" r="1.75" />
+      <circle cx="11.25" cy="11" r="1.75" />
+    </Icon>
+  )
+}
+
+/** Points to the end of the line ("opens more"). */
+export function ChevronEndIcon() {
+  return (
+    <Icon>
+      <path d="m6.25 3.5 4.5 4.5-4.5 4.5" />
+    </Icon>
+  )
+}
+
+export function ChevronDownIcon() {
+  return (
+    <Icon>
+      <path d="m3.5 6.25 4.5 4.5 4.5-4.5" />
+    </Icon>
+  )
+}

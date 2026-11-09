@@ -5,6 +5,8 @@ import type { AudioSourceStatus, AudioSources, AudioStatus } from '../../shared/
 interface Toggles {
   mic: boolean
   micDeviceId: string | null
+  /** F-04 "Audio settings": on unless turned off. */
+  micNoiseSuppression: boolean
   system: boolean
 }
 
@@ -29,10 +31,15 @@ export function useHomeAudio(): AudioSourcesProps | null {
         setToggles({
           mic: settings.micEnabled === true,
           micDeviceId: settings.micDeviceId || null,
+          micNoiseSuppression: settings.micNoiseSuppression !== false,
           system: support.system && settings.systemAudioEnabled === true,
         })
       })
-      .catch(() => !cancelled && setToggles({ mic: false, micDeviceId: null, system: false }))
+      .catch(
+        () =>
+          !cancelled &&
+          setToggles({ mic: false, micDeviceId: null, micNoiseSuppression: true, system: false }),
+      )
     const unsubscribe = window.kamo.onAudioStatus(setStatus)
     return () => {
       cancelled = true
@@ -40,7 +47,7 @@ export function useHomeAudio(): AudioSourcesProps | null {
     }
   }, [])
 
-  // The meters follow the toggles; leaving Home closes the devices (main also does it when
+  // The meters follow the toggles (a new noise suppression reopens the microphone); leaving Home closes the devices (main also does it when
   // the page navigates away, since unmount effects do not run then).
   useEffect(() => {
     if (!toggles) return
@@ -64,6 +71,9 @@ export function useHomeAudio(): AudioSourcesProps | null {
         ...(next.mic !== undefined ? { micEnabled: next.mic } : {}),
         ...(next.system !== undefined ? { systemAudioEnabled: next.system } : {}),
         ...(next.micDeviceId !== undefined ? { micDeviceId: next.micDeviceId ?? '' } : {}),
+        ...(next.micNoiseSuppression !== undefined
+          ? { micNoiseSuppression: next.micNoiseSuppression }
+          : {}),
       })
       .catch(() => {})
   }
@@ -94,5 +104,9 @@ export function useHomeAudio(): AudioSourcesProps | null {
     microphoneId: toggles.micDeviceId,
     onSelectMicrophone: (id) => update({ micDeviceId: id }),
     subscribeLevels,
+    noiseSuppression: {
+      value: toggles.micNoiseSuppression,
+      onChange: (on) => update({ micNoiseSuppression: on }),
+    },
   }
 }

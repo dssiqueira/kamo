@@ -1,6 +1,6 @@
 import { FOCUS_RING } from '../primitives/controls.tsx'
 
-/** The on/off switch of a source card (the camera card uses it too). */
+/** The on/off switch of Home's source cards and options: green when on, like the cards' icons. */
 export function SourceSwitch(props: {
   on: boolean
   labelId: string
@@ -17,7 +17,7 @@ export function SourceSwitch(props: {
       disabled={disabled}
       onClick={onClick}
       className={`relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors duration-[120ms] disabled:opacity-50 ${
-        on ? 'bg-tertiary' : 'bg-border'
+        on ? 'bg-primary-strong' : 'bg-border'
       } ${FOCUS_RING}`}
     >
       <span
