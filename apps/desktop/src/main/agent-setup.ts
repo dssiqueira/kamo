@@ -8,6 +8,14 @@ import { dirname, join } from 'node:path'
 export const MCP_DOCS_URL = 'https://github.com/dssiqueira/kamo/tree/main/apps/mcp#readme'
 
 /**
+ * Where Settings suggests cloning the repository to build the server from source while
+ * `@kamo/mcp` is not on npm: `kamo` in the user's home folder.
+ */
+export function sourceCheckoutDir(home: string): string {
+  return join(home, 'kamo')
+}
+
+/**
  * `apps/mcp/dist/cli.js` next to this app in the repository, looking up from the app path
  * (apps/desktop, or a build folder inside it). Null when packaged or not built.
  */

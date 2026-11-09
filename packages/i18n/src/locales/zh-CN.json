@@ -448,6 +448,9 @@
       "devTitle": "使用开发版本？",
       "devHint": "运行在此仓库中构建的服务器（pnpm --filter @kamo/mcp build），而不是 npm 包。",
       "notPublished": "npm 包 @kamo/mcp 尚未发布。在此之前，请将智能体连接到 Kamo 的开发版本（请参阅说明）。",
+      "fromSource": "npm 包 @kamo/mcp 尚未发布。在此之前，请先从 Kamo 的源代码构建一次服务器（需要 Git、Node.js 24 或更新版本以及 pnpm），然后将其添加到你的智能体。",
+      "sourceBuild": "构建服务器（仅需一次）",
+      "sourceHint": "克隆到了其他文件夹？请修改命令中的文件夹。以后要更新时，运行 git pull，然后再次运行最后两行。",
       "unsafeFolder": "项目文件夹的名称包含 Windows 命令行可能会改变的字符（% & | < > ^）。连接智能体之前，请将项目文件夹换成不含这些字符的文件夹。"
     }
   },

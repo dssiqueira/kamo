@@ -17,7 +17,8 @@ function DesktopSettings() {
   const [agentSetup, setAgentSetup] = useState<{
     devServerPath: string | null
     mcpVersion: string | null
-  }>({ devServerPath: null, mcpVersion: null })
+    sourceDir: string | null
+  }>({ devServerPath: null, mcpVersion: null, sourceDir: null })
   const [permissions] = usePermissions()
   const update = useUpdateStatus()
   // A-07: the list of packs loads when the Packs section comes into view.
@@ -91,6 +92,7 @@ function DesktopSettings() {
       agent={{
         devServerPath: agentSetup.devServerPath,
         mcpVersion: agentSetup.mcpVersion,
+        sourceDir: agentSetup.sourceDir,
         onOpenDocs: () => void window.kamo.openAgentDocs().catch(() => {}),
       }}
       onShowTour={() => void window.kamo.openOnboarding({ tour: true }).catch(() => {})}

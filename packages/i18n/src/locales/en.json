@@ -448,6 +448,9 @@
       "devTitle": "Using a development build?",
       "devHint": "Runs the server built in this repository (pnpm --filter @kamo/mcp build) instead of the npm package.",
       "notPublished": "The @kamo/mcp npm package is not published yet. Until it is, connect an agent to a development build of Kamo (see the instructions).",
+      "fromSource": "The @kamo/mcp npm package is not published yet. Until it is, build the server from Kamo's source code once (you need Git, Node.js 24 or newer and pnpm), then add it to your agent.",
+      "sourceBuild": "Build the server (once)",
+      "sourceHint": "Cloned it somewhere else? Change the folder in the commands. To update it later, run git pull and the last two lines again.",
       "unsafeFolder": "Your projects folder's name has a character (% & | < > ^) that Windows command lines can change. Move the projects folder to one without them before connecting an agent."
     }
   },

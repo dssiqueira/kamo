@@ -201,9 +201,14 @@ export interface KamoApi {
   // Connect to an agent (M-01, step 26).
   /**
    * devServerPath: apps/mcp/dist/cli.js in an unpackaged build (to try the MCP before npm);
-   * mcpVersion: the @kamo/mcp version on npm to pin in the npx command, null while unpublished.
+   * mcpVersion: the @kamo/mcp version on npm to pin in the npx command, null while unpublished;
+   * sourceDir: where to clone the repository to build the server from source until then.
    */
-  getAgentSetup(): Promise<{ devServerPath: string | null; mcpVersion: string | null }>
+  getAgentSetup(): Promise<{
+    devServerPath: string | null
+    mcpVersion: string | null
+    sourceDir: string | null
+  }>
   /** Opens the local MCP instructions (apps/mcp/README.md) in the browser. */
   openAgentDocs(): Promise<void>
 

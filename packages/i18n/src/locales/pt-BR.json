@@ -448,6 +448,9 @@
       "devTitle": "Usando uma versão de desenvolvimento?",
       "devHint": "Roda o servidor compilado neste repositório (pnpm --filter @kamo/mcp build) em vez do pacote do npm.",
       "notPublished": "O pacote npm @kamo/mcp ainda não foi publicado. Até lá, conecte um agente a uma versão de desenvolvimento do Kamo (veja as instruções).",
+      "fromSource": "O pacote npm @kamo/mcp ainda não foi publicado. Até lá, compile o servidor a partir do código-fonte do Kamo uma vez (você precisa de Git, Node.js 24 ou mais novo e pnpm) e depois adicione-o ao seu agente.",
+      "sourceBuild": "Compilar o servidor (uma vez)",
+      "sourceHint": "Clonou em outra pasta? Troque a pasta nos comandos. Para atualizar depois, rode git pull e as duas últimas linhas de novo.",
       "unsafeFolder": "O nome da sua pasta de projetos tem um caractere (% & | < > ^) que a linha de comando do Windows pode alterar. Mude a pasta de projetos para uma sem esses caracteres antes de conectar um agente."
     }
   },

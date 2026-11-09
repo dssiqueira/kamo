@@ -7,6 +7,13 @@ import type { ShortcutPlatform } from './shortcut.ts'
 export const MCP_PACKAGE = '@kamo/mcp'
 /** Name the server is registered under in the agent. */
 export const MCP_SERVER_NAME = 'kamo'
+/** The public repository, cloned to build the server from source while it is not on npm. */
+export const KAMO_REPO_URL = 'https://github.com/dssiqueira/kamo.git'
+/**
+ * Node runs the built server from a checkout with this flag: in the repository, `@kamo/core`
+ * resolves to its TypeScript source, which plain type stripping cannot load.
+ */
+export const NODE_SOURCE_FLAG = '--experimental-transform-types'
 
 export interface AgentSetupInput {
   platform: ShortcutPlatform
@@ -22,6 +29,11 @@ export interface AgentSetupInput {
    * npx. Only offered by unpackaged builds of the app.
    */
   devServerPath?: string | null
+  /**
+   * Where the user is told to clone the repository to build the server from source (e.g.
+   * `~/kamo`): what a release offers while the package is not on npm.
+   */
+  sourceDir?: string | null
 }
 
 /**
@@ -60,17 +72,51 @@ export function canUseNpx(input: AgentSetupInput): boolean {
   return packageSpec(input.mcpVersion) !== null
 }
 
+/** True when only the from-source instructions apply: not on npm and no development build. */
+export function needsSourceBuild(input: AgentSetupInput): boolean {
+  return !canUseNpx(input) && !input.devServerPath && Boolean(input.sourceDir)
+}
+
+/** `<sourceDir>/apps/mcp/dist/cli.js`, with the platform's separator. */
+export function sourceServerPath(sourceDir: string, platform: ShortcutPlatform): string {
+  const sep = platform === 'windows' ? '\\' : '/'
+  const base = sourceDir.endsWith(sep) ? sourceDir.slice(0, -1) : sourceDir
+  return [base, 'apps', 'mcp', 'dist', 'cli.js'].join(sep)
+}
+
+/**
+ * The terminal lines that build the server from source: clone into `sourceDir`, install only
+ * what the server needs (no Electron) and compile it. Empty without a `sourceDir`.
+ */
+export function sourceBuildCommands(input: AgentSetupInput): string {
+  if (!input.sourceDir) return ''
+  const dir = shellQuote(input.sourceDir, input.platform)
+  return [
+    `git clone ${KAMO_REPO_URL} ${dir}`,
+    `cd ${dir}`,
+    `pnpm install --filter "${MCP_PACKAGE}..."`,
+    `pnpm --filter ${MCP_PACKAGE} build`,
+  ].join('\n')
+}
+
 /**
  * The server's command line: npx on Mac and Linux; on Windows through `cmd /c`, which native
  * Windows needs to start npx from Claude Code and most MCP clients. The development build
- * runs with Node when asked, or whenever the package is not on npm.
+ * runs with Node when asked, or whenever the package is not on npm; without one, the build
+ * from source in `sourceDir`.
  */
 function serverArgv(input: AgentSetupInput, dev: boolean) {
-  const { platform, projectsDir, devServerPath } = input
+  const { platform, projectsDir, devServerPath, sourceDir } = input
   const tail = ['--dir', projectsDir]
   const spec = packageSpec(input.mcpVersion)
   if ((dev || !spec) && devServerPath) {
-    return { command: 'node', args: [devServerPath, ...tail] }
+    return { command: 'node', args: [NODE_SOURCE_FLAG, devServerPath, ...tail] }
+  }
+  if (!spec && sourceDir) {
+    return {
+      command: 'node',
+      args: [NODE_SOURCE_FLAG, sourceServerPath(sourceDir, platform), ...tail],
+    }
   }
   const pkg = spec ?? MCP_PACKAGE
   if (platform === 'windows') {

@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { findDevMcpServer, MCP_DOCS_URL } from './agent-setup.ts'
+import { findDevMcpServer, MCP_DOCS_URL, sourceCheckoutDir } from './agent-setup.ts'
 
 describe('findDevMcpServer', () => {
   const repo = join('/src', 'kamo')
@@ -19,5 +19,11 @@ describe('findDevMcpServer', () => {
 
   it('points the docs at the MCP README', () => {
     expect(MCP_DOCS_URL).toMatch(/^https:\/\/github\.com\/dssiqueira\/kamo\/.*apps\/mcp/)
+  })
+})
+
+describe('sourceCheckoutDir', () => {
+  it('suggests a kamo folder in the home folder', () => {
+    expect(sourceCheckoutDir(join('/home', 'ana'))).toBe(join('/home', 'ana', 'kamo'))
   })
 })

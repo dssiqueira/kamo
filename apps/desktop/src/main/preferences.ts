@@ -24,7 +24,7 @@ import type {
   StoredSettingsUpdate,
 } from '../shared/api.ts'
 import { IpcChannel } from '../shared/api.ts'
-import { findDevMcpServer, MCP_DOCS_URL } from './agent-setup.ts'
+import { findDevMcpServer, MCP_DOCS_URL, sourceCheckoutDir } from './agent-setup.ts'
 import { publishedMcpVersion } from './build-flags.ts'
 import { DEFAULT_STOP_SHORTCUT } from './accelerator.ts'
 import { isBusy, registerBusyCheck } from './busy.ts'
@@ -335,6 +335,7 @@ export function registerPreferences(deps: PreferencesDeps): Preferences {
   handle(IpcChannel.getAgentSetup, () => ({
     devServerPath: findDevMcpServer(app.getAppPath(), app.isPackaged),
     mcpVersion: publishedMcpVersion(app.isPackaged, app.getVersion()),
+    sourceDir: sourceCheckoutDir(app.getPath('home')),
   }))
   handle(IpcChannel.openAgentDocs, async () => {
     await shell.openExternal(MCP_DOCS_URL)

@@ -9,6 +9,8 @@ import {
   canUseNpx,
   claudeCommand,
   mcpClientJson,
+  needsSourceBuild,
+  sourceBuildCommands,
   unsafeForCmd,
   type AgentSetupInput,
 } from './agent.ts'
@@ -24,6 +26,11 @@ export interface AgentSectionProps {
   devServerPath?: string | null
   /** The @kamo/mcp version on npm that matches this app; null while it is not published. */
   mcpVersion?: string | null
+  /**
+   * Where to clone the repository to build the server from source, offered while the package
+   * is not on npm and there is no development build (e.g. `~/kamo`).
+   */
+  sourceDir?: string | null
   onCopy(text: string): ActionResult
   /** Opens the setup instructions for other MCP clients (apps/mcp/README.md). */
   onOpenDocs(): void
@@ -34,15 +41,17 @@ export function AgentSection({
   projectsDir,
   devServerPath = null,
   mcpVersion = null,
+  sourceDir = null,
   onCopy,
   onOpenDocs,
 }: AgentSectionProps) {
   const t = useT()
   if (!projectsDir) return null
-  const input: AgentSetupInput = { platform, projectsDir, devServerPath, mcpVersion }
-  // Without the package on npm, only the development build can be offered (never an npx
-  // command that would run whatever owns the name).
+  const input: AgentSetupInput = { platform, projectsDir, devServerPath, mcpVersion, sourceDir }
+  // Without the package on npm, never an npx command that would run whatever owns the name:
+  // the development build, or the steps to build the server from source.
   const npx = canUseNpx(input)
+  const fromSource = needsSourceBuild(input)
 
   return (
     <Section id="settings-agent" title={t('settings.agent.title')}>
@@ -50,8 +59,19 @@ export function AgentSection({
 
       {!npx && (
         <p className="text-body text-on-surface-muted" data-testid="agent-not-published">
-          {t('settings.agent.notPublished')}
+          {t(fromSource ? 'settings.agent.fromSource' : 'settings.agent.notPublished')}
         </p>
+      )}
+      {fromSource && (
+        <>
+          <Snippet
+            id="agent-source"
+            label={t('settings.agent.sourceBuild')}
+            text={sourceBuildCommands(input)}
+            onCopy={onCopy}
+          />
+          <p className="text-label text-on-surface-muted">{t('settings.agent.sourceHint')}</p>
+        </>
       )}
       {!npx && devServerPath && (
         <p className="text-label text-on-surface-muted">{t('settings.agent.devHint')}</p>
@@ -62,7 +82,7 @@ export function AgentSection({
         </p>
       )}
 
-      {(npx || devServerPath) && (
+      {(npx || devServerPath || fromSource) && (
         <>
           <Snippet
             id="agent-claude"

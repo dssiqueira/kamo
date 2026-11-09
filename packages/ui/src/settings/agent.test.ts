@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { canUseNpx, claudeCommand, mcpClientJson, shellQuote, unsafeForCmd } from './agent.ts'
+import {
+  canUseNpx,
+  claudeCommand,
+  mcpClientJson,
+  needsSourceBuild,
+  shellQuote,
+  sourceBuildCommands,
+  sourceServerPath,
+  unsafeForCmd,
+} from './agent.ts'
 
 describe('claudeCommand', () => {
   it('pins the published version and passes the projects folder on Mac', () => {
@@ -35,7 +44,9 @@ describe('claudeCommand', () => {
         },
         true,
       ),
-    ).toBe('claude mcp add kamo -- node /src/kamo/apps/mcp/dist/cli.js --dir "/home/ana/My Kamo"')
+    ).toBe(
+      'claude mcp add kamo -- node --experimental-transform-types /src/kamo/apps/mcp/dist/cli.js --dir "/home/ana/My Kamo"',
+    )
   })
 
   it('never offers npx while the package is not on npm: only the development build', () => {
@@ -47,15 +58,77 @@ describe('claudeCommand', () => {
     }
     expect(canUseNpx(input)).toBe(false)
     expect(claudeCommand(input)).toBe(
-      'claude mcp add kamo -- node /src/kamo/apps/mcp/dist/cli.js --dir /x',
+      'claude mcp add kamo -- node --experimental-transform-types /src/kamo/apps/mcp/dist/cli.js --dir /x',
     )
     expect(canUseNpx({ platform: 'mac', projectsDir: '/x', mcpVersion: '0.1.0' })).toBe(true)
+    // A development build wins over the from-source steps.
+    expect(needsSourceBuild({ ...input, sourceDir: '/home/ana/kamo' })).toBe(false)
+  })
+
+  it('runs the server built from source on Windows, with the real folders quoted', () => {
+    const input = {
+      platform: 'windows' as const,
+      projectsDir: 'C:\\Users\\Ana Lima\\Kamo\\projects',
+      mcpVersion: null,
+      sourceDir: 'C:\\Users\\Ana Lima\\kamo',
+    }
+    expect(needsSourceBuild(input)).toBe(true)
+    expect(claudeCommand(input)).toBe(
+      'claude mcp add kamo -- node --experimental-transform-types "C:\\Users\\Ana Lima\\kamo\\apps\\mcp\\dist\\cli.js" --dir "C:\\Users\\Ana Lima\\Kamo\\projects"',
+    )
+    expect(JSON.parse(mcpClientJson(input)).mcpServers.kamo).toEqual({
+      command: 'node',
+      args: [
+        '--experimental-transform-types',
+        'C:\\Users\\Ana Lima\\kamo\\apps\\mcp\\dist\\cli.js',
+        '--dir',
+        'C:\\Users\\Ana Lima\\Kamo\\projects',
+      ],
+    })
+  })
+
+  it('never offers the source steps once the package is on npm', () => {
+    const input = {
+      platform: 'mac' as const,
+      projectsDir: '/x',
+      mcpVersion: '0.1.0',
+      sourceDir: '/Users/ana/kamo',
+    }
+    expect(needsSourceBuild(input)).toBe(false)
+    expect(claudeCommand(input)).toBe('claude mcp add kamo -- npx -y @kamo/mcp@0.1.0 --dir /x')
   })
 
   it('quotes a Windows folder with % so cmd does not expand it', () => {
     expect(
       claudeCommand({ platform: 'windows', projectsDir: 'C:\\%TEMP%', mcpVersion: '1.0.0' }),
     ).toBe('claude mcp add kamo -- cmd /c npx -y @kamo/mcp@1.0.0 --dir "C:\\%TEMP%"')
+  })
+})
+
+describe('sourceBuildCommands', () => {
+  it('clones into the folder, installs only the server and builds it', () => {
+    expect(
+      sourceBuildCommands({
+        platform: 'windows',
+        projectsDir: 'C:\\x',
+        sourceDir: 'C:\\Users\\Ana Lima\\kamo',
+      }),
+    ).toBe(
+      [
+        'git clone https://github.com/dssiqueira/kamo.git "C:\\Users\\Ana Lima\\kamo"',
+        'cd "C:\\Users\\Ana Lima\\kamo"',
+        'pnpm install --filter "@kamo/mcp..."',
+        'pnpm --filter @kamo/mcp build',
+      ].join('\n'),
+    )
+    expect(sourceBuildCommands({ platform: 'mac', projectsDir: '/x' })).toBe('')
+  })
+
+  it('joins the server path with the platform separator', () => {
+    expect(sourceServerPath('/Users/ana/kamo/', 'mac')).toBe('/Users/ana/kamo/apps/mcp/dist/cli.js')
+    expect(sourceServerPath('D:\\src\\kamo', 'windows')).toBe(
+      'D:\\src\\kamo\\apps\\mcp\\dist\\cli.js',
+    )
   })
 })
 

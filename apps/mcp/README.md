@@ -30,6 +30,20 @@ claude mcp add kamo -- npx -y @kamo/mcp --dir "<projects folder>"
    - Linux: `~/.config/Kamo/settings.json`
 3. `~/Kamo/projects`
 
+### From source (until `@kamo/mcp` is on npm)
+
+Until the package is published, build the server from this repository once. You need Git, Node.js 24 or newer and pnpm. Settings → Connect to an agent shows these commands with your folders filled in:
+
+```bash
+git clone https://github.com/dssiqueira/kamo.git ~/kamo
+cd ~/kamo
+pnpm install --filter "@kamo/mcp..."      # only the server and what it needs, no Electron
+pnpm --filter @kamo/mcp build
+claude mcp add kamo -- node --experimental-transform-types ~/kamo/apps/mcp/dist/cli.js --dir "<projects folder>"
+```
+
+`--experimental-transform-types` is needed because, inside the repository, `@kamo/core` resolves to its TypeScript source. On Windows, use full paths such as `"C:\Users\you\kamo\apps\mcp\dist\cli.js"`. To update later, run `git pull` and the install and build lines again.
+
 ### Other MCP clients
 
 Any client that can start a stdio server works. The usual JSON config:

@@ -6,9 +6,11 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ### Changed
 - A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
+- Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.
 
 ### Fixed
 - The permissions button says *Open Windows Settings* on Windows (it said *Open System Settings*, the Mac name).
+- The command for a development build of the MCP server now starts it (Node needs `--experimental-transform-types` inside the repository).
 
 ## [0.1.0] — first public release (Windows)
 
