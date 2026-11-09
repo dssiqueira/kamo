@@ -61,6 +61,28 @@ describe('resolveProjectsDir', () => {
     expect(result).toEqual({ dir: custom, source: 'settings' })
   })
 
+  it('finds the settings of the Microsoft Store build inside its package', async () => {
+    const local = join(root, 'Local')
+    const custom = join(root, 'Store recordings')
+    const redirected = join(
+      local,
+      'Packages',
+      'DSStudio.Kamo_8wekyb3d8bbwe',
+      'LocalCache',
+      'Roaming',
+      'Kamo',
+    )
+    await mkdir(redirected, { recursive: true })
+    await mkdir(join(local, 'Packages', 'Other.App_123'), { recursive: true })
+    await writeFile(join(redirected, 'settings.json'), JSON.stringify({ projectsDir: custom }))
+    const result = await resolveProjectsDir({
+      home: root,
+      env: { APPDATA: join(root, 'NoAppData'), LOCALAPPDATA: local },
+      platform: 'win32',
+    })
+    expect(result).toEqual({ dir: custom, source: 'settings' })
+  })
+
   it('falls back to ~/Kamo/projects when settings have no folder or are broken', async () => {
     const appData = join(root, 'AppData2')
     await mkdir(join(appData, 'Kamo'), { recursive: true })

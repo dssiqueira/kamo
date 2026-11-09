@@ -1,0 +1,78 @@
+name: Microsoft Store
+
+# The Windows app as an MSIX package (electron-builder's `appx` target) for the Microsoft
+# Store. The Store signs it with its own certificate, so this job needs no code-signing secret,
+# and the app updates through the Store (src/main/updater.ts turns electron-updater off when
+# `process.windowsStore` is true). The package is a workflow artifact: upload it in Partner
+# Center (Apps and games → Kamo → a new submission → Packages).
+#
+# The package identity comes from Partner Center (Product management → Product identity) and
+# lives in repository variables (Settings → Secrets and variables → Actions → Variables):
+#   STORE_IDENTITY_NAME       Package/Identity/Name, e.g. 12345DSStudio.Kamo
+#   STORE_PUBLISHER           Package/Identity/Publisher, e.g. CN=A1B2C3D4-...
+#   STORE_PUBLISHER_NAME      Package/Properties/PublisherDisplayName, e.g. DS Studio
+# Without them the job stops with an error that names the missing one.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version in the package, e.g. 0.1.0 (the Store needs a higher one on every submission)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  msix:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      VERSION: ${{ inputs.version }}
+      STORE_IDENTITY_NAME: ${{ vars.STORE_IDENTITY_NAME }}
+      STORE_PUBLISHER: ${{ vars.STORE_PUBLISHER }}
+      STORE_PUBLISHER_NAME: ${{ vars.STORE_PUBLISHER_NAME }}
+    steps:
+      - name: Check the inputs
+        run: |
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Version $VERSION is not <major>.<minor>.<patch>"
+            exit 1
+          fi
+          for name in STORE_IDENTITY_NAME STORE_PUBLISHER STORE_PUBLISHER_NAME; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Repository variable $name is not set (see the top of store.yml)"
+              exit 1
+            fi
+          done
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+      - run: pnpm install --frozen-lockfile
+      - name: Set the app version
+        working-directory: apps/desktop
+        run: npm pkg set version="$VERSION"
+      - name: Build the Windows capture helper
+        run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+      - name: Build the app
+        run: pnpm --filter @kamo/desktop build
+      - name: 'Package (MSIX, unsigned: the Store signs it)'
+        working-directory: apps/desktop
+        run: |
+          pnpm exec electron-builder --win appx --publish never \
+            "-c.appx.identityName=$STORE_IDENTITY_NAME" \
+            "-c.appx.publisher=$STORE_PUBLISHER" \
+            "-c.appx.publisherDisplayName=$STORE_PUBLISHER_NAME"
+      - name: Package size budget
+        # MSIX compresses file by file, so it is ~35MB larger than the NSIS installer (D-039).
+        run: node scripts/check-size.ts 170 apps/desktop/release/*.appx
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kamo-${{ inputs.version }}-store
+          path: apps/desktop/release/*.appx
+          if-no-files-found: error

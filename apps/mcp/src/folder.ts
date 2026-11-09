@@ -1,6 +1,6 @@
 // Where the recordings are (docs/integrations.md → MCP): `--dir`, then the desktop app's
 // settings.json (a local file), then ~/Kamo/projects. Only reads; never creates the folder.
-import { readFile, stat } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join, resolve } from 'node:path'
 
@@ -38,6 +38,26 @@ export function appDataDir(
 
 export function settingsFile(platform: NodeJS.Platform, env: NodeJS.ProcessEnv, home: string) {
   return join(appDataDir(platform, env, home), 'settings.json')
+}
+
+/**
+ * The Microsoft Store build (MSIX) keeps its app data inside the package: Windows redirects
+ * `%APPDATA%\Kamo` to `%LOCALAPPDATA%\Packages\<package family>\LocalCache\Roaming\Kamo`, and
+ * only the app itself sees the redirect. The family name ends in a publisher hash, so every
+ * package with "Kamo" in its name is tried.
+ */
+export async function storeSettingsFiles(env: NodeJS.ProcessEnv, home: string): Promise<string[]> {
+  const packages = join(env.LOCALAPPDATA ?? join(home, 'AppData', 'Local'), 'Packages')
+  let names: string[]
+  try {
+    names = await readdir(packages)
+  } catch {
+    return []
+  }
+  return names
+    .filter((name) => name.toLowerCase().includes(APP_NAME.toLowerCase()))
+    .sort()
+    .map((name) => join(packages, name, 'LocalCache', 'Roaming', APP_NAME, 'settings.json'))
 }
 
 /** `projectsDir` from the app's settings.json; `null` when missing, unreadable or invalid. */
@@ -97,7 +117,13 @@ export async function resolveProjectsDir(options: ResolveOptions = {}): Promise<
     const dir = resolve(expandHome(options.dir.trim(), home))
     return { dir: await normalizeProjectsDir(dir), source: 'argument' }
   }
-  const fromSettings = await readSettingsProjectsDir(settingsFile(platform, env, home))
+  const files = [settingsFile(platform, env, home)]
+  if (platform === 'win32') files.push(...(await storeSettingsFiles(env, home)))
+  let fromSettings: string | null = null
+  for (const file of files) {
+    fromSettings = await readSettingsProjectsDir(file)
+    if (fromSettings) break
+  }
   if (fromSettings) return { dir: await normalizeProjectsDir(fromSettings), source: 'settings' }
   return { dir: join(home, 'Kamo', 'projects'), source: 'default' }
 }

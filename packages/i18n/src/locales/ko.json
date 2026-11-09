@@ -419,7 +419,8 @@
         "downloading": "버전 {version} 다운로드 중… {progress, number, percent}",
         "ready": "버전 {version}이(가) 준비됐어요. 마무리하려면 Kamo를 다시 시작하세요.",
         "error": "업데이트를 확인하지 못했어요. 인터넷에 연결되어 있나요?",
-        "unsupported": "업데이트는 설치된 앱에서만 작동해요."
+        "unsupported": "업데이트는 설치된 앱에서만 작동해요.",
+        "store": "Kamo는 Microsoft Store에서 업데이트돼요."
       }
     },
     "help": {

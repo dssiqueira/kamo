@@ -364,6 +364,8 @@ function UpdatesRow({ version, update, onCheckUpdates, onRestartToUpdate }: Sett
     switch (update.state) {
       case 'unsupported':
         return t('settings.updates.status.unsupported')
+      case 'store':
+        return t('settings.updates.status.store')
       case 'idle':
         return t('settings.updates.status.idle')
       case 'checking':
@@ -399,6 +401,7 @@ function UpdatesRow({ version, update, onCheckUpdates, onRestartToUpdate }: Sett
           <SecondaryButton
             disabled={
               update.state === 'unsupported' ||
+              update.state === 'store' ||
               update.state === 'checking' ||
               update.state === 'downloading'
             }

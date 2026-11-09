@@ -419,7 +419,8 @@
         "downloading": "バージョン {version} をダウンロード中… {progress, number, percent}",
         "ready": "バージョン {version} の準備ができました。Kamo を再起動すると完了します。",
         "error": "アップデートを確認できませんでした。オンラインか確認してください。",
-        "unsupported": "アップデートはインストール版のアプリでのみ利用できます。"
+        "unsupported": "アップデートはインストール版のアプリでのみ利用できます。",
+        "store": "Kamo は Microsoft Store から更新されます。"
       }
     },
     "help": {

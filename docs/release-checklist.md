@@ -90,6 +90,12 @@ list into the release's tracking issue and tick it there.
 - [ ] npm: `npm view @kamo/core version` (and design-tokens, i18n, cloud-client, mcp) shows the new version, with provenance
 - [ ] Tell the beta testers
 
+## 13. Microsoft Store (when the Partner Center account exists, D-039)
+- [ ] Repository variables `STORE_IDENTITY_NAME`, `STORE_PUBLISHER` and `STORE_PUBLISHER_NAME` hold the values from Partner Center → Product management → Product identity
+- [ ] Actions → Microsoft Store → Run workflow with this version: the `kamo-<v>-store` artifact has `Kamo-<v>-store-x64.appx`
+- [ ] Partner Center → a new submission → Packages: upload the `.appx`; the listing texts are in `docs/store/` (written for Chrome, adapt them)
+- [ ] After certification, install from the Store: no SmartScreen warning; Settings → Updates says the Store updates Kamo; microphone and webcam ask for permission; `npx @kamo/mcp` without `--dir` finds a custom projects folder
+
 ## Secrets and accounts
 
 Set in GitHub → Settings → Secrets and variables → Actions. Every one is optional: without it
@@ -125,6 +131,7 @@ upload, and a Google Cloud project for the store API.
 | `prerelease.yml` | push to `main` | `@kamo/design-tokens` and `@kamo/core` as `0.0.<run>-next` (skipped without `NPM_TOKEN`) |
 | `release.yml` | `v*` tag | the draft release, npm packages, Chrome Web Store (see the top of this file) |
 | `packs.yml` | manual | the optional transcription packs on the rolling `packs` release |
+| `store.yml` | manual | the Microsoft Store package (MSIX), as a workflow artifact |
 
 Export benchmark: the CI job summary of `desktop-package` shows seconds of export per minute
 of video. Once a few runs look stable, write those numbers into

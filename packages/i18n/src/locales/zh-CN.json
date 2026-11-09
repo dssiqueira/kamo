@@ -419,7 +419,8 @@
         "downloading": "正在下载版本 {version}… {progress, number, percent}",
         "ready": "版本 {version} 已就绪。重启 Kamo 即可完成更新。",
         "error": "无法检查更新。请确认网络已连接。",
-        "unsupported": "仅安装版应用支持更新。"
+        "unsupported": "仅安装版应用支持更新。",
+        "store": "Kamo 通过 Microsoft Store 更新。"
       }
     },
     "help": {

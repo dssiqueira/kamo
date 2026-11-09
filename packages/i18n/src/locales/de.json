@@ -419,7 +419,8 @@
         "downloading": "Version {version} wird geladen… {progress, number, percent}",
         "ready": "Version {version} ist bereit. Starte Kamo neu, um abzuschließen.",
         "error": "Updates konnten nicht geprüft werden. Bist du online?",
-        "unsupported": "Updates funktionieren nur in der installierten App."
+        "unsupported": "Updates funktionieren nur in der installierten App.",
+        "store": "Kamo wird über den Microsoft Store aktualisiert."
       }
     },
     "help": {

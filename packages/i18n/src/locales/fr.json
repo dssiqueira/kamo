@@ -419,7 +419,8 @@
         "downloading": "Téléchargement de la version {version}… {progress, number, percent}",
         "ready": "La version {version} est prête. Redémarrez Kamo pour terminer.",
         "error": "Impossible de rechercher les mises à jour. Êtes-vous connecté à Internet ?",
-        "unsupported": "Les mises à jour ne fonctionnent que dans l'app installée."
+        "unsupported": "Les mises à jour ne fonctionnent que dans l'app installée.",
+        "store": "Kamo se met à jour via le Microsoft Store."
       }
     },
     "help": {

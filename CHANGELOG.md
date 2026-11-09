@@ -5,6 +5,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ## [Unreleased]
 
 ### Added
+- A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
 - German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
 - Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
 
@@ -22,6 +23,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 Full notes: [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
 
 ### Added
+- A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
 - German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
 - Desktop app for Windows 10 (2004+) and 11: record the whole screen, a window or a selection, with microphone, computer sound and webcam, at 30 or 60 fps; mouse only, never the keyboard.
 - Automatic zoom on every click with a spring camera, editable on the timeline; smooth cursor; trim; undo and redo.

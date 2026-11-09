@@ -419,7 +419,8 @@
         "downloading": "Baixando a versão {version}… {progress, number, percent}",
         "ready": "A versão {version} está pronta. Reinicie o Kamo para concluir.",
         "error": "Não deu para procurar atualizações. Você está on-line?",
-        "unsupported": "As atualizações só funcionam no app instalado."
+        "unsupported": "As atualizações só funcionam no app instalado.",
+        "store": "O Kamo é atualizado pela Microsoft Store."
       }
     },
     "help": {

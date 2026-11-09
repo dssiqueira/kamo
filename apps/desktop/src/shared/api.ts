@@ -429,6 +429,8 @@ export interface PermissionInfo {
 
 export type UpdateStatus =
   | { state: 'unsupported' }
+  /** Installed from the Microsoft Store (MSIX), which updates the app itself. */
+  | { state: 'store' }
   | { state: 'idle' }
   | { state: 'checking' }
   | { state: 'up-to-date'; checkedAt: number }

@@ -31,6 +31,8 @@ export interface PermissionItem {
 
 export type UpdateState =
   | { state: 'unsupported' }
+  /** Installed from the Microsoft Store, which updates the app itself. */
+  | { state: 'store' }
   | { state: 'idle' }
   | { state: 'checking' }
   | { state: 'up-to-date'; checkedAt: number }

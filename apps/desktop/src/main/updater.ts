@@ -4,6 +4,8 @@
 //   and never while recording or exporting (busy.ts).
 // - The check sends no user data: it reads the public release feed. Optional packs live in
 //   app-data, outside the install folder, so an update neither ships nor deletes them.
+//   The Microsoft Store build (MSIX, `process.windowsStore`) is updated by the Store, so
+//   electron-updater stays off there (.github/workflows/store.yml).
 import { app } from 'electron'
 import type { AppUpdater } from 'electron-updater'
 import type { UpdateStatus } from '../shared/api.ts'
@@ -27,6 +29,12 @@ export class Updater {
 
   constructor(private readonly log: Log) {
     if (!app.isPackaged) this.status = { state: 'unsupported' }
+    else if (process.windowsStore) this.status = { state: 'store' }
+  }
+
+  /** Packaged, and not from the Microsoft Store. */
+  private enabled(): boolean {
+    return app.isPackaged && process.windowsStore !== true
   }
 
   getStatus(): UpdateStatus {
@@ -40,7 +48,7 @@ export class Updater {
 
   /** Launch check plus one every 24h. No-op in development builds. */
   start(): void {
-    if (!app.isPackaged || this.timer) return
+    if (!this.enabled() || this.timer) return
     void this.check()
     this.timer = setInterval(() => void this.check(), CHECK_INTERVAL_MS)
     this.timer.unref()
@@ -48,7 +56,7 @@ export class Updater {
 
   /** Also the "Check now" button. Never interrupts a download or a ready update. */
   async check(): Promise<UpdateStatus> {
-    if (!app.isPackaged) return this.status
+    if (!this.enabled()) return this.status
     if (['checking', 'downloading', 'ready'].includes(this.status.state)) return this.status
     try {
       const updater = await this.load()
