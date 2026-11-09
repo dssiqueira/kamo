@@ -24,7 +24,9 @@ export function Countdown({ value, stopShortcut }: CountdownProps) {
     <div className="flex h-screen w-screen flex-col items-center justify-center gap-md">
       <div className="relative">
         <Mascot
-          pose={blinking ? 'head-blink' : 'head-look'}
+          // head-look-side has the eye turned the same way as the snout: mirrored on the right
+          // shoulder, both point at the number (head-look's eye looked away once mirrored).
+          pose={blinking ? 'head-blink' : 'head-look-side'}
           size={96}
           // Perched on the circle's right shoulder, looking toward the number.
           flip
