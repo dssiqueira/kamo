@@ -550,6 +550,7 @@
     },
     "resolution": "Resolution",
     "frameRate": "Frame rate",
+    "frameRateOf": "Frame rate ({format})",
     "fileFormat": "Format",
     "fps": "{fps} fps",
     "folder": "Saves to",
@@ -596,7 +597,8 @@
       "srtHint": "An .srt file next to each video, timed to the trim.",
       "burnHint": "In the picture, with the style from the Captions panel.",
       "srtFile": "+ {name}",
-      "gifBurnOnly": "A GIF can only have captions burned in."
+      "gifBurnOnly": "A GIF can only have captions burned in.",
+      "gifBurnWithSrt": "The .srt goes with the MP4s; the GIFs get the captions burned in."
     },
     "needs4kSource": "4K needs a recording larger than 1080p; this one is {size}.",
     "fps60From30": "This recording is {fps} fps: zooms and the cursor move at 60 fps, while the screen itself still changes {fps} times a second.",

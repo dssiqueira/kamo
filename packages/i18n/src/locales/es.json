@@ -550,6 +550,7 @@
     },
     "resolution": "Resolución",
     "frameRate": "Fotogramas por segundo",
+    "frameRateOf": "Fotogramas por segundo ({format})",
     "fileFormat": "Formato",
     "fps": "{fps} fps",
     "folder": "Se guarda en",
@@ -596,7 +597,8 @@
       "srtHint": "Un archivo .srt junto a cada video, ajustado al recorte.",
       "burnHint": "En la imagen, con el estilo del panel Subtítulos.",
       "srtFile": "+ {name}",
-      "gifBurnOnly": "Un GIF solo admite subtítulos grabados en la imagen."
+      "gifBurnOnly": "Un GIF solo admite subtítulos grabados en la imagen.",
+      "gifBurnWithSrt": "El .srt va con los MP4; los GIF llevan los subtítulos grabados en la imagen."
     },
     "needs4kSource": "El 4K necesita una grabación mayor que 1080p; esta tiene {size}.",
     "fps60From30": "Esta grabación tiene {fps} fps: los zooms y el cursor se mueven a 60 fps, pero la pantalla en sí sigue cambiando {fps} veces por segundo.",

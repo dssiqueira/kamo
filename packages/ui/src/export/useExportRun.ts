@@ -60,22 +60,28 @@ export interface ExportPlatform {
 export type CaptionExport = 'none' | 'burn' | 'srt'
 
 export type ExportFormat = 'mp4' | 'gif'
+/** File formats in the order their files are exported (and listed). */
+export const EXPORT_FORMATS: readonly ExportFormat[] = ['mp4', 'gif']
 
-/** The choices of the Formats sheet (F-11, A-01, A-02) that apply to every checked format. */
+/**
+ * The choices of the Formats sheet (F-11, A-01, A-02). Every checked aspect is exported in
+ * every checked file format, each file with its own format's settings.
+ */
 export interface ExportSettings {
-  format: ExportFormat
+  /** at least one; MP4 and GIF can go in the same run */
+  formats: readonly ExportFormat[]
   /** MP4 only (A-01) */
   resolution: Resolution
   /** MP4 only (A-01) */
   fps: Fps
   /** GIF only (A-02) */
   gifFps: GifFps
-  /** A-06; a GIF can only burn them in, so `srt` counts as `none` there */
+  /** A-06; a GIF can only burn them in, so `srt` counts as `burn` there (see jobCaptions) */
   captions: CaptionExport
 }
 
 export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
-  format: 'mp4',
+  formats: ['mp4'],
   resolution: '1080p',
   fps: 30,
   gifFps: 15,
@@ -83,6 +89,7 @@ export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
 }
 
 export interface ExportJob {
+  format: ExportFormat
   aspect: Aspect
   status: 'waiting' | 'exporting' | 'done'
   /** 0..1 */
@@ -108,6 +115,40 @@ export interface ExportRunInput {
   platform: ExportPlatform
   /** transcript.json (A-06): the captions' text; null = no captions to export */
   transcript?: Transcript | null
+}
+
+/**
+ * The files of a run (F-11, A-02): every checked aspect in every checked file format, MP4s
+ * first, each format in the sheet's aspect order. Duplicates count once.
+ */
+export function exportJobs(
+  aspects: readonly Aspect[],
+  formats: readonly ExportFormat[],
+): ExportJob[] {
+  const unique = [...new Set(aspects)]
+  return EXPORT_FORMATS.filter((format) => formats.includes(format)).flatMap((format) =>
+    unique.map((aspect): ExportJob => ({
+      format,
+      aspect,
+      status: 'waiting',
+      progress: 0,
+      name: null,
+      path: null,
+    })),
+  )
+}
+
+/** One job's identity in the list (an aspect can be in the run twice: MP4 and GIF). */
+export function jobKey(job: Pick<ExportJob, 'format' | 'aspect'>): string {
+  return `${job.format}-${job.aspect}`
+}
+
+/**
+ * The captions one file gets (A-06): a GIF has no .srt, so the .srt choice burns them into
+ * the GIF while the MP4s of the same run get their .srt.
+ */
+export function jobCaptions(captions: CaptionExport, format: ExportFormat): CaptionExport {
+  return format === 'gif' && captions === 'srt' ? 'burn' : captions
 }
 
 /**
@@ -189,7 +230,6 @@ export function useExportRun({
   const run = useCallback(async (jobs: ExportJob[]) => {
     const { project, events, autoZoom, platform, transcript } = latest.current
     const settings = settingsRef.current
-    const gif = settings.format === 'gif'
     const captions = transcript ? settings.captions : 'none'
     const abort = new AbortController()
     controller.current = abort
@@ -218,15 +258,13 @@ export function useExportRun({
     }
 
     const imageFile = backgroundImageFile(project.style.background)
-    const burned =
-      captions === 'burn' && transcript ? { transcript, settings: projectCaptions(project) } : null
+    const burned = transcript ? { transcript, settings: projectCaptions(project) } : null
     const common = {
       project,
       events,
       video: platform.media.video,
       webcam: project.webcam ? (platform.media.webcam ?? null) : null,
       backgroundImage: imageFile ? (platform.media.backgroundImage?.(imageFile) ?? null) : null,
-      captions: burned,
       autoZoom,
       signal: abort.signal,
     }
@@ -235,9 +273,12 @@ export function useExportRun({
       const job = current[index] as ExportJob
       const step = jobStep(job)
       if (step === 'none') continue
-      // A-06: an .srt next to each MP4 (a GIF only takes them burned in).
+      const gif = job.format === 'gif'
+      // A-06: an .srt next to each MP4; a GIF only takes them burned in.
+      const fileCaptions = jobCaptions(captions, job.format)
       const srt =
-        captions === 'srt' && !gif && transcript ? srtFor(project, transcript, job.aspect) : null
+        fileCaptions === 'srt' && transcript ? srtFor(project, transcript, job.aspect) : null
+      const jobCommon = { ...common, captions: fileCaptions === 'burn' ? burned : null }
       update(index, { status: 'exporting', progress: step === 'srt' ? 1 : 0 })
       try {
         if (step === 'file') {
@@ -267,7 +308,7 @@ export function useExportRun({
             )
             update(index, { name: file.name })
             result = await exportGif({
-              ...common,
+              ...jobCommon,
               aspect: job.aspect,
               fps: settings.gifFps,
               sink: file,
@@ -293,7 +334,7 @@ export function useExportRun({
             )
             update(index, { name: file.name })
             result = await exportVideo({
-              ...common,
+              ...jobCommon,
               audio,
               aspect: job.aspect,
               resolution: resolved.resolution,
@@ -337,15 +378,7 @@ export function useExportRun({
     state,
     start: (aspects: readonly Aspect[], settings: ExportSettings = DEFAULT_EXPORT_SETTINGS) => {
       settingsRef.current = settings
-      void run(
-        aspects.map((aspect) => ({
-          aspect,
-          status: 'waiting',
-          progress: 0,
-          name: null,
-          path: null,
-        })),
-      )
+      void run(exportJobs(aspects, settings.formats))
     },
     /** After an error: redoes only what did not finish (a saved video keeps its file). */
     retry: () => {

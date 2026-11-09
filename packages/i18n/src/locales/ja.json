@@ -550,6 +550,7 @@
     },
     "resolution": "解像度",
     "frameRate": "フレームレート",
+    "frameRateOf": "フレームレート（{format}）",
     "fileFormat": "ファイル形式",
     "fps": "{fps} fps",
     "folder": "保存先",
@@ -596,7 +597,8 @@
       "srtHint": "各動画の横に .srt ファイルを保存します。タイミングはトリムに合わせます。",
       "burnHint": "映像の中に、字幕パネルのスタイルで表示します。",
       "srtFile": "+ {name}",
-      "gifBurnOnly": "GIF では字幕を映像に焼き込む形でのみ使えます。"
+      "gifBurnOnly": "GIF では字幕を映像に焼き込む形でのみ使えます。",
+      "gifBurnWithSrt": ".srt は MP4 に付きます。GIF には字幕が映像に焼き込まれます。"
     },
     "needs4kSource": "4K には 1080p より大きい録画が必要です。この録画は {size} です。",
     "fps60From30": "この録画は {fps} fps です。ズームとカーソルは 60 fps で動きますが、画面そのものは 1 秒間に {fps} 回しか変わりません。",

@@ -550,6 +550,7 @@
     },
     "resolution": "Resolução",
     "frameRate": "Taxa de quadros",
+    "frameRateOf": "Taxa de quadros ({format})",
     "fileFormat": "Formato",
     "fps": "{fps} fps",
     "folder": "Salva em",
@@ -596,7 +597,8 @@
       "srtHint": "Um arquivo .srt ao lado de cada vídeo, com o tempo do corte.",
       "burnHint": "Na imagem, com o estilo do painel Legendas.",
       "srtFile": "+ {name}",
-      "gifBurnOnly": "Um GIF só aceita legendas gravadas na imagem."
+      "gifBurnOnly": "Um GIF só aceita legendas gravadas na imagem.",
+      "gifBurnWithSrt": "O .srt vai com os MP4; os GIFs recebem as legendas gravadas na imagem."
     },
     "needs4kSource": "O 4K precisa de uma gravação maior que 1080p; esta tem {size}.",
     "fps60From30": "Esta gravação tem {fps} fps: os zooms e o cursor se movem a 60 fps, mas a tela em si continua mudando {fps} vezes por segundo.",

@@ -4,6 +4,9 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Added
+- Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
+
 ### Changed
 - A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
 - Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.

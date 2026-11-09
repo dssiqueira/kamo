@@ -550,6 +550,7 @@
     },
     "resolution": "分辨率",
     "frameRate": "帧率",
+    "frameRateOf": "帧率（{format}）",
     "fileFormat": "文件格式",
     "fps": "{fps} fps",
     "folder": "保存到",
@@ -596,7 +597,8 @@
       "srtHint": "每个视频旁边一个 .srt 文件，时间与剪辑一致。",
       "burnHint": "显示在画面中，使用字幕面板的样式。",
       "srtFile": "+ {name}",
-      "gifBurnOnly": "GIF 只能使用烧录到画面中的字幕。"
+      "gifBurnOnly": "GIF 只能使用烧录到画面中的字幕。",
+      "gifBurnWithSrt": ".srt 文件随 MP4 一起保存；GIF 中的字幕会烧录到画面中。"
     },
     "needs4kSource": "4K 需要大于 1080p 的录制；此录制为 {size}。",
     "fps60From30": "此录制为 {fps} fps：缩放和光标以 60 fps 运动，但屏幕画面本身仍每秒变化 {fps} 次。",

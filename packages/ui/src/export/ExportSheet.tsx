@@ -28,8 +28,11 @@ import { FOCUS_RING } from '../primitives/controls.tsx'
 import { FormatPreview } from './FormatPreview.tsx'
 import {
   DEFAULT_EXPORT_SETTINGS,
+  EXPORT_FORMATS,
+  jobKey,
   useExportRun,
   type CaptionExport,
+  type ExportFormat,
   type ExportJob,
   type ExportPlatform,
   type ExportSettings,
@@ -75,6 +78,9 @@ const ASPECT_LABEL: Record<Aspect, string> = {
   '9:16': 'export.aspect.vertical',
 }
 
+/** File formats are names, the same in every language. */
+const FORMAT_LABEL: Record<ExportFormat, string> = { mp4: 'MP4', gif: 'GIF' }
+
 const BUTTON_PRIMARY = `rounded-md bg-primary px-[20px] py-[12px] text-title text-on-primary transition-colors duration-[120ms] hover:bg-[#97CB90] disabled:opacity-50 disabled:hover:bg-primary ${FOCUS_RING}`
 const BUTTON_SECONDARY = `rounded-md bg-surface-raised px-md py-[10px] text-title text-on-surface transition-colors duration-[120ms] hover:bg-border ${FOCUS_RING}`
 
@@ -118,12 +124,15 @@ export function ExportSheet({
     ...DEFAULT_EXPORT_SETTINGS,
     fps: project.source.fps >= 60 ? 60 : DEFAULT_EXPORT_SETTINGS.fps,
   }))
-  const gif = settings.format === 'gif'
+  // MP4 and GIF can both be checked: every checked aspect is exported in each (A-02).
+  const mp4 = settings.formats.includes('mp4')
+  const gif = settings.formats.includes('gif')
   const allow4k = canExport4k(project.source)
   // What this machine's encoder will really make (4K60 is beyond many): said before exporting.
-  const fallback = useEncoderFallback(gif ? null : settings)
-  // A GIF only takes captions burned in (A-06): the .srt choice counts as burned in there.
-  const effectiveCaptions: CaptionExport = gif && captions === 'srt' ? 'burn' : captions
+  const fallback = useEncoderFallback(mp4 ? settings : null)
+  // A GIF only takes captions burned in (A-06): without an MP4 the .srt choice counts as
+  // burned in; with one, the MP4s get the .srt and the GIFs get them burned in.
+  const effectiveCaptions: CaptionExport = !mp4 && captions === 'srt' ? 'burn' : captions
   const { state, start, retry, cancel, reset } = useExportRun({
     project,
     events,
@@ -160,10 +169,19 @@ export function ExportSheet({
   const gifTotal = gifBytes.reduce((sum, bytes) => sum + bytes, 0)
   const gifLarge = gifBytes.some((bytes) => bytes > GIF_LARGE_BYTES)
   const locale = resolveLocale([useLocale()])
-  const chooseFormat = (format: ExportSettings['format']) => {
-    setSettings({ ...settings, format })
-    if (format === 'gif' && captions === 'srt') setCaptions('burn')
+  // At least one file format stays checked; unchecking the last one does nothing.
+  const toggleFormat = (format: ExportFormat) => {
+    const formats = settings.formats.includes(format)
+      ? settings.formats.filter((f) => f !== format)
+      : EXPORT_FORMATS.filter((f) => f === format || settings.formats.includes(f))
+    if (formats.length === 0) return
+    setSettings({ ...settings, formats })
+    if (!formats.includes('mp4') && captions === 'srt') setCaptions('burn')
   }
+  const fileCount = selected.length * settings.formats.length
+  // With both formats checked, each frame rate row says which files it is for.
+  const frameRateLabel = (format: ExportFormat) =>
+    mp4 && gif ? t('export.frameRateOf', { format: FORMAT_LABEL[format] }) : t('export.frameRate')
   const exporting = state.phase === 'exporting'
 
   useEffect(() => {
@@ -256,18 +274,18 @@ export function ExportSheet({
             <dl className="grid grid-cols-[auto_1fr] items-center gap-x-md gap-y-sm text-body">
               <dt className="text-on-surface-muted">{t('export.fileFormat')}</dt>
               <dd>
-                <Choices
+                <Toggles
                   label={t('export.fileFormat')}
                   testId="export-file-format"
-                  value={settings.format}
-                  onChange={chooseFormat}
-                  options={[
-                    { value: 'mp4', label: 'MP4' },
-                    { value: 'gif', label: 'GIF' },
-                  ]}
+                  values={settings.formats}
+                  onToggle={toggleFormat}
+                  options={EXPORT_FORMATS.map((format) => ({
+                    value: format,
+                    label: FORMAT_LABEL[format],
+                  }))}
                 />
               </dd>
-              {!gif && (
+              {mp4 && (
                 <>
                   <dt className="text-on-surface-muted">{t('export.resolution')}</dt>
                   <dd className="flex flex-col gap-xs">
@@ -294,40 +312,49 @@ export function ExportSheet({
                   </dd>
                 </>
               )}
-              <dt className="text-on-surface-muted">{t('export.frameRate')}</dt>
-              <dd className="flex flex-col gap-xs">
-                {gif ? (
-                  <Choices
-                    label={t('export.frameRate')}
-                    testId="export-gif-fps"
-                    value={settings.gifFps}
-                    onChange={(gifFps) => setSettings({ ...settings, gifFps })}
-                    options={GIF_FPS_CHOICES.map((fps) => ({
-                      value: fps,
-                      label: t('export.fps', { fps }),
-                    }))}
-                  />
-                ) : (
-                  <Choices
-                    label={t('export.frameRate')}
-                    testId="export-fps"
-                    value={settings.fps}
-                    onChange={(fps) => setSettings({ ...settings, fps })}
-                    options={[
-                      { value: 30, label: t('export.fps', { fps: 30 }) },
-                      { value: 60, label: t('export.fps', { fps: 60 }) },
-                    ]}
-                  />
-                )}
-                {!gif && settings.fps === 60 && project.source.fps < 60 && (
-                  <span className="text-label text-on-surface-muted" data-testid="export-60-hint">
-                    {t('export.fps60From30', { fps: project.source.fps })}
-                  </span>
-                )}
-                {gif && (
-                  <span className="text-label text-on-surface-muted">{t('export.gifHint')}</span>
-                )}
-              </dd>
+              {mp4 && (
+                <>
+                  <dt className="text-on-surface-muted">{frameRateLabel('mp4')}</dt>
+                  <dd className="flex flex-col gap-xs">
+                    <Choices
+                      label={frameRateLabel('mp4')}
+                      testId="export-fps"
+                      value={settings.fps}
+                      onChange={(fps) => setSettings({ ...settings, fps })}
+                      options={[
+                        { value: 30, label: t('export.fps', { fps: 30 }) },
+                        { value: 60, label: t('export.fps', { fps: 60 }) },
+                      ]}
+                    />
+                    {settings.fps === 60 && project.source.fps < 60 && (
+                      <span
+                        className="text-label text-on-surface-muted"
+                        data-testid="export-60-hint"
+                      >
+                        {t('export.fps60From30', { fps: project.source.fps })}
+                      </span>
+                    )}
+                  </dd>
+                </>
+              )}
+              {gif && (
+                <>
+                  <dt className="text-on-surface-muted">{frameRateLabel('gif')}</dt>
+                  <dd className="flex flex-col gap-xs">
+                    <Choices
+                      label={frameRateLabel('gif')}
+                      testId="export-gif-fps"
+                      value={settings.gifFps}
+                      onChange={(gifFps) => setSettings({ ...settings, gifFps })}
+                      options={GIF_FPS_CHOICES.map((fps) => ({
+                        value: fps,
+                        label: t('export.fps', { fps }),
+                      }))}
+                    />
+                    <span className="text-label text-on-surface-muted">{t('export.gifHint')}</span>
+                  </dd>
+                </>
+              )}
               {hasCaptions && (
                 <>
                   <dt className="text-on-surface-muted">{t('export.captions.label')}</dt>
@@ -343,7 +370,7 @@ export function ExportSheet({
                           type="button"
                           role="radio"
                           aria-checked={effectiveCaptions === choice}
-                          disabled={gif && choice === 'srt'}
+                          disabled={!mp4 && choice === 'srt'}
                           data-testid={`export-captions-${choice}`}
                           onClick={() => setCaptions(choice)}
                           className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS_RING} ${
@@ -356,9 +383,17 @@ export function ExportSheet({
                         </button>
                       ))}
                     </div>
-                    {gif && (
+                    {gif && !mp4 && (
                       <span className="text-label text-on-surface-muted">
                         {t('export.captions.gifBurnOnly')}
+                      </span>
+                    )}
+                    {gif && mp4 && effectiveCaptions === 'srt' && (
+                      <span
+                        className="text-label text-on-surface-muted"
+                        data-testid="export-captions-gif-burn"
+                      >
+                        {t('export.captions.gifBurnWithSrt')}
                       </span>
                     )}
                     {effectiveCaptions !== 'none' && (
@@ -436,7 +471,7 @@ export function ExportSheet({
                 }
                 className={BUTTON_PRIMARY}
               >
-                {t('export.start', { count: selected.length })}
+                {t('export.start', { count: fileCount })}
               </button>
             </footer>
           </>
@@ -472,7 +507,7 @@ export function ExportSheet({
 
             <ul className="flex flex-col gap-md" aria-label={t('export.formats')}>
               {state.jobs.map((job) => (
-                <JobRow key={job.aspect} job={job} />
+                <JobRow key={jobKey(job)} job={job} />
               ))}
             </ul>
 
@@ -544,9 +579,12 @@ function JobRow({ job }: { job: ExportJob }) {
   const t = useT()
   const locale = useLocale()
   const percent = new Intl.NumberFormat(locale, { style: 'percent' }).format(job.progress)
-  const label = job.name ?? `${job.aspect} ${t(ASPECT_LABEL[job.aspect])}`
+  const label =
+    job.name ?? `${job.aspect} ${t(ASPECT_LABEL[job.aspect])} · ${FORMAT_LABEL[job.format]}`
+  // MP4 rows keep their original test id (smoke tests); GIF rows add the format.
+  const testId = job.format === 'mp4' ? `export-job-${job.aspect}` : `export-job-gif-${job.aspect}`
   return (
-    <li className="flex flex-col gap-xs" data-testid={`export-job-${job.aspect}`}>
+    <li className="flex flex-col gap-xs" data-testid={testId} data-format={job.format}>
       <div className="flex items-baseline justify-between gap-md text-body">
         <span className="flex min-w-0 flex-col">
           <span className="min-w-0 truncate" title={label}>
@@ -619,6 +657,46 @@ interface ChoiceOption<T> {
   value: T
   label: string
   disabled?: boolean
+}
+
+/** Any-of chips (chip-selected look): the file formats, where MP4 and GIF can both be on. */
+function Toggles<T extends string>({
+  label,
+  testId,
+  values,
+  options,
+  onToggle,
+}: {
+  label: string
+  testId: string
+  values: readonly T[]
+  options: readonly ChoiceOption<T>[]
+  onToggle(value: T): void
+}) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-xs">
+      {options.map((option) => {
+        const on = values.includes(option.value)
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="checkbox"
+            aria-checked={on}
+            data-testid={`${testId}-${option.value}`}
+            onClick={() => onToggle(option.value)}
+            className={`rounded-full px-[12px] py-xs text-label transition-colors duration-[120ms] ${FOCUS_RING} ${
+              on
+                ? 'bg-tertiary-container text-on-surface'
+                : 'text-on-surface-muted hover:bg-surface-raised'
+            }`}
+          >
+            {option.label}
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 /** One-of chips (chip-selected), the same look as the captions choice. */
