@@ -5,6 +5,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ## [Unreleased]
 
 ### Added
+- Chrome extension: a small recording bar (time, pause, stop) in its own window, never part of the video; clicking the toolbar icon while recording stops it.
 - Video compatibility pack (optional, FFmpeg): when this computer's video encoder is missing or fails, the export offers to download it and try again.
 - A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
 - German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.

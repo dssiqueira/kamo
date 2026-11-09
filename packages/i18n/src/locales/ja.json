@@ -712,7 +712,10 @@
       "sitesAllow": "許可",
       "sitesGranted": "許可しました。Chrome の拡張機能の設定からいつでも取り消せます。",
       "privacy": "録画はこのブラウザに保存されます。あなたが送らない限り、外に出ることはありません。"
-    }
+    },
+    "actionTitleRecording": "録画中。クリックで停止",
+    "actionTitlePaused": "一時停止中。クリックで停止して保存",
+    "barTitle": "Kamo · 録画中"
   },
   "menu": {
     "file": "ファイル",

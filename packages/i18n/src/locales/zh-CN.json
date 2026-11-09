@@ -712,7 +712,10 @@
       "sitesAllow": "允许",
       "sitesGranted": "已允许。你可以随时在 Chrome 的扩展程序设置中撤销。",
       "privacy": "你的录制内容保存在此浏览器中。除非你主动发送，否则不会离开浏览器。"
-    }
+    },
+    "actionTitleRecording": "正在录制。单击停止",
+    "actionTitlePaused": "已暂停。单击停止并保存",
+    "barTitle": "Kamo · 正在录制"
   },
   "menu": {
     "file": "文件",

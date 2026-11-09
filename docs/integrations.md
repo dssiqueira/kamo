@@ -54,7 +54,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 ## Distribution
 - GitHub Releases: `.dmg` (arm64) and `.exe` (x64), with a budget of **≤ 130MB** (Electron alone already takes up a good part; no model or FFmpeg inside)
 - Extension: **≤ 5MB** (estimate: 1–3MB). Uses the same `core` and the same `ui` as the desktop; what weighs on the desktop is Electron and the native modules, and the extension has neither
-- **Bundles per entry point in the extension:** popup (≤ 150KB, no `core` or editor), recording offscreen (capture, events and thumbnails only), editor (`core` + `ui`, loaded only when the editor tab opens) and service worker (minimal). Language strings loaded on demand, only the language in use
+- **Bundles per entry point in the extension:** popup (≤ 150KB, no `core` or editor), recording bar (as light as the popup, no `core`), recording offscreen (capture, events and thumbnails only), editor (`core` + `ui`, loaded only when the editor tab opens) and service worker (minimal). Language strings loaded on demand, only the language in use
 - **Mac:** signed with a Developer ID Application certificate + notarization from v0.1 (uses the Apple Developer account that already exists; the certificate is created by the Account Holder)
 - **Windows:** unsigned in v0.1. The README and the site explain the SmartScreen "More info → Run anyway". Certificate only if the app gains traction.
 - **Mac App Store:** out (see D-009)
@@ -67,6 +67,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 | Microphone | the permission is requested **beforehand**, on a visible extension page (welcome or on the first click of the microphone toggle), because the offscreen document can't show the prompt; afterwards, the offscreen document uses `getUserMedia` normally |
 | Tab audio | comes along in the `tabCapture` stream; the offscreen document must play that audio back (`AudioContext`), otherwise the tab goes silent for the user during recording |
 | Clicks | content script injected only into the recorded tab, listening only to mouse events |
+| Recording controls | `chrome.windows.create({ type: 'popup', focused: false })` opens the recording bar (`recording-bar.html`: timecode, Pause / Resume, Stop) as its own small window at the bottom center of the recorded tab's browser window; no permission needed. While recording, `chrome.action.setPopup({ popup: '' })` turns a click on the icon into `action.onClicked`, which stops |
 | Editor | extension page (`editor.html`) opened in a new tab |
 | Projects | OPFS (`navigator.storage.getDirectory()`) |
 | Settings and cloud session | `chrome.storage.local` |
@@ -78,7 +79,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 - Doesn't record internal pages (`chrome://`, the Chrome Web Store itself), nor capture clicks on them
 - Clicks inside cross-origin iframes may not be captured in the MVP
 - If the user switches tabs during recording, the recording continues on the original tab
-- Any element injected into the page shows up in the video (`tabCapture` records what the tab renders). That's why the extension doesn't inject a bar or buttons during recording; the controls live in the popup, the icon and the shortcut
+- Any element injected into the page shows up in the video (`tabCapture` records what the tab renders). That's why the extension doesn't inject a bar or buttons during recording; the controls live in the recording bar's own window (a separate window is not part of the tab, so `tabCapture` never records it), the icon and the shortcut
 
 **Publishing:**
 - Chrome Web Store (one-time US$ 5 fee for the developer account)

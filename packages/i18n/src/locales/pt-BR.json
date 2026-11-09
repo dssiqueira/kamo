@@ -712,7 +712,10 @@
       "sitesAllow": "Permitir",
       "sitesGranted": "Permitido. Você pode revogar quando quiser nas configurações de extensões do Chrome.",
       "privacy": "Suas gravações ficam neste navegador. Nada sai dele a menos que você envie."
-    }
+    },
+    "actionTitleRecording": "Gravando. Clique para parar",
+    "actionTitlePaused": "Pausado. Clique para parar e salvar",
+    "barTitle": "Kamo · Gravando"
   },
   "menu": {
     "file": "Arquivo",

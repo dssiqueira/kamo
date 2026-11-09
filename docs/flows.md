@@ -106,8 +106,8 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 1. The user is on the tab they want to record and clicks the Kamo icon in the Chrome toolbar
 2. The **popup** opens: Record button, microphone toggle and the latest projects
 3. Clicks **Record** → 3-2-1 countdown overlaid on the tab itself
-4. Records. The extension icon becomes a small coral dot with the time in the badge. **Nothing is injected into the page** (it would show up in the video); the control stays in the popup
-5. Clicks **Stop** (in the popup, on the icon or with the ⌘⇧2 / Ctrl+Shift+2 shortcut)
+4. Records. The **recording bar** opens in its own small window at the bottom center of the browser window (see below), the extension icon becomes a small coral dot with the time in the badge, and its tooltip says "Recording. Click to stop". **Nothing is injected into the page** (it would show up in the video)
+5. Stops: **Stop** on the recording bar, one click on the icon (also while paused) or the ⌘⇧2 / Ctrl+Shift+2 shortcut; all three run the same stop and save
 6. The **Editor** opens in a new extension tab, already with zooms, background and cursor
 7. Exports → the file goes to the downloads folder
 
@@ -118,7 +118,15 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 - **States:**
   - normal tab: ready to record
   - tab that cannot be recorded (`chrome://`, Chrome Web Store): button disabled + "Chrome doesn't let you record this page"
-  - recording: the popup becomes the control (timecode, pause, stop)
+  - recording or paused: a click on the icon stops instead of opening the popup; the popup (timecode, pause, stop) stays open if it was open when the recording started
+
+### Recording bar (extension)
+- The desktop floating bar (same component, `RecordingBar` from `packages/ui`) in a small Chrome popup window: pulsing REC dot, hh:mm:ss:ff timecode, Pause / Resume, Stop. No grip: the window moves by its title bar
+- Opens when the recording actually starts (after the countdown), unfocused, so the recorded tab keeps the focus; closes on stop, save, cancel or failure
+- It is a separate window, not part of the recorded tab, so it **never shows in the video** (tab capture records only the tab) and nothing is drawn in the page
+- **States:** recording (Pause, Stop) · paused ("Paused", dimmed timecode, Resume, Stop)
+- **Closed by the user:** the recording keeps going and the bar does not come back for that recording; the icon and the shortcut still stop it (paused, it stays paused until stopped)
+- **Service worker restarted mid-recording:** the open bar is adopted (its window id lives with the rest of the state in `chrome.storage.session`), never a second one
 
 ### First use of the extension
 - Welcome screen opened in a tab on install: Kamo waving, a sentence about what the extension does and the "Pin to toolbar" button with a visual instruction

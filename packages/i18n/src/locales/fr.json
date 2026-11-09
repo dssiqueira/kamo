@@ -712,7 +712,10 @@
       "sitesAllow": "Autoriser",
       "sitesGranted": "Autorisé. Vous pouvez revenir dessus à tout moment dans les paramètres des extensions de Chrome.",
       "privacy": "Vos enregistrements restent dans ce navigateur. Rien n'en sort sans que vous l'envoyiez."
-    }
+    },
+    "actionTitleRecording": "Enregistrement en cours. Cliquez pour arrêter",
+    "actionTitlePaused": "En pause. Cliquez pour arrêter et enregistrer",
+    "barTitle": "Kamo · Enregistrement"
   },
   "menu": {
     "file": "Fichier",

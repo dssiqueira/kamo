@@ -712,7 +712,10 @@
       "sitesAllow": "Allow",
       "sitesGranted": "Allowed. You can take it back anytime in Chrome's extension settings.",
       "privacy": "Your recordings stay in this browser. Nothing leaves it unless you send it."
-    }
+    },
+    "actionTitleRecording": "Recording. Click to stop",
+    "actionTitlePaused": "Paused. Click to stop and save",
+    "barTitle": "Kamo · Recording"
   },
   "menu": {
     "file": "File",

@@ -712,7 +712,10 @@
       "sitesAllow": "허용",
       "sitesGranted": "허용했어요. Chrome 확장 프로그램 설정에서 언제든 취소할 수 있어요.",
       "privacy": "녹화는 이 브라우저에 남아요. 직접 보내지 않으면 아무것도 밖으로 나가지 않아요."
-    }
+    },
+    "actionTitleRecording": "녹화 중. 클릭하면 중지",
+    "actionTitlePaused": "일시 정지됨. 클릭하면 중지하고 저장",
+    "barTitle": "Kamo · 녹화 중"
   },
   "menu": {
     "file": "파일",

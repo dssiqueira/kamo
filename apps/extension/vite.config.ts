@@ -52,6 +52,8 @@ export default defineConfig(({ mode }) => {
         input: {
           // Popup: ≤ 150KB, no engine (docs/integrations.md → bundles per entry point).
           popup: resolve(root, 'popup.html'),
+          // Recording bar window (background/control-bar.ts): as light as the popup.
+          'recording-bar': resolve(root, 'recording-bar.html'),
           // Hidden recorder: capture, thumbnails and the project files.
           offscreen: resolve(root, 'offscreen.html'),
           // Asks for the microphone or the camera on a visible page (E-01, A-03).

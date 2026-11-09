@@ -1,11 +1,11 @@
 // Messages between the extension's pieces (E-01). `chrome.runtime.sendMessage` reaches every
 // extension page at once, so each message names its `target` and the others ignore it.
 //
-//   popup ──request──▶ background (service worker) ──request──▶ offscreen (recorder)
-//   popup ◀──state (port)── background ◀──events── offscreen
+//   popup, bar ──request──▶ background (service worker) ──request──▶ offscreen (recorder)
+//   popup, bar ◀──state (port)── background ◀──events── offscreen
 import type { ClockSnapshot } from './clock.ts'
 
-/** Port the popup opens to receive the background state while it is open. */
+/** Port the popup and the recording bar open to receive the background state while open. */
 export const POPUP_PORT = 'kamo-popup'
 
 /** Chrome command (manifest `commands`) that stops the recording: ⌘⇧2 / Ctrl+Shift+2. */
@@ -32,6 +32,11 @@ export interface BackgroundState {
   session: Session
   /** Shown once in the popup (e.g. "Saved"), then dismissed. */
   notices: Notice[]
+  /**
+   * The recording bar's window id while open, 'closed' once the user closed it, absent when
+   * none was opened for this recording (background/control-bar.ts).
+   */
+  bar?: number | 'closed'
 }
 
 export interface RecordOptions {

@@ -27,6 +27,8 @@ import { startMouseCapture, stopMouseCapture } from '../content/mouse-capture.ts
 import { installErrorLog, recordError } from '../shared/error-log.ts'
 import { fromExtensionPage, fromPage, OFFSCREEN_PAGE } from '../shared/sender.ts'
 import { WELCOME_PAGE, editorPath } from '../shared/pages.ts'
+import { actionMode, actionSettings, type ActionMode } from './action-click.ts'
+import { BAR_PAGE, barBounds, planBar, type BarRecord } from './control-bar.ts'
 import { GAZE_ALARM, GAZE_PERIOD_MINUTES, gazeAlarmAction } from './gaze-alarm.ts'
 import { playGaze, setIdleIcon, setRecordingIcon } from './icon.ts'
 
@@ -52,13 +54,21 @@ async function loadState(): Promise<void> {
   const phase = state.session.phase
   if (phase === 'countdown' || (phase !== 'idle' && !(await hasOffscreenDocument()))) {
     await setState({ session: { phase: 'idle' } })
+    return
   }
+  // A fresh worker doesn't know what the icon does now: settle the popup and the tooltip, and
+  // adopt the recording bar if one is open (never a second one).
+  await syncClickMode(state.session).catch(() => undefined)
+  void syncBar()
 }
 
 async function setState(next: Partial<BackgroundState>): Promise<void> {
+  const before = state.session.phase
   state = { ...state, ...next }
   await chrome.storage.session.set({ [STATE_KEY]: state })
   for (const port of ports) port.postMessage(state)
+  // The bar opens when the recording starts and closes when it ends (not on every clock tick).
+  if (state.session.phase !== before) void syncBar()
   await updateAction(state.session)
 }
 
@@ -77,6 +87,82 @@ function addNotices(notices: Notice[]): Notice[] {
 // otherwise Kamo's head, glancing around once a minute (gaze-alarm.ts).
 
 let lastBadge = ''
+// What a click on the icon does now (action-click.ts); null until set by this worker.
+let clickMode: ActionMode | null = null
+
+/** Popup or stop on click, and the tooltip; only when the mode changes. */
+async function syncClickMode(session: Session): Promise<void> {
+  const mode = actionMode(session)
+  if (mode === clickMode) return
+  clickMode = mode
+  const settings = actionSettings(mode)
+  await chrome.action.setPopup({ popup: settings.popup })
+  await chrome.action.setTitle({ title: chrome.i18n.getMessage(settings.title) })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Recording bar (control-bar.ts): a small popup window with the timecode, Pause / Resume and
+// Stop, open while the session is 'recording'. Runs one plan at a time, so two wake-ups or two
+// phase changes in a row never open two bars.
+
+let barQueue: Promise<void> = Promise.resolve()
+
+function syncBar(): Promise<void> {
+  barQueue = barQueue.then(runBarPlan).catch(() => undefined)
+  return barQueue
+}
+
+/** Windows hosting the bar page now (Chrome is the source of truth, not the stored id). */
+async function barWindows(): Promise<number[]> {
+  const contexts = await chrome.runtime.getContexts({
+    contextTypes: [chrome.runtime.ContextType.TAB],
+    documentUrls: [chrome.runtime.getURL(BAR_PAGE)],
+  })
+  const ids = new Set(contexts.map((context) => context.windowId).filter((id) => id >= 0))
+  // Just created, its page may not be listed yet: the window itself counts.
+  if (typeof state.bar === 'number' && !ids.has(state.bar)) {
+    const window = await chrome.windows.get(state.bar).catch(() => undefined)
+    if (window) ids.add(state.bar)
+  }
+  return [...ids]
+}
+
+async function runBarPlan(): Promise<void> {
+  const session = state.session
+  const plan = planBar(session, state.bar, await barWindows())
+  for (const id of plan.close) await chrome.windows.remove(id).catch(() => undefined)
+  let next = plan.next
+  // A bar that can't open is not retried: the icon and the shortcut still stop.
+  if (plan.open && session.phase === 'recording') next = (await openBar(session.tabId)) ?? 'closed'
+  await saveBar(next)
+}
+
+/** Persists the bar's id without telling the popup or touching the icon. */
+async function saveBar(next: BarRecord): Promise<void> {
+  if (next === state.bar) return
+  const { bar: _previous, ...rest } = state
+  state = next === undefined ? rest : { ...rest, bar: next }
+  await chrome.storage.session.set({ [STATE_KEY]: state })
+}
+
+/** Opens the bar over the recorded tab's browser window, without taking its focus. */
+async function openBar(tabId: number): Promise<number | undefined> {
+  const tab = await chrome.tabs.get(tabId).catch(() => undefined)
+  const browser = tab ? await chrome.windows.get(tab.windowId).catch(() => undefined) : undefined
+  const created = await chrome.windows
+    .create({
+      url: chrome.runtime.getURL(BAR_PAGE),
+      type: 'popup',
+      focused: false,
+      ...barBounds(browser ?? {}),
+    })
+    .catch(() => undefined)
+  // Some window managers focus a new window anyway: hand the focus back to the tab's window.
+  if (created?.focused && tab) {
+    await chrome.windows.update(tab.windowId, { focused: true }).catch(() => undefined)
+  }
+  return created?.id
+}
 
 async function syncGazeAlarm(phase: Session['phase']): Promise<void> {
   const action = gazeAlarmAction(phase, (await chrome.alarms.get(GAZE_ALARM)) !== undefined)
@@ -92,6 +178,7 @@ async function syncGazeAlarm(phase: Session['phase']): Promise<void> {
 
 async function updateAction(session: Session): Promise<void> {
   await syncGazeAlarm(session.phase).catch(() => undefined)
+  await syncClickMode(session).catch(() => undefined)
   if (session.phase === 'recording') {
     const paused = session.clock.state === 'paused'
     const text = formatBadge(session.clock.elapsedMs, chrome.i18n.getUILanguage())
@@ -399,6 +486,26 @@ chrome.runtime.onConnect.addListener((port) => {
 // ⌘⇧2 / Ctrl+Shift+2 (manifest `commands`): a Chrome shortcut, not a key listener (rule 2).
 chrome.commands.onCommand.addListener((command) => {
   if (command === STOP_COMMAND) void loaded.then(stop)
+})
+
+// A click on the icon while recording or paused (the popup is off then, action-click.ts) stops,
+// like the shortcut and the bar's Stop. Should it fire with nothing to stop, the popup comes back
+// and opens.
+chrome.action.onClicked.addListener(() => {
+  void loaded.then(async () => {
+    if (state.session.phase === 'recording') {
+      await stop()
+      return
+    }
+    clickMode = null
+    await syncClickMode(state.session).catch(() => undefined)
+    await chrome.action.openPopup().catch(() => undefined)
+  })
+})
+
+// The user closed the recording bar: the recording goes on, and the bar stays closed for it.
+chrome.windows.onRemoved.addListener((windowId) => {
+  void loaded.then(() => (state.bar === windowId ? syncBar() : undefined))
 })
 
 // The recorded tab loaded a new page: the content script went with the old one (E-02).

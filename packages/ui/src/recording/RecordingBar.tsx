@@ -17,13 +17,25 @@ export interface RecordingBarProps {
   onPause(): void
   onResume(): void
   onStop(): void
+  /**
+   * Shows the grip and makes the bar drag its frameless window (desktop). Off where the window
+   * has its own title bar to drag (the extension's bar window).
+   */
+  draggable?: boolean
 }
 
 /**
  * Floating bar while recording (flows.md §4): pulsing REC, hh:mm:ss:ff timecode, pause, stop.
- * The window that hosts it is excluded from capture, so it never shows in the video.
+ * The window that hosts it is excluded from capture (desktop) or is not the recorded tab
+ * (extension), so it never shows in the video.
  */
-export function RecordingBar({ clock, onPause, onResume, onStop }: RecordingBarProps) {
+export function RecordingBar({
+  clock,
+  onPause,
+  onResume,
+  onStop,
+  draggable = true,
+}: RecordingBarProps) {
   const t = useT()
   const elapsed = useElapsed(clock)
   const paused = clock.state === 'paused'
@@ -36,9 +48,9 @@ export function RecordingBar({ clock, onPause, onResume, onStop }: RecordingBarP
       <div
         role="toolbar"
         aria-label={t(paused ? 'recording.paused' : 'recording.rec')}
-        className="flex items-center gap-sm rounded-full border border-border bg-surface-raised py-[6px] ps-[10px] pe-[6px] text-on-surface shadow-[0_8px_24px_rgb(0_0_0/0.12)] [-webkit-app-region:drag]"
+        className={`flex items-center gap-sm rounded-full border border-border bg-surface-raised py-[6px] pe-[6px] text-on-surface shadow-[0_8px_24px_rgb(0_0_0/0.12)] ${draggable ? 'ps-[10px] [-webkit-app-region:drag]' : 'ps-[14px]'}`}
       >
-        <Grip />
+        {draggable && <Grip />}
         <span className="flex items-center gap-[10px] pe-xs">
           <RecDot paused={paused} />
           <span

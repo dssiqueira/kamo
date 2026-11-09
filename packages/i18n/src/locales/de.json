@@ -712,7 +712,10 @@
       "sitesAllow": "Erlauben",
       "sitesGranted": "Erlaubt. Du kannst es jederzeit in den Erweiterungseinstellungen von Chrome zurücknehmen.",
       "privacy": "Deine Aufnahmen bleiben in diesem Browser. Nichts verlässt ihn, außer du schickst es."
-    }
+    },
+    "actionTitleRecording": "Aufnahme läuft. Klicken zum Beenden",
+    "actionTitlePaused": "Pausiert. Klicken zum Beenden und Speichern",
+    "barTitle": "Kamo · Aufnahme"
   },
   "menu": {
     "file": "Ablage",

@@ -1,17 +1,19 @@
 // The extension's manifest.json and _locales/, generated at build time so the version comes
 // from package.json and every text Chrome shows comes from packages/i18n (rule 14).
 import { LOCALES, type Locale, type Messages } from '@kamo/i18n'
+import { POPUP_PAGE } from '../src/background/action-click.ts'
 import { TOOLBAR_ICON } from '../src/background/toolbar-frames.ts'
 
 /** Built entry points the manifest points to (see vite.config.ts). */
 export const SERVICE_WORKER = 'service-worker.js'
-export const POPUP = 'popup.html'
+export const POPUP = POPUP_PAGE
 
 /**
  * Permissions of the extension so far (docs/integrations.md lists the full set; `identity` arrives
  * with the cloud login in step 17). `scripting` + `activeTab` draw the countdown over the tab the
  * user clicked on and listen to its mouse (E-02); no host permission. `downloads` saves exports (E-04).
  * `alarms` wakes the service worker about once a minute so the toolbar Kamo blinks or glances.
+ * The recording bar (a small popup window, background/control-bar.ts) needs no permission.
  */
 export const PERMISSIONS = [
   'tabCapture',
@@ -99,12 +101,18 @@ export function buildManifest(version: string): Record<string, unknown> {
   }
 }
 
-/** i18n key (packages/i18n) of each `__MSG_name__` the manifest uses. */
+/**
+ * i18n key (packages/i18n) of each `_locales` message: the `__MSG_name__` the manifest uses, and
+ * what the service worker reads with chrome.i18n.getMessage (the icon's tooltip while recording,
+ * background/action-click.ts).
+ */
 export const MANIFEST_MESSAGES = {
   extName: 'extension.name',
   extDescription: 'extension.description',
   actionTitle: 'extension.actionTitle',
   commandStop: 'extension.commandStop',
+  actionTitleRecording: 'extension.actionTitleRecording',
+  actionTitlePaused: 'extension.actionTitlePaused',
 } as const
 
 function lookup(messages: Messages, key: string): string | undefined {
