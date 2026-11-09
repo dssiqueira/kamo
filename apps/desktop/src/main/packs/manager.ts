@@ -1,12 +1,12 @@
-// Optional pack manager (A-07, D-019): lists the packs, downloads them only when the user
-// asks (progress, pause/resume, cancel), checks every file's SHA-256 and installs atomically
-// into app-data/packs/<id>/<version>/. Updates are installed only on request, and replace the
-// old version once the new one is complete. No timer, no background check, no telemetry.
-import { chmod, mkdir, readdir, rm, stat } from 'node:fs/promises'
+// Optional pack manager (A-07, D-019, D-042): a pack is one whisper model. It is downloaded
+// from Hugging Face only when the user asks (progress, pause/resume, cancel), checked against
+// its pinned SHA-256 and installed atomically into app-data/packs/<id>/<version>/. The program
+// that runs it (whisper-cli) ships inside the app and is found by `program`. No timer, no
+// background check, no telemetry.
+import { mkdir, readdir, rm, stat } from 'node:fs/promises'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import {
   PACK_IDS,
-  type CatalogErrorCode,
   type PackErrorCode,
   type PackId,
   type PackInfo,
@@ -14,16 +14,8 @@ import {
   type PacksStatus,
 } from '../../shared/packs.ts'
 import { renameWithRetry } from '../storage/atomic.ts'
-import { DISK_MARGIN_BYTES, KNOWN_PACKS } from './config.ts'
+import { DISK_MARGIN_BYTES, KNOWN_PACKS, type KnownPack } from './config.ts'
 import { DownloadError, downloadFile, partialSize, sha256File, type FetchLike } from './download.ts'
-import {
-  ManifestError,
-  parseManifest,
-  platformSize,
-  type ManifestPack,
-  type PackPlatform,
-  type PacksManifest,
-} from './manifest.ts'
 import { readRegistry, writeRegistry, type InstalledPack, type InstalledPacks } from './registry.ts'
 
 export class PackError extends Error {
@@ -36,27 +28,6 @@ export class PackError extends Error {
   }
 }
 
-/** The list of packs answered with an HTTP error. */
-export class CatalogHttpError extends Error {
-  constructor(readonly status: number) {
-    super(`packs manifest: HTTP ${status}`)
-    this.name = 'CatalogHttpError'
-  }
-}
-
-/**
- * Why loading packs-manifest.json failed, as the UI explains it: a 404 means the packs are not
- * published yet (the rolling `packs` release or its manifest does not exist), a fetch that threw
- * means no connection, an unreadable list means a newer format, anything else is a server error.
- */
-export function catalogErrorCode(error: unknown): CatalogErrorCode {
-  if (error instanceof CatalogHttpError) {
-    return error.status === 404 || error.status === 410 ? 'catalog_unpublished' : 'catalog_failed'
-  }
-  if (error instanceof ManifestError || error instanceof SyntaxError) return 'manifest_invalid'
-  return 'offline'
-}
-
 export interface PackLogger {
   info(event: string, data?: Record<string, unknown>): void
   warn(event: string, data?: Record<string, unknown>): void
@@ -67,31 +38,28 @@ export interface PackManagerOptions {
   dir: string
   /** app-data/packs.json */
   registryFile: string
-  manifestUrl: string
-  /** `win32-x64`, `darwin-arm64`... */
-  platform: string
+  /** The models and where they come from (config.ts; tests and dev point them elsewhere). */
+  packs?: readonly KnownPack[]
   fetch: FetchLike
   /** Free bytes on the volume holding `dir`. */
   freeBytes(dir: string): Promise<number>
+  /** Whether the computer has a connection (Electron's `net.isOnline`): offline vs. unreachable. */
+  isOnline?(): boolean
+  /** Absolute path of the bundled whisper-cli, or null when this build has none. */
+  program(): string | null
   log: PackLogger
-  /** Mac/Linux set the executable bit; Windows does not need it. */
-  chmodExecutables?: boolean
   /** Progress events at most this often (ms). */
   progressIntervalMs?: number
+  /** A download that receives nothing for this long stops (download.ts). */
+  stallMs?: number
 }
 
-/** An installed pack's program, checked and ready to run. */
-export interface InstalledProgram {
+/** An installed model, checked and ready to transcribe with. */
+export interface TranscriberPack {
   id: PackId
   version: string
   /** The pack folder. */
   dir: string
-  /** Absolute path of the program. */
-  entry: string
-}
-
-/** An installed transcription pack, ready to run. */
-export interface TranscriberPack extends InstalledProgram {
   model: { name: string; path: string }
 }
 
@@ -111,13 +79,11 @@ interface Failure {
 const STAGING_DIR = '.downloads'
 
 export class PackManager {
-  private manifest: PacksManifest | null = null
-  private catalog: PacksStatus['catalog'] = 'idle'
-  private catalogError: CatalogErrorCode | null = null
-  private catalogLoad: Promise<void> | null = null
+  private readonly known: readonly KnownPack[]
   private installed: Promise<InstalledPacks> | null = null
+  private scanned: Promise<void> | null = null
   private readonly active = new Map<PackId, ActiveDownload>()
-  /** From the Install click until installed, paused, cancelled or failed. */
+  /** From the Download click until installed, paused, cancelled or failed. */
   private readonly installs = new Map<PackId, Promise<void>>()
   private readonly failures = new Map<PackId, Failure>()
   /** Partial downloads on disk (paused, or left by a closed app). */
@@ -126,43 +92,37 @@ export class PackManager {
   private readonly listeners = new Set<(status: PacksStatus) => void>()
   private lastProgressEmit = 0
   /**
-   * Models whose SHA-256 was checked, by path, with the size and mtime they had then: the
-   * model (150–500MB) is hashed again only when either changes. Programs are always hashed.
+   * Models whose SHA-256 was checked, by path, with the size and mtime they had then: a model
+   * (150–500MB) is hashed again only when either changes.
    */
   private readonly verifiedModels = new Map<
     string,
     { size: number; mtimeMs: number; sha256: string }
   >()
 
-  constructor(private readonly options: PackManagerOptions) {}
+  constructor(private readonly options: PackManagerOptions) {
+    this.known = options.packs ?? KNOWN_PACKS
+  }
 
   onChange(listener: (status: PacksStatus) => void): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   }
 
-  /** What is installed and, once the list loaded, what can be downloaded. Never fetches. */
+  /** What is installed, on its way or paused, and whether the program is there. Never fetches. */
   async status(): Promise<PacksStatus> {
     const installed = await this.loadInstalled()
+    await this.scanPartials()
     return {
-      packs: KNOWN_PACKS.map((known) => this.info(known.id, installed)),
-      catalog: this.catalog,
-      catalogError: this.catalogError,
+      packs: this.known.map((known) => this.info(known, installed)),
+      program: this.options.program() ? 'ready' : 'missing',
     }
   }
 
-  /** Fetches packs-manifest.json (user action: Settings → Packs, or Transcribe). */
-  async refresh(): Promise<PacksStatus> {
-    this.catalogLoad ??= this.loadCatalog().finally(() => {
-      this.catalogLoad = null
-    })
-    await this.catalogLoad
-    return this.status()
-  }
-
   /**
-   * Downloads and installs a pack (or its update, or resumes a paused download). Resolves when
-   * it is installed, paused or cancelled; failures are reported in the status, not thrown.
+   * Downloads and installs a model (or the newer one this app pins, or resumes a paused
+   * download). Resolves when it is installed, paused or cancelled; failures are reported in
+   * the status, not thrown.
    */
   install(id: PackId): Promise<void> {
     assertPackId(id)
@@ -175,23 +135,14 @@ export class PackManager {
 
   private async startInstall(id: PackId): Promise<void> {
     this.failures.delete(id)
-    if (!this.manifest) await this.refresh()
-    if (!this.manifest) {
-      // The list itself failed: that is the one error to show (status.catalogError), not a
-      // failed download of this pack, which never started.
-      this.options.log.warn('packs.install.refused', { id, error: this.catalogError })
-      return this.emit()
-    }
-    const pack = this.manifest.packs.find((p) => p.id === id)
-    if (!pack) return this.fail(id, 'unknown_pack')
-    const platform = pack.platforms[this.options.platform]
-    if (!platform) return this.fail(id, 'unsupported_platform')
+    const pack = this.knownPack(id)
     const installed = await this.loadInstalled()
-    if (installed[id]?.version === pack.version) return this.emit()
+    if (this.isCurrent(pack, installed[id])) return this.emit()
 
     const staging = this.stagingDir(id, pack.version)
-    const total = platformSize(platform)
-    const onDisk = await this.bytesOnDisk(staging, platform)
+    const file = join(staging, pack.source.file)
+    const total = pack.source.size
+    const onDisk = Math.min(total, await partialSize(file))
     const required = total - onDisk + DISK_MARGIN_BYTES
     const free = await this.options.freeBytes(this.options.dir).catch(() => Infinity)
     if (free < required) return this.fail(id, 'disk_space', required)
@@ -204,7 +155,7 @@ export class PackManager {
       total,
       done: Promise.resolve(),
     }
-    download.done = this.run(id, pack, platform, staging, download).finally(() => {
+    download.done = this.run(pack, staging, download).finally(() => {
       if (this.active.get(id) === download) this.active.delete(id)
       this.emit()
     })
@@ -215,7 +166,7 @@ export class PackManager {
     return download.done
   }
 
-  /** Stops the download and keeps what arrived; Install resumes it. */
+  /** Stops the download and keeps what arrived; Download again resumes it. */
   pause(id: PackId): void {
     assertPackId(id)
     this.active.get(id)?.controller.abort(new PackAbort('paused'))
@@ -235,7 +186,7 @@ export class PackManager {
     this.emit()
   }
 
-  /** Deletes the pack's files (transcripts already made stay in the projects). */
+  /** Deletes the model (transcripts already made stay in the projects). */
   async remove(id: PackId): Promise<void> {
     assertPackId(id)
     if (this.isBusy(id)) throw new PackError('pack_busy')
@@ -256,7 +207,12 @@ export class PackManager {
     this.emit()
   }
 
-  /** The transcription pack to use: the preferred one if installed, else Accurate, else Light. */
+  /** The bundled whisper-cli, or null when this build has none (D-042). */
+  program(): string | null {
+    return this.options.program()
+  }
+
+  /** The model to transcribe with: the preferred one if installed, else Accurate, else Light. */
   async transcriber(preferred?: PackId): Promise<TranscriberPack | null> {
     const installed = await this.loadInstalled()
     const order: PackId[] = [
@@ -266,45 +222,19 @@ export class PackManager {
     ]
     for (const id of order) {
       const pack = installed[id]
-      if (!pack?.model) continue
-      const program = await this.checkedProgram(id, pack)
-      if (!program) continue
-      return {
-        ...program,
-        model: { name: pack.model.name, path: join(program.dir, ...pack.model.path.split('/')) },
+      if (!pack || !isPackId(id)) continue
+      const dir = this.packDir(id, pack.version)
+      const path = join(dir, pack.model.file)
+      if (!(await this.modelIntact(path, pack))) {
+        this.options.log.warn('packs.model_changed', { id })
+        continue
       }
+      return { id, version: pack.version, dir, model: { name: pack.model.name, path } }
     }
     return null
   }
 
-  /**
-   * An installed pack's program (the compatibility pack's FFmpeg, D-040), checked like the
-   * transcriber before every run; null when it is not installed or its files changed.
-   */
-  async program(id: PackId): Promise<InstalledProgram | null> {
-    assertPackId(id)
-    const pack = (await this.loadInstalled())[id]
-    return pack ? this.checkedProgram(id, pack) : null
-  }
-
-  private async checkedProgram(id: PackId, pack: InstalledPack): Promise<InstalledProgram | null> {
-    const dir = this.packDir(id, pack.version)
-    const entry = join(dir, ...pack.entry.split('/'))
-    const model = pack.model ? join(dir, ...pack.model.path.split('/')) : null
-    if (!(await exists(entry)) || (model !== null && !(await exists(model)))) {
-      this.options.log.warn('packs.files_missing', { id })
-      return null
-    }
-    // Before every run: the program and its libraries must still be the files that were
-    // downloaded and checked, so nothing swapped into the pack folder runs as Kamo.
-    if (!(await this.filesIntact(dir, pack))) {
-      this.options.log.warn('packs.files_changed', { id })
-      return null
-    }
-    return { id, version: pack.version, dir, entry }
-  }
-
-  /** A transcription or an export is using this pack: Remove waits (`pack_busy`). Returns the release. */
+  /** A transcription is using this model: Remove waits (`pack_busy`). Returns the release. */
   retain(id: PackId): () => void {
     this.busy.set(id, (this.busy.get(id) ?? 0) + 1)
     let released = false
@@ -321,38 +251,25 @@ export class PackManager {
     return (this.busy.get(id) ?? 0) > 0
   }
 
-  private async run(
-    id: PackId,
-    pack: ManifestPack,
-    platform: PackPlatform,
-    staging: string,
-    download: ActiveDownload,
-  ): Promise<void> {
+  private async run(pack: KnownPack, staging: string, download: ActiveDownload): Promise<void> {
+    const { id } = pack
     const { signal } = download.controller
     try {
-      for (const file of platform.files) {
-        await downloadFile({
-          url: file.url,
-          dest: join(staging, ...file.path.split('/')),
-          size: file.size,
-          sha256: file.sha256,
-          fetch: this.options.fetch,
-          signal,
-          onBytes: (bytes) => {
-            download.received += bytes
-            this.emitProgress()
-          },
-        })
-      }
+      await downloadFile({
+        url: pack.source.url,
+        dest: join(staging, pack.source.file),
+        size: pack.source.size,
+        sha256: pack.source.sha256,
+        fetch: this.options.fetch,
+        signal,
+        ...(this.options.stallMs !== undefined ? { stallMs: this.options.stallMs } : {}),
+        onBytes: (bytes) => {
+          download.received += bytes
+          this.emitProgress()
+        },
+      })
       download.state = 'verifying'
       this.emit()
-      if (this.options.chmodExecutables) {
-        for (const file of platform.files) {
-          if (file.executable || file.path === platform.entry) {
-            await chmod(join(staging, ...file.path.split('/')), 0o755)
-          }
-        }
-      }
       signal.throwIfAborted()
       const target = this.packDir(id, pack.version)
       await rm(target, { recursive: true, force: true })
@@ -362,26 +279,24 @@ export class PackManager {
       const entry: InstalledPack = {
         version: pack.version,
         installedAt: new Date().toISOString(),
-        entry: platform.entry,
-        ...(pack.model ? { model: pack.model } : {}),
-        files: platform.files.map(({ path, size, sha256 }) => ({ path, size, sha256 })),
+        model: {
+          name: pack.modelName,
+          file: pack.source.file,
+          size: pack.source.size,
+          sha256: pack.source.sha256,
+        },
       }
       const next = { ...installed, [id]: entry }
       await writeRegistry(this.options.registryFile, next)
       this.installed = Promise.resolve(next)
       // The model was just checked while downloading: the first run need not hash it again.
-      const modelFile = pack.model
-        ? platform.files.find((file) => file.path === pack.model?.path)
-        : undefined
-      if (modelFile) {
-        const path = join(target, ...modelFile.path.split('/'))
-        const info = await stat(path)
-        this.verifiedModels.set(path, {
-          size: info.size,
-          mtimeMs: info.mtimeMs,
-          sha256: modelFile.sha256,
-        })
-      }
+      const path = join(target, pack.source.file)
+      const info = await stat(path)
+      this.verifiedModels.set(path, {
+        size: info.size,
+        mtimeMs: info.mtimeMs,
+        sha256: pack.source.sha256,
+      })
       await this.removeOtherVersions(id, pack.version)
       this.options.log.info('packs.installed', { id, version: pack.version })
     } catch (error) {
@@ -395,64 +310,57 @@ export class PackManager {
         this.options.log.info(`packs.download.${reason.kind}`, { id })
         return
       }
-      const code: PackErrorCode =
-        error instanceof DownloadError
-          ? error.code
-          : error instanceof PackError
-            ? error.code
-            : 'install_failed'
+      const code = this.errorCode(error)
       this.options.log.warn('packs.download.failed', { id, code, error })
-      if (code === 'offline') {
-        this.partial.set(id, { received: download.received, total: download.total })
+      // What is still on disk is fine (a damaged file was deleted): "Try again" resumes there.
+      const kept = Math.min(
+        download.total,
+        await partialSize(join(staging, pack.source.file)).catch(() => 0),
+      )
+      if (kept > 0) this.partial.set(id, { received: kept, total: download.total })
+      const required =
+        code === 'disk_space' ? download.total - download.received + DISK_MARGIN_BYTES : null
+      this.failures.set(id, { error: code, requiredBytes: required })
+    }
+  }
+
+  private errorCode(error: unknown): PackErrorCode {
+    if (error instanceof DownloadError) {
+      switch (error.code) {
+        case 'unreachable':
+          return (this.options.isOnline?.() ?? true) ? 'source_unreachable' : 'offline'
+        case 'checksum_mismatch':
+          return 'checksum_mismatch'
+        case 'disk_space':
+          return 'disk_space'
+        case 'download_failed':
+          return 'download_failed'
       }
-      this.failures.set(id, { error: code, requiredBytes: null })
     }
+    if (error instanceof PackError) return error.code
+    return 'install_failed'
   }
 
-  private async loadCatalog(): Promise<void> {
-    this.catalog = 'loading'
-    this.catalogError = null
-    this.emit()
-    try {
-      const response = await this.options.fetch(this.options.manifestUrl, {})
-      if (!response.ok) {
-        await response.body?.cancel().catch(() => {})
-        throw new CatalogHttpError(response.status)
+  /** A download a closed app left half done shows as paused, ready to resume (once). */
+  private scanPartials(): Promise<void> {
+    this.scanned ??= (async () => {
+      for (const pack of this.known) {
+        if (this.active.has(pack.id)) continue
+        const file = join(this.stagingDir(pack.id, pack.version), pack.source.file)
+        const received = Math.min(pack.source.size, await partialSize(file))
+        if (received > 0) this.partial.set(pack.id, { received, total: pack.source.size })
       }
-      this.manifest = parseManifest(await response.json(), this.options.manifestUrl)
-      this.catalog = 'ready'
-      await this.findPartialDownloads()
-    } catch (error) {
-      this.catalog = 'error'
-      this.catalogError = catalogErrorCode(error)
-      this.options.log.warn('packs.manifest.failed', { code: this.catalogError, error })
-    }
-    this.emit()
+    })().catch(() => {})
+    return this.scanned
   }
 
-  /** A download a closed app left half done shows as paused, ready to resume. */
-  private async findPartialDownloads(): Promise<void> {
-    for (const pack of this.manifest?.packs ?? []) {
-      if (!isPackId(pack.id) || this.active.has(pack.id)) continue
-      const platform = pack.platforms[this.options.platform]
-      if (!platform) continue
-      const staging = this.stagingDir(pack.id, pack.version)
-      if (!(await exists(staging))) continue
-      const received = await this.bytesOnDisk(staging, platform)
-      if (received > 0) this.partial.set(pack.id, { received, total: platformSize(platform) })
-    }
-  }
-
-  private info(id: PackId, installed: InstalledPacks): PackInfo {
-    const known = KNOWN_PACKS.find((pack) => pack.id === id)!
-    const pack = this.manifest?.packs.find((p) => p.id === id)
-    const platform = pack?.platforms[this.options.platform]
-    const installedVersion = installed[id]?.version ?? null
-    const availableVersion = pack && platform ? pack.version : null
+  private info(known: KnownPack, installed: InstalledPacks): PackInfo {
+    const { id } = known
+    const mine = installed[id]
+    const installedVersion = mine?.version ?? null
     const active = this.active.get(id)
     const failure = this.failures.get(id)
     const partial = this.partial.get(id)
-    const unsupported = this.catalog === 'ready' && !platform && !installedVersion
     let state: PackState = installedVersion ? 'installed' : 'not_installed'
     if (active) state = active.state
     else if (failure) state = 'failed'
@@ -464,21 +372,30 @@ export class PackManager {
         : null
     return {
       id,
-      kind: known.kind,
       quality: known.quality,
-      sizeBytes: platform ? platformSize(platform) : known.approxBytes,
-      sizeExact: platform !== undefined,
+      sizeBytes: known.source.size,
       installedVersion,
-      availableVersion,
-      updateAvailable:
-        installedVersion !== null &&
-        availableVersion !== null &&
-        installedVersion !== availableVersion,
+      updateAvailable: mine !== undefined && !this.isCurrent(known, mine),
       state,
       progress,
-      error: failure?.error ?? (unsupported ? 'unsupported_platform' : null),
+      error: failure?.error ?? null,
       requiredBytes: failure?.requiredBytes ?? null,
     }
+  }
+
+  /** The installed model is the very file this app pins. */
+  private isCurrent(known: KnownPack, pack: InstalledPack | undefined): boolean {
+    return (
+      pack !== undefined &&
+      pack.version === known.version &&
+      pack.model.sha256 === known.source.sha256
+    )
+  }
+
+  private knownPack(id: PackId): KnownPack {
+    const pack = this.known.find((p) => p.id === id)
+    if (!pack) throw new PackError('unknown_pack')
+    return pack
   }
 
   private fail(id: PackId, error: PackErrorCode, requiredBytes: number | null = null): void {
@@ -515,40 +432,30 @@ export class PackManager {
   }
 
   /**
-   * True when every file of an installed pack still has its recorded size and SHA-256. The
-   * model is hashed only when its size or mtime changed since the last check.
+   * True when the model still has its recorded size and SHA-256, so a file swapped into the
+   * pack folder is never fed to whisper. Hashed again only when its size or mtime changed.
    */
-  private async filesIntact(dir: string, pack: InstalledPack): Promise<boolean> {
-    const listed = pack.files.map((file) => file.path.toLowerCase())
-    if (!listed.includes(pack.entry.toLowerCase())) return false
+  private async modelIntact(path: string, pack: InstalledPack): Promise<boolean> {
     try {
-      for (const file of pack.files) {
-        const path = join(dir, ...file.path.split('/'))
-        const info = await stat(path)
-        if (!info.isFile() || info.size !== file.size) return false
-        const isModel = file.path === pack.model?.path
-        if (isModel) {
-          const known = this.verifiedModels.get(path)
-          if (
-            known?.size === info.size &&
-            known.mtimeMs === info.mtimeMs &&
-            known.sha256 === file.sha256
-          ) {
-            continue
-          }
-        }
-        if ((await sha256File(path)) !== file.sha256) {
-          this.verifiedModels.delete(path)
-          return false
-        }
-        if (isModel) {
-          this.verifiedModels.set(path, {
-            size: info.size,
-            mtimeMs: info.mtimeMs,
-            sha256: file.sha256,
-          })
-        }
+      const info = await stat(path)
+      if (!info.isFile() || info.size !== pack.model.size) return false
+      const known = this.verifiedModels.get(path)
+      if (
+        known?.size === info.size &&
+        known.mtimeMs === info.mtimeMs &&
+        known.sha256 === pack.model.sha256
+      ) {
+        return true
       }
+      if ((await sha256File(path)) !== pack.model.sha256) {
+        this.verifiedModels.delete(path)
+        return false
+      }
+      this.verifiedModels.set(path, {
+        size: info.size,
+        mtimeMs: info.mtimeMs,
+        sha256: pack.model.sha256,
+      })
       return true
     } catch {
       return false
@@ -564,14 +471,6 @@ export class PackManager {
     return inside(join(this.options.dir, STAGING_DIR), `${id}-${version}`)
   }
 
-  private async bytesOnDisk(staging: string, platform: PackPlatform): Promise<number> {
-    let sum = 0
-    for (const file of platform.files) {
-      sum += Math.min(file.size, await partialSize(join(staging, ...file.path.split('/'))))
-    }
-    return sum
-  }
-
   private async removeStaging(id: PackId): Promise<void> {
     const root = join(this.options.dir, STAGING_DIR)
     const names = await readdir(root).catch(() => [] as string[])
@@ -581,7 +480,7 @@ export class PackManager {
     this.partial.delete(id)
   }
 
-  /** After an update; a version still running (Windows keeps the .exe locked) stays for now. */
+  /** After an update; a version still in use stays for now. */
   private async removeOtherVersions(id: PackId, keep: string): Promise<void> {
     const versions = await readdir(join(this.options.dir, id)).catch(() => [] as string[])
     for (const version of versions) {
@@ -619,13 +518,4 @@ function inside(parent: string, name: string): string {
     throw new PackError('install_failed')
   }
   return target
-}
-
-async function exists(path: string): Promise<boolean> {
-  try {
-    await stat(path)
-    return true
-  } catch {
-    return false
-  }
 }

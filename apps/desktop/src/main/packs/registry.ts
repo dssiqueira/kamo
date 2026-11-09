@@ -1,28 +1,38 @@
-// app-data/packs.json (docs/data-model.md): which packs are installed, their version and the
-// SHA-256 of every file. Written atomically after each install or removal.
+// app-data/packs.json (docs/data-model.md): which models are installed, the Hugging Face
+// revision they came from, and the size and SHA-256 of the file. Written atomically after each
+// install or removal.
 import { readFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { writeFileAtomic } from '../storage/atomic.ts'
-import { PackPath, PackVersion } from './manifest.ts'
 
-export const REGISTRY_VERSION = 1
+/** 2 since D-042 (model only, no program); a version 1 file counts as nothing installed. */
+export const REGISTRY_VERSION = 2
 
-// packs.json is a local file any program running as the user can edit: versions and paths
-// follow the manifest's rules again, so they can never point outside the pack folder.
-const InstalledFile = z.object({
-  path: PackPath,
-  size: z.number().int().nonnegative(),
-  sha256: z.string(),
-})
+/** A plain file name inside the pack folder: no separator, never `.` or `..`. */
+export const PackFileName = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9_][A-Za-z0-9._-]*$/)
 
+/**
+ * A pack version (the Hugging Face revision). It names a folder (`packs/<id>/<version>/`), so
+ * it starts with a letter or a digit and has no separator.
+ */
+export const PackVersion = z.string().regex(/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/)
+
+// packs.json is a local file any program running as the user can edit: names and versions
+// follow the rules again, so they can never point outside the pack folder.
 export const InstalledPack = z.object({
   version: PackVersion,
   installedAt: z.string(),
-  /** Program to run, relative to the pack folder. */
-  entry: PackPath,
-  /** Transcription packs only (the compatibility pack is just a program, D-040). */
-  model: z.object({ name: z.string().min(1), path: PackPath }).optional(),
-  files: z.array(InstalledFile),
+  model: z.object({
+    /** Its name in transcript.json (`whisper-base`). */
+    name: z.string().min(1).max(64),
+    file: PackFileName,
+    size: z.number().int().positive(),
+    sha256: z.string().regex(/^[0-9a-f]{64}$/),
+  }),
 })
 export type InstalledPack = z.infer<typeof InstalledPack>
 

@@ -23,8 +23,8 @@ export interface EditorTranscription {
   state: CardTranscriptState
   /** a transcription pack is installed */
   hasPack: boolean
-  /** the lighter pack, to say its size before any download; null until known */
-  pack: Pick<PackView, 'sizeBytes' | 'sizeExact'> | null
+  /** the lighter pack, to say its size before any download */
+  pack: Pick<PackView, 'sizeBytes'> | null
   /** `replaceEdited`: the user agreed to lose the caption fixes (A-06) */
   onTranscribe(options?: { replaceEdited?: boolean }): void
   onCancel(): void

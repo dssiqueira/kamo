@@ -267,7 +267,7 @@ export async function exportVideo(options: ExportVideoOptions): Promise<ExportRe
 
 /**
  * An encoder step (adding a frame or a sound block, finishing the file): a failure that is not
- * already an ExportError means WebCodecs' encoder broke (`encoder_failed`, D-040). A sink error
+ * already an ExportError means WebCodecs' encoder broke (`encoder_failed`). A sink error
  * still wins in the catch below (disk full stays disk full).
  */
 async function encoding(step: Promise<void>): Promise<void> {
@@ -283,13 +283,13 @@ function now(): number {
   return globalThis.performance?.now() ?? Date.now()
 }
 
-export interface AudioTrackReader {
+interface AudioTrackReader {
   reader: TrackReader
   volume: number
 }
 
 /** Opens the audible tracks; an unreadable one is left out with a warning. */
-export async function openAudioTracks(
+async function openAudioTracks(
   tracks: readonly ExportAudioTrack[],
   trimStartS: number,
   inputs: Input[],

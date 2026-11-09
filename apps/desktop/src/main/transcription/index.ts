@@ -1,6 +1,6 @@
-// Electron wiring for optional packs (A-07) and local transcription (A-05): the pack manager
-// (downloads through Electron's net, only on a user action), the background transcription
-// queue and their IPC. index.ts calls `registerTranscription` once and forwards saved
+// Electron wiring for optional packs (A-07, D-042) and local transcription (A-05): the pack
+// manager (model downloads from Hugging Face through Electron's net, only on a user action),
+// the bundled whisper-cli, the background transcription queue and their IPC. index.ts calls `registerTranscription` once and forwards saved
 // recordings to it.
 import { app, BrowserWindow, net } from 'electron'
 import { cpus } from 'node:os'
@@ -8,7 +8,7 @@ import { join } from 'node:path'
 import { IpcChannel } from '../../shared/api.ts'
 import { debugHooksAllowed } from '../build-flags.ts'
 import { isPackId, PackError, PackManager } from '../packs/manager.ts'
-import { manifestUrl, platformKey } from '../packs/config.ts'
+import { knownPacks } from '../packs/config.ts'
 import { setTranscriptState } from '../projects.ts'
 import { getServices } from '../services.ts'
 import { assertProjectId, freeDiskSpace } from '../storage/index.ts'
@@ -16,6 +16,7 @@ import { createAudioDecoder } from './decoder.ts'
 import { PersistentQueue } from './queue.ts'
 import { TranscriptionService } from './service.ts'
 import { runWhisper, whisperCommand, whisperThreads } from './whisper.ts'
+import { resolveWhisperPath, WHISPER_PROGRAM_ENV } from './whisper-path.ts'
 
 type Handle = (channel: string, listener: (...args: unknown[]) => unknown) => void
 
@@ -44,23 +45,30 @@ export function registerTranscription(options: {
     info: (event: string, data?: Record<string, unknown>) => getServices().log.info(event, data),
     warn: (event: string, data?: Record<string, unknown>) => getServices().log.warn(event, data),
   }
-  // KAMO_PACKS_MANIFEST_URL is a development hook: a release always uses the default manifest.
-  const url = manifestUrl(debugHooksAllowed(app.isPackaged) ? process.env : {}, {
-    packaged: app.isPackaged,
-  })
-  if (!app.isPackaged && url !== manifestUrl({}, { packaged: false })) {
-    console.info(`kamo: packs manifest from ${url}`)
+  // KAMO_PACKS_DEV_MODELS and KAMO_WHISPER_CLI are development hooks (D-038): a release
+  // always downloads the pinned Hugging Face files and runs the whisper-cli it ships.
+  const hooks = debugHooksAllowed(app.isPackaged) ? process.env : {}
+  const models = knownPacks(hooks)
+  if (models.some((pack) => pack.version === 'dev' || !pack.source.url.startsWith('https:'))) {
+    console.info('kamo: transcription models from a local test server')
   }
+  const program = () =>
+    resolveWhisperPath({
+      packaged: app.isPackaged,
+      resourcesPath: process.resourcesPath,
+      appPath: app.getAppPath(),
+      override: hooks[WHISPER_PROGRAM_ENV],
+    })
   const packs = new PackManager({
     dir: join(appData, 'packs'),
     registryFile: join(appData, 'packs.json'),
-    manifestUrl: url,
-    platform: platformKey(),
+    packs: models,
     // The only network access of the app outside updates: always started by a user click.
     fetch: (input, init) => net.fetch(input, init),
     freeBytes: (dir) => freeDiskSpace(dir),
+    isOnline: () => net.isOnline(),
+    program,
     log,
-    chmodExecutables: process.platform !== 'win32',
   })
   const decoder = createAudioDecoder()
   const service = new TranscriptionService({
@@ -106,7 +114,6 @@ export function registerTranscription(options: {
   }
 
   handle(IpcChannel.getPacks, () => packs.status())
-  handle(IpcChannel.refreshPacks, () => packs.refresh())
   // Install runs until done; the windows follow it through packsChanged.
   handle(IpcChannel.installPack, (id) => {
     void packs.install(packId(id))

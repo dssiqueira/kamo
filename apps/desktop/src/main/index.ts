@@ -485,8 +485,7 @@ const preferences = registerPreferences({
   smokeTest: isSmokeTest,
 })
 // Export (F-11): media reads, the output files and the close-during-export question.
-// The compatibility pack's exports (D-040) find the pack manager once transcription made it.
-const exporter = registerExport({ packs: () => transcription.packs })
+const exporter = registerExport()
 // Optional packs and local transcription (A-07, A-05): downloads only on a user click.
 const transcription = registerTranscription({ handle, notifyProjectsChanged })
 handle(IpcChannel.cancelCountdown, () => recording.cancelCountdown())

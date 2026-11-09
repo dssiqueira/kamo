@@ -1,13 +1,15 @@
-// Test and local-check helpers for packs (A-07) and transcription (A-05): a tiny HTTP server
-// that serves a fake packs-manifest.json, a fake transcription pack (a Node script that
-// behaves like whisper-cli and writes a canned transcript) and a fake compatibility pack (a
-// Node script that reads frames like ffmpeg, D-040). Nothing here ships in the app's
-// flow: tests import it, and `scripts/fake-pack-server.ts` runs it for manual checks with
-// KAMO_PACKS_MANIFEST_URL. No real whisper, FFmpeg or model is ever downloaded.
+// Test and local-check helpers for packs (A-07, D-042) and transcription (A-05): a tiny HTTP
+// server that serves fake models the way Hugging Face does (a redirect to a "CDN", ranges),
+// and a fake whisper-cli (a Node script that writes a canned transcript). Nothing here ships in
+// the app's flow: tests import it, and `scripts/fake-pack-server.ts` runs it for manual checks.
+// No real whisper or model is ever downloaded.
 import { createHash } from 'node:crypto'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { platformKey } from './config.ts'
+import { join } from 'node:path'
+import type { PackId } from '../../shared/packs.ts'
+import { KNOWN_PACKS, type KnownPack } from './config.ts'
 
 /**
  * Behaves like `whisper-cli -m <model> -f <wav> -l <lang> -oj -ojf -of <out> -pp`: checks the
@@ -57,113 +59,52 @@ writeFileSync(out + '.json', JSON.stringify({
 }))
 `
 
-/**
- * Behaves like the compatibility pack's ffmpeg as Kamo runs it (compat/ffmpeg.ts): raw RGBA
- * frames of `-s WxH` on stdin, an optional `-f s16le` sound file, the encoder after `-c:v`
- * and the output path last. A probe (`-f null -`) exits 0 unless the encoder is listed in
- * FAKE_FFMPEG_REFUSE (comma-separated). An export writes a JSON summary to the output instead
- * of an MP4: { encoder, frames, audioBytes, args }. FAKE_FFMPEG_FAIL=1 exits 1 after reading,
- * FAKE_FFMPEG_DISK_FULL=1 prints FFmpeg's "No space left on device" and exits 1.
- */
-export const FAKE_FFMPEG_SCRIPT = `
-import { statSync, writeFileSync } from 'node:fs'
-const args = process.argv.slice(2)
-const arg = (name, from = 0) => { const i = args.indexOf(name, from); return i === -1 ? undefined : args[i + 1] }
-const [w, h] = (arg('-s') ?? '0x0').split('x').map(Number)
-const encoder = arg('-c:v')
-const frameBytes = w * h * 4
-if (!frameBytes || !encoder) { console.error('usage'); process.exit(2) }
-const audioFlag = args.indexOf('s16le')
-const audio = audioFlag === -1 ? undefined : arg('-i', audioFlag)
-let bytes = 0
-process.stdin.on('data', (chunk) => { bytes += chunk.length })
-process.stdin.on('end', () => {
-  const probe = args.at(-1) === '-' && arg('-f', args.indexOf('-c:v')) === 'null'
-  const refused = (process.env.FAKE_FFMPEG_REFUSE ?? '').split(',').includes(encoder)
-  if (probe) process.exit(refused ? 1 : 0)
-  if (refused || process.env.FAKE_FFMPEG_FAIL === '1') { console.error('Error while encoding'); process.exit(1) }
-  if (process.env.FAKE_FFMPEG_DISK_FULL === '1') { console.error('av_interleaved_write_frame(): No space left on device'); process.exit(1) }
-  if (bytes % frameBytes !== 0) { console.error('partial frame'); process.exit(3) }
-  const audioBytes = audio ? statSync(audio).size : 0
-  writeFileSync(args.at(-1), JSON.stringify({ encoder, frames: bytes / frameBytes, audioBytes, args }))
-})
-`
+/** Writes the fake whisper-cli into `dir` and returns its path (the program in tests and dev). */
+export async function writeFakeWhisper(dir: string): Promise<string> {
+  await mkdir(dir, { recursive: true })
+  const path = join(dir, 'whisper-cli.mjs')
+  await writeFile(path, FAKE_WHISPER_SCRIPT)
+  return path
+}
 
-export interface FakeFile {
-  path: string
+export interface FakeModel {
+  id: PackId
   body: Uint8Array
-  executable?: boolean
 }
 
-export interface FakePack {
-  id: string
-  version: string
-  kind?: 'transcription' | 'compatibility'
-  /** Transcription packs only. */
-  modelName?: string
-  modelPath?: string
-  entry: string
-  files: FakeFile[]
+/** A fake model of `bytes` bytes (a pattern, so a corrupted copy has another hash). */
+export function fakeModel(id: PackId = 'transcribe-light', bytes = 256 * 1024): FakeModel {
+  const body = new Uint8Array(bytes)
+  for (let i = 0; i < body.length; i++) body[i] = (i * 31 + 7 + (id.length & 3)) & 0xff
+  return { id, body }
 }
 
-/** A fake transcription pack: the script as its program and a small "model". */
-export function fakeTranscriptionPack(
-  id: 'transcribe-light' | 'transcribe-accurate' = 'transcribe-light',
-  version = '1.0.0',
-  modelBytes = 256 * 1024,
-): FakePack {
-  const model = new Uint8Array(modelBytes)
-  for (let i = 0; i < model.length; i++) model[i] = (i * 31 + 7) & 0xff
-  return {
-    id,
-    version,
-    modelName: id === 'transcribe-light' ? 'whisper-base' : 'whisper-small',
-    modelPath: 'models/fake-model.bin',
-    entry: 'bin/whisper-cli.mjs',
-    files: [
-      {
-        path: 'bin/whisper-cli.mjs',
-        body: new TextEncoder().encode(FAKE_WHISPER_SCRIPT),
-        executable: true,
-      },
-      { path: 'models/fake-model.bin', body: model },
-    ],
-  }
-}
-
-/** A fake "Video compatibility" pack (D-040): the script as its ffmpeg, plus a notice file. */
-export function fakeCompatibilityPack(version = '1.0.0'): FakePack {
-  return {
-    id: 'video-compatibility',
-    version,
-    kind: 'compatibility',
-    entry: 'bin/ffmpeg.mjs',
-    files: [
-      {
-        path: 'bin/ffmpeg.mjs',
-        body: new TextEncoder().encode(FAKE_FFMPEG_SCRIPT),
-        executable: true,
-      },
-      { path: 'NOTICE.txt', body: new TextEncoder().encode('FFmpeg, LGPL-2.1-or-later') },
-    ],
-  }
-}
-
-export interface FakePackServerOptions {
-  packs: FakePack[]
+export interface FakeModelServerOptions {
+  models: FakeModel[]
   /** Bytes per write and pause between them, to make progress (and pausing) observable. */
   chunkBytes?: number
   chunkDelayMs?: number
   /** Ignore Range headers (a server without resume support). */
   noRanges?: boolean
-  /** Serve this body instead of the real one for the given path (a corrupted download). */
-  corrupt?: string
-  platform?: string
+  /** Serve wrong bytes (same size) for this pack: a damaged download. */
+  corrupt?: PackId
+  /**
+   * Like Hugging Face: `/resolve/<file>` answers 302 to `/cdn/<file>`, which serves it.
+   * Default true; false serves the file at `/resolve/<file>` directly.
+   */
+  redirect?: boolean
+  /** Answer every file request with this HTTP status instead (a server error). */
+  status?: number
+  /** Send this many bytes of each response, then nothing more (the connection stays open). */
+  stallAfterBytes?: number
+  /** The version the packs report (default `rev1`). */
+  version?: string
 }
 
-export interface FakePackServer {
+export interface FakeModelServer {
   url: string
-  manifestUrl: string
+  /** KNOWN_PACKS with each fake model's URL, size and SHA-256 (version `rev1`). */
+  packs: KnownPack[]
   /** Range requests seen (`<path> bytes=<n>-`). */
   ranges: string[]
   requests: string[]
@@ -171,61 +112,47 @@ export interface FakePackServer {
   server: Server
 }
 
-export async function startFakePackServer(options: FakePackServerOptions): Promise<FakePackServer> {
-  const files = new Map<string, Uint8Array>()
+export function sha256Hex(body: Uint8Array): string {
+  return createHash('sha256').update(body).digest('hex')
+}
+
+export async function startFakeModelServer(
+  options: FakeModelServerOptions,
+): Promise<FakeModelServer> {
+  const files = new Map<string, FakeModel>()
+  for (const model of options.models) {
+    const known = KNOWN_PACKS.find((pack) => pack.id === model.id)!
+    files.set(known.source.file, model)
+  }
   const ranges: string[] = []
   const requests: string[] = []
-  let base = ''
-  const manifest = () => ({
-    schema: 1,
-    packs: options.packs.map((pack) => ({
-      id: pack.id,
-      version: pack.version,
-      kind: pack.kind ?? 'transcription',
-      ...(pack.modelName && pack.modelPath
-        ? { model: { name: pack.modelName, path: pack.modelPath } }
-        : {}),
-      platforms: {
-        [options.platform ?? platformKey()]: {
-          entry: pack.entry,
-          files: pack.files.map((file) => {
-            const name = `${pack.id}-${pack.version}-${file.path.replace(/\//g, '-')}`
-            files.set(`/files/${name}`, file.body)
-            return {
-              path: file.path,
-              url: `${base}/files/${name}`,
-              size: file.body.byteLength,
-              sha256: createHash('sha256').update(file.body).digest('hex'),
-              ...(file.executable ? { executable: true } : {}),
-            }
-          }),
-        },
-      },
-    })),
-  })
+  const redirect = options.redirect ?? true
   const server = createServer((request, response) => {
     const path = new URL(request.url ?? '/', 'http://x').pathname
     requests.push(path)
-    if (path === '/packs-manifest.json') {
-      response.writeHead(200, { 'content-type': 'application/json' })
-      response.end(JSON.stringify(manifest()))
-      return
-    }
-    const body = files.get(path)
-    if (!body) {
+    const match = /^\/(resolve|cdn)\/([^/]+)$/.exec(path)
+    const model = match ? files.get(match[2]!) : undefined
+    if (!match || !model) {
       response.writeHead(404).end()
       return
     }
-    let data = body
-    if (options.corrupt && path.endsWith(options.corrupt)) {
-      data = new Uint8Array(body.byteLength).fill(1)
+    if (options.status) {
+      response.writeHead(options.status).end()
+      return
     }
+    if (match[1] === 'resolve' && redirect) {
+      // Hugging Face keeps the Range header across its redirect to the CDN; fetch does too.
+      response.writeHead(302, { location: `/cdn/${match[2]}?signed=1` }).end()
+      return
+    }
+    let data = model.body
+    if (options.corrupt === model.id) data = new Uint8Array(model.body.byteLength).fill(1)
     let start = 0
     const range = request.headers.range
     if (range && !options.noRanges) {
       ranges.push(`${path} ${range}`)
-      const match = /^bytes=(\d+)-$/.exec(range)
-      start = match ? Number(match[1]) : 0
+      const parsed = /^bytes=(\d+)-$/.exec(range)
+      start = parsed ? Number(parsed[1]) : 0
       if (start >= data.byteLength) {
         response.writeHead(416).end()
         return
@@ -240,14 +167,17 @@ export async function startFakePackServer(options: FakePackServerOptions): Promi
     const chunk = options.chunkBytes ?? 64 * 1024
     const delay = options.chunkDelayMs ?? 0
     let at = start
+    let sent = 0
     const pump = () => {
       if (response.destroyed) return
       if (at >= data.byteLength) {
         response.end()
         return
       }
+      if (options.stallAfterBytes !== undefined && sent >= options.stallAfterBytes) return
       const end = Math.min(data.byteLength, at + chunk)
       response.write(Buffer.from(data.subarray(at, end)))
+      sent += end - at
       at = end
       if (delay) setTimeout(pump, delay)
       else setImmediate(pump)
@@ -255,10 +185,24 @@ export async function startFakePackServer(options: FakePackServerOptions): Promi
     pump()
   })
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
-  base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+  const packs = KNOWN_PACKS.map((pack): KnownPack => {
+    const model = options.models.find((m) => m.id === pack.id)
+    if (!model) return pack
+    return {
+      ...pack,
+      version: options.version ?? 'rev1',
+      source: {
+        ...pack.source,
+        url: `${base}/resolve/${pack.source.file}`,
+        size: model.body.byteLength,
+        sha256: sha256Hex(model.body),
+      },
+    }
+  })
   return {
     url: base,
-    manifestUrl: `${base}/packs-manifest.json`,
+    packs,
     ranges,
     requests,
     server,

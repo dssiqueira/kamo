@@ -13,12 +13,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { TranscriptionJob } from '../../shared/packs.ts'
-import { platformKey } from '../packs/config.ts'
 import { PackManager } from '../packs/manager.ts'
 import {
-  fakeTranscriptionPack,
-  startFakePackServer,
-  type FakePackServer,
+  fakeModel,
+  startFakeModelServer,
+  writeFakeWhisper,
+  type FakeModelServer,
 } from '../packs/testing.ts'
 import { saveProjectData, setTranscriptState } from '../projects.ts'
 import { saveEditedTranscript } from '../transcript-file.ts'
@@ -48,7 +48,7 @@ const source = {
 }
 
 let root: string
-let server: FakePackServer
+let server: FakeModelServer
 let store: FileProjectStore
 let packs: PackManager
 
@@ -56,16 +56,17 @@ beforeEach(async () => {
   // "app-data" with a non-ASCII name: whisper gets paths relative to it (Windows narrow paths).
   root = await mkdtemp(join(tmpdir(), 'kamo-transcribe-ção-'))
   store = new FileProjectStore(join(root, 'projects'))
-  server = await startFakePackServer({ packs: [fakeTranscriptionPack()] })
+  server = await startFakeModelServer({ models: [fakeModel()] })
+  // whisper-cli ships in the app (D-042): here, the fake one.
+  const program = await writeFakeWhisper(join(root, 'resources'))
   packs = new PackManager({
     dir: join(root, 'packs'),
     registryFile: join(root, 'packs.json'),
-    manifestUrl: server.manifestUrl,
-    platform: platformKey(),
+    packs: server.packs,
     fetch: (input, init) => fetch(input, init),
     freeBytes: async () => 10 ** 12,
+    program: () => program,
     log,
-    chmodExecutables: process.platform !== 'win32',
   })
 })
 afterEach(async () => {
@@ -274,6 +275,25 @@ describe('TranscriptionService', () => {
     expect(jobOf(service, silent.id)?.state).toBe('no_audio')
     expect(await store.readText(silent.id, PROJECT_FILES.transcript)).toBeNull()
     expect((await loadProject(store, silent.id)).transcript.status).toBe('none')
+  })
+
+  it('fails with program_missing in a build without whisper-cli (D-042)', async () => {
+    const project = await makeProject()
+    await packs.install('transcribe-light')
+    const { service } = harness(
+      {},
+      {
+        packs: {
+          transcriber: (preferred) => packs.transcriber(preferred),
+          retain: (id) => packs.retain(id),
+          program: () => null,
+        },
+      },
+    )
+    await service.enqueue(project.id)
+    await service.idle()
+    expect(jobOf(service, project.id)).toMatchObject({ state: 'failed', error: 'program_missing' })
+    expect(packs.isBusy('transcribe-light')).toBe(false)
   })
 
   it('fails without the pack and when whisper fails, keeping the project consistent', async () => {

@@ -6,6 +6,7 @@ import type { CardTranscriptState } from './types.ts'
 
 const FAILURE_KEYS: Record<string, string> = {
   pack_missing: 'transcription.errors.packMissing',
+  program_missing: 'transcription.errors.programMissing',
   audio_unreadable: 'transcription.errors.audioUnreadable',
   transcript_edited: 'transcription.errors.transcriptEdited',
 }

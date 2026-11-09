@@ -55,7 +55,7 @@ Check these first; each one has only been compiled in CI.
 - [ ] Microphone and webcam bubble; the camera is asked only when the webcam is turned on
 - [ ] Menu bar icon while recording; closing the window keeps Kamo in the Dock; Cmd+Q quits
 - [ ] Export 1080p30, 4K and 60fps with the hardware encoder (Settings → Copy diagnostics names it)
-- [ ] Transcription pack (once the `packs` release exists): the downloaded `whisper-cli` runs without a Gatekeeper block
+- [ ] Transcription: the bundled `whisper-cli` (signed with the app) runs without a Gatekeeper block, with Metal; download the Light model and transcribe
 
 ## 5. When something fails
 

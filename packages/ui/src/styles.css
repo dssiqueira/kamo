@@ -20,6 +20,16 @@
   }
 }
 
+/* A waveform bar breathing while a pack downloads or a transcript is made. */
+@keyframes kamo-wave {
+  from {
+    transform: scaleY(0.55);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kamo-motion {
     animation: none !important;

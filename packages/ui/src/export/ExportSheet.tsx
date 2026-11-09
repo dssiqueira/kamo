@@ -25,17 +25,11 @@ import { useLocale, useT, type Translate } from '../i18n.tsx'
 import { DecorPiece } from '../decor/Decor.tsx'
 import { Mascot } from '../mascot/Mascot.tsx'
 import { FOCUS_RING } from '../primitives/controls.tsx'
-import {
-  CompatibilityOffer,
-  useCompatibilityPack,
-  useCompatibilityRetry,
-} from './CompatibilityOffer.tsx'
 import { FormatPreview } from './FormatPreview.tsx'
 import {
   DEFAULT_EXPORT_SETTINGS,
   EXPORT_FORMATS,
   jobKey,
-  offersCompatibility,
   useExportRun,
   type CaptionExport,
   type ExportFormat,
@@ -146,16 +140,6 @@ export function ExportSheet({
     platform,
     transcript: hasCaptions ? transcript : null,
   })
-  // A-07 / D-040: no working encoder → offer the compatibility pack (desktop only).
-  const compatPack = useCompatibilityPack(platform.compatibility)
-  const compatOffer =
-    state.phase === 'error' &&
-    platform.compatibility &&
-    compatPack &&
-    offersCompatibility(state.code, compatPack)
-      ? compatPack
-      : null
-  const compatRetry = useCompatibilityRetry(platform.compatibility, compatPack, retry)
   // The format previews show the captions only when they will be burned in.
   const captionTrack = useMemo(
     () =>
@@ -518,13 +502,6 @@ export function ExportSheet({
                 <p className="text-body" data-testid="export-error" data-code={state.code}>
                   {t(`export.errors.${state.code}`)}
                 </p>
-                {compatOffer && (
-                  <CompatibilityOffer
-                    pack={compatOffer}
-                    onDownload={compatRetry.download}
-                    onCancel={compatRetry.cancel}
-                  />
-                )}
               </div>
             )}
 
@@ -585,11 +562,9 @@ export function ExportSheet({
                   >
                     {t('export.close')}
                   </button>
-                  {!compatOffer && (
-                    <button type="button" onClick={retry} className={BUTTON_PRIMARY}>
-                      {t('export.retry')}
-                    </button>
-                  )}
+                  <button type="button" onClick={retry} className={BUTTON_PRIMARY}>
+                    {t('export.retry')}
+                  </button>
                 </>
               )}
             </footer>

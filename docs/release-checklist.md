@@ -47,8 +47,9 @@ list into the release's tracking issue and tick it there.
 - [ ] Cancel an export midway: no `.partial` file is left
 
 ## 5. Captions and transcription with a real pack (A-05, A-06, A-07)
-- [ ] Settings → Optional packs lists the Light and Accurate packs from the `packs` release; download Light with pause/resume
-- [ ] Mac: the downloaded `whisper-cli` runs (no Gatekeeper block on the ad-hoc signed binary)
+- [ ] Settings → Optional packs lists Light (~148 MB) and Accurate (~488 MB); download Light from Hugging Face with pause/resume (D-042)
+- [ ] Offline (network off) and back: the notice says you're offline, Try again continues where it stopped
+- [ ] The installed app has `resources/whisper/whisper-cli(.exe)`; Mac: it runs (no Gatekeeper block, signed with the app)
 - [ ] Transcribe a 10-minute recording in Portuguese and one in English with Light: well under 5 minutes on an M1 / recent i5
 - [ ] Captions show in the preview, can be edited, are burned into the export, and `.srt` export opens in a player
 - [ ] Remove the pack: the folder is gone from `app-data/packs/`
@@ -130,7 +131,6 @@ upload, and a Google Cloud project for the store API.
 | `ci.yml` | every PR and push to `main` | lint, typecheck, tests, i18n, keyboard guard, extension and `@kamo/mcp` budgets; native helpers; unsigned installers on both OSes with the 130MB budget, a smoke test and the export benchmark; visual regression of the renderer |
 | `prerelease.yml` | push to `main` | `@kamo/design-tokens` and `@kamo/core` as `0.0.<run>-next` (skipped without `NPM_TOKEN`) |
 | `release.yml` | `v*` tag | the draft release, npm packages, Chrome Web Store (see the top of this file) |
-| `packs.yml` | manual | the optional transcription packs on the rolling `packs` release |
 | `store.yml` | manual | the Microsoft Store package (MSIX), as a workflow artifact |
 
 Export benchmark: the CI job summary of `desktop-package` shows seconds of export per minute

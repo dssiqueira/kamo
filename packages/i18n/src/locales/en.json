@@ -302,8 +302,7 @@
         "styles": "12 styles, burned into MP4 or GIF, or as .srt",
         "create": "Create captions",
         "transcribe": "Transcribe this recording",
-        "sizeExact": "One-time {size} download, only when you click",
-        "sizeApprox": "One-time download of about {size}, only when you click"
+        "sizeExact": "One-time {size} download, only when you click"
       }
     }
   },
@@ -584,8 +583,7 @@
       "source_unreadable": "Kamo could not read this recording's video.",
       "encoder_unavailable": "This computer has no H.264 encoder Kamo can use.",
       "failed": "Something went wrong while exporting. The incomplete file was deleted.",
-      "encoder_failed": "This computer's video encoder stopped in the middle of the export. The incomplete file was deleted.",
-      "compatibility_failed": "The compatibility package could not export this video. The incomplete file was deleted."
+      "encoder_failed": "This computer's video encoder stopped in the middle of the export. The incomplete file was deleted."
     },
     "warnings": {
       "software_encoder": "This computer has no hardware video encoder, so the export used the slower software one.",
@@ -593,8 +591,7 @@
       "audio_encoder_unavailable": "This computer cannot encode AAC sound, so the video has no sound.",
       "webcam_unreadable": "The webcam recording could not be read, so the video has no webcam bubble.",
       "background_unreadable": "The background image could not be read, so the video uses a plain background.",
-      "settings_fallback": "This computer's video encoder couldn't make the resolution or frame rate you picked, so a lower one was used. The file name says which.",
-      "compatibility_encoder": "Exported with the compatibility package (FFmpeg), because this computer's own video encoder couldn't."
+      "settings_fallback": "This computer's video encoder couldn't make the resolution or frame rate you picked, so a lower one was used. The file name says which."
     },
     "closeDialog": {
       "title": "Export in progress",
@@ -618,13 +615,7 @@
     "gifHint": "No sound, up to 1280 px wide.",
     "gifEstimate": "Estimated size: about {size}.",
     "gifLarge": "Many sites and chat apps refuse GIFs over {limit}: trim the video, pick 10 fps or export an MP4.",
-    "encoderFallback": "This computer's video encoder can't make {wanted}, so Kamo will export {actual}.",
-    "compat": {
-      "question": "Download the compatibility package and try again?",
-      "body": "Kamo can make the MP4 with FFmpeg instead: an optional package, downloaded only if you ask, that stays on this computer.",
-      "size": "Download size: {size}",
-      "download": "Download and try again"
-    }
+    "encoderFallback": "This computer's video encoder can't make {wanted}, so Kamo will export {actual}."
   },
   "recovery": {
     "found": "We found an interrupted recording from {date}.",
@@ -755,19 +746,18 @@
   },
   "packs": {
     "title": "Optional packs",
-    "description": "Extras you download only if you want them. Kamo records, edits and exports without them.",
-    "local": "Packs run on your computer. Nothing you record is sent anywhere.",
+    "description": "A transcription model is the one extra you can download, only if you want it. Kamo records, edits and exports without it.",
+    "local": "The model comes once from Hugging Face, the official home of the whisper.cpp models. Transcripts are made right here; nothing you record is sent anywhere.",
     "light": {
       "name": "Transcription — Light",
-      "hint": "Faster. Transcripts for captions, search and agents (MCP).",
+      "hint": "Good for captions, search and agents (MCP). Quick on any computer.",
       "short": "Light"
     },
     "accurate": {
       "name": "Transcription — Accurate",
-      "hint": "Slower and more accurate. Best for Portuguese, Chinese and Japanese.",
+      "hint": "Good when every word counts. Best for Portuguese, Chinese and Japanese.",
       "short": "Accurate"
     },
-    "sizeApprox": "About {size}",
     "progressLabel": "Downloading {name}",
     "install": "Download",
     "resume": "Resume",
@@ -775,46 +765,39 @@
     "update": "Update",
     "remove": "Remove",
     "removeConfirm": "Remove {name}? The transcripts you already made stay.",
-    "updateConfirm": "Download version {version} ({size})? The current one keeps working until it finishes.",
+    "updateConfirm": "Download the newer model ({size})? The current one keeps working until it finishes.",
     "status": {
       "notInstalled": "Not installed",
       "downloading": "Downloading… {progress, number, percent}",
       "paused": "Paused at {progress, number, percent}",
       "verifying": "Checking the download…",
-      "installed": "Installed (version {version})",
-      "update": "Update available: version {version}",
+      "installed": "Installed",
+      "update": "Update available",
       "failed": "Didn't finish",
       "starting": "Starting the download…"
     },
-    "catalog": {
-      "loading": "Loading the list of packs…",
-      "unpublished": "The packs aren't published yet. Check back soon.",
-      "offline": "You seem to be offline. Check your connection and try again.",
-      "failed": "Couldn't load the list of packs right now. Try again in a little while.",
-      "titles": {
-        "unpublished": "Coming soon",
-        "offline": "No connection",
-        "failed": "Couldn't load the packs"
-      }
-    },
     "errors": {
-      "offline": "No connection. Try again when you're online; what already arrived is kept.",
-      "downloadFailed": "The download failed. Try again.",
-      "checksumMismatch": "The download arrived damaged and was deleted. Try again.",
-      "diskSpace": "Not enough free space: {size} needed.",
-      "unsupportedPlatform": "Not available for this computer yet.",
-      "manifestInvalid": "The list of packs couldn't be read. Update Kamo and try again.",
+      "offline": "You're offline. Connect and try again; what already arrived is kept.",
+      "downloadFailed": "Hugging Face couldn't send the model right now. Try again in a little while.",
+      "checksumMismatch": "The model arrived damaged, so Kamo deleted it. Try again: it starts over.",
+      "diskSpace": "Not enough free space: the model needs {size}. Free some up and try again.",
       "packBusy": "It's transcribing right now. Try again when it finishes.",
       "installFailed": "Couldn't install it. Try again.",
-      "unknownPack": "This pack isn't available anymore."
+      "unknownPack": "This pack isn't available anymore.",
+      "sourceUnreachable": "Couldn't reach Hugging Face, where the model comes from. Try again in a moment; what already arrived is kept."
     },
-    "compatibility": {
-      "name": "Video compatibility",
-      "hint": "Exports MP4 with FFmpeg on computers where the system's video encoder fails.",
-      "removeConfirm": "Remove {name}? The videos you already exported stay.",
-      "busy": "It's exporting a video right now. Try again when it finishes."
+    "progressBytes": "{received} of {total}",
+    "meters": {
+      "speed": "Speed",
+      "accuracy": "Accuracy",
+      "value": "{value} of {max}"
     },
-    "progressBytes": "{received} of {total}"
+    "headline": "Transcription, on your computer",
+    "sizeAbout": "~{size}",
+    "program": {
+      "title": "This build can't transcribe",
+      "body": "It was built without the transcription program, so there is nothing to download yet. Everything else in Kamo works as usual."
+    }
   },
   "transcription": {
     "title": "Transcription",
@@ -834,15 +817,31 @@
     },
     "offer": {
       "title": "Transcribe on your computer",
-      "body": "Transcription is an optional pack that runs on your computer. Pick one to download:",
       "choose": "Transcription quality",
-      "recommendAccurate": "For Chinese or Japanese, Accurate works much better.",
       "download": "Download and transcribe",
       "notNow": "Not now",
       "recommended": "Recommended",
-      "unpublished": "The transcription packs aren't published yet. Check back soon; everything else in Kamo works without them.",
-      "installedTitle": "All set.",
-      "installedBody": "{name} is installed. One quick question before the first transcript:"
+      "installedTitle": "Pack installed",
+      "installedBody": "{name} is installed. One quick question before the first transcript:",
+      "subtitle": "Pick a pack. It downloads once, then every transcript happens right here.",
+      "private": "The model comes once from Hugging Face. Transcripts are made on this computer; your recordings never leave it.",
+      "downloading": "Downloading…",
+      "paused": "Paused",
+      "timeLeft": "about {time} left",
+      "timeLeftSoon": "less than a minute left",
+      "transcribing": {
+        "title": "Transcribing…",
+        "body": "You can close this window. It keeps going in the background."
+      },
+      "done": {
+        "title": "All set",
+        "body": "The transcript is ready. Captions, search and agents can use it now.",
+        "button": "Done"
+      },
+      "failedTitle": "That didn't work",
+      "noAudioTitle": "Nothing to hear",
+      "noAudioBody": "This recording has no sound, so there is nothing to transcribe.",
+      "stopped": "Stopped"
     },
     "status": {
       "queued": "Waiting to transcribe",
@@ -854,7 +853,8 @@
     "errors": {
       "packMissing": "Download a transcription pack first.",
       "audioUnreadable": "Kamo couldn't read this recording's audio.",
-      "transcriptEdited": "Your caption fixes were kept: the new transcription was not saved."
+      "transcriptEdited": "Your caption fixes were kept: the new transcription was not saved.",
+      "programMissing": "This build of Kamo can't transcribe: the transcription program is missing."
     },
     "replace": {
       "title": "Replace your caption fixes?",

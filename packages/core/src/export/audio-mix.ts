@@ -159,24 +159,6 @@ export function toPlanar({ left, right }: StereoBlock): Float32Array {
   return out
 }
 
-/**
- * Interleaved signed 16-bit (`s16le` once written little-endian): what the compatibility
- * encoder reads (D-040). Samples are already within [-1, 1] after mixBlocks.
- */
-export function toInterleavedS16({ left, right }: StereoBlock): Int16Array {
-  const out = new Int16Array(left.length * 2)
-  for (let i = 0; i < left.length; i++) {
-    out[i * 2] = toS16(left[i] as number)
-    out[i * 2 + 1] = toS16(right[i] as number)
-  }
-  return out
-}
-
-function toS16(value: number): number {
-  const v = clampUnit(value)
-  return v < 0 ? Math.round(v * 0x8000) : Math.round(v * 0x7fff)
-}
-
 /** Audio frames of an export that lasts `durationS`. */
 export function audioFrameCount(durationS: number, rate = EXPORT_SAMPLE_RATE): number {
   return Math.max(0, Math.round(durationS * rate))

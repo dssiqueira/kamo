@@ -54,6 +54,10 @@ mac:
   extraResources:
     - from: native/mac/build/release/kamo-capture
       to: helpers/mac/kamo-capture
+    # whisper.cpp's CLI for local transcription (D-042), built by native/whisper/build.mjs;
+    # signed with the app like the helper. The models are downloaded by the app, never here.
+    - from: native/whisper/build/mac
+      to: whisper
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES
@@ -78,6 +82,10 @@ win:
   extraResources:
     - from: native/win/build/release/kamo-capture.exe
       to: helpers/win/kamo-capture.exe
+    # whisper.cpp's CLI, its ggml DLLs and the C++ runtime they need (D-042), built by
+    # native/whisper/build.mjs.
+    - from: native/whisper/build/win
+      to: whisper
     # Settings → About → Third-party notices.
     - from: ../../THIRD_PARTY_NOTICES
       to: THIRD_PARTY_NOTICES

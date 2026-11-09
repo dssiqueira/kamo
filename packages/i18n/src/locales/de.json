@@ -302,8 +302,7 @@
         "styles": "12 Stile, eingebrannt in MP4 oder GIF oder als .srt",
         "create": "Untertitel erstellen",
         "transcribe": "Diese Aufnahme transkribieren",
-        "sizeExact": "Einmaliger Download von {size}, nur wenn du klickst",
-        "sizeApprox": "Einmaliger Download von etwa {size}, nur wenn du klickst"
+        "sizeExact": "Einmaliger Download von {size}, nur wenn du klickst"
       }
     }
   },
@@ -584,8 +583,7 @@
       "source_unreadable": "Kamo konnte das Video dieser Aufnahme nicht lesen.",
       "encoder_unavailable": "Dieser Computer hat keinen H.264-Encoder, den Kamo nutzen kann.",
       "failed": "Beim Exportieren ist etwas schiefgelaufen. Die unvollständige Datei wurde gelöscht.",
-      "encoder_failed": "Der Video-Encoder dieses Computers ist mitten im Export stehen geblieben. Die unvollständige Datei wurde gelöscht.",
-      "compatibility_failed": "Das Kompatibilitätspaket konnte dieses Video nicht exportieren. Die unvollständige Datei wurde gelöscht."
+      "encoder_failed": "Der Video-Encoder dieses Computers ist mitten im Export stehen geblieben. Die unvollständige Datei wurde gelöscht."
     },
     "warnings": {
       "software_encoder": "Dieser Computer hat keinen Hardware-Video-Encoder, deshalb wurde der langsamere Software-Encoder genutzt.",
@@ -593,8 +591,7 @@
       "audio_encoder_unavailable": "Dieser Computer kann keinen AAC-Ton kodieren, deshalb hat das Video keinen Ton.",
       "webcam_unreadable": "Die Webcam-Aufnahme konnte nicht gelesen werden, deshalb hat das Video keine Webcam-Blase.",
       "background_unreadable": "Das Hintergrundbild konnte nicht gelesen werden, deshalb nutzt das Video einen einfachen Hintergrund.",
-      "settings_fallback": "Der Video-Encoder dieses Computers schafft die gewählte Auflösung oder Bildrate nicht, deshalb wurde eine niedrigere genutzt. Der Dateiname verrät, welche.",
-      "compatibility_encoder": "Mit dem Kompatibilitätspaket (FFmpeg) exportiert, weil der eigene Video-Encoder dieses Computers es nicht konnte."
+      "settings_fallback": "Der Video-Encoder dieses Computers schafft die gewählte Auflösung oder Bildrate nicht, deshalb wurde eine niedrigere genutzt. Der Dateiname verrät, welche."
     },
     "closeDialog": {
       "title": "Export läuft",
@@ -618,13 +615,7 @@
     "gifHint": "Ohne Ton, bis zu 1280 px breit.",
     "gifEstimate": "Geschätzte Größe: etwa {size}.",
     "gifLarge": "Viele Websites und Chat-Apps lehnen GIFs über {limit} ab: Kürz das Video, wähl 10 fps oder exportier ein MP4.",
-    "encoderFallback": "Der Video-Encoder dieses Computers schafft {wanted} nicht, deshalb exportiert Kamo {actual}.",
-    "compat": {
-      "question": "Das Kompatibilitätspaket herunterladen und erneut versuchen?",
-      "body": "Kamo kann das MP4 stattdessen mit FFmpeg erstellen: ein optionales Paket, das nur auf deinen Wunsch heruntergeladen wird und auf diesem Computer bleibt.",
-      "size": "Downloadgröße: {size}",
-      "download": "Herunterladen und erneut versuchen"
-    }
+    "encoderFallback": "Der Video-Encoder dieses Computers schafft {wanted} nicht, deshalb exportiert Kamo {actual}."
   },
   "recovery": {
     "found": "Wir haben eine unterbrochene Aufnahme vom {date} gefunden.",
@@ -755,19 +746,18 @@
   },
   "packs": {
     "title": "Optionale Pakete",
-    "description": "Extras, die du nur herunterlädst, wenn du sie willst. Kamo nimmt auch ohne sie auf, bearbeitet und exportiert.",
-    "local": "Pakete laufen auf deinem Computer. Nichts, was du aufnimmst, wird irgendwohin gesendet.",
+    "description": "Ein Transkriptionsmodell ist das einzige Extra, das du herunterladen kannst, nur wenn du es willst. Kamo nimmt auch ohne es auf, bearbeitet und exportiert.",
+    "local": "Das Modell kommt einmal von Hugging Face, der offiziellen Quelle der whisper.cpp-Modelle. Transkripte entstehen hier; nichts, was du aufnimmst, wird irgendwohin gesendet.",
     "light": {
       "name": "Transkription – Leicht",
-      "hint": "Schneller. Transkripte für Untertitel, Suche und Agenten (MCP).",
+      "hint": "Gut für Untertitel, Suche und Agenten (MCP). Schnell auf jedem Computer.",
       "short": "Leicht"
     },
     "accurate": {
       "name": "Transkription – Genau",
-      "hint": "Langsamer und genauer. Am besten für Portugiesisch, Chinesisch und Japanisch.",
+      "hint": "Gut, wenn jedes Wort zählt. Am besten für Portugiesisch, Chinesisch und Japanisch.",
       "short": "Genau"
     },
-    "sizeApprox": "Etwa {size}",
     "progressLabel": "{name} wird heruntergeladen",
     "install": "Herunterladen",
     "resume": "Fortsetzen",
@@ -775,46 +765,39 @@
     "update": "Aktualisieren",
     "remove": "Entfernen",
     "removeConfirm": "{name} entfernen? Deine bisherigen Transkripte bleiben erhalten.",
-    "updateConfirm": "Version {version} ({size}) herunterladen? Die aktuelle funktioniert weiter, bis der Download fertig ist.",
+    "updateConfirm": "Das neuere Modell ({size}) herunterladen? Das aktuelle funktioniert weiter, bis der Download fertig ist.",
     "status": {
       "notInstalled": "Nicht installiert",
       "downloading": "Wird heruntergeladen… {progress, number, percent}",
       "paused": "Pausiert bei {progress, number, percent}",
       "verifying": "Download wird geprüft…",
-      "installed": "Installiert (Version {version})",
-      "update": "Update verfügbar: Version {version}",
+      "installed": "Installiert",
+      "update": "Update verfügbar",
       "failed": "Nicht abgeschlossen",
       "starting": "Download startet…"
     },
-    "catalog": {
-      "loading": "Paketliste wird geladen…",
-      "unpublished": "Die Pakete sind noch nicht veröffentlicht. Schau bald wieder vorbei.",
-      "offline": "Du scheinst offline zu sein. Prüf deine Verbindung und versuch es noch einmal.",
-      "failed": "Die Paketliste konnte gerade nicht geladen werden. Versuch es gleich noch einmal.",
-      "titles": {
-        "unpublished": "Bald verfügbar",
-        "offline": "Keine Verbindung",
-        "failed": "Pakete konnten nicht geladen werden"
-      }
-    },
     "errors": {
-      "offline": "Keine Verbindung. Versuch es noch einmal, wenn du online bist; was schon angekommen ist, bleibt erhalten.",
-      "downloadFailed": "Der Download ist fehlgeschlagen. Versuch es noch einmal.",
-      "checksumMismatch": "Der Download kam beschädigt an und wurde gelöscht. Versuch es noch einmal.",
-      "diskSpace": "Nicht genug freier Speicher: {size} benötigt.",
-      "unsupportedPlatform": "Für diesen Computer noch nicht verfügbar.",
-      "manifestInvalid": "Die Paketliste konnte nicht gelesen werden. Aktualisiere Kamo und versuch es noch einmal.",
+      "offline": "Du bist offline. Verbinde dich und versuch es noch einmal; was schon angekommen ist, bleibt erhalten.",
+      "downloadFailed": "Hugging Face konnte das Modell gerade nicht senden. Versuch es später noch einmal.",
+      "checksumMismatch": "Das Modell kam beschädigt an, deshalb hat Kamo es gelöscht. Versuch es noch einmal: Der Download beginnt neu.",
+      "diskSpace": "Nicht genug freier Speicher: Das Modell braucht {size}. Schaffe etwas Platz und versuch es noch einmal.",
       "packBusy": "Es wird gerade transkribiert. Versuch es noch einmal, wenn es fertig ist.",
       "installFailed": "Installation fehlgeschlagen. Versuch es noch einmal.",
-      "unknownPack": "Dieses Paket ist nicht mehr verfügbar."
+      "unknownPack": "Dieses Paket ist nicht mehr verfügbar.",
+      "sourceUnreachable": "Hugging Face, woher das Modell kommt, war nicht erreichbar. Versuch es gleich noch einmal; was schon angekommen ist, bleibt erhalten."
     },
-    "compatibility": {
-      "name": "Videokompatibilität",
-      "hint": "Exportiert MP4 mit FFmpeg auf Computern, auf denen der Video-Encoder des Systems versagt.",
-      "removeConfirm": "{name} entfernen? Deine bereits exportierten Videos bleiben erhalten.",
-      "busy": "Es wird gerade ein Video exportiert. Versuch es noch einmal, wenn es fertig ist."
+    "progressBytes": "{received} von {total}",
+    "meters": {
+      "speed": "Tempo",
+      "accuracy": "Genauigkeit",
+      "value": "{value} von {max}"
     },
-    "progressBytes": "{received} von {total}"
+    "headline": "Transkription auf deinem Computer",
+    "sizeAbout": "~{size}",
+    "program": {
+      "title": "Dieser Build kann nicht transkribieren",
+      "body": "Er wurde ohne das Transkriptionsprogramm gebaut, daher gibt es noch nichts herunterzuladen. Alles andere in Kamo funktioniert wie gewohnt."
+    }
   },
   "transcription": {
     "title": "Transkription",
@@ -834,15 +817,31 @@
     },
     "offer": {
       "title": "Auf deinem Computer transkribieren",
-      "body": "Transkription ist ein optionales Paket, das auf deinem Computer läuft. Wähl eins zum Herunterladen:",
       "choose": "Qualität der Transkription",
-      "recommendAccurate": "Für Chinesisch oder Japanisch funktioniert Genau viel besser.",
       "download": "Herunterladen und transkribieren",
       "notNow": "Nicht jetzt",
       "recommended": "Empfohlen",
-      "unpublished": "Die Transkriptionspakete sind noch nicht veröffentlicht. Schau bald wieder vorbei; alles andere in Kamo funktioniert auch ohne sie.",
-      "installedTitle": "Alles bereit.",
-      "installedBody": "{name} ist installiert. Eine kurze Frage vor dem ersten Transkript:"
+      "installedTitle": "Paket installiert",
+      "installedBody": "{name} ist installiert. Eine kurze Frage vor dem ersten Transkript:",
+      "subtitle": "Wähl ein Paket. Es wird einmal geladen, danach passiert jede Transkription hier.",
+      "private": "Das Modell kommt einmal von Hugging Face. Transkripte entstehen auf diesem Computer; deine Aufnahmen verlassen ihn nie.",
+      "downloading": "Wird geladen…",
+      "paused": "Pausiert",
+      "timeLeft": "noch etwa {time}",
+      "timeLeftSoon": "weniger als eine Minute übrig",
+      "transcribing": {
+        "title": "Wird transkribiert…",
+        "body": "Du kannst dieses Fenster schließen. Es läuft im Hintergrund weiter."
+      },
+      "done": {
+        "title": "Alles bereit",
+        "body": "Das Transkript ist fertig. Untertitel, Suche und Agenten können es jetzt nutzen.",
+        "button": "Fertig"
+      },
+      "failedTitle": "Das hat nicht geklappt",
+      "noAudioTitle": "Nichts zu hören",
+      "noAudioBody": "Diese Aufnahme hat keinen Ton, also gibt es nichts zu transkribieren.",
+      "stopped": "Angehalten"
     },
     "status": {
       "queued": "Wartet auf Transkription",
@@ -854,7 +853,8 @@
     "errors": {
       "packMissing": "Lade zuerst ein Transkriptionspaket herunter.",
       "audioUnreadable": "Kamo konnte den Ton dieser Aufnahme nicht lesen.",
-      "transcriptEdited": "Deine Untertitel-Korrekturen wurden behalten: Die neue Transkription wurde nicht gespeichert."
+      "transcriptEdited": "Deine Untertitel-Korrekturen wurden behalten: Die neue Transkription wurde nicht gespeichert.",
+      "programMissing": "Dieser Kamo-Build kann nicht transkribieren: Das Transkriptionsprogramm fehlt."
     },
     "replace": {
       "title": "Deine Untertitel-Korrekturen ersetzen?",

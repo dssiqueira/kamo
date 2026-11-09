@@ -21,7 +21,7 @@ function DesktopSettings() {
   }>({ devServerPath: null, mcpVersion: null, sourceDir: null })
   const [permissions] = usePermissions()
   const update = useUpdateStatus()
-  // A-07: the list of packs loads when the Packs section comes into view.
+  // A-07: the installed and downloading models, live (nothing is fetched to list them).
   const packs = usePacks()
 
   useEffect(() => {
@@ -106,7 +106,6 @@ function DesktopSettings() {
             packs: {
               ...packs.actions,
               packs: packs.status,
-              onOpen: packs.refresh,
               autoTranscribe: settings.autoTranscribe,
               onAutoTranscribeChange: (autoTranscribe: boolean) => save({ autoTranscribe }),
               language: settings.transcriptionLanguage ?? 'auto',

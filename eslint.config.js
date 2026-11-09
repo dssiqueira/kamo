@@ -30,6 +30,8 @@ export default tseslint.config(
       '**/release/**',
       '**/generated/**',
       '**/coverage/**',
+      // native helper build output (cargo, SwiftPM, whisper.cpp's source and CMake tree)
+      'apps/desktop/native/*/build/**',
     ],
   },
   js.configs.recommended,

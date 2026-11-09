@@ -248,7 +248,7 @@ Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING
 
 ## Acknowledgements
 
-Kamo stands on great open-source work: Electron, React, Vite, Tailwind CSS, mediabunny, gifenc, the MCP TypeScript SDK, whisper.cpp (in the optional transcription pack), and the Inter, Instrument Serif and JetBrains Mono typefaces. License notices for what ships inside the app are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+Kamo stands on great open-source work: Electron, React, Vite, Tailwind CSS, mediabunny, gifenc, the MCP TypeScript SDK, whisper.cpp (built into the app; its models download from Hugging Face when you ask), and the Inter, Instrument Serif and JetBrains Mono typefaces. License notices for what ships inside the app are in [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 <p align="center">
   <img src="packages/design-tokens/assets/mascot/kamo-head-happy.webp" width="72" alt="Kamo smiling">

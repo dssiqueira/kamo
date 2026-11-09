@@ -510,13 +510,13 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 ---
 
 ## A-05 — Local transcription (optional package)
-**Behavior:** transcription is **not in the installer**. It is an optional package (whisper.cpp binary + model) that the user downloads only if they want it. Once installed, the app transcribes recordings with audio in the background and saves to `transcript.json`. It is the basis of captions (A-06) and of the text part of the MCP (M-01, M-02).
+**Behavior:** the transcription **model is not in the installer**. The app ships whisper.cpp's small `whisper-cli` program (a few MB, D-042) and the user downloads a model from Hugging Face only if they want it. Once installed, the app transcribes recordings with audio in the background and saves to `transcript.json`. It is the basis of captions (A-06) and of the text part of the MCP (M-01, M-02).
 
 **Acceptance criteria**
-- [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the list of packs is fetched only when Settings → Optional packs comes into view or Transcribe is clicked (checked in the Electron build: no request before a click)
+- [x] The app never downloads the package on its own nor opens a popup asking to download it after recording — the models are listed from the app itself (no list to fetch); the only request is the model's download, after its Download click
 - [ ] Discreet entry points: "Transcribe" button in the Editor, Settings → Optional packs, and the "Connect to an agent" panel — Settings → Optional packs, a Transcribe button on Home's project cards and in the editor's Captions section done; the agent panel comes with step 26
-- [x] Before downloading, shows the size and the quality choice: **Light** (~150MB, faster) or **Accurate** (~500MB, better in Portuguese) — exact sizes once the list loaded, "About …" before
-- [x] Download with progress, pause/cancel and integrity check (SHA-256) — resumes with HTTP Range, also after a restart
+- [x] Before downloading, shows the size and the quality choice: **Light** (~148MB, faster) or **Accurate** (~488MB, better in Portuguese) — the pinned files' sizes, shown as "~148 MB" / "~488 MB"
+- [x] Download with progress, pause/cancel and integrity check (SHA-256) — resumes with HTTP Range across Hugging Face's redirect to its CDN, also after a restart; verified for real with the Light model (paused at 38MB, resumed, SHA-256 and whisper.cpp's SHA-1 matched, 2026-11-09)
 - [x] Once installed, asks once: "Automatically transcribe the next recordings?" (yes → in the background; no → only when Transcribe is clicked)
 - [ ] Runs in the background, without freezing the editor or the export — whisper is a below-normal-priority child process with half the cores, the audio is decoded in a hidden window; not yet measured with the real whisper.cpp during an export
 - [ ] 10 minutes of audio transcribed in under 5 minutes on an average machine with the Light model (M1 / i5 with 8GB)
@@ -526,7 +526,8 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 - [ ] Desktop first; in the extension, only after validating Whisper's performance in the browser (also as an optional download)
 
 **Edge cases**
-- No internet at download time → "Try again" button, without freezing anything
+- No internet at download time → "Try again" button, without freezing anything; Hugging Face unreachable or answering with an error, a damaged file (deleted) and a full disk each have their own message
+- A build without `whisper-cli` (development) → Transcribe says once that this build can't transcribe, and offers no download
 - Disk out of space → warns the required size before starting
 - Recording without audio → no transcript; the MCP still uses clicks and reference frames
 - App closed midway through transcription → restarts on the next launch
@@ -537,20 +538,21 @@ Edge-case status: the software-encoder fallback works, but its "slower" notice s
 
 | Package | Approx. size | What for |
 |---|---|---|
-| Transcription — Light | ~150MB | transcription, captions and text search in the MCP |
-| Transcription — Accurate | ~500MB | same, with higher accuracy |
-| Video compatibility (FFmpeg) | ~70MB | fallback export on machines where WebCodecs fails |
+| Transcription — Light | ~148MB | transcription, captions and text search in the MCP |
+| Transcription — Accurate | ~488MB | same, with higher accuracy |
+
+A "Video compatibility (FFmpeg)" package for exports where WebCodecs fails is on hold (D-040, D-042): there is no official LGPL FFmpeg build to download from its source.
 
 **Acceptance criteria**
-- [x] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons — the transcription packs and Video compatibility (FFmpeg), which shows "Not available for this computer yet" until the `packs` release has it
+- [x] Each package shows size, what it unlocks, status (not installed · downloading · installed · update available) and Install / Remove buttons — the Light and Accurate models
 - [x] Packages live in `app-data/packs/`, outside the app folder; updating the app does not delete the packages
-- [x] Packages update separately from the app, only with user confirmation
-- [x] FFmpeg is only offered when the export fails for lack of an encoder ("Download the compatibility package and try again?") — also when the encoder breaks mid-file; built and tested with a fake FFmpeg (D-040); the real pack waits for a Packs workflow run with an `ffmpeg` commit
-- [ ] Downloads come from versioned GitHub Releases assets, with SHA-256 verified — verified against a local fake release; `.github/workflows/packs.yml` builds the real assets but has not run yet
+- [x] Packages update separately from the app, only with user confirmation — a later app that pins a newer model shows "Update available"; the old one keeps working until the new one is in
+- [ ] FFmpeg is only offered when the export fails for lack of an encoder — on hold (D-040): no FFmpeg package for now; an export without a working encoder says so (`encoder_unavailable`, `encoder_failed`)
+- [x] Downloads come from a pinned source, with SHA-256 verified — the models from the official Hugging Face repository `ggerganov/whisper.cpp` at one pinned revision, each file's size and SHA-256 pinned in the app (D-042); `whisper-cli` ships in the app, built from a pinned whisper.cpp commit
 
 ## A-06 — Automatic captions
 - [x] Generated from `transcript.json` (A-05), without transcribing again — the same core code draws them in the preview, the format previews and the export (rule 11); a transcription started from the editor turns them on when it finishes
-- [x] Without the transcription package installed, the Captions button explains that the package is needed and offers to download it (with the size) — the side panel says the pack's size and opens the same download offer as Home (checked in the Electron build; the real `packs` release is not published yet)
+- [x] Without the transcription package installed, the Captions button explains that the package is needed and offers to download it (with the size) — the side panel says the pack's size and opens the same download offer as Home (checked in the Electron build)
 - [ ] Captions editable on the timeline (text and timing); the edit also corrects the transcript — a captions lane with one block per segment: double-click or Enter edits the text inline, Delete removes it, dragging moves it or its edges; every edit is undoable with the rest of the editor and saved to `transcript.json` with `edited: true`. Text fixes, undo and redo checked in the Electron build; the timing drags are covered by core tests but not yet tried by hand
 - [x] Style: 3 presets (position at the bottom or middle), in the app font — a gallery of 12 styles (Clean, Bold, Kamo, Minimal, Soft, Neon, Typewriter, Caps, Cinema, Marker, Classic, Duo), each thumbnail painted by the core renderer over the video at the playhead with the start of the caption there (a sample sentence without speech), a radio group with arrow keys, Home and End; Clean, Bold and Kamo look exactly as before; bottom or middle, 3 sizes; only the bundled fonts (Inter, Instrument Serif, JetBrains Mono) with the system CJK fonts of the transcript's language; switching styles never changes the line breaks, except to and from Bold, which keeps its own as before (a wider style shrinks the font); inside the screen frame in every format, above the camera card in the 9:16 split; spring fade in and out; a webcam bubble dragged under them (e.g. bottom middle) pushes them clear (above it, or below when shorter), following its size on zoom and its fade
 - [x] On export, three options: no captions, captions burned into the video, or an `.srt` file next to the MP4 (timings adjusted to the F-16 trim) — checked with real exports (9:16 burned in, 16:9 with its `.srt`)

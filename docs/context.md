@@ -133,7 +133,7 @@ Kamo is global from launch. All text in the interface, landing page, stores and 
 - Open and start recording in < 5s, without login
 - Export of 1 min 1080p30 in < 1 min on an average machine
 - The free app is complete, not a demo: no record, edit or export feature sits behind payment
-- **Light for those who just want to record:** desktop installer ≤ 130MB and extension ≤ 5MB. Transcription, FFmpeg and any AI model are optional packages, downloaded on demand
+- **Light for those who just want to record:** desktop installer ≤ 130MB and extension ≤ 5MB. Transcription models and any AI model are optional packages, downloaded on demand (the small transcription program ships in the app, D-042)
 
 ## Schedule
 > Assumption: ~10h per week, building with Claude Code. Starts on Nov 9, 2026, with a pause for the year-end holidays. The steps are the ones in `AGENTS.md`.

@@ -1,5 +1,5 @@
 // Background transcription (A-05): one job at a time, in order. Each job turns the voice track
-// into 16kHz audio (a hidden renderer decodes it), runs whisper.cpp from the installed pack at
+// into 16kHz audio (a hidden renderer decodes it), runs the bundled whisper.cpp with the installed model at
 // low priority and writes transcript.json. Nothing leaves the machine. Platform pieces (the
 // decoder, the process, the project store) are injected, so the whole flow runs in tests.
 import {
@@ -51,6 +51,8 @@ export interface TranscriptionDeps {
   packs: {
     transcriber(preferred?: PackId): Promise<TranscriberPack | null>
     retain(id: PackId): () => void
+    /** The bundled whisper-cli (D-042), or null when this build has none. */
+    program(): string | null
   }
   settings(): Promise<TranscriptionSettings>
   queue: PersistentQueue
@@ -66,7 +68,7 @@ export interface TranscriptionDeps {
     signal: AbortSignal,
     onProgress: (fraction: number) => void,
   ): Promise<void>
-  /** The pack's program (or, in development, the fake script). */
+  /** How to start whisper-cli (or, in development, the fake script). */
   command(entry: string): WhisperCommand
   runWhisper(options: {
     command: WhisperCommand
@@ -252,6 +254,8 @@ export class TranscriptionService {
       const settings = await this.deps.settings()
       const pack = await this.deps.packs.transcriber(settings.transcriptionPack)
       if (!pack) throw new JobFailure('pack_missing')
+      const program = this.deps.packs.program()
+      if (!program) throw new JobFailure('program_missing')
       release = this.deps.packs.retain(pack.id)
       previous = project.transcript
       await this.deps.setTranscriptState(projectId, { status: 'pending' })
@@ -285,7 +289,7 @@ export class TranscriptionService {
       const { cwd } = this.deps
       await this.deps
         .runWhisper({
-          command: this.deps.command(pack.entry),
+          command: this.deps.command(program),
           args: whisperArgs({
             model: relativeForWhisper(cwd, pack.model.path),
             wav: relativeForWhisper(cwd, wav),

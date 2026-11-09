@@ -248,7 +248,7 @@ Los issues y los pull requests son bienvenidos. Lee primero [CONTRIBUTING.md](CO
 
 ## Agradecimientos
 
-Kamo se apoya en grandes proyectos de código abierto: Electron, React, Vite, Tailwind CSS, mediabunny, gifenc, el MCP TypeScript SDK, whisper.cpp (en el paquete opcional de transcripción) y las tipografías Inter, Instrument Serif y JetBrains Mono. Los avisos de licencia de lo que va dentro de la app están en [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
+Kamo se apoya en grandes proyectos de código abierto: Electron, React, Vite, Tailwind CSS, mediabunny, gifenc, el MCP TypeScript SDK, whisper.cpp (incluido en la app; sus modelos se descargan de Hugging Face cuando lo pides) y las tipografías Inter, Instrument Serif y JetBrains Mono. Los avisos de licencia de lo que va dentro de la app están en [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
 
 <p align="center">
   <img src="packages/design-tokens/assets/mascot/kamo-head-happy.webp" width="72" alt="Kamo sonriendo">

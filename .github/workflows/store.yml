@@ -59,6 +59,9 @@ jobs:
         run: npm pkg set version="$VERSION"
       - name: Build the Windows capture helper
         run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+      # whisper.cpp's CLI ships in the app (D-042): the same pinned commit everywhere.
+      - name: Build whisper-cli
+        run: node apps/desktop/native/whisper/build.mjs
       - name: Build the app
         run: pnpm --filter @kamo/desktop build
       - name: 'Package (MSIX, unsigned: the Store signs it)'

@@ -128,6 +128,9 @@ jobs:
       - name: Build the Windows capture helper
         if: runner.os == 'Windows'
         run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+      # whisper.cpp's CLI ships in the app (D-042): the same pinned commit everywhere.
+      - name: Build whisper-cli
+        run: node apps/desktop/native/whisper/build.mjs
       # KAMO_BUILD_CI_SMOKE=1 keeps --smoke-test and the KAMO_SMOKE_* hooks in this packaged
       # build (src/main/build-flags.ts); release builds never set it, so they ignore both.
       - run: pnpm --filter @kamo/desktop exec electron-vite build

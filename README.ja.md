@@ -248,7 +248,7 @@ issue や pull request は大歓迎です。まずは [CONTRIBUTING.md](CONTRIBU
 
 ## 謝辞
 
-Kamo は優れたオープンソースの成果の上に成り立っています：Electron、React、Vite、Tailwind CSS、mediabunny、gifenc、MCP TypeScript SDK、whisper.cpp（オプションの文字起こしパックに含まれます）、そして Inter、Instrument Serif、JetBrains Mono の各書体。アプリに同梱しているもののライセンス表記は [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) にあります。
+Kamo は優れたオープンソースの成果の上に成り立っています：Electron、React、Vite、Tailwind CSS、mediabunny、gifenc、MCP TypeScript SDK、whisper.cpp（アプリに内蔵。モデルは必要なときに Hugging Face からダウンロード）、そして Inter、Instrument Serif、JetBrains Mono の各書体。アプリに同梱しているもののライセンス表記は [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) にあります。
 
 <p align="center">
   <img src="packages/design-tokens/assets/mascot/kamo-head-happy.webp" width="72" alt="笑顔の Kamo">

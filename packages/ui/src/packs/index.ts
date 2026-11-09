@@ -4,7 +4,16 @@ export { PacksSection, AutoTranscribeQuestion, languageName } from './PacksSecti
 export type { PacksSectionProps } from './PacksSection.tsx'
 export { TranscribeOffer } from './TranscribeOffer.tsx'
 export type { TranscribeOfferProps } from './TranscribeOffer.tsx'
-export { PackRow, PackSize, ProgressBar, packErrorText, packHint, packName } from './PackList.tsx'
+export {
+  PackMeters,
+  PackRow,
+  PackSize,
+  ProgressBar,
+  SizeChip,
+  packErrorText,
+  packHint,
+  packName,
+} from './PackList.tsx'
 export { TranscribeButton, TranscriptIcon, TranscriptStatus } from './CardTranscription.tsx'
 export type * from './types.ts'
 export { ReplaceTranscriptDialog } from './ReplaceTranscriptDialog.tsx'

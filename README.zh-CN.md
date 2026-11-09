@@ -248,7 +248,7 @@ pnpm check                            # lint, typecheck, tests, i18n and the key
 
 ## 致谢
 
-Kamo 建立在许多优秀的开源项目之上：Electron、React、Vite、Tailwind CSS、mediabunny、gifenc、MCP TypeScript SDK、whisper.cpp（在可选转录包中），以及 Inter、Instrument Serif 和 JetBrains Mono 字体。应用内附带内容的许可声明见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)。
+Kamo 建立在许多优秀的开源项目之上：Electron、React、Vite、Tailwind CSS、mediabunny、gifenc、MCP TypeScript SDK、whisper.cpp（内置于应用中；模型在你需要时从 Hugging Face 下载），以及 Inter、Instrument Serif 和 JetBrains Mono 字体。应用内附带内容的许可声明见 [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES)。
 
 <p align="center">
   <img src="packages/design-tokens/assets/mascot/kamo-head-happy.webp" width="72" alt="微笑的 Kamo">

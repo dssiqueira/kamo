@@ -302,8 +302,7 @@
         "styles": "12 styles, incrustés dans le MP4 ou le GIF, ou en .srt",
         "create": "Créer des sous-titres",
         "transcribe": "Transcrire cet enregistrement",
-        "sizeExact": "Téléchargement unique de {size}, seulement quand vous cliquez",
-        "sizeApprox": "Téléchargement unique d'environ {size}, seulement quand vous cliquez"
+        "sizeExact": "Téléchargement unique de {size}, seulement quand vous cliquez"
       }
     }
   },
@@ -584,8 +583,7 @@
       "source_unreadable": "Kamo n'a pas pu lire la vidéo de cet enregistrement.",
       "encoder_unavailable": "Cet ordinateur n'a aucun encodeur H.264 utilisable par Kamo.",
       "failed": "Un problème est survenu pendant l'export. Le fichier incomplet a été supprimé.",
-      "encoder_failed": "L'encodeur vidéo de cet ordinateur s'est arrêté en plein export. Le fichier incomplet a été supprimé.",
-      "compatibility_failed": "Le pack de compatibilité n'a pas pu exporter cette vidéo. Le fichier incomplet a été supprimé."
+      "encoder_failed": "L'encodeur vidéo de cet ordinateur s'est arrêté en plein export. Le fichier incomplet a été supprimé."
     },
     "warnings": {
       "software_encoder": "Cet ordinateur n'a pas d'encodeur vidéo matériel, l'export a donc utilisé l'encodeur logiciel, plus lent.",
@@ -593,8 +591,7 @@
       "audio_encoder_unavailable": "Cet ordinateur ne peut pas encoder le son en AAC, la vidéo n'a donc pas de son.",
       "webcam_unreadable": "L'enregistrement de la webcam n'a pas pu être lu, la vidéo n'a donc pas de bulle webcam.",
       "background_unreadable": "L'image d'arrière-plan n'a pas pu être lue, la vidéo utilise donc un arrière-plan uni.",
-      "settings_fallback": "L'encodeur vidéo de cet ordinateur n'a pas pu produire la résolution ou la fréquence d'images choisie, une valeur inférieure a donc été utilisée. Le nom du fichier l'indique.",
-      "compatibility_encoder": "Exporté avec le pack de compatibilité (FFmpeg), car l'encodeur vidéo de cet ordinateur n'y arrivait pas."
+      "settings_fallback": "L'encodeur vidéo de cet ordinateur n'a pas pu produire la résolution ou la fréquence d'images choisie, une valeur inférieure a donc été utilisée. Le nom du fichier l'indique."
     },
     "closeDialog": {
       "title": "Export en cours",
@@ -618,13 +615,7 @@
     "gifHint": "Sans son, jusqu'à 1280 px de large.",
     "gifEstimate": "Taille estimée : environ {size}.",
     "gifLarge": "Beaucoup de sites et d'apps de messagerie refusent les GIF de plus de {limit} : coupez la vidéo, choisissez 10 fps ou exportez un MP4.",
-    "encoderFallback": "L'encodeur vidéo de cet ordinateur ne peut pas produire {wanted}, Kamo exportera donc en {actual}.",
-    "compat": {
-      "question": "Télécharger le pack de compatibilité et réessayer ?",
-      "body": "Kamo peut créer le MP4 avec FFmpeg à la place : un pack facultatif, téléchargé seulement si vous le demandez, qui reste sur cet ordinateur.",
-      "size": "Taille du téléchargement : {size}",
-      "download": "Télécharger et réessayer"
-    }
+    "encoderFallback": "L'encodeur vidéo de cet ordinateur ne peut pas produire {wanted}, Kamo exportera donc en {actual}."
   },
   "recovery": {
     "found": "Nous avons trouvé un enregistrement interrompu du {date}.",
@@ -755,19 +746,18 @@
   },
   "packs": {
     "title": "Packs facultatifs",
-    "description": "Des extras à télécharger seulement si vous en voulez. Kamo enregistre, monte et exporte sans eux.",
-    "local": "Les packs tournent sur votre ordinateur. Rien de ce que vous enregistrez n'est envoyé nulle part.",
+    "description": "Un modèle de transcription est le seul extra que vous pouvez télécharger, seulement si vous le voulez. Kamo enregistre, monte et exporte sans lui.",
+    "local": "Le modèle vient une seule fois de Hugging Face, la source officielle des modèles whisper.cpp. Les transcriptions se font ici même ; rien de ce que vous enregistrez n'est envoyé nulle part.",
     "light": {
       "name": "Transcription — Léger",
-      "hint": "Plus rapide. Transcriptions pour les sous-titres, la recherche et les agents (MCP).",
+      "hint": "Idéal pour les sous-titres, la recherche et les agents (MCP). Rapide sur tout ordinateur.",
       "short": "Léger"
     },
     "accurate": {
       "name": "Transcription — Précis",
-      "hint": "Plus lent et plus précis. Idéal pour le portugais, le chinois et le japonais.",
+      "hint": "Idéal quand chaque mot compte. Le meilleur pour le portugais, le chinois et le japonais.",
       "short": "Précis"
     },
-    "sizeApprox": "Environ {size}",
     "progressLabel": "Téléchargement de {name}",
     "install": "Télécharger",
     "resume": "Reprendre",
@@ -775,46 +765,39 @@
     "update": "Mettre à jour",
     "remove": "Supprimer",
     "removeConfirm": "Supprimer {name} ? Les transcriptions déjà faites sont conservées.",
-    "updateConfirm": "Télécharger la version {version} ({size}) ? La version actuelle continue de fonctionner jusqu'à la fin.",
+    "updateConfirm": "Télécharger le modèle plus récent ({size}) ? L'actuel continue de fonctionner jusqu'à la fin.",
     "status": {
       "notInstalled": "Non installé",
       "downloading": "Téléchargement… {progress, number, percent}",
       "paused": "En pause à {progress, number, percent}",
       "verifying": "Vérification du téléchargement…",
-      "installed": "Installé (version {version})",
-      "update": "Mise à jour disponible : version {version}",
+      "installed": "Installé",
+      "update": "Mise à jour disponible",
       "failed": "Inachevé",
       "starting": "Démarrage du téléchargement…"
     },
-    "catalog": {
-      "loading": "Chargement de la liste des packs…",
-      "unpublished": "Les packs ne sont pas encore publiés. Revenez bientôt.",
-      "offline": "Vous semblez hors ligne. Vérifiez votre connexion et réessayez.",
-      "failed": "Impossible de charger la liste des packs pour l'instant. Réessayez dans un moment.",
-      "titles": {
-        "unpublished": "Bientôt disponible",
-        "offline": "Pas de connexion",
-        "failed": "Impossible de charger les packs"
-      }
-    },
     "errors": {
-      "offline": "Pas de connexion. Réessayez une fois en ligne ; ce qui a déjà été téléchargé est conservé.",
-      "downloadFailed": "Le téléchargement a échoué. Réessayez.",
-      "checksumMismatch": "Le téléchargement est arrivé endommagé et a été supprimé. Réessayez.",
-      "diskSpace": "Pas assez d'espace libre : {size} nécessaires.",
-      "unsupportedPlatform": "Pas encore disponible pour cet ordinateur.",
-      "manifestInvalid": "Impossible de lire la liste des packs. Mettez Kamo à jour et réessayez.",
+      "offline": "Vous êtes hors ligne. Connectez-vous et réessayez ; ce qui est déjà arrivé est conservé.",
+      "downloadFailed": "Hugging Face n'a pas pu envoyer le modèle pour le moment. Réessayez dans un petit moment.",
+      "checksumMismatch": "Le modèle est arrivé endommagé, Kamo l'a donc supprimé. Réessayez : le téléchargement recommence.",
+      "diskSpace": "Pas assez d'espace libre : le modèle a besoin de {size}. Libérez de la place et réessayez.",
       "packBusy": "Une transcription est en cours. Réessayez quand elle sera terminée.",
       "installFailed": "Impossible de l'installer. Réessayez.",
-      "unknownPack": "Ce pack n'est plus disponible."
+      "unknownPack": "Ce pack n'est plus disponible.",
+      "sourceUnreachable": "Impossible de joindre Hugging Face, d'où vient le modèle. Réessayez dans un instant ; ce qui est déjà arrivé est conservé."
     },
-    "compatibility": {
-      "name": "Compatibilité vidéo",
-      "hint": "Exporte en MP4 avec FFmpeg sur les ordinateurs où l'encodeur vidéo du système échoue.",
-      "removeConfirm": "Supprimer {name} ? Les vidéos déjà exportées sont conservées.",
-      "busy": "Un export vidéo est en cours. Réessayez quand il sera terminé."
+    "progressBytes": "{received} sur {total}",
+    "meters": {
+      "speed": "Vitesse",
+      "accuracy": "Précision",
+      "value": "{value} sur {max}"
     },
-    "progressBytes": "{received} sur {total}"
+    "headline": "La transcription, sur votre ordinateur",
+    "sizeAbout": "~{size}",
+    "program": {
+      "title": "Cette version ne peut pas transcrire",
+      "body": "Elle a été compilée sans le programme de transcription, il n'y a donc rien à télécharger pour l'instant. Tout le reste de Kamo fonctionne normalement."
+    }
   },
   "transcription": {
     "title": "Transcription",
@@ -834,15 +817,31 @@
     },
     "offer": {
       "title": "Transcrire sur votre ordinateur",
-      "body": "La transcription est un pack facultatif qui tourne sur votre ordinateur. Choisissez-en un à télécharger :",
       "choose": "Qualité de transcription",
-      "recommendAccurate": "Pour le chinois ou le japonais, Précis fonctionne bien mieux.",
       "download": "Télécharger et transcrire",
       "notNow": "Pas maintenant",
       "recommended": "Recommandé",
-      "unpublished": "Les packs de transcription ne sont pas encore publiés. Revenez bientôt ; tout le reste de Kamo fonctionne sans eux.",
-      "installedTitle": "Tout est prêt.",
-      "installedBody": "{name} est installé. Une petite question avant la première transcription :"
+      "installedTitle": "Pack installé",
+      "installedBody": "{name} est installé. Une petite question avant la première transcription :",
+      "subtitle": "Choisissez un pack. Il se télécharge une fois, puis chaque transcription se fait ici.",
+      "private": "Le modèle vient une seule fois de Hugging Face. Les transcriptions se font sur cet ordinateur ; vos enregistrements ne le quittent jamais.",
+      "downloading": "Téléchargement…",
+      "paused": "En pause",
+      "timeLeft": "encore environ {time}",
+      "timeLeftSoon": "moins d'une minute restante",
+      "transcribing": {
+        "title": "Transcription…",
+        "body": "Vous pouvez fermer cette fenêtre. La transcription continue en arrière-plan."
+      },
+      "done": {
+        "title": "Tout est prêt",
+        "body": "La transcription est prête. Sous-titres, recherche et agents peuvent l'utiliser.",
+        "button": "Terminé"
+      },
+      "failedTitle": "Ça n'a pas marché",
+      "noAudioTitle": "Rien à entendre",
+      "noAudioBody": "Cet enregistrement n'a pas de son : il n'y a rien à transcrire.",
+      "stopped": "Arrêté"
     },
     "status": {
       "queued": "En attente de transcription",
@@ -854,7 +853,8 @@
     "errors": {
       "packMissing": "Téléchargez d'abord un pack de transcription.",
       "audioUnreadable": "Kamo n'a pas pu lire l'audio de cet enregistrement.",
-      "transcriptEdited": "Vos corrections de sous-titres ont été conservées : la nouvelle transcription n'a pas été enregistrée."
+      "transcriptEdited": "Vos corrections de sous-titres ont été conservées : la nouvelle transcription n'a pas été enregistrée.",
+      "programMissing": "Cette version de Kamo ne peut pas transcrire : le programme de transcription est absent."
     },
     "replace": {
       "title": "Remplacer vos corrections de sous-titres ?",

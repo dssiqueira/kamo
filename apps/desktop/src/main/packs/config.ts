@@ -1,79 +1,108 @@
-// Where optional packs come from (A-07, D-019). The only place with a pack URL: everything
-// else gets it from here. Nothing is fetched until the user opens Settings → Packs or asks to
-// transcribe; there is no telemetry and no background check.
-import type { PackId, PackKind } from '../../shared/packs.ts'
+// Where the transcription models come from (A-07, D-042): the official whisper.cpp model
+// repository on Hugging Face, at one pinned revision, each file pinned by size and SHA-256.
+// The only place with a model URL. Nothing is fetched until the user asks for a model; there
+// is no manifest, no telemetry and no background check: a plain GET of one file.
+import { readFileSync } from 'node:fs'
+import type { PackId } from '../../shared/packs.ts'
 
+/** huggingface.co/ggerganov/whisper.cpp, the models whisper.cpp's own scripts download. */
+export const MODEL_REPO = 'ggerganov/whisper.cpp'
 /**
- * `packs-manifest.json` on this repository's rolling `packs` release (a prerelease, so
- * electron-updater never takes it for an app version). `.github/workflows/packs.yml` builds
- * the packs and replaces the manifest; the pack files keep versioned names.
+ * A commit of that repository ("Add automatic-speech-recognition tag", 2024-10-29). The
+ * `resolve/<revision>/` URL always serves the file as it was in this commit, so a later push
+ * to the repository never changes what Kamo downloads.
  */
-export const DEFAULT_MANIFEST_URL =
-  'https://github.com/dssiqueira/kamo/releases/download/packs/packs-manifest.json'
+export const MODEL_REVISION = '5359861c739e955e79d9a303bcbc70fb988958b1'
+export const MODEL_BASE_URL = `https://huggingface.co/${MODEL_REPO}/resolve/${MODEL_REVISION}/`
 
-/** Development and tests: point the app at another manifest (e.g. a local fake server). */
-export const MANIFEST_URL_ENV = 'KAMO_PACKS_MANIFEST_URL'
-
-const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
-
-/**
- * The manifest URL: the env override when it is https (or plain http on this machine, for a
- * local test server in an unpackaged build), otherwise the default.
- */
-export function manifestUrl(
-  env: Record<string, string | undefined>,
-  options: { packaged: boolean },
-): string {
-  const override = env[MANIFEST_URL_ENV]
-  if (!override) return DEFAULT_MANIFEST_URL
-  try {
-    const url = new URL(override)
-    if (url.protocol === 'https:') return url.href
-    if (url.protocol === 'http:' && !options.packaged && LOOPBACK.has(url.hostname)) {
-      return url.href
-    }
-  } catch {
-    // not a URL: the default
-  }
-  return DEFAULT_MANIFEST_URL
-}
-
-/** `win32-x64`, `darwin-arm64`... the key of a platform in the manifest. */
-export function platformKey(platform: string = process.platform, arch: string = process.arch) {
-  return `${platform}-${arch}`
+export interface ModelSource {
+  /** The download (Hugging Face redirects it to its CDN). */
+  url: string
+  /** File name inside the pack folder. */
+  file: string
+  size: number
+  sha256: string
 }
 
 export interface KnownPack {
   id: PackId
-  kind: PackKind
-  /** Transcription packs only. */
-  quality: 'light' | 'accurate' | null
-  /** Shown before the list loads (features.md A-05: ~150MB / ~500MB). */
-  approxBytes: number
+  quality: 'light' | 'accurate'
+  /** The model's name in transcript.json. */
+  modelName: string
+  /** Pack folder name (`packs/<id>/<version>/`): the pinned revision. */
+  version: string
+  source: ModelSource
 }
 
 /**
- * The packs Kamo knows how to use. The manifest adds versions, files and exact sizes; a pack
- * in the manifest that is not here is ignored (a newer app's pack).
- * Light: whisper `base` multilingual (148MB), Accurate: `small` multilingual (488MB) — see
- * the packs workflow for why these two. Video compatibility: an LGPL FFmpeg build (D-040),
- * only offered when an export fails for lack of an encoder (features.md A-07: ~70MB).
+ * Light: whisper `base` multilingual (148MB), quick on any computer. Accurate: `small`
+ * multilingual (488MB), clearly better in Portuguese, Chinese and Japanese (A-05). Sizes and
+ * SHA-256 from the Hugging Face API (`/api/models/<repo>/tree/<revision>`, lfs.oid); the
+ * SHA-1s whisper.cpp's models/README.md lists (465707469ff3…, 55356645c2b3…) match them.
  */
 export const KNOWN_PACKS: readonly KnownPack[] = [
-  { id: 'transcribe-light', kind: 'transcription', quality: 'light', approxBytes: 152_000_000 },
   {
-    id: 'transcribe-accurate',
-    kind: 'transcription',
-    quality: 'accurate',
-    approxBytes: 492_000_000,
+    id: 'transcribe-light',
+    quality: 'light',
+    modelName: 'whisper-base',
+    version: MODEL_REVISION,
+    source: {
+      url: `${MODEL_BASE_URL}ggml-base.bin`,
+      file: 'ggml-base.bin',
+      size: 147_951_465,
+      sha256: '60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe',
+    },
   },
   {
-    id: 'video-compatibility',
-    kind: 'compatibility',
-    quality: null,
-    approxBytes: 70_000_000,
+    id: 'transcribe-accurate',
+    quality: 'accurate',
+    modelName: 'whisper-small',
+    version: MODEL_REVISION,
+    source: {
+      url: `${MODEL_BASE_URL}ggml-small.bin`,
+      file: 'ggml-small.bin',
+      size: 487_601_967,
+      sha256: '1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b',
+    },
   },
 ]
 
 /** Extra free space asked for on top of the download (the WAV, the transcript, the OS). */
 export const DISK_MARGIN_BYTES = 200_000_000
+
+/**
+ * Development and tests only (a debug hook, D-038): a JSON file that replaces the model
+ * sources, `{ "<pack id>": { "url", "size", "sha256", "version"? } }`, written by
+ * `scripts/fake-pack-server.ts`. URLs must be plain http on this machine.
+ */
+export const DEV_MODELS_ENV = 'KAMO_PACKS_DEV_MODELS'
+
+const LOOPBACK = new Set(['127.0.0.1', 'localhost', '[::1]'])
+
+/** The packs with the dev override applied; anything wrong in it is ignored. */
+export function knownPacks(env: Record<string, string | undefined>): readonly KnownPack[] {
+  const file = env[DEV_MODELS_ENV]
+  if (!file) return KNOWN_PACKS
+  let override: Record<string, Partial<ModelSource & { version: string }>>
+  try {
+    override = JSON.parse(readFileSync(file, 'utf8')) as typeof override
+  } catch {
+    return KNOWN_PACKS
+  }
+  return KNOWN_PACKS.map((pack) => {
+    const dev = override[pack.id]
+    if (!dev || typeof dev.url !== 'string') return pack
+    if (typeof dev.size !== 'number' || typeof dev.sha256 !== 'string') return pack
+    try {
+      const url = new URL(dev.url)
+      if (url.protocol !== 'http:' || !LOOPBACK.has(url.hostname)) return pack
+    } catch {
+      return pack
+    }
+    return {
+      ...pack,
+      version: typeof dev.version === 'string' ? dev.version : 'dev',
+      source: { ...pack.source, url: dev.url, size: dev.size, sha256: dev.sha256 },
+    }
+  })
+}

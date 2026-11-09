@@ -9,12 +9,10 @@ export type ExportErrorCode =
   | 'write_failed'
   /** the recorded video could not be read or decoded */
   | 'source_unreadable'
-  /** this machine has no H.264 encoder WebCodecs can use (D-011 plan B: FFmpeg pack) */
+  /** this machine has no H.264 encoder WebCodecs can use */
   | 'encoder_unavailable'
-  /** the WebCodecs encoder broke in the middle of the export (D-040: the FFmpeg pack is offered) */
+  /** the WebCodecs encoder broke in the middle of the export */
   | 'encoder_failed'
-  /** the optional compatibility pack (FFmpeg) failed to encode the video (D-040) */
-  | 'compatibility_failed'
   | 'failed'
 
 export class ExportError extends Error {
@@ -43,8 +41,6 @@ export type ExportWarning =
    * the file was exported at the best setting it takes, which its name says
    */
   | 'settings_fallback'
-  /** exported with the optional compatibility pack (FFmpeg) instead of WebCodecs (D-040) */
-  | 'compatibility_encoder'
 
 export function exportErrorCode(error: unknown): ExportErrorCode {
   if (error instanceof ExportError) return error.code
@@ -52,11 +48,6 @@ export function exportErrorCode(error: unknown): ExportErrorCode {
     return 'aborted'
   }
   return 'failed'
-}
-
-/** The export failed for lack of a working encoder: the compatibility pack can help (A-07). */
-export function needsCompatibilityEncoder(code: ExportErrorCode): boolean {
-  return code === 'encoder_unavailable' || code === 'encoder_failed'
 }
 
 /** Any failure as an ExportError (an ExportError stays as it is). */

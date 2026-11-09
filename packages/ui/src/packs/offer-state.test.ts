@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest'
-import { defaultChoice, offerStage, recommendedPack, selectable } from './offer-state.ts'
+import {
+  addRateSample,
+  defaultChoice,
+  estimateSecondsLeft,
+  finishStage,
+  offerStage,
+  packMeters,
+  recommendedPack,
+} from './offer-state.ts'
 import type { PackView, PacksView } from './types.ts'
 
 function pack(id: PackView['id'], over: Partial<PackView> = {}): PackView {
   return {
     id,
-    kind: id === 'video-compatibility' ? 'compatibility' : 'transcription',
-    quality: id === 'transcribe-light' ? 'light' : id === 'transcribe-accurate' ? 'accurate' : null,
-    sizeBytes: 150_000_000,
-    sizeExact: true,
+    quality: id === 'transcribe-light' ? 'light' : 'accurate',
+    sizeBytes: id === 'transcribe-light' ? 147_951_465 : 487_601_967,
     installedVersion: null,
-    availableVersion: '1.0.0',
     updateAvailable: false,
     state: 'not_installed',
     progress: null,
@@ -22,52 +27,46 @@ function pack(id: PackView['id'], over: Partial<PackView> = {}): PackView {
 
 function view(
   over: { light?: Partial<PackView>; accurate?: Partial<PackView> } = {},
-  catalog: PacksView['catalog'] = 'ready',
-  catalogError: string | null = null,
+  program: PacksView['program'] = 'ready',
 ): PacksView {
   return {
-    packs: [
-      pack('transcribe-light', over.light),
-      pack('transcribe-accurate', over.accurate),
-      pack('video-compatibility', { installedVersion: '1.0.0', state: 'installed' }),
-    ],
-    catalog,
-    catalogError,
+    packs: [pack('transcribe-light', over.light), pack('transcribe-accurate', over.accurate)],
+    program,
   }
 }
 
 describe('offerStage', () => {
-  it('lets the user choose once the list loaded, and waits while it loads', () => {
-    expect(offerStage(view(), null)).toEqual({ stage: 'choosing', loading: false })
-    expect(offerStage(view({}, 'loading'), null)).toEqual({ stage: 'choosing', loading: true })
-    expect(offerStage(view({}, 'idle'), null)).toEqual({ stage: 'choosing', loading: true })
+  it('lets the user choose right away: the models are known, nothing to load', () => {
+    expect(offerStage(view(), null)).toEqual({ stage: 'choosing' })
   })
 
-  it('shows one catalog error, never a per-pack failure, when the list did not load', () => {
-    const unpublished = view({}, 'error', 'catalog_unpublished')
-    expect(offerStage(unpublished, null)).toEqual({
+  it('says once that this build cannot transcribe, before offering any download', () => {
+    expect(offerStage(view({}, 'missing'), null)).toEqual({
       stage: 'unavailable',
-      error: 'catalog_unpublished',
+      error: 'program_missing',
     })
-    // The user clicked Download: still the list's error, not "the download failed".
-    expect(offerStage(unpublished, 'transcribe-accurate')).toEqual({
-      stage: 'unavailable',
-      error: 'catalog_unpublished',
-    })
-    expect(offerStage(view({}, 'error', 'offline'), null)).toMatchObject({ error: 'offline' })
-    expect(offerStage(view({}, 'error', null), null)).toMatchObject({ error: 'offline' })
+    const installed = view({ light: { installedVersion: 'rev1', state: 'installed' } }, 'missing')
+    expect(offerStage(installed, 'transcribe-light').stage).toBe('unavailable')
   })
 
   it('follows the chosen pack while it downloads, pauses or fails', () => {
     for (const state of ['not_installed', 'downloading', 'verifying', 'paused'] as const) {
-      const stage = offerStage(view({ light: { state } }, 'loading'), 'transcribe-light')
+      const stage = offerStage(view({ light: { state } }), 'transcribe-light')
       expect(stage).toMatchObject({ stage: 'working', pack: { id: 'transcribe-light', state } })
     }
-    const failed = view({ accurate: { state: 'failed', error: 'checksum_mismatch' } })
-    expect(offerStage(failed, 'transcribe-accurate')).toMatchObject({
-      stage: 'working',
-      pack: { id: 'transcribe-accurate', error: 'checksum_mismatch' },
-    })
+    for (const error of [
+      'offline',
+      'source_unreachable',
+      'download_failed',
+      'checksum_mismatch',
+      'disk_space',
+    ]) {
+      const failed = view({ accurate: { state: 'failed', error } })
+      expect(offerStage(failed, 'transcribe-accurate')).toMatchObject({
+        stage: 'working',
+        pack: { id: 'transcribe-accurate', error },
+      })
+    }
   })
 
   it('keeps a download that is already running when the offer opens', () => {
@@ -76,22 +75,20 @@ describe('offerStage', () => {
       stage: 'working',
       pack: { id: 'transcribe-accurate' },
     })
-    // Even with a list that failed to load again meanwhile.
-    expect(
-      offerStage(view({ accurate: { state: 'downloading' } }, 'error', 'offline'), null),
-    ).toMatchObject({ stage: 'working' })
   })
 
-  it('is ready once a transcription pack is installed (not the compatibility pack)', () => {
+  it('is ready once a model is installed', () => {
     expect(offerStage(view(), null).stage).not.toBe('ready')
-    const installed = view({ light: { installedVersion: '1.0.0', state: 'installed' } })
+    const installed = view({ light: { installedVersion: 'rev1', state: 'installed' } })
     expect(offerStage(installed, 'transcribe-light')).toMatchObject({
       stage: 'ready',
       pack: { id: 'transcribe-light' },
     })
-    // Installed packs are known locally: ready even when the list fails.
-    const offline = view({ accurate: { installedVersion: '1.0.0', state: 'installed' } }, 'error')
-    expect(offerStage(offline, null)).toMatchObject({ stage: 'ready' })
+    const other = view({ accurate: { installedVersion: 'rev1', state: 'installed' } })
+    expect(offerStage(other, null)).toMatchObject({
+      stage: 'ready',
+      pack: { id: 'transcribe-accurate' },
+    })
   })
 })
 
@@ -112,9 +109,55 @@ describe('defaultChoice', () => {
   })
 })
 
-describe('selectable', () => {
-  it('refuses a pack without a build for this computer', () => {
-    expect(selectable(pack('transcribe-light'))).toBe(true)
-    expect(selectable(pack('transcribe-light', { error: 'unsupported_platform' }))).toBe(false)
+describe('download estimate', () => {
+  it('says nothing until it has seen enough of the download', () => {
+    let samples = addRateSample([], { at: 0, bytes: 0 })
+    samples = addRateSample(samples, { at: 1_000, bytes: 10_000_000 })
+    expect(estimateSecondsLeft(samples, 152_000_000)).toBeNull()
+  })
+
+  it('divides what is left by the rate seen over the window', () => {
+    let samples = addRateSample([], { at: 0, bytes: 0 })
+    samples = addRateSample(samples, { at: 2_000, bytes: 20_000_000 })
+    // 10 MB/s, 132 MB left.
+    expect(estimateSecondsLeft(samples, 152_000_000)).toBeCloseTo(13.2)
+  })
+
+  it('forgets readings older than the window, so a slower link shows up', () => {
+    let samples = addRateSample([], { at: 0, bytes: 0 })
+    samples = addRateSample(samples, { at: 5_000, bytes: 50_000_000 })
+    samples = addRateSample(samples, { at: 10_000, bytes: 55_000_000 })
+    samples = addRateSample(samples, { at: 15_000, bytes: 60_000_000 })
+    expect(samples[0]!.at).toBe(5_000)
+    // 1 MB/s over the last 10 s, 92 MB left.
+    expect(estimateSecondsLeft(samples, 152_000_000)).toBeCloseTo(92)
+  })
+
+  it('starts over when the count goes back (a new download) and with nothing arriving', () => {
+    let samples = addRateSample([], { at: 0, bytes: 0 })
+    samples = addRateSample(samples, { at: 2_000, bytes: 20_000_000 })
+    samples = addRateSample(samples, { at: 3_000, bytes: 1_000 })
+    expect(samples).toEqual([{ at: 3_000, bytes: 1_000 }])
+    samples = addRateSample(samples, { at: 6_000, bytes: 1_000 })
+    expect(estimateSecondsLeft(samples, 152_000_000)).toBeNull()
+  })
+})
+
+describe('after the install', () => {
+  it('asks first, then follows the transcript', () => {
+    expect(finishStage(true, { state: 'done' })).toBe('asking')
+    expect(finishStage(false, undefined)).toBe('transcribing')
+    expect(finishStage(false, { state: 'queued' })).toBe('transcribing')
+    expect(finishStage(false, { state: 'running', progress: 0.3 })).toBe('transcribing')
+    expect(finishStage(false, { state: 'done' })).toBe('done')
+    expect(finishStage(false, { state: 'failed', error: null })).toBe('failed')
+    expect(finishStage(false, { state: 'no_audio' })).toBe('no_audio')
+  })
+
+  it('rates Light faster and Accurate more accurate', () => {
+    const light = packMeters('light')
+    const accurate = packMeters('accurate')
+    expect(light.speed).toBeGreaterThan(accurate.speed)
+    expect(accurate.accuracy).toBeGreaterThan(light.accuracy)
   })
 })

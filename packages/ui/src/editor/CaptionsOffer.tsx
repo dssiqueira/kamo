@@ -77,12 +77,7 @@ export function CaptionsOffer({ transcription }: { transcription: EditorTranscri
               data-testid="captions-needs-pack"
               className="text-center text-label text-on-surface-muted"
             >
-              {t(
-                pack?.sizeExact
-                  ? 'editor.captions.offer.sizeExact'
-                  : 'editor.captions.offer.sizeApprox',
-                { size },
-              )}
+              {t('editor.captions.offer.sizeExact', { size })}
             </p>
           )}
         </div>

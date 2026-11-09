@@ -229,9 +229,19 @@ export function InlineNotice({
   )
 }
 
+/** A friendlier dialog header: art, a serif headline and one line under it. */
+export interface DialogHero {
+  /** Decorative (mascot, illustration): beside the title, or above it when centered. */
+  art?: ReactNode
+  subtitle?: ReactNode
+  /** Centered: an empty-state moment (art on top, buttons centered). */
+  align?: 'start' | 'center'
+}
+
 /**
  * Modal dialog on the native <dialog> (focus trap, Esc to close, inert page behind). Floating,
- * so it gets the soft shadow (DESIGN.md elevation).
+ * so it gets the soft shadow (DESIGN.md elevation). With `hero`, the title is a serif headline
+ * with art and a subtitle (DESIGN.md typography: Instrument Serif for large headings).
  */
 export function Dialog({
   open,
@@ -240,6 +250,7 @@ export function Dialog({
   onClose,
   children,
   footer,
+  hero,
 }: {
   open: boolean
   title: string
@@ -247,6 +258,7 @@ export function Dialog({
   onClose(): void
   children: ReactNode
   footer?: ReactNode
+  hero?: DialogHero
 }) {
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
@@ -255,6 +267,18 @@ export function Dialog({
     if (open && !dialog.open) dialog.showModal()
     if (!open && dialog.open) dialog.close()
   }, [open])
+  const centered = hero?.align === 'center'
+  const close = (
+    <button
+      type="button"
+      aria-label={closeLabel}
+      title={closeLabel}
+      onClick={onClose}
+      className={`flex size-[28px] shrink-0 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-raised hover:text-on-surface ${FOCUS_RING}`}
+    >
+      <CloseIcon />
+    </button>
+  )
   return (
     <dialog
       ref={ref}
@@ -267,23 +291,55 @@ export function Dialog({
       className="m-auto max-h-[calc(100vh-64px)] w-[min(680px,calc(100vw-48px))] rounded-lg border border-border bg-surface p-0 text-on-surface shadow-[0_8px_24px_rgb(0_0_0/0.12)] backdrop:bg-[rgb(0_0_0/0.35)]"
     >
       {open && (
-        <div className="flex max-h-[calc(100vh-64px)] flex-col gap-md p-lg">
-          <div className="flex items-start justify-between gap-md">
-            <h2 id="dialog-title" className="text-title">
-              {title}
-            </h2>
-            <button
-              type="button"
-              aria-label={closeLabel}
-              title={closeLabel}
-              onClick={onClose}
-              className={`flex size-[28px] shrink-0 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-raised hover:text-on-surface ${FOCUS_RING}`}
-            >
-              <CloseIcon />
-            </button>
-          </div>
+        <div
+          className={`relative flex max-h-[calc(100vh-64px)] flex-col overflow-y-auto ${
+            hero ? 'gap-lg px-xl pt-xl pb-lg' : 'gap-md p-lg'
+          }`}
+        >
+          {!hero ? (
+            <div className="flex items-start justify-between gap-md">
+              <h2 id="dialog-title" className="text-title">
+                {title}
+              </h2>
+              {close}
+            </div>
+          ) : centered ? (
+            <>
+              <div className="absolute end-md top-md">{close}</div>
+              <div className="flex flex-col items-center gap-sm pt-sm text-center">
+                {hero.art}
+                <h2 id="dialog-title" className="pt-xs font-serif text-headline">
+                  {title}
+                </h2>
+                {hero.subtitle && (
+                  <p className="max-w-[440px] text-body text-pretty text-on-surface-muted">
+                    {hero.subtitle}
+                  </p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex items-start gap-md">
+              {hero.art}
+              <div className="flex min-w-0 flex-1 flex-col gap-xs self-center">
+                <h2 id="dialog-title" className="font-serif text-headline">
+                  {title}
+                </h2>
+                {hero.subtitle && (
+                  <p className="text-body text-pretty text-on-surface-muted">{hero.subtitle}</p>
+                )}
+              </div>
+              {close}
+            </div>
+          )}
           {children}
-          {footer && <div className="flex flex-wrap items-center justify-end gap-sm">{footer}</div>}
+          {footer && (
+            <div
+              className={`flex flex-wrap items-center gap-sm ${centered ? 'justify-center' : 'justify-end'}`}
+            >
+              {footer}
+            </div>
+          )}
         </div>
       )}
     </dialog>

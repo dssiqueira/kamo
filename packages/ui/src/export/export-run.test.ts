@@ -1,15 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { PackView } from '../packs/types.ts'
 import {
-  compatibilityReady,
   exportJobs,
   jobCaptions,
   jobKey,
   jobsAfterFailure,
   jobStep,
-  mp4Encoder,
-  offersCompatibility,
-  retriesWithCompatibility,
   type ExportJob,
 } from './useExportRun.ts'
 
@@ -100,62 +95,5 @@ describe('export retry', () => {
     const jobs = jobsAfterFailure([savedMp4, { ...gif, status: 'exporting', progress: 0.3 }], 1)
     expect(jobs.map(jobStep)).toEqual(['none', 'file'])
     expect(jobs[1]).toMatchObject({ format: 'gif', aspect: '16:9', status: 'waiting', progress: 0 })
-  })
-})
-
-describe('the compatibility pack (A-07, D-040)', () => {
-  const pack = (patch: Partial<PackView> = {}): PackView => ({
-    id: 'video-compatibility',
-    kind: 'compatibility',
-    quality: null,
-    sizeBytes: 70_000_000,
-    sizeExact: false,
-    installedVersion: null,
-    availableVersion: null,
-    updateAvailable: false,
-    state: 'not_installed',
-    progress: null,
-    error: null,
-    requiredBytes: null,
-    ...patch,
-  })
-
-  it('is offered only when the export failed for lack of a working encoder', () => {
-    expect(offersCompatibility('encoder_unavailable', pack())).toBe(true)
-    expect(offersCompatibility('encoder_failed', pack({ state: 'downloading' }))).toBe(true)
-    expect(offersCompatibility('disk_full', pack())).toBe(false)
-    expect(offersCompatibility('source_unreadable', pack())).toBe(false)
-    expect(offersCompatibility('compatibility_failed', pack())).toBe(false)
-  })
-
-  it('is not offered once installed, without a build for this computer, or without packs', () => {
-    expect(offersCompatibility('encoder_unavailable', pack({ installedVersion: '1.0.0' }))).toBe(
-      false,
-    )
-    expect(
-      offersCompatibility('encoder_unavailable', pack({ error: 'unsupported_platform' })),
-    ).toBe(false)
-    // The extension has no packs.
-    expect(offersCompatibility('encoder_unavailable', null)).toBe(false)
-  })
-
-  it('counts as ready while installed, an update waiting included', () => {
-    expect(compatibilityReady(pack())).toBe(false)
-    expect(compatibilityReady(pack({ installedVersion: '1.0.0', updateAvailable: true }))).toBe(
-      true,
-    )
-    expect(compatibilityReady(null)).toBe(false)
-  })
-
-  it('WebCodecs first; the pack only without it, and never the pack by itself', () => {
-    expect(mp4Encoder({ webCodecs: true, compatReady: true })).toBe('webcodecs')
-    expect(mp4Encoder({ webCodecs: false, compatReady: true })).toBe('compatibility')
-    expect(mp4Encoder({ webCodecs: false, compatReady: false })).toBeNull()
-  })
-
-  it('remakes a file through the pack only when WebCodecs broke and the pack is in', () => {
-    expect(retriesWithCompatibility('encoder_failed', true)).toBe(true)
-    expect(retriesWithCompatibility('encoder_failed', false)).toBe(false)
-    expect(retriesWithCompatibility('disk_full', true)).toBe(false)
   })
 })

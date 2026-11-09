@@ -41,7 +41,7 @@ const Accelerator = z.string().refine(isValidAccelerator)
 // MediaDeviceInfo.deviceId (an opaque hash); '' means the system default device.
 const DeviceId = z.string().max(512)
 const TranscriptionLanguageSchema = z.enum(TRANSCRIPTION_LANGUAGES)
-// The pack that transcribes: only a transcription pack (not the compatibility one, D-040).
+// The model that transcribes (A-05).
 const PackIdSchema = z.enum(TRANSCRIPTION_PACK_IDS)
 // Home's selected playlist (D-028): a playlist id, or '' for All.
 const HomePlaylistId = z.union([z.literal(''), z.uuid()])

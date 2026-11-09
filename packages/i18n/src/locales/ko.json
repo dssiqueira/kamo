@@ -302,8 +302,7 @@
         "styles": "12가지 스타일, MP4나 GIF에 입히거나 .srt로",
         "create": "자막 만들기",
         "transcribe": "이 녹화 받아쓰기",
-        "sizeExact": "{size} 한 번만 다운로드, 클릭할 때만",
-        "sizeApprox": "약 {size} 한 번만 다운로드, 클릭할 때만"
+        "sizeExact": "{size} 한 번만 다운로드, 클릭할 때만"
       }
     }
   },
@@ -584,8 +583,7 @@
       "source_unreadable": "Kamo가 이 녹화의 영상을 읽을 수 없었어요.",
       "encoder_unavailable": "이 컴퓨터에는 Kamo가 사용할 수 있는 H.264 인코더가 없어요.",
       "failed": "내보내는 중에 문제가 생겼어요. 완성되지 않은 파일은 삭제했어요.",
-      "encoder_failed": "이 컴퓨터의 비디오 인코더가 내보내는 도중에 멈췄어요. 완성되지 않은 파일은 삭제했어요.",
-      "compatibility_failed": "호환성 팩으로 이 영상을 내보내지 못했어요. 완성되지 않은 파일은 삭제했어요."
+      "encoder_failed": "이 컴퓨터의 비디오 인코더가 내보내는 도중에 멈췄어요. 완성되지 않은 파일은 삭제했어요."
     },
     "warnings": {
       "software_encoder": "이 컴퓨터에 하드웨어 비디오 인코더가 없어서 더 느린 소프트웨어 인코더로 내보냈어요.",
@@ -593,8 +591,7 @@
       "audio_encoder_unavailable": "이 컴퓨터는 AAC 사운드를 인코딩할 수 없어서 영상에 소리가 없어요.",
       "webcam_unreadable": "웹캠 녹화를 읽을 수 없어서 영상에 웹캠 버블이 없어요.",
       "background_unreadable": "배경 이미지를 읽을 수 없어서 영상에 기본 배경을 사용했어요.",
-      "settings_fallback": "이 컴퓨터의 비디오 인코더가 선택한 해상도나 프레임 레이트를 만들 수 없어서 더 낮은 값을 사용했어요. 파일 이름에 어떤 값인지 나와 있어요.",
-      "compatibility_encoder": "이 컴퓨터의 비디오 인코더로는 내보낼 수 없어서 호환성 팩(FFmpeg)으로 내보냈어요."
+      "settings_fallback": "이 컴퓨터의 비디오 인코더가 선택한 해상도나 프레임 레이트를 만들 수 없어서 더 낮은 값을 사용했어요. 파일 이름에 어떤 값인지 나와 있어요."
     },
     "closeDialog": {
       "title": "내보내는 중",
@@ -618,13 +615,7 @@
     "gifHint": "소리 없음, 최대 너비 1280px.",
     "gifEstimate": "예상 크기: 약 {size}.",
     "gifLarge": "많은 사이트와 채팅 앱은 {limit}보다 큰 GIF를 받지 않아요. 영상을 자르거나, 10fps를 선택하거나, MP4로 내보내세요.",
-    "encoderFallback": "이 컴퓨터의 비디오 인코더는 {wanted}을(를) 만들 수 없어서 Kamo가 {actual}(으)로 내보낼게요.",
-    "compat": {
-      "question": "호환성 팩을 다운로드하고 다시 시도할까요?",
-      "body": "Kamo는 대신 FFmpeg로 MP4를 만들 수 있어요. 요청할 때만 다운로드되는 선택 팩이며, 이 컴퓨터에 남아 있어요.",
-      "size": "다운로드 크기: {size}",
-      "download": "다운로드하고 다시 시도"
-    }
+    "encoderFallback": "이 컴퓨터의 비디오 인코더는 {wanted}을(를) 만들 수 없어서 Kamo가 {actual}(으)로 내보낼게요."
   },
   "recovery": {
     "found": "{date}에 중단된 녹화를 찾았어요.",
@@ -755,19 +746,18 @@
   },
   "packs": {
     "title": "선택 팩",
-    "description": "원할 때만 다운로드하는 추가 기능이에요. Kamo는 팩 없이도 녹화, 편집, 내보내기를 할 수 있어요.",
-    "local": "팩은 내 컴퓨터에서 실행돼요. 녹화한 내용은 어디로도 보내지 않아요.",
+    "description": "전사 모델은 원할 때만 내려받는 유일한 추가 기능입니다. 없어도 Kamo로 녹화, 편집, 내보내기를 할 수 있습니다.",
+    "local": "모델은 whisper.cpp 모델의 공식 배포처인 Hugging Face에서 한 번만 내려받습니다. 전사는 이 컴퓨터에서 이루어지며, 녹화한 내용은 어디에도 전송되지 않습니다.",
     "light": {
       "name": "받아쓰기 — 가벼움",
-      "hint": "더 빨라요. 자막, 검색, 에이전트(MCP)용 대본을 만들어요.",
+      "hint": "자막, 검색, 에이전트(MCP)에 좋아요. 어떤 컴퓨터에서도 빨라요.",
       "short": "가벼움"
     },
     "accurate": {
       "name": "받아쓰기 — 정확함",
-      "hint": "더 느리지만 더 정확해요. 포르투갈어, 중국어, 일본어에 가장 좋아요.",
+      "hint": "단어 하나하나가 중요할 때 좋아요. 포르투갈어, 중국어, 일본어에 가장 좋아요.",
       "short": "정확함"
     },
-    "sizeApprox": "약 {size}",
     "progressLabel": "{name} 다운로드 중",
     "install": "다운로드",
     "resume": "다시 시작",
@@ -775,46 +765,39 @@
     "update": "업데이트",
     "remove": "제거",
     "removeConfirm": "{name}을(를) 제거할까요? 이미 만든 대본은 그대로 남아요.",
-    "updateConfirm": "버전 {version}({size})을(를) 다운로드할까요? 다운로드가 끝날 때까지 현재 버전은 계속 작동해요.",
+    "updateConfirm": "새 모델({size})을 내려받을까요? 완료될 때까지 현재 모델을 계속 쓸 수 있습니다.",
     "status": {
       "notInstalled": "설치 안 됨",
       "downloading": "다운로드 중… {progress, number, percent}",
       "paused": "{progress, number, percent}에서 일시정지됨",
       "verifying": "다운로드 확인 중…",
-      "installed": "설치됨(버전 {version})",
-      "update": "업데이트 가능: 버전 {version}",
+      "installed": "설치됨",
+      "update": "업데이트 있음",
       "failed": "완료되지 않음",
       "starting": "다운로드를 시작하는 중…"
     },
-    "catalog": {
-      "loading": "팩 목록을 불러오는 중…",
-      "unpublished": "팩이 아직 공개되지 않았어요. 곧 다시 확인해 주세요.",
-      "offline": "오프라인 상태인 것 같아요. 연결을 확인하고 다시 시도하세요.",
-      "failed": "지금은 팩 목록을 불러올 수 없어요. 잠시 후 다시 시도하세요.",
-      "titles": {
-        "unpublished": "곧 만나요",
-        "offline": "연결 없음",
-        "failed": "팩을 불러올 수 없어요"
-      }
-    },
     "errors": {
-      "offline": "연결이 없어요. 온라인 상태일 때 다시 시도하세요. 이미 받은 부분은 보관돼요.",
-      "downloadFailed": "다운로드에 실패했어요. 다시 시도하세요.",
-      "checksumMismatch": "다운로드한 파일이 손상되어 삭제했어요. 다시 시도하세요.",
-      "diskSpace": "여유 공간이 부족해요. {size}이(가) 필요해요.",
-      "unsupportedPlatform": "이 컴퓨터에서는 아직 사용할 수 없어요.",
-      "manifestInvalid": "팩 목록을 읽을 수 없어요. Kamo를 업데이트한 뒤 다시 시도하세요.",
+      "offline": "오프라인 상태입니다. 연결한 뒤 다시 시도하세요. 이미 받은 부분은 유지됩니다.",
+      "downloadFailed": "Hugging Face가 지금은 모델을 보낼 수 없습니다. 잠시 후 다시 시도하세요.",
+      "checksumMismatch": "모델이 손상된 채로 도착해 Kamo가 삭제했습니다. 다시 시도하면 처음부터 받습니다.",
+      "diskSpace": "여유 공간이 부족합니다. 모델에 {size}가 필요합니다. 공간을 확보한 뒤 다시 시도하세요.",
       "packBusy": "지금 받아쓰는 중이에요. 끝나면 다시 시도하세요.",
       "installFailed": "설치하지 못했어요. 다시 시도하세요.",
-      "unknownPack": "이 팩은 더 이상 사용할 수 없어요."
+      "unknownPack": "이 팩은 더 이상 사용할 수 없어요.",
+      "sourceUnreachable": "모델을 제공하는 Hugging Face에 연결할 수 없습니다. 잠시 후 다시 시도하세요. 이미 받은 부분은 유지됩니다."
     },
-    "compatibility": {
-      "name": "비디오 호환성",
-      "hint": "시스템의 비디오 인코더가 작동하지 않는 컴퓨터에서 FFmpeg로 MP4를 내보내요.",
-      "removeConfirm": "{name}을(를) 제거할까요? 이미 내보낸 영상은 그대로 남아요.",
-      "busy": "지금 영상을 내보내는 중이에요. 끝나면 다시 시도하세요."
+    "progressBytes": "{received} / {total}",
+    "meters": {
+      "speed": "속도",
+      "accuracy": "정확도",
+      "value": "{max}단계 중 {value}"
     },
-    "progressBytes": "{received} / {total}"
+    "headline": "전사는 내 컴퓨터에서",
+    "sizeAbout": "약 {size}",
+    "program": {
+      "title": "이 빌드에서는 전사할 수 없습니다",
+      "body": "전사 프로그램 없이 빌드되어 아직 내려받을 것이 없습니다. Kamo의 다른 기능은 평소처럼 작동합니다."
+    }
   },
   "transcription": {
     "title": "받아쓰기",
@@ -834,15 +817,31 @@
     },
     "offer": {
       "title": "내 컴퓨터에서 받아쓰기",
-      "body": "받아쓰기는 내 컴퓨터에서 실행되는 선택 팩이에요. 다운로드할 팩을 고르세요.",
       "choose": "받아쓰기 품질",
-      "recommendAccurate": "중국어나 일본어라면 정확함이 훨씬 좋아요.",
       "download": "다운로드하고 받아쓰기",
       "notNow": "나중에",
       "recommended": "추천",
-      "unpublished": "받아쓰기 팩이 아직 공개되지 않았어요. 곧 다시 확인해 주세요. Kamo의 다른 기능은 팩 없이도 모두 쓸 수 있어요.",
-      "installedTitle": "준비됐어요.",
-      "installedBody": "{name} 설치를 마쳤어요. 첫 받아쓰기 전에 하나만 물어볼게요."
+      "installedTitle": "팩을 설치했어요",
+      "installedBody": "{name} 설치를 마쳤어요. 첫 받아쓰기 전에 하나만 물어볼게요.",
+      "subtitle": "팩을 고르세요. 한 번만 다운로드하면 모든 받아쓰기가 이 컴퓨터에서 이루어져요.",
+      "private": "모델은 Hugging Face에서 한 번만 내려받습니다. 전사는 이 컴퓨터에서 이루어지며, 녹화 파일은 절대 밖으로 나가지 않습니다.",
+      "downloading": "다운로드 중…",
+      "paused": "일시 정지됨",
+      "timeLeft": "약 {time} 남음",
+      "timeLeftSoon": "1분 미만 남음",
+      "transcribing": {
+        "title": "받아쓰는 중…",
+        "body": "이 창을 닫아도 백그라운드에서 계속돼요."
+      },
+      "done": {
+        "title": "모두 준비됐어요",
+        "body": "받아쓰기가 끝났어요. 이제 자막, 검색, 에이전트에서 쓸 수 있어요.",
+        "button": "완료"
+      },
+      "failedTitle": "잘 되지 않았어요",
+      "noAudioTitle": "들을 소리가 없어요",
+      "noAudioBody": "이 녹화에는 소리가 없어서 받아쓸 내용이 없어요.",
+      "stopped": "중지됨"
     },
     "status": {
       "queued": "받아쓰기 대기 중",
@@ -854,7 +853,8 @@
     "errors": {
       "packMissing": "먼저 받아쓰기 팩을 다운로드하세요.",
       "audioUnreadable": "Kamo가 이 녹화의 오디오를 읽을 수 없었어요.",
-      "transcriptEdited": "자막에서 고친 내용은 유지했어요. 새 받아쓰기는 저장하지 않았어요."
+      "transcriptEdited": "자막에서 고친 내용은 유지했어요. 새 받아쓰기는 저장하지 않았어요.",
+      "programMissing": "이 Kamo 빌드에서는 전사할 수 없습니다. 전사 프로그램이 없습니다."
     },
     "replace": {
       "title": "자막에서 고친 내용을 바꿀까요?",

@@ -1,10 +1,12 @@
-// Settings → Packs and Settings → Transcription (flows.md §7, A-07, A-05). The list of packs is
-// only fetched when this section comes into view (`onOpen`), never on its own.
-import { useEffect, useRef } from 'react'
+// Settings → Optional packs and Settings → Transcription (flows.md §7, A-07, A-05, D-042). The
+// models are listed from what the app knows (nothing is fetched to show them); a download
+// starts only from a Download click.
 import { useLocale, useT } from '../i18n.tsx'
+import { LockIcon } from '../primitives/icons.tsx'
 import { Switch } from '../primitives/controls.tsx'
 import { Row, SecondaryButton, Section } from '../settings/parts.tsx'
-import { CatalogNotice, PackRow, packName } from './PackList.tsx'
+import { ParcelArt, WaveToTextArt } from './illustrations.tsx'
+import { PackRow, packName } from './PackList.tsx'
 import type { PackActions, PackViewId, PacksView, TranscriptionLanguageChoice } from './types.ts'
 
 export const TRANSCRIPTION_LANGUAGE_CHOICES: readonly TranscriptionLanguageChoice[] = [
@@ -21,8 +23,6 @@ export const TRANSCRIPTION_LANGUAGE_CHOICES: readonly TranscriptionLanguageChoic
 
 export interface PacksSectionProps extends PackActions {
   packs: PacksView
-  /** The section came into view: load the list of packs (user action, no background check). */
-  onOpen(): void
   /** Absent: never asked; the question shows once a transcription pack is installed. */
   autoTranscribe: boolean | undefined
   onAutoTranscribeChange(value: boolean): void
@@ -49,52 +49,42 @@ const SELECT =
 export function PacksSection(props: PacksSectionProps) {
   const t = useT()
   const locale = useLocale()
-  const ref = useRef<HTMLDivElement>(null)
-  const opened = useRef(false)
-  const { onOpen } = props
-
-  // Fetch the list the first time the section is on screen.
-  useEffect(() => {
-    const element = ref.current
-    const open = () => {
-      if (opened.current) return
-      opened.current = true
-      onOpen()
-    }
-    if (!element || typeof IntersectionObserver === 'undefined') {
-      open()
-      return
-    }
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        open()
-        observer.disconnect()
-      }
-    })
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [onOpen])
-
-  // The transcription settings follow the transcription packs only (not the compatibility one).
-  const installed = props.packs.packs.filter(
-    (pack) => pack.kind === 'transcription' && pack.installedVersion !== null,
-  )
+  const installed = props.packs.packs.filter((pack) => pack.installedVersion !== null)
+  const programMissing = props.packs.program === 'missing'
 
   return (
     <>
       <Section id="settings-packs" title={t('packs.title')}>
-        <div ref={ref} className="flex flex-col gap-md">
-          <p className="text-body text-on-surface-muted">{t('packs.description')}</p>
+        <div className="flex flex-col gap-md">
+          <div className="flex items-center gap-md rounded-lg bg-tertiary-container/35 p-md">
+            <WaveToTextArt size={44} />
+            <div className="flex min-w-0 flex-1 flex-col gap-xs">
+              <p className="font-serif text-[24px] leading-tight">{t('packs.headline')}</p>
+              <p className="text-body text-on-surface-muted">{t('packs.description')}</p>
+            </div>
+          </div>
+          {programMissing && (
+            <div
+              role="status"
+              data-testid="packs-program-missing"
+              className="flex items-center gap-md rounded-md border border-dashed border-border p-md"
+            >
+              <ParcelArt size={52} />
+              <div className="flex min-w-0 flex-1 flex-col gap-xs">
+                <p className="text-body font-medium">{t('packs.program.title')}</p>
+                <p className="text-label text-on-surface-muted">{t('packs.program.body')}</p>
+              </div>
+            </div>
+          )}
           {props.packs.packs.map((pack) => (
-            <PackRow
-              key={pack.id}
-              pack={pack}
-              actions={props}
-              catalogUnavailable={props.packs.catalog === 'error'}
-            />
+            <PackRow key={pack.id} pack={pack} actions={props} programMissing={programMissing} />
           ))}
-          <CatalogNotice packs={props.packs} onRetry={props.onRetryCatalog} />
-          <p className="text-label text-on-surface-muted">{t('packs.local')}</p>
+          <p className="flex items-start gap-xs text-label text-on-surface-muted">
+            <span className="flex shrink-0">
+              <LockIcon size={14} />
+            </span>
+            <span className="min-w-0">{t('packs.local')}</span>
+          </p>
         </div>
       </Section>
 
@@ -156,23 +146,34 @@ export function PacksSection(props: PacksSectionProps) {
 }
 
 /** Asked once, after a transcription pack is installed (A-05). */
-export function AutoTranscribeQuestion({ onAnswer }: { onAnswer(auto: boolean): void }) {
+export function AutoTranscribeQuestion({
+  onAnswer,
+  centered = false,
+}: {
+  onAnswer(auto: boolean): void
+  /** In a centered moment (the Transcribe offer): no panel, everything on the axis. */
+  centered?: boolean
+}) {
   const t = useT()
   return (
     <div
       role="group"
       aria-labelledby="auto-transcribe-question"
-      className="flex flex-col gap-sm rounded-md bg-surface-raised p-md"
+      className={
+        centered
+          ? 'flex flex-col items-center gap-sm border-t border-border pt-lg text-center'
+          : 'flex flex-col gap-sm rounded-md bg-surface-raised p-md'
+      }
     >
       <p id="auto-transcribe-question" className="text-body font-medium">
         {t('transcription.ask.title')}
       </p>
       <p className="text-label text-on-surface-muted">{t('transcription.ask.body')}</p>
-      <div className="flex flex-wrap gap-sm">
-        <SecondaryButton raised onClick={() => onAnswer(true)}>
+      <div className={`flex flex-wrap gap-sm ${centered ? 'justify-center pt-xs' : ''}`}>
+        <SecondaryButton raised={!centered} onClick={() => onAnswer(true)}>
           {t('transcription.ask.yes')}
         </SecondaryButton>
-        <SecondaryButton raised onClick={() => onAnswer(false)}>
+        <SecondaryButton raised={!centered} onClick={() => onAnswer(false)}>
           {t('transcription.ask.no')}
         </SecondaryButton>
       </div>

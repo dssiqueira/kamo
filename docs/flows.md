@@ -82,7 +82,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 - **Side panel:** Background · Padding · Corners · Shadow · Cursor · Webcam (v0.4) · Captions (v0.4)
 - **Webcam layout:** Bubble or Split. Split (9:16 only; picking it switches the preview to 9:16) stacks the screen and the camera as two cards; drag the line between them in the preview to resize (one undo step), "Camera on top" swaps them. While split shows, the bubble controls hide; in 16:9 and 1:1 the camera stays a bubble
 - **Actions:** "auto-zoom" toggle and "Regenerate zooms" button (keeps the ones the user edited)
-- **Transcribe** (discreet, in the side panel): without the pack, opens a popover "Transcription is an optional ~150MB pack that runs on your computer" with Download / Not now; with the pack, transcribes right away. Never appears as a popup on its own after recording
+- **Transcribe** (discreet, in the side panel): without the pack, opens the Transcribe dialog: Light (~148MB) or Accurate (~488MB) as two cards, one "Download and transcribe" (the model comes once from Hugging Face, D-042), progress inside the chosen card, one calm notice per failure (offline, Hugging Face unreachable or failing, damaged file, disk space) with Try again; with the pack, transcribes right away. Never appears as a popup on its own after recording
 - **States:** loading (processing events) · ready · no clicks (notice: "no clicks, nothing to zoom")
 
 ### 6. Export (Formats)
@@ -99,7 +99,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 - OS permission status
 - Shortcuts
 - **Help:** "Copy diagnostics" (shows the text before copying) and "Open GitHub issue"
-- **Packs:** list of optional packs (transcription Light/Accurate, video compatibility) with size, status and Install/Remove
+- **Packs:** the transcription models (Light ~148MB, Accurate ~488MB, from Hugging Face, D-042) as cards with size, Speed/Accuracy, status and Download/Pause/Remove; a build without `whisper-cli` says once that it can't transcribe
 - Transcription (only appears with the pack installed): automatic on/off, language (automatic, Portuguese, English)
 - **Connect to an agent (MCP):** explains in one sentence ("Let Claude Code talk to your recordings"), shows the ready-made command with a Copy button, a link to the instructions for other MCP clients and, if the person subscribes to Cloud, the cloud MCP option
 

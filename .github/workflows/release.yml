@@ -114,6 +114,9 @@ jobs:
       - name: Build the Windows capture helper
         if: runner.os == 'Windows'
         run: cargo build --locked --release --manifest-path apps/desktop/native/win/Cargo.toml --target-dir apps/desktop/native/win/build
+      # whisper.cpp's CLI ships in the app (D-042): the same pinned commit everywhere.
+      - name: Build whisper-cli
+        run: node apps/desktop/native/whisper/build.mjs
 
       # Never KAMO_BUILD_CI_SMOKE here: a release ignores --smoke-test and every KAMO_SMOKE_*
       # hook (src/main/build-flags.ts). KAMO_BUILD_MCP_ON_NPM=1 only when this release also

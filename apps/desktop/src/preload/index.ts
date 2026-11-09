@@ -107,11 +107,6 @@ const api: KamoApi = {
   commitExportFile: (id) => invoke(IpcChannel.commitExportFile, id) as Promise<string>,
   abortExportFile: (id) => invoke(IpcChannel.abortExportFile, id) as Promise<void>,
   showExportedFile: (path) => invoke(IpcChannel.showExportedFile, path) as Promise<void>,
-  compatOpen: (options) => invoke(IpcChannel.compatOpen, options),
-  compatWriteAudio: (id, bytes) => invoke(IpcChannel.compatWriteAudio, id, bytes),
-  compatWriteFrame: (id, bytes) => invoke(IpcChannel.compatWriteFrame, id, bytes),
-  compatFinish: (id) => invoke(IpcChannel.compatFinish, id),
-  compatAbort: (id) => invoke(IpcChannel.compatAbort, id),
   getSettings: () => invoke(IpcChannel.getSettings) as Promise<AppSettings>,
   updateSettings: (update) => invoke(IpcChannel.updateSettings, update) as Promise<AppSettings>,
   onSettingsChanged: (listener) => subscribe<AppSettings>(IpcChannel.settingsChanged, listener),
@@ -157,7 +152,6 @@ const api: KamoApi = {
   // Optional packs (A-07) and local transcription (A-05). `invoke` returns Promise<any>;
   // KamoApi types each one.
   getPacks: () => invoke(IpcChannel.getPacks),
-  refreshPacks: () => invoke(IpcChannel.refreshPacks),
   installPack: (id) => invoke(IpcChannel.installPack, id),
   pausePack: (id) => invoke(IpcChannel.pausePack, id),
   cancelPack: (id) => invoke(IpcChannel.cancelPack, id),

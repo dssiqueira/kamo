@@ -17,7 +17,7 @@ export const MCP_ON_NPM_BUILD = typeof __KAMO_MCP_ON_NPM__ === 'boolean' && __KA
 
 /**
  * Test and debug hooks (`--smoke-test`, KAMO_SMOKE_*, KAMO_AUDIO_SELF_TEST,
- * KAMO_PACKS_MANIFEST_URL): development runs, and the packaged app only when built for CI.
+ * KAMO_PACKS_DEV_MODELS, KAMO_WHISPER_CLI): development runs, and the packaged app only when built for CI.
  */
 export function debugHooksAllowed(packaged: boolean, ciSmokeBuild = CI_SMOKE_BUILD): boolean {
   return !packaged || ciSmokeBuild

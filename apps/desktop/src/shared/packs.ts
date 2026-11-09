@@ -1,56 +1,41 @@
-// Optional packs (A-07, D-019) and local transcription (A-05): what main tells the windows.
-// Shapes only; main owns downloads, installs and the transcription queue.
+// Optional packs (A-07, D-019, D-042) and local transcription (A-05): what main tells the
+// windows. Shapes only; main owns downloads, installs and the transcription queue. A pack is
+// one whisper model, downloaded from Hugging Face; the program (whisper-cli) ships in the app.
 
 export type TranscriptionPackId = 'transcribe-light' | 'transcribe-accurate'
-/** The export's FFmpeg fallback (D-040): offered when the export fails for lack of an encoder. */
-export type CompatibilityPackId = 'video-compatibility'
-export type PackId = TranscriptionPackId | CompatibilityPackId
+export type PackId = TranscriptionPackId
 export const TRANSCRIPTION_PACK_IDS = [
   'transcribe-light',
   'transcribe-accurate',
 ] as const satisfies readonly TranscriptionPackId[]
-export const COMPATIBILITY_PACK_ID: CompatibilityPackId = 'video-compatibility'
-export const PACK_IDS = [
-  ...TRANSCRIPTION_PACK_IDS,
-  COMPATIBILITY_PACK_ID,
-] as const satisfies readonly PackId[]
-
-export type PackKind = 'transcription' | 'compatibility'
+export const PACK_IDS: readonly PackId[] = TRANSCRIPTION_PACK_IDS
 
 export type PackState =
   'not_installed' | 'downloading' | 'paused' | 'verifying' | 'installed' | 'failed'
 
 /** Stable codes the UI explains (packages/i18n `packs.errors.*`). */
 export type PackErrorCode =
+  /** This computer has no connection. */
   | 'offline'
+  /** Online, but Hugging Face did not answer, or stopped sending: try again later. */
+  | 'source_unreachable'
+  /** Hugging Face answered with an error, or sent something other than the pinned file. */
   | 'download_failed'
+  /** The file arrived, but without the pinned SHA-256: it was deleted. */
   | 'checksum_mismatch'
   | 'disk_space'
-  | 'unsupported_platform'
-  | 'manifest_invalid'
   | 'pack_busy'
   | 'install_failed'
   | 'unknown_pack'
 
-/**
- * Why the list of packs (packs-manifest.json) could not be loaded: not published yet (HTTP 404),
- * no connection, a list this app cannot read, or anything else (a server error).
- */
-export type CatalogErrorCode =
-  'catalog_unpublished' | 'offline' | 'manifest_invalid' | 'catalog_failed'
-
 export interface PackInfo {
   id: PackId
-  kind: PackKind
-  /** Transcription packs only. */
-  quality: 'light' | 'accurate' | null
-  /** Download size for this computer: exact once the list loaded, approximate before. */
+  quality: 'light' | 'accurate'
+  /** Download size: the pinned file's exact size. */
   sizeBytes: number
-  sizeExact: boolean
+  /** The Hugging Face revision installed; null when not installed. */
   installedVersion: string | null
-  /** From the list on GitHub; null until it loaded. */
-  availableVersion: string | null
-  /** Installed, and the list has another version (installed only with confirmation). */
+  /** Installed from another pinned file than this app's (a later app pinned a new one). */
   updateAvailable: boolean
   state: PackState
   /** While downloading or paused. */
@@ -63,11 +48,10 @@ export interface PackInfo {
 export interface PacksStatus {
   packs: PackInfo[]
   /**
-   * The list of packs on GitHub: only fetched when the user opens Settings → Packs or asks to
-   * transcribe (never on its own).
+   * The whisper-cli program that ships inside the app (D-042): `missing` in a development
+   * build where it was not built (apps/desktop/native/whisper/README.md), or on another OS.
    */
-  catalog: 'idle' | 'loading' | 'ready' | 'error'
-  catalogError: CatalogErrorCode | null
+  program: 'ready' | 'missing'
 }
 
 export type TranscriptionLanguage = 'auto' | 'en' | 'pt' | 'es' | 'zh' | 'ja' | 'de' | 'fr' | 'ko'
@@ -88,6 +72,8 @@ export type TranscriptionJobState =
 
 export type TranscriptionErrorCode =
   | 'pack_missing'
+  /** whisper-cli is not in this build (a development build that did not build it, D-042). */
+  | 'program_missing'
   | 'project_not_found'
   | 'audio_unreadable'
   | 'whisper_failed'
