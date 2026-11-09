@@ -48,7 +48,7 @@ export function CameraSource(props: CameraSourceProps) {
   return (
     <div className="flex w-[240px] flex-col gap-sm rounded-lg border-2 border-border bg-surface p-sm">
       <div className="flex items-center justify-between gap-sm">
-        <span id={labelId} className="truncate text-title">
+        <span id={labelId} className="min-w-0 truncate text-title" title={t('home.camera.title')}>
           {t('home.camera.title')}
         </span>
         <SourceSwitch on={enabled} labelId={labelId} onClick={() => props.onToggle(!enabled)} />

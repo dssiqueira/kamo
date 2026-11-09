@@ -154,7 +154,9 @@ export function MenuButton({ label, title, icon, items, buttonRef }: MenuButtonP
                   {item.icon}
                 </span>
               )}
-              <span className="truncate">{item.label}</span>
+              <span className="truncate" title={item.label}>
+                {item.label}
+              </span>
             </button>
           ))}
         </div>

@@ -275,7 +275,9 @@ function DisplayCard({ display, name, selected, onSelect }: DisplayCardProps) {
         )}
       </div>
       <div className="flex items-center justify-between gap-sm">
-        <span className="truncate text-title">{name}</span>
+        <span className="min-w-0 truncate text-title" title={name}>
+          {name}
+        </span>
         {display.primary && (
           <span className="shrink-0 rounded-full bg-tertiary-container px-[12px] py-xs text-label">
             {t('home.primary')}

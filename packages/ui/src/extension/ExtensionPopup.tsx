@@ -332,7 +332,9 @@ function Recent({
                   )}
                 </span>
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-body">{project.name}</span>
+                  <span className="truncate text-body" title={project.name}>
+                    {project.name}
+                  </span>
                   <span className="font-mono text-label text-on-surface-muted">
                     {t('extension.popup.projectMeta', {
                       duration: formatDuration(locale, project.durationMs),

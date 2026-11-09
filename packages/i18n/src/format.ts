@@ -43,6 +43,7 @@ export function formatDuration(locale: Locale, ms: number): string {
 
 const SIZE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const
 
+// A no-break space between the number and the unit, so "152 MB" never wraps in a narrow panel.
 export function formatFileSize(locale: Locale, bytes: number): string {
   let value = bytes
   let unit = 0
@@ -55,7 +56,9 @@ export function formatFileSize(locale: Locale, bytes: number): string {
     unit: SIZE_UNITS[unit],
     unitDisplay: 'short',
     maximumFractionDigits: value < 10 && unit > 0 ? 1 : 0,
-  }).format(value)
+  })
+    .format(value)
+    .replace(/\s/g, '\u00a0')
 }
 
 /**

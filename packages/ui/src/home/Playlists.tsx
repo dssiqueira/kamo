@@ -370,7 +370,9 @@ export function AddToPlaylistMenu({
                     onChange={() => (checked ? onRemove(playlist.id) : onAdd(playlist.id))}
                     className={`size-[16px] shrink-0 accent-tertiary ${FOCUS_RING}`}
                   />
-                  <span className="truncate">{playlist.name}</span>
+                  <span className="truncate" title={playlist.name}>
+                    {playlist.name}
+                  </span>
                 </label>
               </li>
             )

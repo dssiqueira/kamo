@@ -81,7 +81,7 @@ describe('formatters', () => {
 
   it('duration and file size via Intl', () => {
     expect(formatDuration('en', 125_000)).toBe('2m 5s')
-    expect(formatFileSize('en', 150_000_000)).toBe('150 MB')
-    expect(formatFileSize('en', 1_500)).toBe('1.5 kB')
+    expect(formatFileSize('en', 150_000_000)).toBe('150\u00a0MB')
+    expect(formatFileSize('en', 1_500)).toBe('1.5\u00a0kB')
   })
 })

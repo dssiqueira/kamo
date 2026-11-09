@@ -384,7 +384,9 @@ export function Editor({
         {/* Brand mark like Home's, small: the header stays a slim working bar. */}
         <div className="flex min-w-0 flex-1 items-center gap-sm">
           <Mascot pose="icon" size={28} className="shrink-0" />
-          <h1 className="min-w-0 truncate text-title">{project.name}</h1>
+          <h1 className="min-w-0 truncate text-title" title={project.name}>
+            {project.name}
+          </h1>
         </div>
         <button
           type="button"
@@ -642,7 +644,10 @@ function EndTrimSuggestion({
       data-testid="end-trim-suggestion"
       className="flex min-w-0 items-center gap-xs rounded-full bg-surface-raised py-[3px] ps-[12px] pe-[3px] text-label"
     >
-      <span className="min-w-0 truncate text-on-surface-muted">
+      <span
+        className="min-w-0 truncate text-on-surface-muted"
+        title={t('editor.endTrim.question', { seconds })}
+      >
         {t('editor.endTrim.question', { seconds })}
       </span>
       <button

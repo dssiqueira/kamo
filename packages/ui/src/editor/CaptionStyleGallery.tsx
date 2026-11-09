@@ -187,8 +187,10 @@ export function CaptionStyleGallery({
                   className="block aspect-[16/10] w-full bg-[#1A1D1B]"
                 />
               </span>
+              {/* Up to two lines: names like "Machine à écrire" are much longer than English. */}
               <span
-                className={`truncate px-[2px] text-label ${
+                title={t(PRESET_KEY[preset])}
+                className={`line-clamp-2 px-[2px] text-label leading-tight break-words ${
                   selected ? 'text-on-surface' : 'text-on-surface-muted'
                 }`}
               >
