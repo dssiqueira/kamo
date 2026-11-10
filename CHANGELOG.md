@@ -4,6 +4,8 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-11-10
+
 Full notes: [docs/releases/v0.2.0.md](docs/releases/v0.2.0.md).
 
 ### Added
@@ -54,5 +56,6 @@ Full notes: [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
 - Mac app and Chrome extension (built and tested in CI, not released yet).
 - `@kamo/mcp` on npm, code-signed installers.
 
-[Unreleased]: https://github.com/dssiqueira/kamo/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/dssiqueira/kamo/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/dssiqueira/kamo/releases/tag/v0.2.0
 [0.1.0]: https://github.com/dssiqueira/kamo/releases/tag/v0.1.0
