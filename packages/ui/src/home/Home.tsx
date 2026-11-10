@@ -165,7 +165,20 @@ export function Home({
             <h2 id="displays-title" className="text-title">
               {capture ? t('home.capture.title') : t('home.displays')}
             </h2>
-            {capture && <CaptureKindSwitch kind={kind} onKindChange={capture.onKindChange} />}
+            {capture && (
+              <CaptureKindSwitch
+                kind={kind}
+                onKindChange={(next) => {
+                  capture.onKindChange(next)
+                  // Choosing "Select" opens the selection frame right away on the chosen
+                  // display: one click instead of the tab and then the button (A-08). The
+                  // button stays to adjust the selection later.
+                  if (next === 'region' && kind !== 'region' && selectedId && !needsPermission) {
+                    capture.onPickRegion()
+                  }
+                }}
+              />
+            )}
           </div>
           {capture && kind === 'window' ? (
             <WindowList
