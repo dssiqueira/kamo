@@ -74,6 +74,11 @@ TypeScript everywhere · React + Vite · Tailwind + shadcn/ui · Canvas/WebGL fo
 - **Native capture:** manual checklist on Mac and Windows at every release (record, permissions, system sound, update)
 - **CI (GitHub Actions):** lint + typecheck + tests on every PR; size budget check (installer, extension, `@kamo/mcp`)
 - **Prereleases:** `@kamo/design-tokens` and `@kamo/core` go out as `0.0.x-next` on every merge to `main` since step 1, because `kamo-site` uses these packages since phase 0
+- **Docs for every release** (prepared before the tag, committed, never published by an agent):
+  - `CHANGELOG.md`: user-facing entries under `## [Unreleased]` (Added / Changed / Fixed) as work lands, plus a "Full notes" link to the next notes file. A released section is never edited afterwards
+  - `docs/releases/v<version>.md`: the release notes (highlights, download table, what's new, coming soon, known limits, privacy), in the style of the previous ones; the release workflow uses this file as the GitHub release page. Notes of a released version are never rewritten
+  - **READMEs in every app language:** `README.md` (English) is the source; `README.<locale>.md` exists for each locale in `packages/i18n` (today pt-BR, es, zh-CN, ja, de, fr, ko). Any README change lands in English first and then in all translations in the same release, with the same HTML blocks, images and order, the app's own UI wording (`packages/i18n/src/locales/<locale>.json`) and a language menu at the top listing every README, the current one in bold. A new app language means a new README. Images never show real people or a real user's screen (synthetic content only)
+  - Every relative link in the READMEs and the notes resolves, and `pnpm lint` (prettier) passes
 - **Release:** `v*` tag triggers a build on `macos-15` (signing + notarization) and `windows-latest`, publishes to GitHub Releases, publishes the extension to the Chrome Web Store and publishes to npm `@kamo/mcp`, `@kamo/core`, `@kamo/design-tokens`, `@kamo/i18n` and `@kamo/cloud-client` (used by the private repositories)
 
 ## Commands
@@ -142,9 +147,9 @@ One feature per session. Don't skip steps. Numbering is global, the same across 
 34. **[kamo-cloud]** "Agent connections" in the account, with revocation
 
 ## Status
-- **Current step:** first public release, **v0.1.0 for Windows** (the Mac app and the Chrome extension are "coming soon": the release workflow builds them only with the repository variables `RELEASE_MAC` / `RELEASE_EXTENSION` set to `true`). Release notes in `docs/releases/v0.1.0.md`, changelog in `CHANGELOG.md`, README in five languages. Before tagging: the user's manual pass on Windows (`docs/release-checklist.md`). Cloud (16–22, 31–34) waits for `kamo-cloud`
+- **Current step:** first public release, **v0.1.0 for Windows** (the Mac app and the Chrome extension are "coming soon": the release workflow builds them only with the repository variables `RELEASE_MAC` / `RELEASE_EXTENSION` set to `true`). v0.1.0 is out (notes in `docs/releases/v0.1.0.md`); **v0.2.0** is being prepared: notes in `docs/releases/v0.2.0.md`, `CHANGELOG.md` [Unreleased], READMEs in the eight app languages. Before tagging: the user's manual pass on Windows (`docs/release-checklist.md`). Cloud (16–22, 31–34) waits for `kamo-cloud`
 - **Last thing that worked:** 2026-11-05: 60fps recording from Home (A-01, step 27 done; real 60fps recording and 1080p60 export on Windows); "Copy diagnostics" in the extension (F-17, on All projects); E-01…E-06 criteria checked against the code in `docs/features.md`. 2026-11-04: `pnpm check` green (1127 tests) and the 19 visual references match; real short recordings of a window and a region on Windows; 4K30 and 1080p60 exports; GIF with burned-in captions; extension end-to-end smoke with a stand-in tab stream (real `tabCapture` untested in automation)
-- **Blockers:** a real Mac (capture, permissions, computer sound, window/region; Swift only compiled in CI); Apple Developer ID (and optionally a Windows code-signing certificate) for signed releases; the `@kamo` npm org and `NPM_TOKEN`; a Chrome Web Store developer account and its API credentials; native review of the 5 locales
+- **Blockers:** a real Mac (capture, permissions, computer sound, window/region; Swift only compiled in CI); Apple Developer ID (and optionally a Windows code-signing certificate) for signed releases; the `@kamo` npm org and `NPM_TOKEN`; a Chrome Web Store developer account and its API credentials; native review of the 7 non-English locales
 
 ## First prompt
 > Read AGENTS.md and everything it points to. Confirm for me what we are going to build, who will use it, what the product looks like and what the first feature is.
