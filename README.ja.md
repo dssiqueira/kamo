@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b>
+  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <b>日本語</b> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@
 
 ### 1 回の録画で、すべての形式に
 
-YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 9:16 を、同じタイムラインからまとめて書き出せます。最大 4K60 の MP4、GIF、`.srt` 字幕に対応。プレビューと書き出しは同じレンダリングコードを使うので、見たとおりの仕上がりになります。透かしなし、時間制限なし。
+YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 9:16 を、同じタイムラインからまとめて書き出せます。最大 4K60 の MP4 と GIF を 1 回の書き出しで同時に作成でき、`.srt` 字幕も付けられます。プレビューと書き出しは同じレンダリングコードを使うので、見たとおりの仕上がりになります。透かしなし、時間制限なし。
 
 <p align="center">
   <img src="docs/readme/formats.gif" width="880" alt="同じ録画を 16:9、1:1、縦長の 9:16（画面の下にカメラ）で並べて書き出した例">
@@ -75,12 +75,12 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/readme/webcam.gif" alt="隅に置かれた丸い Webカメラのバブル。カメラがズームする間は小さくなります">
-      <br><b>Webカメラのバブル。</b> 丸、四角、横長から選べて、四隅のどこにでも、ドラッグした好きな場所にも置けます。カメラがズームしている間は小さくなり、終わると元に戻ります。9:16 では独立したカードにもできます（分割）。
+      <img src="docs/readme/webcam.gif" alt="隅に置かれた円形の Webカメラのバブル。カメラがズームする間は小さくなります">
+      <br><b>Webカメラのバブル。</b> 円形、正方形、横長から選べて、四隅のどこにでも、ドラッグした好きな場所にも置けます。カメラがズームしている間は小さくなり、終わると元に戻ります。9:16 では独立したカードにもできます（分割）。
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/captions.gif" alt="5 つのスタイルの字幕：太字、Kamo、タイプライター、ネオン、マーカー">
-      <br><b>12 種類の字幕スタイル。</b> 文字起こしはあなたのパソコン上で行います（必要なときだけダウンロードするオプションパック）。タイムラインで単語を直せば、文字起こしも追従します。動画に焼き込むことも、<code>.srt</code> で書き出すこともできます。
+      <br><b>12 種類の字幕スタイル。</b> 文字起こしはあなたのパソコン上で行います。文字起こしのプログラムはアプリに内蔵されていて、モデル（ライト：約 148 MB、高精度：約 488 MB）は必要なときにだけ Hugging Face からダウンロードします。タイムラインで単語を直せば、文字起こしも追従します。動画に焼き込むことも、<code>.srt</code> で書き出すこともできます。
     </td>
   </tr>
   <tr>
@@ -107,6 +107,8 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
   <img src="docs/readme/how-it-works-light.svg" width="920" alt="4 つのステップ：画面、ウィンドウ、選択範囲を録画。クリックすると、Kamo はマウスだけを記録し、キーボードは記録しません。ズームでは、クリックごとにスプリングでズーム。書き出しでは、16:9、1:1、9:16 の MP4、GIF、.srt に">
 </picture>
 
+ホーム、トレイメニュー、Windows のタスクバーのジャンプリスト（Mac では Dock メニュー）のどこからでも始められます。Kamo は最後に選んだものを、3-2-1 のカウントダウンのあとで録画します。カウントダウン中に鳴る小さな音は、設定でオフにできます。カウントダウンが終わった瞬間に録画が始まります。
+
 ## アプリを見てみよう
 
 <table>
@@ -116,14 +118,14 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.webp">
         <img src="docs/readme/home-light.webp" alt="Kamo のホーム画面：画面、ウィンドウ、選択から選び、マイク、パソコンの音、カメラを切り替え、最近のプロジェクトを確認できます">
       </picture>
-      <br><b>ホーム。</b> 画面、ウィンドウ、選択の 3 つから選びます。マイク、パソコンの音、カメラはそれぞれワンタッチで切り替え。プロジェクトとローカルのプレイリストはすぐ下に並びます。
+      <br><b>ホーム。</b> 画面、ウィンドウ、選択の 3 つから選びます。マイク、パソコンの音、カメラはそれぞれ 1 枚のカードにまとまっていて、ノイズ抑制はマイクの「オーディオ設定」にあります。プロジェクトとローカルのプレイリストはすぐ下に並びます。
     </td>
     <td width="50%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/editor-dark.webp">
         <img src="docs/readme/editor-light.webp" alt="エディター：ズーム付きのライブプレビュー、Webカメラのバブル、スタイルパネル、そしてズーム・Webカメラ・字幕のトラックが並ぶタイムライン">
       </picture>
-      <br><b>エディター。</b> 中央にライブプレビュー、右にスタイル、タイムラインにズーム、Webカメラ、字幕。非破壊編集なので、元の動画には一切手を加えません。
+      <br><b>エディター。</b> 録画を止めるとすぐに開きます。中央にライブプレビュー、右にスタイル、タイムラインにズーム、Webカメラ、字幕。非破壊編集なので、元の動画には一切手を加えません。
     </td>
   </tr>
   <tr>
@@ -137,7 +139,7 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
     <td width="50%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/welcome-tour-dark.webp">
-        <img src="docs/readme/welcome-tour-light.webp" alt="ようこそツアー：カメレオンの Kamo が「録画を押して」と話し、隣に録画オプションのスケッチ">
+        <img src="docs/readme/welcome-tour-light.webp" alt="ようこそツアー：カメレオンの Kamo が「録画を押すだけ。」と話し、隣に録画オプションのスケッチ">
       </picture>
       <br><b>ようこそツアー。</b> Kamo が 3 枚のスライドで、あなたの言語で案内します。そのあとは邪魔しません。
     </td>
@@ -146,7 +148,7 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
 
 <p align="center">
   <img src="docs/readme/extension-popup.webp" width="300" alt="Chrome 拡張機能のポップアップ：「このタブを録画」と、マイク、タブの音声、カメラの切り替え">
-  <br><sub>Chrome 拡張機能（近日公開）：ポップアップひとつ、ボタンひとつ。</sub>
+  <br><sub>Chrome 拡張機能（近日公開）：ポップアップひとつ、ボタンひとつ。録画中は専用ウィンドウの小さなバーで一時停止と停止ができ、ツールバーのアイコンをクリックしても停止します。</sub>
 </p>
 
 ## デスクトップ版か、拡張機能か
@@ -176,7 +178,7 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
 - **テレメトリなし。アナリティクスなし。** 「匿名化」でもありません。一切なしです。
 - **あなたが送ると決めない限り、何もパソコンの外に出ません。**
 - **マウスだけ、キーボードは記録しません。** Kamo が記録するのはクリックと動きだけ。キー入力は取得せず、拡張機能が録画中のページの内容を読むこともありません。この点は pull request ごとに CI でチェックしています。
-- **軽いダウンロード。** アプリがするのは録画、編集、書き出しだけ。文字起こしモデルのような重いものはオプションパックで、必要なときにだけダウンロードします。
+- **軽いダウンロード。** アプリがするのは録画、編集、書き出しで、小さな文字起こしプログラムも内蔵しています。音声モデルは内蔵していません。必要なときにだけ、whisper.cpp のモデルの公式配布元である Hugging Face から直接ダウンロードし、バージョンを固定したうえで SHA-256 で検証します。Kamo のサーバーは一切介しません。（現在、中国本土からは Hugging Face に接続できないため、当面そこでは文字起こしを設定できません。）
 - **非破壊編集。** 元の録画は決して変更されません。編集内容はすべて `project.json` に保存されます。
 
 ## 録画を AI で活用する
@@ -236,7 +238,7 @@ English、Português (Brasil)、Español、简体中文、日本語、Deutsch、
 
 ## ロードマップ
 
-ステップごとの計画は [docs/plan.md](docs/plan.md) に、各機能と受け入れ基準は [docs/features.md](docs/features.md) にあります。次の予定は、実機でテストした Mac 版、署名付きインストーラー、Chrome ウェブストアへの掲載、npm での `@kamo/mcp` の公開です。リンクで共有するためのオプションのクラウドも計画中ですが、アプリ自体は今後も無料で、すべての機能が使えます。
+ステップごとの計画は [docs/plan.md](docs/plan.md) に、各機能と受け入れ基準は [docs/features.md](docs/features.md) にあります。次の予定は、実機でテストした Mac 版、署名付きインストーラー、Chrome ウェブストアへの掲載、npm での `@kamo/mcp` の公開です。Microsoft Store 向けのパッケージも準備中です。リンクで共有するためのオプションのクラウドも計画中ですが、アプリ自体は今後も無料で、すべての機能が使えます。
 
 ## コントリビュート
 

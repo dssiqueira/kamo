@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a>
+  <a href="README.md">English</a> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <b>简体中文</b> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@
 
 ### 一次录制，所有格式
 
-16:9 发 YouTube，1:1 发信息流，9:16 发 Reels 和 Shorts，从同一条时间轴一起导出。MP4 最高 4K60，还有 GIF 和 `.srt` 字幕。预览和导出使用同一套渲染代码，所见即所得。没有水印，没有时长限制。
+16:9 发 YouTube，1:1 发信息流，9:16 发 Reels 和 Shorts，从同一条时间轴一起导出。一次导出就能同时得到最高 4K60 的 MP4 和 GIF，外加 `.srt` 字幕。预览和导出使用同一套渲染代码，所见即所得。没有水印，没有时长限制。
 
 <p align="center">
   <img src="docs/readme/formats.gif" width="880" alt="同一段录制并排导出为 16:9、1:1 和竖屏 9:16，摄像头画面位于屏幕下方">
@@ -80,7 +80,7 @@
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/captions.gif" alt="五种样式的字幕：醒目、Kamo、打字机、霓虹和荧光笔">
-      <br><b>12 种字幕样式。</b> 在你的电脑上本地转录（使用可选扩展包，只在你需要时才下载）。在时间轴上改一个词，转录文本也会跟着更新。可以把字幕烧录进画面，也可以导出 <code>.srt</code>。
+      <br><b>12 种字幕样式。</b> 在你的电脑上完成转录：转录程序已内置在应用中，模型（轻量，约 148 MB；或精准，约 488 MB）只在你需要时才从 Hugging Face 下载。在时间轴上改一个词，转录文本也会跟着更新。可以把字幕烧录进画面，也可以导出 <code>.srt</code>。
     </td>
   </tr>
   <tr>
@@ -107,6 +107,8 @@
   <img src="docs/readme/how-it-works-light.svg" width="920" alt="四个步骤：录制屏幕、窗口或选区；点击，Kamo 只记录鼠标，从不记录键盘；缩放，每次点击都变成弹簧缩放；导出为 16:9、1:1 和 9:16 的 MP4、GIF 和 .srt">
 </picture>
 
+可以从主页、托盘菜单或 Windows 任务栏的跳转列表（Mac 上是程序坞菜单）开始录制：Kamo 会录制你上次选择的内容。开始前有 3-2-1 倒计时，伴有轻柔的提示音，可以在设置中关闭。倒计时一结束，录制立即开始。
+
 ## 应用一览
 
 <table>
@@ -116,14 +118,14 @@
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.webp">
         <img src="docs/readme/home-light.webp" alt="Kamo 主页：选择屏幕、窗口或选择，开关麦克风、电脑声音和摄像头，并查看最近的项目">
       </picture>
-      <br><b>主页。</b> 屏幕、窗口或选择。麦克风、电脑声音和摄像头各一个开关。你的项目和本地播放列表就在下方。
+      <br><b>主页。</b> 屏幕、窗口或选择。麦克风、电脑声音和摄像头各占一张卡片，降噪功能在麦克风的“音频设置”里。你的项目和本地播放列表就在下方。
     </td>
     <td width="50%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/editor-dark.webp">
         <img src="docs/readme/editor-light.webp" alt="编辑器：带缩放的实时预览、摄像头气泡、样式面板，以及包含缩放、摄像头和字幕轨道的时间轴">
       </picture>
-      <br><b>编辑器。</b> 中间是实时预览，右边是样式，时间轴上是缩放、摄像头和字幕。编辑是非破坏性的：原始视频永远不会被改动。
+      <br><b>编辑器。</b> 录制一停止就会打开。中间是实时预览，右边是样式，时间轴上是缩放、摄像头和字幕。编辑是非破坏性的：原始视频永远不会被改动。
     </td>
   </tr>
   <tr>
@@ -146,7 +148,7 @@
 
 <p align="center">
   <img src="docs/readme/extension-popup.webp" width="300" alt="Chrome 扩展的弹出窗口：录制此标签页，带有麦克风、标签页声音和摄像头开关">
-  <br><sub>Chrome 扩展（即将推出）：一个弹窗，一个按钮。</sub>
+  <br><sub>Chrome 扩展（即将推出）：一个弹窗，一个按钮。录制时，独立窗口中的一个小工具条可以暂停和停止，点击浏览器工具栏上的图标也能停止。</sub>
 </p>
 
 ## 桌面版还是扩展？
@@ -176,7 +178,7 @@
 - **没有遥测，没有数据分析。** 不是“匿名化”，是完全没有。
 - **除非你主动发送，否则没有任何东西会离开你的电脑。**
 - **只看鼠标，从不碰键盘。** Kamo 记录点击和移动，不捕获按键，扩展也从不读取你录制的网页内容。CI 会在每个 pull request 上检查这一点。
-- **下载很轻量。** 应用只负责录制、编辑和导出。转录模型这类大文件是可选扩展包，只在你需要时才下载。
+- **下载很轻量。** 应用负责录制、编辑和导出，小巧的转录程序也已内置。语音模型则不在安装包里：只有在你需要时，才会直接从 Hugging Face（whisper.cpp 模型的官方发布地）下载，固定为某一个版本，并用 SHA-256 校验。整个过程不经过任何 Kamo 服务器。（目前在中国大陆还无法访问 Hugging Face，因此暂时无法在当地设置转录功能。）
 - **非破坏性编辑。** 原始录制永远不会被修改；所有编辑都保存在 `project.json` 中。
 
 ## 让 AI 用上你的录制
@@ -236,7 +238,7 @@ pnpm check                            # lint, typecheck, tests, i18n and the key
 
 ## 路线图
 
-分步计划见 [docs/plan.md](docs/plan.md)，每个功能及其验收标准见 [docs/features.md](docs/features.md)。接下来：经过测试的 Mac 版、签名安装程序、Chrome 网上应用店上架，以及在 npm 上发布 `@kamo/mcp`。一个用于分享链接的可选云服务也在计划中；应用本身会一直保持免费且功能完整。
+分步计划见 [docs/plan.md](docs/plan.md)，每个功能及其验收标准见 [docs/features.md](docs/features.md)。接下来：经过测试的 Mac 版、签名安装程序、Chrome 网上应用店上架，以及在 npm 上发布 `@kamo/mcp`。Microsoft Store 版本也在准备中。一个用于分享链接的可选云服务也在计划中；应用本身会一直保持免费且功能完整。
 
 ## 参与贡献
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> · <b>Português (Brasil)</b> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
+  <a href="README.md">English</a> · <b>Português (Brasil)</b> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@
 
 ### Uma gravação, todos os formatos
 
-16:9 para o YouTube, 1:1 para o feed, 9:16 para Reels e Shorts, exportados juntos da mesma linha do tempo. MP4 até 4K60, GIF e legendas em `.srt`. A prévia e a exportação usam o mesmo código de renderização: o que você vê é o que sai. Sem marca d'água, sem limite de tempo.
+16:9 para o YouTube, 1:1 para o feed, 9:16 para Reels e Shorts, exportados juntos da mesma linha do tempo. MP4 até 4K60 e GIF numa única exportação, além de legendas em `.srt`. A prévia e a exportação usam o mesmo código de renderização: o que você vê é o que sai. Sem marca d'água, sem limite de tempo.
 
 <p align="center">
   <img src="docs/readme/formats.gif" width="880" alt="A mesma gravação exportada lado a lado em 16:9, 1:1 e 9:16 vertical, com a câmera embaixo da tela">
@@ -80,7 +80,7 @@
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/captions.gif" alt="Legendas em cinco estilos: Forte, Kamo, Datilografado, Neon e Marca-texto">
-      <br><b>Legendas em 12 estilos.</b> Transcritas no seu computador (um pacote opcional que você só baixa se quiser). Corrija uma palavra na linha do tempo e a transcrição acompanha. Grave na imagem ou exporte um <code>.srt</code>.
+      <br><b>Legendas em 12 estilos.</b> Transcritas no seu computador: o programa de transcrição já vem no app, e o modelo (Leve, ~148 MB, ou Precisa, ~488 MB) só é baixado do Hugging Face quando você pede. Corrija uma palavra na linha do tempo e a transcrição acompanha. Grave na imagem ou exporte um <code>.srt</code>.
     </td>
   </tr>
   <tr>
@@ -107,6 +107,8 @@
   <img src="docs/readme/how-it-works-light.svg" width="920" alt="Quatro passos: Grave uma tela, janela ou seleção; Clique, e o Kamo registra o mouse, nunca o teclado; Zoom, em que cada clique vira um zoom com mola; Exporte em MP4, GIF e .srt, em 16:9, 1:1 e 9:16">
 </picture>
 
+Comece pela tela inicial, pelo menu da bandeja ou pela lista de atalhos da barra de tarefas do Windows (no Mac, pelo menu do Dock): o Kamo grava o que você escolheu por último, depois de uma contagem 3-2-1 com um tique suave que dá para desligar nas Configurações. A gravação começa no instante em que a contagem termina.
+
 ## Um tour pelo app
 
 <table>
@@ -116,14 +118,14 @@
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.webp">
         <img src="docs/readme/home-light.webp" alt="A tela inicial do Kamo: escolha Tela, Janela ou Selecionar, ligue microfone, som do computador e câmera e veja os projetos recentes">
       </picture>
-      <br><b>Início.</b> Tela, Janela ou Selecionar. Microfone, som do computador e câmera são um botão cada. Seus projetos e playlists locais ficam logo abaixo.
+      <br><b>Tela inicial.</b> Tela, Janela ou Selecionar. Microfone, som do computador e câmera têm um cartão cada, com a supressão de ruído nos Ajustes de áudio do microfone. Seus projetos e playlists locais ficam logo abaixo.
     </td>
     <td width="50%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/editor-dark.webp">
         <img src="docs/readme/editor-light.webp" alt="O editor: prévia ao vivo com zooms, uma bolha de webcam, o painel de estilo e uma linha do tempo com faixas de zoom, webcam e legendas">
       </picture>
-      <br><b>Editor.</b> Prévia ao vivo no meio, estilo à direita, zooms, webcam e legendas na linha do tempo. A edição é não destrutiva: o vídeo original nunca é alterado.
+      <br><b>Editor.</b> Abre assim que você para de gravar. Prévia ao vivo no meio, estilo à direita, zooms, webcam e legendas na linha do tempo. A edição é não destrutiva: o vídeo original nunca é alterado.
     </td>
   </tr>
   <tr>
@@ -146,7 +148,7 @@
 
 <p align="center">
   <img src="docs/readme/extension-popup.webp" width="300" alt="O popup da extensão para Chrome: Gravar esta aba, com botões de microfone, som da aba e câmera">
-  <br><sub>A extensão para Chrome (em breve): um popup, um botão.</sub>
+  <br><sub>A extensão para Chrome (em breve): um popup, um botão. Durante a gravação, uma barrinha numa janela própria pausa e para, e clicar no ícone da barra de ferramentas também para.</sub>
 </p>
 
 ## Desktop ou extensão?
@@ -176,7 +178,7 @@ Mesmo motor, mesmo editor, mesma exportação. A diferença é o que cada um con
 - **Sem telemetria. Sem analytics.** Nem "anonimizado". Nada.
 - **Nada sai da sua máquina a não ser que você mesmo envie.**
 - **Só o mouse, nunca o teclado.** O Kamo registra cliques e movimento. Ele não captura teclas, e a extensão nunca lê a página que você grava. O CI confere isso em todo pull request.
-- **Download leve.** O app grava, edita e exporta. Coisas pesadas, como o modelo de transcrição, são pacotes opcionais, baixados só quando você pede.
+- **Download leve.** O app grava, edita e exporta, e o pequeno programa de transcrição já vem incluído. O modelo de fala, não: ele é baixado direto do Hugging Face, a casa oficial dos modelos do whisper.cpp, só quando você pede, travado numa versão e conferido com SHA-256. Nenhum servidor do Kamo entra no caminho. (Por enquanto o Hugging Face não abre na China continental, então lá ainda não dá para configurar a transcrição.)
 - **Não destrutivo.** Sua gravação original nunca é alterada; toda edição fica no `project.json`.
 
 ## Use suas gravações com IA
@@ -236,7 +238,7 @@ English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Franç
 
 ## Próximos passos
 
-O plano passo a passo está em [docs/plan.md](docs/plan.md), e cada recurso com seus critérios de aceite em [docs/features.md](docs/features.md). Na fila: uma versão para Mac testada, instaladores assinados, a página na Chrome Web Store e o `@kamo/mcp` no npm. Uma nuvem opcional para compartilhar links está nos planos; o app em si continua grátis e completo.
+O plano passo a passo está em [docs/plan.md](docs/plan.md), e cada recurso com seus critérios de aceite em [docs/features.md](docs/features.md). Na fila: uma versão para Mac testada, instaladores assinados, a página na Chrome Web Store e o `@kamo/mcp` no npm. Um pacote para a Microsoft Store também está sendo preparado. Uma nuvem opcional para compartilhar links está nos planos; o app em si continua grátis e completo.
 
 ## Como contribuir
 

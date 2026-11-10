@@ -4,26 +4,35 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+Full notes: [docs/releases/v0.2.0.md](docs/releases/v0.2.0.md).
+
 ### Added
-- "Start recording" in the tray menu, the Windows taskbar jump list and the Mac Dock menu: it records what you chose last on Home, with the countdown.
-- A soft tick on each number of the 3-2-1 countdown (Settings → Recording turns it off); it ends before recording starts.
-- Chrome extension: a small recording bar (time, pause, stop) in its own window, never part of the video; clicking the toolbar icon while recording stops it.
-- A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
-- German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
+- German, French and Korean, in the app and the extension (Settings → Language and the first-run language screen) and as spoken languages for transcription.
 - Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
+- "Start recording" in the tray menu, the Windows taskbar jump list and the Mac Dock menu: it records what you chose last on Home, with the countdown.
+- A soft tick on each number of the 3-2-1 countdown; Settings → Recording turns it off.
+- A *Noise suppression* switch for the microphone, under *Audio settings* on Home (on by default).
+- Chrome extension (coming soon): a small recording bar (time, pause, stop) in its own window, never part of the video; clicking the toolbar icon while recording stops it.
+- Groundwork for a Microsoft Store package. Installed from the Store, Kamo leaves updates to the Store.
 
 ### Changed
-- Settings: every section follows the same look (an illustrated header, cards with an icon, chips and status pills), like Optional packs.
-- Transcription works out of the box: the whisper.cpp program now ships inside the app (a few MB), and the Light or Accurate model downloads straight from Hugging Face, the official home of the whisper.cpp models, only when you ask (pinned to one version and checked byte for byte). Nothing depends on a Kamo download server anymore.
-- Recording starts sooner after the countdown: the capture helper gets ready during the 3-2-1.
-- Long labels in German and French, and Chinese, Japanese and Korean text, fit their screens (tooltips on cut-off names, caption styles on two lines).
+- Transcription works out of the box: the whisper.cpp program now ships inside the app (a few MB), and the Light (~148 MB) or Accurate (~488 MB) model downloads straight from Hugging Face, the official home of the whisper.cpp models, only when you ask, pinned to one version and checked with SHA-256. Nothing depends on a Kamo download server anymore.
+- The Transcribe dialog offers Light and Accurate as two cards (speed, accuracy, size) with one *Download and transcribe* button; the chosen card shows the download (percentage, time left, Pause and Cancel), then follows the first transcript to "All set". Settings → Optional packs uses the same look.
+- Home's microphone, computer sound and camera are three cards, with a level meter, a live waveform for computer sound and a wide camera preview.
+- Settings: every section follows the same look (an illustrated header, cards with an icon, chips and status pills).
 - A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
+- Recording starts sooner after the countdown: the capture helper gets ready during the 3-2-1.
+- Choosing *Select* on Home opens the selection frame right away.
+- Long labels in German and French, and Chinese, Japanese and Korean text, fit their screens (tooltips on cut-off names, caption styles on two lines).
 - Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.
+- On Windows the app no longer has a Window menu that only repeated the title bar buttons.
 
 ### Fixed
-- The Transcribe dialog offers Light and Accurate as two cards with one Download and transcribe button, and shows one calm message at a time when the download stops (offline, Hugging Face unreachable, a damaged file, not enough space), with Try again continuing where it stopped (it used to show the same download error twice). Each card has a small illustration, Speed and Accuracy meters and its size; the chosen one grows into the download (big percentage, smooth bar, time left, Pause and Cancel), then the dialog follows the first transcript to "All set". Settings → Optional packs uses the same look.
+- Clicks in the microphone track of some recordings: the microphone is now recorded straight from the device.
+- A microphone level that jumped while nobody spoke: automatic gain and echo cancellation are now off.
+- When a model download stops (offline, Hugging Face unreachable, a damaged file, not enough space), the Transcribe dialog shows one calm message instead of the same error twice, and *Try again* continues where it stopped.
 - The permissions button says *Open Windows Settings* on Windows (it said *Open System Settings*, the Mac name).
-- The command for a development build of the MCP server now starts it (Node needs `--experimental-transform-types` inside the repository).
+- The command for a development build of the MCP server now starts it.
 - The MCP docs name the *Optional packs* section of Settings correctly.
 
 ## [0.1.0] — first public release (Windows)

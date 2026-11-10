@@ -1,5 +1,5 @@
 <p align="center">
-  <b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
+  <b>English</b> · <a href="README.pt-BR.md">Português (Brasil)</a> · <a href="README.es.md">Español</a> · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a> · <a href="README.de.md">Deutsch</a> · <a href="README.fr.md">Français</a> · <a href="README.ko.md">한국어</a>
 </p>
 
 <p align="center">
@@ -66,7 +66,7 @@
 
 ### One recording, every format
 
-16:9 for YouTube, 1:1 for the feed, 9:16 for Reels and Shorts, exported together from the same timeline. MP4 up to 4K60, GIF, and `.srt` captions. Preview and export share the same rendering code, so what you see is what you get. No watermark, no time limit.
+16:9 for YouTube, 1:1 for the feed, 9:16 for Reels and Shorts, exported together from the same timeline. MP4 up to 4K60 and GIF in a single export run, plus `.srt` captions. Preview and export share the same rendering code, so what you see is what you get. No watermark, no time limit.
 
 <p align="center">
   <img src="docs/readme/formats.gif" width="880" alt="The same recording exported side by side in 16:9, 1:1 and a vertical 9:16 with the camera below the screen">
@@ -80,7 +80,7 @@
     </td>
     <td width="50%" valign="top">
       <img src="docs/readme/captions.gif" alt="Captions in five styles: Bold, Kamo, Typewriter, Neon and Marker">
-      <br><b>Captions in 12 styles.</b> Transcribed on your computer (an optional pack you download only if you want it). Fix a word on the timeline and the transcript follows. Burn them in or export an <code>.srt</code>.
+      <br><b>Captions in 12 styles.</b> Transcribed on your computer: the transcription program is built in, and the model (Light, ~148 MB, or Accurate, ~488 MB) downloads from Hugging Face only when you ask. Fix a word on the timeline and the transcript follows. Burn them in or export an <code>.srt</code>.
     </td>
   </tr>
   <tr>
@@ -107,6 +107,8 @@
   <img src="docs/readme/how-it-works-light.svg" width="920" alt="Four steps: Record a screen, window or selection; Click, and Kamo logs the mouse but never the keyboard; Zoom, where each click becomes a spring zoom; Export to MP4, GIF and .srt in 16:9, 1:1 and 9:16">
 </picture>
 
+Start from Home, from the tray menu or from the Windows taskbar jump list (the Dock menu on Mac): Kamo records what you picked last, after a 3-2-1 countdown with a soft tick you can turn off in Settings. Recording begins the moment the countdown ends.
+
 ## A tour of the app
 
 <table>
@@ -116,14 +118,14 @@
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/home-dark.webp">
         <img src="docs/readme/home-light.webp" alt="Kamo's Home: choose Screen, Window or Select, toggle microphone, computer sound and camera, and see recent projects">
       </picture>
-      <br><b>Home.</b> Screen, Window or Select. Mic, computer sound and camera are one toggle each. Your projects and local playlists live right below.
+      <br><b>Home.</b> Screen, Window or Select. Mic, computer sound and camera are one card each, with noise suppression under the mic's Audio settings. Your projects and local playlists live right below.
     </td>
     <td width="50%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/readme/editor-dark.webp">
         <img src="docs/readme/editor-light.webp" alt="The editor: live preview with zooms, a webcam bubble, the style panel and a timeline with zoom, webcam and caption lanes">
       </picture>
-      <br><b>Editor.</b> Live preview in the middle, style on the right, zooms, webcam and captions on the timeline. Edits are non-destructive: the raw video is never touched.
+      <br><b>Editor.</b> Opens as soon as you stop recording. Live preview in the middle, style on the right, zooms, webcam and captions on the timeline. Edits are non-destructive: the raw video is never touched.
     </td>
   </tr>
   <tr>
@@ -146,7 +148,7 @@
 
 <p align="center">
   <img src="docs/readme/extension-popup.webp" width="300" alt="The Chrome extension popup: Record this tab, with microphone, tab sound and camera toggles">
-  <br><sub>The Chrome extension (coming soon): one popup, one button.</sub>
+  <br><sub>The Chrome extension (coming soon): one popup, one button. While it records, a small bar in its own window pauses and stops, and clicking the toolbar icon stops too.</sub>
 </p>
 
 ## Desktop or extension?
@@ -176,7 +178,7 @@ Same engine, same editor, same export. The difference is what they can record. W
 - **No telemetry. No analytics.** Not "anonymized". None.
 - **Nothing leaves your machine unless you choose to send it.**
 - **Mouse only, never the keyboard.** Kamo records clicks and movement. It does not capture keystrokes, and the extension never reads the page you record. CI checks this on every pull request.
-- **Small download.** The app records, edits and exports. Heavy things like the transcription model are optional packs, downloaded only when you ask for them.
+- **Small download.** The app records, edits and exports, and the small transcription program is built in. The speech model is not: it downloads straight from Hugging Face, the official home of the whisper.cpp models, only when you ask, pinned to one version and checked with SHA-256. No Kamo server is involved. (Hugging Face can't be reached from mainland China yet, so transcription can't be set up there for now.)
 - **Non-destructive.** Your raw recording is never altered; every edit lives in `project.json`.
 
 ## Use your recordings with AI
@@ -236,7 +238,7 @@ English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Franç
 
 ## Roadmap
 
-The step-by-step plan lives in [docs/plan.md](docs/plan.md), and every feature with its acceptance criteria in [docs/features.md](docs/features.md). Next up: a tested Mac build, signed installers, the Chrome Web Store listing and `@kamo/mcp` on npm. An optional cloud for sharing links is planned; the app itself stays free and complete.
+The step-by-step plan lives in [docs/plan.md](docs/plan.md), and every feature with its acceptance criteria in [docs/features.md](docs/features.md). Next up: a tested Mac build, signed installers, the Chrome Web Store listing and `@kamo/mcp` on npm. A Microsoft Store package is being prepared too. An optional cloud for sharing links is planned; the app itself stays free and complete.
 
 ## Contributing
 
