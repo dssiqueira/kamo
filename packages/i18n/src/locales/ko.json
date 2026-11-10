@@ -178,6 +178,8 @@
     "close": "닫기(Esc)"
   },
   "tray": {
+    "record": "녹화 시작",
+    "recordHint": "홈에서 마지막으로 고른 것을 녹화해요",
     "open": "Kamo 열기",
     "quit": "Kamo 종료",
     "notice": {

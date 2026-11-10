@@ -178,6 +178,8 @@
     "close": "Schließen (Esc)"
   },
   "tray": {
+    "record": "Aufnahme starten",
+    "recordHint": "Nimmt auf, was du zuletzt auf der Startseite gewählt hast",
     "open": "Kamo öffnen",
     "quit": "Kamo beenden",
     "notice": {

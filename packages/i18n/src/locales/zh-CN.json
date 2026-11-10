@@ -178,6 +178,8 @@
     "close": "关闭（Esc）"
   },
   "tray": {
+    "record": "开始录制",
+    "recordHint": "录制你上次在主页选择的内容",
     "open": "打开 Kamo",
     "quit": "退出 Kamo",
     "notice": {

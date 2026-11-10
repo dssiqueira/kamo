@@ -8,6 +8,7 @@ import {
   nativeTheme,
   powerMonitor,
   protocol,
+  screen,
   session,
   type IpcMainInvokeEvent,
 } from 'electron'
@@ -19,6 +20,8 @@ import { createHelperBackend } from './capture/backend.ts'
 import { captureHelperPath, registerCapture, windowTitle } from './capture-ipc.ts'
 import { IPC_ERROR_PREFIX, IpcChannel, type AppSettings } from '../shared/api.ts'
 import { getScreenAccess, listDisplays, watchDisplays } from './displays.ts'
+import { listCaptureWindows } from './capture/windows-list.ts'
+import { quickRecordTarget, START_RECORDING_FLAG } from './quick-record.ts'
 import { MEDIA_SCHEME, serveMedia } from './media.ts'
 import { ProjectActionError } from './projects.ts'
 import { openProjectInEditor, registerProjects } from './projects-ipc.ts'
@@ -114,7 +117,10 @@ let mainWindow: BrowserWindow | undefined
 // to an installed Kamo.
 if (app.isPackaged && !isSmokeTest) {
   if (app.requestSingleInstanceLock()) {
-    app.on('second-instance', () => showMainWindow())
+    // The taskbar jump list's "Start recording" launches Kamo again with this flag.
+    app.on('second-instance', (_event, argv) =>
+      argv.includes(START_RECORDING_FLAG) ? void startQuickRecording() : showMainWindow(),
+    )
   } else {
     app.exit(0)
   }
@@ -148,6 +154,7 @@ let trayLabels: TrayLabels = {
 // App tray menu texts (F-15); English until the UI language loads in createBackend.
 let appTrayLabels: AppTrayLabels = {
   tooltip: 'Kamo',
+  record: 'Start recording',
   open: 'Open Kamo',
   quit: 'Quit Kamo',
   noticeTitle: 'Kamo is still running',
@@ -187,6 +194,7 @@ let trayNoticeShown = false
 let recordingActive = false
 
 const appTray = new AppTray(TRAY_ICON, () => appTrayLabels, {
+  record: () => void startQuickRecording(),
   open: () => showMainWindow(),
   quit: () => app.quit(),
 })
@@ -209,6 +217,53 @@ function updateAppTray(): void {
   } catch (error) {
     // No tray on this desktop: closing the window closes it, as if the setting were off.
     getServices().log.warn('tray.failed', { error })
+  }
+}
+
+/**
+ * Tray menu, taskbar jump list and Dock menu (F-15): records what Home would record (its last
+ * choice), with the usual countdown. Home opens instead when it cannot: onboarding not done,
+ * no screen permission (Mac) or no display.
+ */
+async function startQuickRecording(): Promise<void> {
+  if (!app.isReady() || !backend || recordingActive) return
+  const settings = await getServices().settings.get()
+  if (settings.onboardingDone !== true || getScreenAccess() !== 'granted') return showMainWindow()
+  const windows =
+    settings.lastCaptureKind === 'window'
+      ? await listCaptureWindows({ helperPath: captureHelperPath, logger: getServices().log })
+          .then((list) => list.map((w) => ({ id: w.id, displayId: w.displayId })))
+          .catch(() => null)
+      : null
+  const target = quickRecordTarget({
+    settings,
+    displayIds: screen.getAllDisplays().map((d) => String(d.id)),
+    primaryDisplayId: String(screen.getPrimaryDisplay().id),
+    windows,
+  })
+  if (!target) return showMainWindow()
+  // The editor opens in the main window once the take is saved (F-02).
+  if (!mainWindow) createMainWindow()
+  getServices().log.info('recording.quick_start', { kind: target.kind })
+  recording.start(target)
+}
+
+/** Windows taskbar jump list and Mac Dock menu: "Start recording" (F-15), in the UI language. */
+function setQuickRecordEntries(label: string, hint: string): void {
+  if (process.platform === 'win32' && app.isPackaged) {
+    app.setUserTasks([
+      {
+        program: process.execPath,
+        arguments: START_RECORDING_FLAG,
+        iconPath: process.execPath,
+        iconIndex: 0,
+        title: label,
+        description: hint,
+      },
+    ])
+  }
+  if (process.platform === 'darwin') {
+    app.dock?.setMenu(Menu.buildFromTemplate([{ label, click: () => void startQuickRecording() }]))
   }
 }
 
@@ -518,12 +573,16 @@ async function createBackend(): Promise<RecordingBackend> {
   const i18n = await createI18n(locale)
   appTrayLabels = {
     tooltip: i18n.t('app.name'),
+    record: i18n.t('tray.record'),
     open: i18n.t('tray.open'),
     quit: i18n.t('tray.quit'),
     noticeTitle: i18n.t('tray.notice.title'),
     noticeBody: i18n.t('tray.notice.body'),
   }
   appTray.refresh()
+  void app
+    .whenReady()
+    .then(() => setQuickRecordEntries(i18n.t('tray.record'), i18n.t('tray.recordHint')))
   // The app menu follows the UI language too (Electron's default is English only).
   void app.whenReady().then(() => setAppMenu(i18n.t.bind(i18n)))
   trayLabels = {
@@ -601,6 +660,8 @@ void app.whenReady().then(async () => {
         : 'index'
       : await preferences.firstPage(),
   )
+  // Launched from the taskbar jump list's "Start recording" while Kamo was closed.
+  if (!isSmokeTest && process.argv.includes(START_RECORDING_FLAG)) void startQuickRecording()
   preferences.startUpdates()
   // A-05: transcriptions the app was closed in the middle of start again (no network).
   transcription.start()

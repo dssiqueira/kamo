@@ -178,6 +178,8 @@
     "close": "Close (Esc)"
   },
   "tray": {
+    "record": "Start recording",
+    "recordHint": "Records what you chose last on Home",
     "open": "Open Kamo",
     "quit": "Quit Kamo",
     "notice": {

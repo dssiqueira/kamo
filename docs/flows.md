@@ -97,7 +97,7 @@ Every section has the same shape: its title, a hero on a soft water tint (a smal
 
 - Kamo Cloud account: sign in/out, email, plan, space used, "Automatically upload new recordings" (off by default; uploaded as private) and a "Manage subscription" link (opens the web)
 - Projects folder
-- **Window:** "Keep Kamo in the tray when the window is closed" (on by default on Windows, off on Mac; D-026). The first time the window goes to the tray on Windows, a one-time balloon says Kamo is still running
+- **Window:** "Keep Kamo in the tray when the window is closed" (on by default on Windows, off on Mac; D-026). The first time the window goes to the tray on Windows, a one-time balloon says Kamo is still running. The tray menu has Start recording (Home's last choice, with the countdown), Open Kamo and Quit; the Windows taskbar jump list and the Mac Dock menu also offer Start recording
 - OS permission status
 - Shortcuts
 - **Help:** "Copy diagnostics" (shows the text before copying) and "Open GitHub issue"

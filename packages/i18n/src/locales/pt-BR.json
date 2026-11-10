@@ -178,6 +178,8 @@
     "close": "Fechar (Esc)"
   },
   "tray": {
+    "record": "Iniciar gravação",
+    "recordHint": "Grava o que você escolheu por último na tela inicial",
     "open": "Abrir o Kamo",
     "quit": "Sair do Kamo",
     "notice": {

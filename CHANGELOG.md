@@ -5,6 +5,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ## [Unreleased]
 
 ### Added
+- "Start recording" in the tray menu, the Windows taskbar jump list and the Mac Dock menu: it records what you chose last on Home, with the countdown.
 - A soft tick on each number of the 3-2-1 countdown (Settings → Recording turns it off); it ends before recording starts.
 - Chrome extension: a small recording bar (time, pause, stop) in its own window, never part of the video; clicking the toolbar icon while recording stops it.
 - A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.

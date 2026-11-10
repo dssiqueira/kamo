@@ -178,6 +178,8 @@
     "close": "Fermer (Échap)"
   },
   "tray": {
+    "record": "Démarrer l'enregistrement",
+    "recordHint": "Enregistre ce que vous avez choisi en dernier sur l'accueil",
     "open": "Ouvrir Kamo",
     "quit": "Quitter Kamo",
     "notice": {

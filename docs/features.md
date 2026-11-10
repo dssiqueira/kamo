@@ -290,7 +290,8 @@
 - [x] Theme: Light (default) / Dark / System
 - [x] Projects folder and export folder
 - [x] Global stop shortcut, editable
-- [x] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
+- [x] Close to tray: closing the main window keeps Kamo running in the tray (menu bar on Mac), with Start recording, Open Kamo and Quit in its menu; on by default on Windows, off on Mac (D-026). Quitting from the tray or the app menu, OS shutdown and installing an update always quit
+- [x] "Start recording" without opening Home: in the tray menu, the Windows taskbar jump list (right-click the taskbar icon) and the Mac Dock menu. It records Home's last choice (display, window or selection; a display when that is gone) with the usual countdown, and opens Home instead before the onboarding, without screen permission or without a display — _jump list and Dock not yet tried by hand_
 - [x] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), following the system language, with manual switching without restarting
 - [x] Language: English, Portuguese (Brazil), Spanish, Simplified Chinese and Japanese in v0.1 (D-021), plus German, French and Korean since 2026-11-08 (issue #11), following the system language, with manual switching without restarting
 - [ ] No screen breaks with text 35% longer than English (German, French) or with Chinese and Japanese characters — not reviewed yet

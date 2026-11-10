@@ -6,6 +6,7 @@ import { join } from 'node:path'
 
 export interface AppTrayLabels {
   tooltip: string
+  record: string
   open: string
   quit: string
   noticeTitle: string
@@ -13,6 +14,8 @@ export interface AppTrayLabels {
 }
 
 export interface AppTrayActions {
+  /** Records Home's last choice (quick-record.ts). */
+  record(): void
   open(): void
   quit(): void
 }
@@ -82,6 +85,8 @@ export class AppTray {
     this.tray.setToolTip(labels.tooltip)
     this.tray.setContextMenu(
       Menu.buildFromTemplate([
+        { label: labels.record, click: () => this.actions.record() },
+        { type: 'separator' },
         { label: labels.open, click: () => this.actions.open() },
         { type: 'separator' },
         { label: labels.quit, click: () => this.actions.quit() },
