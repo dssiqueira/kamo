@@ -31,14 +31,12 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 Full notes: [docs/releases/v0.1.0.md](docs/releases/v0.1.0.md).
 
 ### Added
-- A Microsoft Store package (MSIX) built by a manual workflow; installed from the Store, Kamo leaves updates to the Store.
-- German, French and Korean in the app and the extension (Settings → Language, the first-run language screen and the Chrome Web Store texts), and as spoken languages for transcription.
 - Desktop app for Windows 10 (2004+) and 11: record the whole screen, a window or a selection, with microphone, computer sound and webcam, at 30 or 60 fps; mouse only, never the keyboard.
 - Automatic zoom on every click with a spring camera, editable on the timeline; smooth cursor; trim; undo and redo.
 - Webcam bubble (round, square, 16:9, 9:16; any corner or free position; shrinks on zoom) and a split layout in 9:16.
 - Wallpapers, your own background image, padding, corners and shadow; 16:9, 1:1 and 9:16 with framing that follows the clicks.
 - Export to MP4 (1080p or 4K, 30 or 60 fps), GIF and .srt; no watermark.
-- Local transcription with whisper.cpp (the model downloads from Hugging Face only when you ask), and captions in 12 styles, editable on the timeline.
+- Local transcription as an optional whisper.cpp pack, and captions in 12 styles, editable on the timeline.
 - Local playlists, crash recovery, close to tray, automatic updates on Windows.
 - Local MCP server (read-only, no network) and a *Connect to an agent* panel.
 - Five languages (en, pt-BR, es, zh-CN, ja), light and dark themes, a welcome tour and *Copy diagnostics*.
