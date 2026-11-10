@@ -102,19 +102,19 @@ export function appMenuTemplate(
       { role: 'togglefullscreen', label: labels.fullScreen },
     ],
   })
-  template.push({
-    label: labels.window,
-    submenu: [
-      { role: 'minimize', label: labels.minimize },
-      ...(mac
-        ? ([
-            { role: 'zoom', label: labels.zoom },
-            { type: 'separator' },
-            { role: 'front', label: labels.front },
-          ] satisfies MenuItemConstructorOptions[])
-        : ([{ role: 'close', label: labels.close }] satisfies MenuItemConstructorOptions[])),
-    ],
-  })
+  // Mac only: it is the standard menu there (Minimize, Zoom, Bring All to Front). On Windows
+  // it only repeated Minimize and Close from the title bar.
+  if (mac) {
+    template.push({
+      label: labels.window,
+      submenu: [
+        { role: 'minimize', label: labels.minimize },
+        { role: 'zoom', label: labels.zoom },
+        { type: 'separator' },
+        { role: 'front', label: labels.front },
+      ],
+    })
+  }
   return template
 }
 

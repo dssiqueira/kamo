@@ -7,12 +7,12 @@ const noop = () => {}
 describe('appMenuTemplate', () => {
   it('names every top menu in the UI language (Windows)', () => {
     const template = appMenuTemplate(labels, { platform: 'win32', dev: false, openSettings: noop })
-    expect(template.map((m) => m.label)).toEqual([
-      '[menu.file]',
-      '[menu.edit]',
-      '[menu.view]',
-      '[menu.window]',
-    ])
+    expect(template.map((m) => m.label)).toEqual(['[menu.file]', '[menu.edit]', '[menu.view]'])
+  })
+
+  it('keeps the Window menu for Mac only', () => {
+    const mac = appMenuTemplate(labels, { platform: 'darwin', dev: false, openSettings: noop })
+    expect(mac.map((m) => m.label)).toContain('[menu.window]')
   })
 
   it('adds the app menu with Settings and Quit on Mac', () => {
