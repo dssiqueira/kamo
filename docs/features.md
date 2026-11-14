@@ -260,7 +260,7 @@
 **Behavior:** on first use, Kamo first asks which language to speak, then explains the app in a three-slide welcome tour (record → click → edit and export), then guides the user through the system permissions, one per screen, explaining why each one is needed (see `flows.md`).
 
 **Acceptance criteria**
-- [x] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone _(Mac untested; whether Input Monitoring is needed is still open, so it is off for now)_
+- [x] Mac: Screen Recording, Microphone and (if step 3 confirms it is still required) Input Monitoring; Windows: Microphone _(Mac: Screen Recording checked on macOS 26; Input Monitoring is not needed since the helper reads the mouse with an AppKit global monitor, D-043, so it is off)_
 - [x] Camera is only requested when the user turns on the webcam for the first time (v0.4), never in onboarding
 - [x] Automatically detects when the permission is granted, without the user having to restart the app (when the system allows it; otherwise, warns that it needs to be reopened) _(Mac untested)_
 - [x] On Mac, if Input Monitoring is required, makes it clear that it is only for the mouse and that the app never reads the keyboard _(Mac untested)_

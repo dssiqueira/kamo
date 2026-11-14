@@ -33,6 +33,15 @@ const RULES: Rule[] = [
     files: NATIVE,
     pattern:
       /\b(kCGEventKeyDown|kCGEventKeyUp|kCGEventFlagsChanged|\.keyDown|\.keyUp|\.flagsChanged|NSEvent\.addGlobalMonitorForEvents)\b/,
+    // The Mac helper's mouse monitor (D-043): only with the mask built from mouse event types
+    // in Mouse.swift. A keyboard type in that mask is caught by `.keyDown` / `.keyUp` /
+    // `.flagsChanged` above, and an all-events mask by the rule below.
+    allow: /NSEvent\.addGlobalMonitorForEvents\(matching: MouseTap\.eventMask\)/,
+  },
+  {
+    name: 'macOS event mask that takes every event type (keyboard included)',
+    files: NATIVE,
+    pattern: /\bEventTypeMask\b.*\.any\b|matching:\s*\.any\b|\bkCGEventMaskForAllEvents\b/,
   },
   {
     name: 'Keyboard hook libraries',

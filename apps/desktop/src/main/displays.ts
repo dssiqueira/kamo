@@ -12,10 +12,15 @@ const THUMBNAIL_QUALITY = 70
 export async function listDisplays(): Promise<DisplayInfo[]> {
   const displays = screen.getAllDisplays()
   const primaryId = screen.getPrimaryDisplay().id
-  const sources = await desktopCapturer.getSources({
-    types: ['screen'],
-    thumbnailSize: { width: THUMBNAIL_BOX, height: THUMBNAIL_BOX },
-  })
+  // Mac without Screen Recording: every getSources shows the system dialog again, so Home lists
+  // the displays without thumbnails until it is granted (the onboarding asks, F-13).
+  const sources =
+    getScreenAccess() === 'granted'
+      ? await desktopCapturer.getSources({
+          types: ['screen'],
+          thumbnailSize: { width: THUMBNAIL_BOX, height: THUMBNAIL_BOX },
+        })
+      : []
 
   return displays.map((display, index) => {
     // display_id can be empty on some Windows setups; fall back to the enumeration order.

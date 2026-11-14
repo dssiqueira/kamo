@@ -22,7 +22,7 @@ Any change to the contract is versioned (`/v1`, `/v2`) and agreed between the tw
 | Resource | macOS | Windows |
 |---|---|---|
 | Screen capture | ScreenCaptureKit (≥ 13.3) | Windows Graphics Capture / desktopCapturer |
-| Mouse events | CGEventTap with a **mouse-only** mask, listen-only (check in step 3 whether macOS still requires Input Monitoring; if not, it is removed from onboarding) | `SetWindowsHookEx(WH_MOUSE_LL)`, mouse only |
+| Mouse events | `NSEvent` global monitor with a **mouse-only** mask (observe only); no Input Monitoring needed. The listen-only CGEventTap it replaced gets no events on macOS 26 without Input Monitoring (D-043) | `SetWindowsHookEx(WH_MOUSE_LL)`, mouse only |
 | Microphone | AVFoundation | MediaDevices |
 | System audio | ScreenCaptureKit (system audio, macOS 13+; the app itself can be excluded) | WASAPI loopback (via `desktopCapturer` with audio; records the whole system, which is why Kamo stays silent during recording) |
 | Webcam | AVFoundation | MediaDevices |

@@ -20,8 +20,6 @@ interface Open {
   window: BrowserWindow
   displayId: string
   display: { width: number; height: number; scaleFactor: number }
-  /** The display's top left in global DIP (pointer → page coordinates). */
-  origin: { x: number; y: number }
   initial: Rect
   areas: Rect[]
   holding: boolean
@@ -46,6 +44,8 @@ export interface SelectionFrameOptions {
   record(target: CaptureTarget): void
   /** The global stop shortcut (accelerator), shown on the Record button. */
   stopShortcut(): string
+  /** Where the frame window really landed (Mac moves windows off the menu bar). */
+  log?(event: string, data: Record<string, unknown>): void
 }
 
 export class SelectionFrame {
@@ -94,6 +94,12 @@ export class SelectionFrame {
       hasShadow: false,
       alwaysOnTop: true,
       show: false,
+      // Mac: without it the window is pushed below the menu bar, so the frame drawn on the page
+      // would sit lower than the region that is recorded.
+      enableLargerThanScreen: true,
+      // Mac: the toolbar takes a click even while Kamo is not the active app (Home is hidden),
+      // instead of spending it on activating the window.
+      acceptFirstMouse: true,
     })
     window.setAlwaysOnTop(true, 'screen-saver')
     // The see-through middle lets clicks through; the poll below takes them over the frame.
@@ -102,14 +108,21 @@ export class SelectionFrame {
     window.once('ready-to-show', () => {
       window.setBounds(found.bounds)
       window.show()
+      // Mac: Home is hidden, and an app that is not active shows no resize cursors over the
+      // edges. The user just pressed Select in Kamo, so taking the focus back is expected.
+      if (process.platform === 'darwin') app.focus({ steal: true })
       window.focus()
+      this.options.log?.('selection.frame.shown', {
+        display: found.bounds,
+        window: window.getBounds(),
+        content: window.getContentBounds(),
+      })
     })
     return new Promise((resolve) => {
       const open: Open = {
         window,
         displayId,
         display,
-        origin: { x: found.bounds.x, y: found.bounds.y },
         initial,
         areas: [],
         holding: false,
@@ -143,8 +156,9 @@ export class SelectionFrame {
   private poll(open: Open): void {
     if (open.window.isDestroyed()) return
     const point = screen.getCursorScreenPoint()
-    const interactive =
-      open.holding || hitsAny(open.areas, point.x - open.origin.x, point.y - open.origin.y)
+    // Page coordinates start at the window's content, wherever the OS actually put it.
+    const origin = open.window.getContentBounds()
+    const interactive = open.holding || hitsAny(open.areas, point.x - origin.x, point.y - origin.y)
     if (interactive === open.interactive) return
     open.interactive = interactive
     open.window.setIgnoreMouseEvents(!interactive)

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   borderWindow,
+  recordingBarBounds,
   centered,
   clampRect,
   clampSize,
@@ -274,5 +275,35 @@ describe('hit areas', () => {
     expect(hitsAny(areas, 700, 503)).toBe(false)
     expect(hitsAny(areas, 400, 300)).toBe(false)
     expect(hitsAny([], 0, 0)).toBe(false)
+  })
+})
+
+describe('recordingBarBounds', () => {
+  // A 2560 × 1080 display with the menu bar (25) and no Dock.
+  const work = { x: 0, y: 25, width: 2560, height: 1055 }
+  const size = { width: 440, height: 64 }
+
+  it('sits at the bottom center without a selection', () => {
+    expect(recordingBarBounds(work, size, 48)).toEqual({ x: 1060, y: 968, ...size })
+  })
+
+  it('stays put when the selection is far from it', () => {
+    const avoid = { x: 100, y: 100, width: 640, height: 360 }
+    expect(recordingBarBounds(work, size, 48, avoid)).toEqual({ x: 1060, y: 968, ...size })
+  })
+
+  it('goes under the selection it would overlap, centered on it', () => {
+    const avoid = { x: 640, y: 180, width: 1280, height: 780 }
+    expect(recordingBarBounds(work, size, 48, avoid)).toEqual({ x: 1060, y: 972, ...size })
+  })
+
+  it('goes above the selection when there is no room under it', () => {
+    const avoid = { x: 640, y: 200, width: 1280, height: 830 }
+    expect(recordingBarBounds(work, size, 48, avoid)).toEqual({ x: 1060, y: 124, ...size })
+  })
+
+  it('goes inside the bottom edge of a selection that fills the work area', () => {
+    const avoid = { x: 0, y: 25, width: 2560, height: 1055 }
+    expect(recordingBarBounds(work, size, 48, avoid)).toEqual({ x: 1060, y: 1004, ...size })
   })
 })

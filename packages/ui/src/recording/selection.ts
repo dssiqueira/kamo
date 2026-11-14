@@ -277,3 +277,49 @@ export function borderWindow(
 export function hitsAny(areas: readonly Rect[], x: number, y: number): boolean {
   return areas.some((a) => x >= a.x && x < a.x + a.width && y >= a.y && y < a.y + a.height)
 }
+
+/**
+ * Where the floating recording bar goes (all DIP, global): centered at the bottom of the work
+ * area, `margin` above its edge. While a selection on the same display records (A-08), a bar
+ * that would overlap it (or its line) moves outside it: under it when there is room, above it
+ * otherwise, and only inside its bottom edge when it fills the work area. Kept on the work area.
+ */
+export function recordingBarBounds(
+  workArea: Rect,
+  size: { width: number; height: number },
+  margin: number,
+  avoid?: Rect | null,
+  gap = 12,
+): Rect {
+  const right = workArea.x + workArea.width
+  const bottom = workArea.y + workArea.height
+  const centered = {
+    x: Math.round(workArea.x + (workArea.width - size.width) / 2),
+    y: bottom - size.height - margin,
+    ...size,
+  }
+  if (!avoid) return centered
+  const clear = {
+    x: avoid.x - gap,
+    y: avoid.y - gap,
+    width: avoid.width + 2 * gap,
+    height: avoid.height + 2 * gap,
+  }
+  if (!overlaps(centered, clear)) return centered
+  const edge = 8
+  const x = Math.round(
+    Math.min(
+      Math.max(avoid.x + (avoid.width - size.width) / 2, workArea.x + edge),
+      right - size.width - edge,
+    ),
+  )
+  const below = avoid.y + avoid.height + gap
+  if (below + size.height <= bottom - edge) return { x, y: Math.round(below), ...size }
+  const above = avoid.y - gap - size.height
+  if (above >= workArea.y + edge) return { x, y: Math.round(above), ...size }
+  return { x, y: Math.round(Math.min(avoid.y + avoid.height, bottom) - size.height - gap), ...size }
+}
+
+function overlaps(a: Rect, b: Rect): boolean {
+  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height
+}

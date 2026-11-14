@@ -5,7 +5,7 @@ ScreenCaptureKit (`showsCursor = false`, D-005), encodes H.264 into a fragmented
 AVAssetWriter (VideoToolbox) and writes the reference JPEGs, talking to the Electron main
 process over stdio. The protocol is in `apps/desktop/src/main/capture/PROTOCOL.md`; `protocol.ts`
 is the source of truth for field names. It also emits the mouse events (F-03) from a listen-only,
-mouse-only event tap (`Sources/kamo-capture/Mouse.swift`), on the same clock as the video, and, when `start.systemAudio` asks, the computer sound
+mouse-only AppKit global monitor (`Sources/kamo-capture/Mouse.swift`, D-043), on the same clock as the video, and, when `start.systemAudio` asks, the computer sound
 (ScreenCaptureKit audio → AAC `system.m4a` through AVAssetWriter, D-024). Window, region and sound are
 not tried on a Mac yet.
 
@@ -50,42 +50,51 @@ macOS attributes the permission to the _responsible_ app, not to the helper:
 - **Packaged:** Kamo.app, since the helper is a child process inside its bundle. To be verified
   on a signed build (step 10).
 
-The helper never prompts (`CGPreflightScreenCaptureAccess` only); asking is the onboarding's job.
+While recording the helper never prompts (`CGPreflightScreenCaptureAccess` only). The onboarding asks through `kamo-capture --request-screen-access` (prints `{"granted":true|false}` and exits): Electron has no API for it. On macOS 26 neither `CGRequestScreenCaptureAccess` nor `desktopCapturer` adds Kamo to the System Settings list (tccd: "does not allow prompting"); asking ScreenCaptureKit for the shareable content does, and shows the system dialog. Each such call shows the dialog again, so nothing that refreshes (the window list, thumbnails) may call it without the permission.
 
-## Mouse events and Input Monitoring (to verify on a Mac, F-13)
+## Mouse events (D-043)
 
-The mouse comes from a Quartz event tap created with `CGEvent.tapCreate`:
+The mouse comes from an AppKit global monitor, `NSEvent.addGlobalMonitorForEvents`, in
+`Sources/kamo-capture/Mouse.swift`:
 
-- `.cgSessionEventTap`, `.headInsertEventTap`, `.listenOnly`: it observes, it never changes or
-  blocks an event. A session tap is enough (the global locations are the same as at the HID level)
-  and is the level an unprivileged process may observe.
-- The mask is built only from mouse types: moved, left/right/other down/up/dragged and scroll
-  wheel. **No keyboard type, ever** (AGENTS.md rule 2, D-003); `pnpm guard:keyboard` fails CI if
-  one shows up.
-- It runs on its own thread and run loop. Events go to the recorder's queue, which converts them to
-  video pixels and video time and thins moves to about 60Hz (PROTOCOL.md, Mouse events).
-- Timestamps: `CGEventTimestamp` is documented as nanoseconds but reported to be mach ticks on
-  Apple silicon, so both readings are tried against the host clock (the clock of the frames) and
-  the arrival time is used if neither is within 250ms.
+- The mask (`MouseTap.eventMask`) has only mouse types: moved, left/right/other down/up/dragged
+  and scroll wheel. **No keyboard type, ever** (AGENTS.md rule 2, D-003); `pnpm guard:keyboard`
+  allows only this exact call and fails CI on any keyboard type or an all-events mask.
+- A global monitor only observes: it cannot change or block an event. It does not see events sent
+  to the helper itself, which has no windows.
+- It runs on the main thread, so `main.swift` runs an `NSApplication` (activation policy
+  `.prohibited`: no Dock icon, no menu) instead of `dispatchMain()`. Events go to the recorder's
+  queue, which converts them to video pixels and video time and thins moves to about 60Hz
+  (PROTOCOL.md, Mouse events).
+- Timestamps: `CGEventTimestamp` (from `event.cgEvent`) is documented as nanoseconds but reported
+  to be mach ticks on Apple silicon, so both readings are tried against the host clock (the clock
+  of the frames) and the arrival time is used if neither is within 250ms.
 
-**Permission.** What we believe, not yet verified: macOS (10.15+) asks for **Input Monitoring**
-(TCC `ListenEvent`) for event taps that observe the **keyboard**; a listen-only tap whose mask has
-only mouse events is created without Input Monitoring and without Accessibility (which is only for
-taps that modify or post events). If that is right, onboarding (F-13) does not need Input
-Monitoring at all. If it is wrong, `tapCreate` returns nil, the helper sends a non-fatal
-`mouse_unavailable` and keeps recording video without mouse events.
+**No permission.** Mouse events through a global monitor need no privacy permission (only key
+events need Accessibility), so onboarding asks for no Input Monitoring. The Quartz event tap used
+before does not work on macOS 26 without Input Monitoring: it is created, then tccd logs
+"Service kTCCServiceListenEvent does not allow prompting; returning denied" and no event arrives
+(0 in 60s, against 1540 moves and 15 clicks for the monitor on the same Mac).
 
-To verify on macOS 14 and 15, with a terminal (dev) and a signed Kamo.app (packaged) that have
-**not** been granted Input Monitoring or Accessibility:
+## Local Kamo.app without a Developer ID
 
-1. Record a few seconds and check that `mouse` lines come out on stdout (or that the project's
-   `events.jsonl` is not empty) and that no `mouse_unavailable` is sent.
-2. stderr logs `listen event access preflight: true|false` (`CGPreflightListenEventAccess`): note
-   it, since a `false` there with mouse events flowing confirms that the mouse tap does not need it.
-3. Check that no system prompt appears and that Kamo does not show up in System Settings → Privacy &
-   Security → Input Monitoring.
-4. Click, drag across two displays, scroll with a wheel and with a trackpad (natural scrolling on
-   and off: record the sign of `dy`), and compare the click times with the video (≤ 33ms).
+macOS ties Screen Recording and Microphone to the app's signature. An ad-hoc signature is tied to
+the binary's hash, so every rebuild is a new app to System Settings: the switch stays on for the old
+build and the new one is denied (tccd logs `Failed to match existing code requirement`). Pinning
+the designated requirement to the bundle identifier does not help on macOS 26. Sign local builds
+with a stable identity instead; a self-signed code-signing certificate in the login keychain is
+enough (it shows as `CSSMERR_TP_NOT_TRUSTED` and still signs):
+
+```bash
+CSC_IDENTITY_AUTO_DISCOVERY=false pnpm exec electron-builder --mac dir --arm64 --publish never
+KAMO_SIGN_IDENTITY="Kamo Local" sh scripts/sign-mac-local.sh release/mac-arm64/Kamo.app
+open release/mac-arm64/Kamo.app
+```
+
+Create the certificate once (subject `CN=Kamo Local`, `extendedKeyUsage = critical,codeSigning`,
+`keyUsage = critical,digitalSignature`) with `openssl req -x509`, export it with `openssl pkcs12`
+and `security import … -T /usr/bin/codesign`. After switching signatures, remove the old Kamo
+entry from the privacy lists (−) once and grant again.
 
 ## Signing (step 10)
 
@@ -93,7 +102,6 @@ The helper has to be signed with the same Developer ID as the app, with the hard
 a secure timestamp, or notarization fails (electron-builder: list it in `mac.binaries`).
 ScreenCaptureKit needs no entitlement (Screen Recording is a privacy permission, not an
 entitlement) and the app is not sandboxed, so no entitlements file is needed for video. The mouse
-event tap needs no entitlement either (Input Monitoring, if it turns out to be needed, is also a
-privacy permission). Step 3
+monitor needs no entitlement either. Step 3
 (microphone) will need `com.apple.security.device.audio-input` on the hardened runtime, plus
 `NSMicrophoneUsageDescription` in the app's `Info.plist`.

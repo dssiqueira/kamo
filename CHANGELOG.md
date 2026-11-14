@@ -4,6 +4,15 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+### Changed
+- The selection frame shows clearer resize marks: squares on the corners and short bars in the middle of each side.
+- While a selection records, the recording bar sits just outside it (under it, or above when there is no room) instead of over its edge.
+
+### Fixed
+- Mac (coming soon): Kamo shows up in System Settings → Screen & System Audio Recording when it asks, and the macOS dialog no longer comes back every few seconds before the permission is granted.
+- Mac (coming soon): clicks are recorded again on macOS 26, with no Input Monitoring permission, so the automatic zoom follows them.
+- Mac (coming soon): the selection frame's toolbar takes clicks, and the frame lines up with the recorded area at the top of the display.
+
 ## [0.2.0] — 2026-11-10
 
 Full notes: [docs/releases/v0.2.0.md](docs/releases/v0.2.0.md).

@@ -39,7 +39,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
   - It stands in for the welcome screen on first run and shows until the onboarding is finished once (`onboardingDone`); opened again from Home's missing-permission notice, the onboarding starts at the welcome screen without the tour
   - Settings → Help → "Show the welcome tour" replays it alone in the main window (never during a recording or an export) and goes back to Home at the end
 - **Hierarchy:** one permission per screen → why it is needed → status → "Open Settings" button
-- **Mac:** Screen Recording, Microphone and, if still required for the mouse tap, Input Monitoring (camera only when the webcam is turned on, in v0.4)
+- **Mac:** Screen Recording, Microphone and, if still required for the mouse tap, Input Monitoring (not needed since D-043: the mouse comes from an AppKit global monitor) (camera only when the webcam is turned on, in v0.4)
 - **Windows:** Microphone only
 - **Required text on Mac (if Input Monitoring is required):** macOS says "keys", but the app only reads the mouse and never sees what you type
 - **States:** pending · granted (green check) · denied (instructions to fix it)
@@ -48,7 +48,7 @@ Link recipient: Player (or Playlist) → "Made with Kamo" → Landing
 ### 2. Home
 - **Hierarchy:** displays (live thumbnail) → toggles → Record button → recent projects
 - **What to record:** full screen (v0.1); window or a selection of the screen (v0.4, A-08): a Screen · Window · Select switch, each with its icon. Window: open windows with thumbnails and a search box. Select: choosing the tab opens the selection frame at once on the chosen display (one click); afterwards "Select an area" (later "Adjust selection", next to the selection's size and display) opens it again, on another display if one is picked. Opening it hides Home and shows the **selection frame** on that display, at the last selection or 1280 × 720 in the middle:
-  - a thin water-colored (tertiary) line around a see-through middle, with small cream squares on the corners; clicks in the middle go to the apps below
+  - a thin water-colored (tertiary) line around a see-through middle, with cream resize marks (squares on the corners, short bars in the middle of each side); clicks in the middle go to the apps below
   - drag the edges or corners to resize (at least 320 × 240, even sizes, never past the display), drag the toolbar to move
   - a slim cream toolbar hangs under the frame (above it when the frame reaches the bottom of the display, inside it when it fills the height): grip · W × H fields in pixels of the recording (Enter or leaving the field applies; ↑/↓ step by 2) · sizes menu (16:9 1280 × 720, 16:9 1920 × 1080, 1:1 1080 × 1080, 9:16 1080 × 1920, scaled down to fit) · Record (coral REC dot, the stop shortcut in small type) · ×
   - Record starts the usual countdown on that selection; × or Esc (Esc only while the frame has focus; it first leaves a field being edited or the menu) closes it and brings Home back with the selection kept
