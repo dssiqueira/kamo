@@ -28,6 +28,18 @@ export const SELECTION_BORDER = 2
 /** How far the grab band of an edge reaches on each side of the line. */
 const GRAB = 6
 
+/** Where the resize marks sit (fraction of the frame on x and y) and their size, DIP. */
+const RESIZE_MARKS: readonly (readonly [number, number, number, number])[] = [
+  [0, 0, 14, 14],
+  [1, 0, 14, 14],
+  [0, 1, 14, 14],
+  [1, 1, 14, 14],
+  [0.5, 0, 28, 8],
+  [0.5, 1, 28, 8],
+  [0, 0.5, 8, 28],
+  [1, 0.5, 8, 28],
+]
+
 export interface SelectionFrameProps {
   /** The display the frame covers: DIP size and scale. */
   display: SelectionDisplay
@@ -210,23 +222,21 @@ export function SelectionFrame({
           borderWidth: SELECTION_BORDER,
         }}
       />
-      {/* Corner marks: small cream squares on the line. */}
-      {(
-        [
-          [0, 0],
-          [1, 0],
-          [0, 1],
-          [1, 1],
-        ] as const
-      ).map(([right, bottom]) => (
+      {/* Resize marks on the line: cream squares on the corners and short bars in the middle
+          of each side, outlined so they show on light and dark screens alike. */}
+      {RESIZE_MARKS.map(([fx, fy, width, height]) => (
         <span
-          key={`${right}${bottom}`}
+          key={`${fx}${fy}`}
           aria-hidden
-          className="pointer-events-none absolute size-[10px] rounded-[2px] border-2 border-tertiary bg-surface"
+          className="pointer-events-none absolute rounded-[3px] border-2 border-tertiary bg-surface shadow-[0_0_0_1px_rgb(0_0_0/0.35)]"
           style={{
-            // centered on the middle of the line at each corner
-            left: outer.x + SELECTION_BORDER / 2 + right * (outer.width - SELECTION_BORDER) - 5,
-            top: outer.y + SELECTION_BORDER / 2 + bottom * (outer.height - SELECTION_BORDER) - 5,
+            width,
+            height,
+            // centered on the middle of the line
+            left:
+              outer.x + SELECTION_BORDER / 2 + fx * (outer.width - SELECTION_BORDER) - width / 2,
+            top:
+              outer.y + SELECTION_BORDER / 2 + fy * (outer.height - SELECTION_BORDER) - height / 2,
           }}
         />
       ))}

@@ -1,6 +1,6 @@
 // Drives a recording from the Record button to Stop (flows.md §3–4, F-01, F-02):
 // idle → countdown → recording ⇄ paused → stopping → idle.
-import { borderWindow } from '@kamo/ui/selection'
+import { borderWindow, recordingBarBounds, type Rect } from '@kamo/ui/selection'
 import { BrowserWindow, globalShortcut, screen } from 'electron'
 import { IpcChannel, type RecordingClock, type RecordingStatus } from '../shared/api.ts'
 import type { AudioWarning } from '../shared/audio.ts'
@@ -108,6 +108,8 @@ type State =
       border: BrowserWindow | null
       /** Where the bar lives (it is recreated there if its page goes away). */
       controlDisplayId: number
+      /** A-08: the recorded selection (global DIP) the bar stays clear of, or null. */
+      barAvoid: Rect | null
       barRecreations: number
       /** The media link write in progress (stop waits for it), once the takes are known. */
       linkWrite?: Promise<void>
@@ -244,7 +246,8 @@ export class RecordingController {
     }
     const videoStartedAt = Date.now()
 
-    const bar = this.openBar(controlDisplayId)
+    const barAvoid = selectionOnDisplay(target, controlDisplayId)
+    const bar = this.openBar(controlDisplayId, barAvoid)
     const border = target.kind === 'region' ? this.openBorder(target) : null
     const clock: RecordingClock = {
       state: 'recording',
@@ -258,6 +261,7 @@ export class RecordingController {
       bar,
       border,
       controlDisplayId,
+      barAvoid,
       barRecreations: 0,
       clock,
       audio,
@@ -508,22 +512,25 @@ export class RecordingController {
     this.state.barRecreations += 1
     this.log.error('recording.bar.gone', { reason, recreated: true })
     try {
-      this.state.bar = this.openBar(this.state.controlDisplayId)
+      this.state.bar = this.openBar(this.state.controlDisplayId, this.state.barAvoid)
     } catch (error) {
       this.log.error('recording.bar.failed', { error })
     }
     if (!old.isDestroyed()) old.destroy()
   }
 
-  private openBar(displayId: number): BrowserWindow {
+  private openBar(displayId: number, avoid: Rect | null): BrowserWindow {
     const display =
       screen.getAllDisplays().find((d) => d.id === displayId) ?? screen.getPrimaryDisplay()
-    const { x, y, width, height } = display.workArea
+    // Bottom center, or just outside a selection recording on this display (A-08).
+    const bounds = recordingBarBounds(
+      display.workArea,
+      { width: BAR_WIDTH, height: BAR_HEIGHT },
+      BAR_BOTTOM_MARGIN,
+      avoid,
+    )
     const bar = createAppWindow('recording-bar', {
-      x: Math.round(x + (width - BAR_WIDTH) / 2),
-      y: y + height - BAR_HEIGHT - BAR_BOTTOM_MARGIN,
-      width: BAR_WIDTH,
-      height: BAR_HEIGHT,
+      ...bounds,
       frame: false,
       transparent: true,
       resizable: false,
@@ -574,6 +581,8 @@ export class RecordingController {
           hasShadow: false,
           alwaysOnTop: true,
           show: false,
+          // Mac: a selection at the top of the display must not be pushed below the menu bar.
+          enableLargerThanScreen: true,
         },
         { border: [inner.x, inner.y, inner.width, inner.height].join(',') },
       )
@@ -584,6 +593,7 @@ export class RecordingController {
         if (border.isDestroyed()) return
         border.setBounds(bounds)
         border.showInactive()
+        this.log.info('recording.border.shown', { wanted: bounds, actual: border.getBounds() })
       })
       return border
     } catch (error) {
@@ -634,4 +644,17 @@ function errorCode(error: unknown): string {
     typeof error.code === 'string'
     ? error.code
     : 'failed'
+}
+
+/** A-08: the recorded selection in global DIP when it is on the bar's display, else null. */
+function selectionOnDisplay(target: CaptureTarget, displayId: number): Rect | null {
+  if (target.kind !== 'region' || target.displayId !== String(displayId)) return null
+  const display = screen.getAllDisplays().find((d) => d.id === displayId)
+  if (!display) return null
+  return {
+    x: display.bounds.x + target.rect.x,
+    y: display.bounds.y + target.rect.y,
+    width: target.rect.width,
+    height: target.rect.height,
+  }
 }

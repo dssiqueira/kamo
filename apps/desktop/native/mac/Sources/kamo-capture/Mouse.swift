@@ -1,14 +1,17 @@
-// Mouse events for F-03 (D-003, D-023): a listen-only Quartz event tap whose mask is built from
+// Mouse events for F-03 (D-003, D-023, D-043): an AppKit global monitor whose mask is built from
 // mouse event types and nothing else (AGENTS.md rule 2: Kamo never captures the keyboard, so no
 // keyboard event type appears in this file, not even in the mask).
 //
-// Tap location: `.cgSessionEventTap`. It sees every mouse event of the user's login session,
-// which is all a recording needs, and it is the level an unprivileged process may observe. A
-// HID tap (`.cghidEventTap`) sits below the window server, historically needs root or extra
-// privacy permissions, and would add nothing: locations are the same global coordinates.
+// Why a global monitor and not a Quartz event tap: on macOS 26 a listen-only `CGEvent.tapCreate`
+// is created but gets no events without Input Monitoring (tccd: "Service kTCCServiceListenEvent
+// does not allow prompting; returning denied"), and macOS describes that permission as reading
+// keystrokes. AppKit's global monitor needs no permission for mouse events (only key
+// events need Accessibility), observes only (it cannot change or block an event) and reports the
+// same global coordinates. It does not see events sent to this process, which has no windows.
 //
-// Threads: the tap runs on its own thread with its own run loop (MouseTap) and only reads the
-// event; everything else happens on the Recorder's queue (MouseTrack).
+// Threads: AppKit calls the monitor on the main thread (main.swift runs NSApplication); it only
+// reads the event, and everything else happens on the Recorder's queue (MouseTrack).
+import AppKit
 import CoreGraphics
 import CoreMedia
 import Foundation
@@ -17,7 +20,7 @@ enum MouseButton: String, Sendable {
     case left, right, middle
 }
 
-/// One mouse event as the tap saw it: global display coordinates (points, origin at the top
+/// One mouse event as the monitor saw it: global display coordinates (points, origin at the top
 /// left of the main display, y down) and host-clock seconds (the clock of the video frames).
 struct RawMouseEvent: Sendable {
     enum Kind: Sendable {
@@ -34,107 +37,52 @@ struct RawMouseEvent: Sendable {
     var scrollY = 0.0
 }
 
-// MARK: - Tap
+// MARK: - Monitor
 
-/// Owns the event tap and its thread. `deliver` is called on the tap thread.
+/// Owns the global mouse monitor. `deliver` is called on the main thread.
 final class MouseTap: @unchecked Sendable {
     /// Mouse event types only (rule 2). Drags are moves with a button held.
-    private static let eventTypes: [CGEventType] = [
+    static let eventMask: NSEvent.EventTypeMask = [
         .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged,
         .leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp,
         .otherMouseDown, .otherMouseUp, .scrollWheel,
     ]
 
-    static var eventMask: CGEventMask {
-        eventTypes.reduce(CGEventMask(0)) { mask, type in mask | (CGEventMask(1) << CGEventMask(type.rawValue)) }
-    }
-
     private let deliver: @Sendable (RawMouseEvent) -> Void
-    private let lock = NSLock()
-    // Guarded by `lock`: written on the tap thread, read by stop() and the callback.
-    private var port: CFMachPort?
-    private var runLoop: CFRunLoop?
+    // Main thread only.
+    private var monitor: Any?
     private var stopped = false
 
     init(deliver: @escaping @Sendable (RawMouseEvent) -> Void) {
         self.deliver = deliver
     }
 
-    /// Starts the tap thread. `ready(nil)` once events flow, `ready(reason)` if the tap cannot be
-    /// created (no permission). Called on the tap thread.
+    /// Installs the monitor on the main thread. `ready(nil)` once it is in place,
+    /// `ready(reason)` if AppKit refuses it.
     func start(ready: @escaping @Sendable (_ problem: String?) -> Void) {
-        let thread = Thread { self.run(ready: ready) }
-        thread.name = "mouse-tap"
-        thread.qualityOfService = .userInteractive
-        thread.start()
+        DispatchQueue.main.async {
+            guard !self.stopped else { return }
+            self.monitor = NSEvent.addGlobalMonitorForEvents(matching: MouseTap.eventMask) { event in
+                self.handle(event)
+            }
+            ready(self.monitor == nil ? "cannot install the global mouse monitor" : nil)
+        }
     }
 
     func stop() {
-        lock.lock()
-        stopped = true
-        let port = self.port
-        let loop = runLoop
-        self.port = nil
-        runLoop = nil
-        lock.unlock()
-        if let port {
-            CGEvent.tapEnable(tap: port, enable: false)
-            // Also invalidates the run loop source, so CFRunLoopRun returns even if it had not
-            // started yet when CFRunLoopStop was called.
-            CFMachPortInvalidate(port)
+        DispatchQueue.main.async {
+            self.stopped = true
+            if let monitor = self.monitor { NSEvent.removeMonitor(monitor) }
+            self.monitor = nil
         }
-        if let loop { CFRunLoopStop(loop) }
     }
 
-    private func run(ready: @Sendable (_ problem: String?) -> Void) {
-        // The tap does not retain its context; the Recorder keeps this object alive.
-        let context = Unmanaged.passUnretained(self).toOpaque()
-        guard let port = CGEvent.tapCreate(
-            tap: .cgSessionEventTap,
-            place: .headInsertEventTap,
-            options: .listenOnly,
-            eventsOfInterest: MouseTap.eventMask,
-            callback: mouseTapCallback,
-            userInfo: context
-        ) else {
-            ready("cannot create the mouse event tap (listen access preflight: \(CGPreflightListenEventAccess()))")
-            return
-        }
-        guard let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0) else {
-            CFMachPortInvalidate(port)
-            ready("cannot create a run loop source for the mouse event tap")
-            return
-        }
-        let loop = CFRunLoopGetCurrent()
-        lock.lock()
-        let stoppedEarly = stopped
-        if !stoppedEarly {
-            self.port = port
-            runLoop = loop
-        }
-        lock.unlock()
-        if stoppedEarly {
-            CFMachPortInvalidate(port)
-            return
-        }
-        CFRunLoopAddSource(loop, source, .commonModes)
-        CGEvent.tapEnable(tap: port, enable: true)
-        ready(nil)
-        CFRunLoopRun()
-    }
-
-    /// On the tap thread, for every event of the mask (and the tap's own notifications).
-    fileprivate func handle(_ type: CGEventType, _ event: CGEvent) {
+    /// On the main thread, for every event of the mask.
+    private func handle(_ event: NSEvent) {
+        guard !stopped, let cgEvent = event.cgEvent else { return }
         let kind: RawMouseEvent.Kind
         var button: MouseButton?
-        switch type {
-        case .tapDisabledByTimeout, .tapDisabledByUserInput:
-            // The system can switch a tap off; turn it back on unless we are stopping.
-            lock.lock()
-            let current = stopped ? nil : port
-            lock.unlock()
-            if let current { CGEvent.tapEnable(tap: current, enable: true) }
-            return
+        switch event.type {
         case .mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
             kind = .move
         case .leftMouseDown:
@@ -151,20 +99,22 @@ final class MouseTap: @unchecked Sendable {
             button = .right
         case .otherMouseDown, .otherMouseUp:
             // Button 2 is the middle button; 3 and up (back, forward...) are not in the format.
-            guard event.getIntegerValueField(.mouseEventButtonNumber) == 2 else { return }
-            kind = type == .otherMouseDown ? .down : .up
+            guard event.buttonNumber == 2 else { return }
+            kind = event.type == .otherMouseDown ? .down : .up
             button = .middle
         case .scrollWheel:
             kind = .scroll
         default:
             return
         }
-        let location = event.location
-        var raw = RawMouseEvent(kind: kind, host: hostSeconds(of: event),
+        // Quartz coordinates: global, top left of the main display, y down (NSEvent's own
+        // locationInWindow is bottom-up).
+        let location = cgEvent.location
+        var raw = RawMouseEvent(kind: kind, host: hostSeconds(of: cgEvent),
                                 x: Double(location.x), y: Double(location.y), button: button)
         if kind == .scroll {
-            raw.scrollX = Double(event.getIntegerValueField(.scrollWheelEventPointDeltaAxis2))
-            raw.scrollY = Double(event.getIntegerValueField(.scrollWheelEventPointDeltaAxis1))
+            raw.scrollX = Double(cgEvent.getIntegerValueField(.scrollWheelEventPointDeltaAxis2))
+            raw.scrollY = Double(cgEvent.getIntegerValueField(.scrollWheelEventPointDeltaAxis1))
         }
         deliver(raw)
     }
@@ -173,7 +123,7 @@ final class MouseTap: @unchecked Sendable {
     /// presentation timestamps), in seconds. CGEventTimestamp is documented as nanoseconds since
     /// startup but is reported to be mach absolute time on Apple silicon, where a tick is not a
     /// nanosecond; both readings are tried and the one closest to now wins (on Intel they are the
-    /// same). A listen-only tap gets events within milliseconds, so anything far off is a clock
+    /// same). The monitor gets events within milliseconds, so anything far off is a clock
     /// mismatch and the time of arrival is used instead.
     private func hostSeconds(of event: CGEvent) -> Double {
         let now = CMClockGetTime(CMClockGetHostTimeClock()).seconds
@@ -185,20 +135,6 @@ final class MouseTap: @unchecked Sendable {
         guard seconds.isFinite, now - seconds < 0.25, seconds - now < 0.005 else { return now }
         return min(seconds, now)
     }
-}
-
-/// C callback of the tap: no captures, the MouseTap comes through `userInfo`.
-private func mouseTapCallback(
-    proxy _: CGEventTapProxy,
-    type: CGEventType,
-    event: CGEvent,
-    userInfo: UnsafeMutableRawPointer?
-) -> Unmanaged<CGEvent>? {
-    if let userInfo {
-        Unmanaged<MouseTap>.fromOpaque(userInfo).takeUnretainedValue().handle(type, event)
-    }
-    // Listen-only: the event goes on untouched whatever is returned.
-    return Unmanaged.passUnretained(event)
 }
 
 // MARK: - Track

@@ -83,7 +83,7 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
     /// Video time (ms) of the next reference frame.
     private var nextFrameMs = 0.0
 
-    // Mouse (F-03). The tap runs on its own thread; the track lives on `queue`.
+    // Mouse (F-03). The monitor runs on the main thread; the track lives on `queue`.
     private var mouseTap: MouseTap?
     private var mouseTrack: MouseTrack?
     /// Where the recorded content is, in global points (the mouse mapping).
@@ -335,6 +335,12 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     /// Answers `listWindows`: the windows a user would pick, front to back, never Kamo's own.
     private func listWindows(excluding excludePid: Int32?) {
+        // Without Screen Recording, every SCShareableContent call shows the system dialog again
+        // (macOS 15+), and Home asks for the list every few seconds: answer empty without asking.
+        guard CGPreflightScreenCaptureAccess() else {
+            Events.windows([])
+            return
+        }
         SCShareableContent.getExcludingDesktopWindows(true, onScreenWindowsOnly: true) { content, error in
             guard let content else {
                 // No permission yet: an empty list (Home shows the permission warning).
@@ -635,16 +641,14 @@ final class Recorder: NSObject, SCStreamOutput, SCStreamDelegate, @unchecked Sen
 
     // MARK: - Mouse
 
-    /// Starts the mouse tap (Mouse.swift). A tap that cannot be created is not fatal: the video
-    /// goes on and main hears `mouse_unavailable`.
+    /// Starts the mouse monitor (Mouse.swift). One that cannot be installed is not fatal: the
+    /// video goes on and main hears `mouse_unavailable`.
     private func startMouse() {
         let track = MouseTrack(queue: queue, videoWidth: videoWidth, videoHeight: videoHeight,
                                bounds: mouseBounds,
                                videoTime: { [unowned self] host in self.mouseVideoTime(atHost: host) })
         if case .window = target { track.updateBounds(mouseBounds, dest: fitInVideo(mouseBounds.size)) }
         mouseTrack = track
-        // Diagnostics for F-13: does a mouse-only listen tap need Input Monitoring?
-        Log.diag("listen event access preflight: \(CGPreflightListenEventAccess())")
         let tap = MouseTap { raw in
             self.queue.async {
                 // A window can move at any time: read where it is before a click.

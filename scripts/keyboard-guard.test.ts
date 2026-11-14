@@ -12,8 +12,17 @@ describe('keyboard guard', () => {
     ['apps/desktop/native/mac/Sources/x/Tap.swift', 'let mask = 1 << CGEventType.keyDown.rawValue'],
     [
       'apps/desktop/native/mac/Sources/x/Tap.swift',
-      'NSEvent.addGlobalMonitorForEvents(matching: .any)',
+      'NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .keyDown])',
     ],
+    [
+      'apps/desktop/native/mac/Sources/x/Tap.swift',
+      'NSEvent.addGlobalMonitorForEvents(matching: mask) { event in',
+    ],
+    [
+      'apps/desktop/native/mac/Sources/x/Tap.swift',
+      'static let eventMask: NSEvent.EventTypeMask = .any',
+    ],
+    ['apps/desktop/native/mac/Sources/x/Tap.swift', 'eventsOfInterest: kCGEventMaskForAllEvents,'],
     ['apps/desktop/src/main/hook.ts', "import { uIOhook } from 'uiohook-napi'"],
     ['apps/desktop/src/main/index.ts', "globalShortcut.register('CommandOrControl+K', fn)"],
     ['apps/desktop/src/main/index.ts', 'globalShortcut.register(shortcut, fn)'],
@@ -38,6 +47,10 @@ describe('keyboard guard', () => {
       'let mask = 1 << CGEventType.leftMouseDown.rawValue',
     ],
     ['apps/desktop/native/win/src/hook.rs', 'SetWindowsHookExW(WH_MOUSE_LL, Some(proc), None, 0)'],
+    [
+      'apps/desktop/native/mac/Sources/kamo-capture/Mouse.swift',
+      'self.monitor = NSEvent.addGlobalMonitorForEvents(matching: MouseTap.eventMask) { event in',
+    ],
   ])('allows %s', (file, text) => {
     expect(rules(file, text)).toEqual([])
   })

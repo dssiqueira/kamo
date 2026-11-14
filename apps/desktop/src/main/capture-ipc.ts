@@ -69,6 +69,7 @@ export function registerCapture(
   })
   const frame = new SelectionFrame({
     mainWindow: options.mainWindow,
+    log: (event, data) => getServices().log.info(event, data),
     remembered: async () => (await getServices().settings.get()).lastRegion ?? null,
     onSelected: (displayId, rect) =>
       remember({

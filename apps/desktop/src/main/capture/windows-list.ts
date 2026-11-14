@@ -1,7 +1,7 @@
 // A-08: the windows Home can record. The capture helper lists them (`listWindows`: ids it can
 // record, titles, apps, bounds; it never lists Kamo), Electron adds the thumbnails and app icons
 // (desktopCapturer, like the display thumbnails, D-023) and maps the bounds to DIP and a display.
-import { desktopCapturer, screen } from 'electron'
+import { desktopCapturer, screen, systemPreferences } from 'electron'
 import type { WindowInfo } from '../../shared/capture.ts'
 import { HelperProcess, type CaptureLogger } from './helper-process.ts'
 import { capturerWindowId, joinWindows, type HelperWindow } from './targets.ts'
@@ -42,6 +42,13 @@ interface WindowPictures {
 
 /** Thumbnails and app icons, keyed by window id. */
 async function pictures(): Promise<WindowPictures> {
+  // Mac without Screen Recording: getSources would show the system dialog again on every list.
+  if (
+    process.platform === 'darwin' &&
+    systemPreferences.getMediaAccessStatus('screen') !== 'granted'
+  ) {
+    return { thumbnails: new Map(), icons: new Map() }
+  }
   const sources = await desktopCapturer.getSources({
     types: ['window'],
     thumbnailSize: THUMBNAIL_SIZE,
