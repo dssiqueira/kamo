@@ -20,7 +20,7 @@
 | Node 24 | ✅ installed | everything |
 | pnpm | ✅ installed (2026-11-04: `packageManager` pins pnpm 12) | monorepo |
 | Rust (rustup) + Visual Studio Build Tools (C++) | ✅ installed (2026-11-04; the Windows helper builds and records locally). Python 3 is no longer needed: the mouse hook lives in the helper (D-023), not in a `node-gyp` module | Windows capture helper (steps 2–3) |
-| Access to an Apple silicon Mac (macOS ≥ 13.3) | ❌ still none (2026-11-04) | capture on Mac (steps 2, 3, 10). Without a Mac, validation is only possible through the `macos-14` CI, and the manual checklist is impossible |
+| Access to an Apple silicon Mac (macOS ≥ 13.3) | ✅ the owner's Mac on macOS 26 (2026-11-14) | capture on Mac (steps 2, 3, 10). Without a Mac, validation is only possible through the `macos-14` CI, and the manual checklist is impossible |
 
 ### Accounts and names (do in phase 0, before they are needed)
 - **`@kamo` org on npm:** the packages don't exist in the registry yet (404), but it wasn't possible to confirm whether the org is free. Create it now; if it's taken, decide on the alternative scope before step 1 (affects every `package.json` and `kamo-site`)
@@ -47,7 +47,7 @@
 |---|---|---|
 | Hiding the system cursor on Windows (`desktopCapturer`/WGC). Without it, D-005 falls | 2 | Test `getDisplayMedia`/`desktopCapturer` with `cursor: "never"` in current Electron; plan B: native helper with Windows Graphics Capture (`IsCursorCaptureEnabled = false`) |
 | Common clock across video, mouse and audio (≤ 33ms and ≤ 40ms) | 2–3 | Use a single monotonic clock in the main process and record the first frame's offset in `project.json` |
-| Mac: does the mouse-only tap still require Input Monitoring? | 3 | Test on macOS 14/15 with our Swift helper |
+| Mac: does the mouse-only tap still require Input Monitoring? | 3 | Answered 2026-11-14 (D-043): on macOS 26 the tap gets nothing without it, so the helper uses a mouse-only AppKit global monitor, which needs no permission |
 | WebCodecs H.264 + AAC encoder available on all target machines | 9 | `VideoEncoder.isConfigSupported` / `AudioEncoder.isConfigSupported` with software fallback; FFmpeg only as an optional pack (D-019) |
 | Installer ≤ 130MB | 10 | Measure the `.dmg` and the `.exe` as early as step 1b, with CI failing above the limit |
 | Whisper in the browser | after 23 | Out of scope for now; only evaluate after desktop |
@@ -92,7 +92,7 @@
 **Done when:** the window opens on Windows (local) and on Mac (`macos-14` CI builds and runs a smoke test), and the project format tests pass.
 
 ### Step 2 — List displays and record the screen (F-01, F-02, frames from step 0) ⏳ (2026-11-04, Windows done, Mac untested)
-> Done: Home with live display thumbnails, countdown, floating bar (excluded from capture), stop shortcut, on-disk store with recovery marker and disk check, local log, the stdio helper protocol with a fake helper and end-to-end tests, and the Swift Mac helper (builds on `macos-14`, ships in the dmg). Since then: the Rust Windows helper (0a934bc: WGC with no cursor or border, hardware H.264 into a fragmented MP4, reference JPEGs; verified recording both monitors, pause, protected window excluded, a killed helper leaves a playable file), recovery of interrupted recordings from Home (b3470e2; the video and the mouse events, not yet the audio or the webcam), the Record button naming its screen, the bar opening on the monitor with Kamo's window and a recording tray icon (62f7ebb). Pending: a real recording test on a Mac, the first-frame latency check (≤ 3.5s from Record), and a 30-minute recording test.
+> Done: Home with live display thumbnails, countdown, floating bar (excluded from capture), stop shortcut, on-disk store with recovery marker and disk check, local log, the stdio helper protocol with a fake helper and end-to-end tests, and the Swift Mac helper (builds on `macos-14`, ships in the dmg). Since then: the Rust Windows helper (0a934bc: WGC with no cursor or border, hardware H.264 into a fragmented MP4, reference JPEGs; verified recording both monitors, pause, protected window excluded, a killed helper leaves a playable file), recovery of interrupted recordings from Home (b3470e2; the video and the mouse events, not yet the audio or the webcam), the Record button naming its screen, the bar opening on the monitor with Kamo's window and a recording tray icon (62f7ebb). 2026-11-14: real screen and selection recordings on a Mac (macOS 26), with Screen Recording asked through ScreenCaptureKit (`--request-screen-access`). Pending: the first-frame latency check (≤ 3.5s from Record), and a 30-minute recording test.
 
 **Spike (done, D-023):** Electron capture always includes the system cursor on Windows, so recording goes through a native helper per OS (Rust on Windows, Swift on Mac). Requires Rust (rustup) and Visual Studio Build Tools (C++ workload, for the MSVC linker) on the Windows dev machine.
 - Home with displays and live thumbnails (≥ 1/s), primary pre-selected, choice remembered
@@ -105,7 +105,7 @@
 - Rotating local logger in `app-data/logs/` (basis of F-17), no personal data
 
 ### Step 3 — Mouse + microphone + system sound (F-03, F-04) ⏳ (2026-11-04, Windows done, Mac partial)
-> Done: mouse events inside each capture helper instead of a separate `@kamo/mouse-hook` module (D-023): `WH_MOUSE_LL` in the Rust helper (0a934bc) and a listen-only, mouse-only `CGEventTap` in the Swift helper (ba3ae78), ~60Hz, video pixels, pauses removed, "outside" moves; the CI keyboard guard (c7cf8da, `pnpm guard:keyboard`); microphone and computer sound through a hidden recorder page (bdf7d4c, D-024): `audio.m4a`/`system.m4a`, mic picker, level meters, per-track `offsetMs`, volume and mute in the editor and the export. Windows computer sound uses Chromium's loopback (`getDisplayMedia`) rather than a WASAPI module of our own. Pending: Mac computer sound (ScreenCaptureKit audio in the Swift helper), the Input Monitoring spike on a real Mac, and the sync measurements (≤ 33ms events, ≤ 40ms audio).
+> Done: mouse events inside each capture helper instead of a separate `@kamo/mouse-hook` module (D-023): `WH_MOUSE_LL` in the Rust helper (0a934bc) and a listen-only, mouse-only `CGEventTap` in the Swift helper (ba3ae78), ~60Hz, video pixels, pauses removed, "outside" moves; the CI keyboard guard (c7cf8da, `pnpm guard:keyboard`); microphone and computer sound through a hidden recorder page (bdf7d4c, D-024): `audio.m4a`/`system.m4a`, mic picker, level meters, per-track `offsetMs`, volume and mute in the editor and the export. Windows computer sound uses Chromium's loopback (`getDisplayMedia`) rather than a WASAPI module of our own. 2026-11-14: Mac mouse events from a mouse-only AppKit global monitor (D-043; the tap gets nothing on macOS 26 without Input Monitoring), clicks and zoom checked on a real Mac. Pending: Mac computer sound checked on a real Mac, and the sync measurements (≤ 33ms events, ≤ 40ms audio).
 
 **Spike:** Input Monitoring on Mac.
 - `@kamo/mouse-hook`: mouse-only native module; Windows `WH_MOUSE_LL` (N-API + prebuilds in CI), Mac via Swift helper with a mouse-only mask, listen-only

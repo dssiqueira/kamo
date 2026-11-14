@@ -17,15 +17,15 @@
 <p align="center">
   <a href="LICENSE"><img alt="ライセンス：MIT" src="https://img.shields.io/badge/%E3%83%A9%E3%82%A4%E3%82%BB%E3%83%B3%E3%82%B9-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="対応環境：現在は Windows、Mac と Chrome は近日公開" src="https://img.shields.io/badge/%E5%AF%BE%E5%BF%9C-Windows%20%C2%B7%20Mac%20%E3%81%A8%20Chrome%20%E3%81%AF%E8%BF%91%E6%97%A5%E5%85%AC%E9%96%8B-2F6F68?style=flat-square">
+  <img alt="対応環境：現在は Windows と Mac、Chrome は近日公開" src="https://img.shields.io/badge/%E5%AF%BE%E5%BF%9C-Windows%20%C2%B7%20Mac%20%C2%B7%20Chrome%20%E3%81%AF%E8%BF%91%E6%97%A5%E5%85%AC%E9%96%8B-2F6F68?style=flat-square">
   <img alt="テレメトリなし" src="https://img.shields.io/badge/%E3%83%86%E3%83%AC%E3%83%A1%E3%83%88%E3%83%AA-%E3%81%AA%E3%81%97-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Windows 版、公開中</h3>
+<h3 align="center">Windows 版と Mac 版、公開中</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Windows 版をダウンロード" src="https://img.shields.io/badge/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <img alt="Mac：近日公開" src="https://img.shields.io/badge/Mac-%E8%BF%91%E6%97%A5%E5%85%AC%E9%96%8B-CDE8E4?style=for-the-badge&labelColor=2F6F68">
+  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Mac 版をダウンロード" src="https://img.shields.io/badge/%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89-Mac-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
   <img alt="Chrome 拡張機能：近日公開" src="https://img.shields.io/badge/Chrome-%E8%BF%91%E6%97%A5%E5%85%AC%E9%96%8B-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
@@ -38,10 +38,13 @@
 </p>
 
 > [!NOTE]
-> **Kamo はまだ生まれたばかりです。** Windows 版は公開済みで、Kamo は毎日 Windows 上で開発・テストされています。Mac アプリと Chrome 拡張機能は近日公開予定です。インストーラーにはまだコード署名がありません。ビルドは [GitHub Releases](https://github.com/dssiqueira/kamo/releases) で公開しています。気になる点があれば [issue を立ててください](https://github.com/dssiqueira/kamo/issues)。
+> **Kamo はまだ生まれたばかりです。** Windows 版と Mac 版を公開中です。Kamo は毎日 Windows 上で開発・テストされていて、Mac アプリは公開されたばかりです。Chrome 拡張機能は近日公開予定です。Windows のインストーラーにはまだコード署名がありません。Mac アプリは Apple による署名と公証済みです。ビルドは [GitHub Releases](https://github.com/dssiqueira/kamo/releases) で公開しています。気になる点があれば [issue を立ててください](https://github.com/dssiqueira/kamo/issues)。
 
 > [!TIP]
 > **Windows での初回起動について。** インストーラーにまだコード署名がないため、SmartScreen に「Windows によって PC が保護されました」と表示されることがあります。**詳細情報** をクリックしてから **実行** を選んでください。
+
+> [!TIP]
+> **Mac での初回起動について。** Kamo は画面収録の許可を求めます。システム設定 → プライバシーとセキュリティ → 画面収録とシステムオーディオ録音 で Kamo をオンにしてから、**Kamo を開き直す** をクリックしてください。
 
 ---
 
@@ -153,9 +156,9 @@ YouTube 向けの 16:9、フィード向けの 1:1、Reels や Shorts 向けの 
 
 ## デスクトップ版か、拡張機能か
 
-エンジンも、エディターも、書き出しも同じ。違うのは録画できるものです。Windows 版は公開中、Mac アプリと拡張機能は近日公開です。
+エンジンも、エディターも、書き出しも同じ。違うのは録画できるものです。Windows 版と Mac 版は公開中、拡張機能は近日公開です。
 
-| | デスクトップアプリ<br><sub>Windows · Mac（Apple シリコン、近日公開）</sub> | Chrome 拡張機能（近日公開）<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | デスクトップアプリ<br><sub>Windows · Mac（Apple シリコン）</sub> | Chrome 拡張機能（近日公開）<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | 画面全体を録画 | ✅ | — |
 | ウィンドウや選択範囲を録画 | ✅ | — |
@@ -238,7 +241,7 @@ English、Português (Brasil)、Español、简体中文、日本語、Deutsch、
 
 ## ロードマップ
 
-ステップごとの計画は [docs/plan.md](docs/plan.md) に、各機能と受け入れ基準は [docs/features.md](docs/features.md) にあります。次の予定は、実機でテストした Mac 版、署名付きインストーラー、Chrome ウェブストアへの掲載、npm での `@kamo/mcp` の公開です。Microsoft Store 向けのパッケージも準備中です。リンクで共有するためのオプションのクラウドも計画中ですが、アプリ自体は今後も無料で、すべての機能が使えます。
+ステップごとの計画は [docs/plan.md](docs/plan.md) に、各機能と受け入れ基準は [docs/features.md](docs/features.md) にあります。次の予定は、署名付きの Windows インストーラー、Chrome ウェブストアへの掲載、npm での `@kamo/mcp` の公開です。Microsoft Store 向けのパッケージも準備中です。リンクで共有するためのオプションのクラウドも計画中ですが、アプリ自体は今後も無料で、すべての機能が使えます。
 
 ## コントリビュート
 
