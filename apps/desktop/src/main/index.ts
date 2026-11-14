@@ -88,7 +88,8 @@ protocol.registerSchemesAsPrivileged([
 const MIN_WIDTH = 1024
 const MIN_HEIGHT = 680
 
-const DEV_ICON = join(app.getAppPath(), 'build', 'icon.png')
+// The Dock icon in development (Mac only): the same template-shaped icon as a packaged build.
+const DEV_ICON = join(app.getAppPath(), 'build', 'icon-mac.png')
 // The tray icon (F-15): electron-builder copies build/tray/ into the resources folder.
 const TRAY_ICON = trayIconFile(
   app.isPackaged ? join(process.resourcesPath, 'tray') : join(app.getAppPath(), 'build', 'tray'),

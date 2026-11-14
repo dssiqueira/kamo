@@ -40,6 +40,9 @@ mac:
     - target: zip
       arch: arm64
   category: public.app-category.video
+  # Apple's icon template (an 824 px rounded square centred on 1024 px); macOS 26 boxes any other
+  # shape in grey. Generated from build/icon.png by scripts/make-mac-icon.mjs.
+  icon: build/icon-mac.png
   hardenedRuntime: true
   # The hardened runtime blocks the microphone and the camera without these entitlements.
   # Screen Recording needs none: macOS asks through its own prompt.

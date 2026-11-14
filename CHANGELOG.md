@@ -11,6 +11,7 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 ### Fixed
 - Mac (coming soon): Kamo shows up in System Settings → Screen & System Audio Recording when it asks, and the macOS dialog no longer comes back every few seconds before the permission is granted.
 - Mac (coming soon): clicks are recorded again on macOS 26, with no Input Monitoring permission, so the automatic zoom follows them.
+- Mac (coming soon): the app icon follows Apple's shape, so macOS 26 no longer shows it inside a grey box.
 - Mac (coming soon): the selection frame's toolbar takes clicks, and the frame lines up with the recorded area at the top of the display.
 
 ## [0.2.0] — 2026-11-10
