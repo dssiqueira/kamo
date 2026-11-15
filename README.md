@@ -17,15 +17,15 @@
 <p align="center">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Platform: Windows and Mac today, Chrome coming soon" src="https://img.shields.io/badge/platform-Windows%20%C2%B7%20Mac%20%C2%B7%20Chrome%20soon-2F6F68?style=flat-square">
+  <img alt="Platform: Windows today, Mac and Chrome coming soon" src="https://img.shields.io/badge/platform-Windows%20%C2%B7%20Mac%20%26%20Chrome%20soon-2F6F68?style=flat-square">
   <img alt="No telemetry" src="https://img.shields.io/badge/telemetry-none-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Out now for Windows and Mac</h3>
+<h3 align="center">Out now for Windows</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Download for Mac" src="https://img.shields.io/badge/Download-Mac-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <img alt="Mac: coming soon" src="https://img.shields.io/badge/Mac-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68">
   <img alt="Chrome extension: coming soon" src="https://img.shields.io/badge/Chrome-coming%20soon-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
@@ -38,13 +38,10 @@
 </p>
 
 > [!NOTE]
-> **Kamo is young.** The Windows and Mac builds are out. Windows is where Kamo is built and tested every day, and the Mac app is new. The Chrome extension is coming soon. The Windows installer is not code-signed yet; the Mac app is signed and notarized by Apple. Builds land on [GitHub Releases](https://github.com/dssiqueira/kamo/releases); if you hit a rough edge, [open an issue](https://github.com/dssiqueira/kamo/issues).
+> **Kamo is young.** The Windows build is out, and Windows is where Kamo is built and tested every day. The Mac app and the Chrome extension are coming soon. Installers are not code-signed yet. Builds land on [GitHub Releases](https://github.com/dssiqueira/kamo/releases); if you hit a rough edge, [open an issue](https://github.com/dssiqueira/kamo/issues).
 
 > [!TIP]
 > **First launch on Windows.** The installer isn't code-signed yet, so SmartScreen may say "Windows protected your PC". Click **More info**, then **Run anyway**.
-
-> [!TIP]
-> **First launch on Mac.** Kamo asks for Screen Recording. Turn Kamo on in System Settings → Privacy & Security → Screen & System Audio Recording, then click **Reopen Kamo**.
 
 ---
 
@@ -156,9 +153,9 @@ Start from Home, from the tray menu or from the Windows taskbar jump list (the D
 
 ## Desktop or extension?
 
-Same engine, same editor, same export. The difference is what they can record. Windows and Mac are out now; the extension is coming soon.
+Same engine, same editor, same export. The difference is what they can record. Windows is out now; the Mac app and the extension are coming soon.
 
-| | Desktop app<br><sub>Windows · Mac (Apple silicon)</sub> | Chrome extension (soon)<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | Desktop app<br><sub>Windows · Mac (Apple silicon, soon)</sub> | Chrome extension (soon)<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | Record the whole screen | ✅ | — |
 | Record one window or a selection | ✅ | — |
@@ -241,7 +238,7 @@ English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Franç
 
 ## Roadmap
 
-The step-by-step plan lives in [docs/plan.md](docs/plan.md), and every feature with its acceptance criteria in [docs/features.md](docs/features.md). Next up: a signed Windows installer, the Chrome Web Store listing and `@kamo/mcp` on npm. A Microsoft Store package is being prepared too. An optional cloud for sharing links is planned; the app itself stays free and complete.
+The step-by-step plan lives in [docs/plan.md](docs/plan.md), and every feature with its acceptance criteria in [docs/features.md](docs/features.md). Next up: a tested Mac build, signed installers, the Chrome Web Store listing and `@kamo/mcp` on npm. A Microsoft Store package is being prepared too. An optional cloud for sharing links is planned; the app itself stays free and complete.
 
 ## Contributing
 

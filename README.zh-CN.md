@@ -17,15 +17,15 @@
 <p align="center">
   <a href="LICENSE"><img alt="许可证：MIT" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="平台：目前支持 Windows 和 Mac，Chrome 即将推出" src="https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%20%C2%B7%20Mac%20%C2%B7%20Chrome%20%E5%8D%B3%E5%B0%86%E6%8E%A8%E5%87%BA-2F6F68?style=flat-square">
+  <img alt="平台：目前支持 Windows，Mac 和 Chrome 即将推出" src="https://img.shields.io/badge/%E5%B9%B3%E5%8F%B0-Windows%20%C2%B7%20Mac%20%E5%92%8C%20Chrome%20%E5%8D%B3%E5%B0%86%E6%8E%A8%E5%87%BA-2F6F68?style=flat-square">
   <img alt="无遥测" src="https://img.shields.io/badge/%E9%81%A5%E6%B5%8B-%E6%97%A0-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Windows 版和 Mac 版现已推出</h3>
+<h3 align="center">Windows 版现已推出</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="下载 Windows 版" src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="下载 Mac 版" src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Mac-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <img alt="Mac：即将推出" src="https://img.shields.io/badge/Mac-%E5%8D%B3%E5%B0%86%E6%8E%A8%E5%87%BA-CDE8E4?style=for-the-badge&labelColor=2F6F68">
   <img alt="Chrome 扩展：即将推出" src="https://img.shields.io/badge/Chrome-%E5%8D%B3%E5%B0%86%E6%8E%A8%E5%87%BA-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
@@ -38,13 +38,10 @@
 </p>
 
 > [!NOTE]
-> **Kamo 还很年轻。** Windows 版和 Mac 版都已发布。Kamo 每天都在 Windows 上开发和测试，Mac 版应用是新推出的。Chrome 扩展即将推出。Windows 安装程序目前还没有代码签名；Mac 版应用已由 Apple 签名和公证。新版本发布在 [GitHub Releases](https://github.com/dssiqueira/kamo/releases)；如果遇到不顺手的地方，欢迎[提交 issue](https://github.com/dssiqueira/kamo/issues)。
+> **Kamo 还很年轻。** Windows 版已经发布，Kamo 每天都在 Windows 上开发和测试。Mac 版应用和 Chrome 扩展即将推出。安装程序目前还没有代码签名。新版本发布在 [GitHub Releases](https://github.com/dssiqueira/kamo/releases)；如果遇到不顺手的地方，欢迎[提交 issue](https://github.com/dssiqueira/kamo/issues)。
 
 > [!TIP]
 > **在 Windows 上首次启动。** 由于安装程序还没有代码签名，SmartScreen 可能会提示“Windows 已保护你的电脑”。点击 **更多信息**，然后点击 **仍要运行**。
-
-> [!TIP]
-> **在 Mac 上首次启动。** Kamo 会请求录屏权限。在 系统设置 → 隐私与安全性 → 录屏与系统录音 中打开 Kamo，然后点击 **重新打开 Kamo**。
 
 ---
 
@@ -156,9 +153,9 @@
 
 ## 桌面版还是扩展？
 
-同一个引擎，同一个编辑器，同样的导出。区别在于它们能录什么。Windows 版和 Mac 版现已推出；扩展即将推出。
+同一个引擎，同一个编辑器，同样的导出。区别在于它们能录什么。Windows 版现已推出；Mac 版应用和扩展即将推出。
 
-| | 桌面应用<br><sub>Windows · Mac（Apple 芯片）</sub> | Chrome 扩展（即将推出）<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | 桌面应用<br><sub>Windows · Mac（Apple 芯片，即将推出）</sub> | Chrome 扩展（即将推出）<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | 录制整个屏幕 | ✅ | — |
 | 录制单个窗口或选区 | ✅ | — |
@@ -241,7 +238,7 @@ pnpm check                            # lint, typecheck, tests, i18n and the key
 
 ## 路线图
 
-分步计划见 [docs/plan.md](docs/plan.md)，每个功能及其验收标准见 [docs/features.md](docs/features.md)。接下来：签名的 Windows 安装程序、Chrome 网上应用店上架，以及在 npm 上发布 `@kamo/mcp`。Microsoft Store 版本也在准备中。一个用于分享链接的可选云服务也在计划中；应用本身会一直保持免费且功能完整。
+分步计划见 [docs/plan.md](docs/plan.md)，每个功能及其验收标准见 [docs/features.md](docs/features.md)。接下来：经过测试的 Mac 版、签名安装程序、Chrome 网上应用店上架，以及在 npm 上发布 `@kamo/mcp`。Microsoft Store 版本也在准备中。一个用于分享链接的可选云服务也在计划中；应用本身会一直保持免费且功能完整。
 
 ## 参与贡献
 
