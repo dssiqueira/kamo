@@ -17,15 +17,15 @@
 <p align="center">
   <a href="LICENSE"><img alt="라이선스: MIT" src="https://img.shields.io/badge/%EB%9D%BC%EC%9D%B4%EC%84%A0%EC%8A%A4-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="플랫폼: 지금은 Windows와 Mac, Chrome은 곧 출시" src="https://img.shields.io/badge/%ED%94%8C%EB%9E%AB%ED%8F%BC-Windows%20%C2%B7%20Mac%20%C2%B7%20Chrome%EC%9D%80%20%EA%B3%A7%20%EC%B6%9C%EC%8B%9C-2F6F68?style=flat-square">
+  <img alt="플랫폼: 지금은 Windows, Mac과 Chrome은 곧 출시" src="https://img.shields.io/badge/%ED%94%8C%EB%9E%AB%ED%8F%BC-Windows%20%C2%B7%20Mac%EA%B3%BC%20Chrome%EC%9D%80%20%EA%B3%A7%20%EC%B6%9C%EC%8B%9C-2F6F68?style=flat-square">
   <img alt="텔레메트리 없음" src="https://img.shields.io/badge/%ED%85%94%EB%A0%88%EB%A9%94%ED%8A%B8%EB%A6%AC-%EC%97%86%EC%9D%8C-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Windows와 Mac 버전, 지금 받을 수 있어요</h3>
+<h3 align="center">Windows 버전, 지금 받을 수 있어요</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Windows 버전 다운로드" src="https://img.shields.io/badge/%EB%8B%A4%EC%9A%B4%EB%A1%9C%EB%93%9C-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Mac 버전 다운로드" src="https://img.shields.io/badge/%EB%8B%A4%EC%9A%B4%EB%A1%9C%EB%93%9C-Mac-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <img alt="Mac: 곧 출시" src="https://img.shields.io/badge/Mac-%EA%B3%A7%20%EC%B6%9C%EC%8B%9C-CDE8E4?style=for-the-badge&labelColor=2F6F68">
   <img alt="Chrome 확장 프로그램: 곧 출시" src="https://img.shields.io/badge/Chrome-%EA%B3%A7%20%EC%B6%9C%EC%8B%9C-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
@@ -38,13 +38,10 @@
 </p>
 
 > [!NOTE]
-> **Kamo는 아직 어려요.** Windows와 Mac 버전이 나왔어요. Kamo는 매일 Windows에서 만들고 테스트하고 있고, Mac 앱은 이제 막 나왔어요. Chrome 확장 프로그램은 곧 나와요. Windows 설치 프로그램에는 아직 코드 서명이 없고, Mac 앱은 Apple의 서명과 공증을 받았어요. 빌드는 [GitHub Releases](https://github.com/dssiqueira/kamo/releases)에 올라오고, 불편한 점이 있으면 [이슈를 열어 주세요](https://github.com/dssiqueira/kamo/issues).
+> **Kamo는 아직 어려요.** Windows 버전이 나왔고, Kamo는 매일 Windows에서 만들고 테스트하고 있어요. Mac 앱과 Chrome 확장 프로그램은 곧 나와요. 설치 프로그램에는 아직 코드 서명이 없어요. 빌드는 [GitHub Releases](https://github.com/dssiqueira/kamo/releases)에 올라오고, 불편한 점이 있으면 [이슈를 열어 주세요](https://github.com/dssiqueira/kamo/issues).
 
 > [!TIP]
 > **Windows에서 처음 실행할 때.** 설치 프로그램에 아직 코드 서명이 없어서 SmartScreen이 "Windows의 PC 보호"라고 표시할 수 있어요. **추가 정보**를 클릭한 다음 **실행**을 누르세요.
-
-> [!TIP]
-> **Mac에서 처음 실행할 때.** Kamo가 화면 기록 권한을 요청해요. 시스템 설정 → 개인정보 보호 및 보안 → 화면 및 시스템 오디오 녹음에서 Kamo를 켠 다음 **Kamo 다시 열기**를 누르세요.
 
 ---
 
@@ -156,9 +153,9 @@ YouTube용 16:9, 피드용 1:1, 릴스와 쇼츠용 9:16을 같은 타임라인�
 
 ## 데스크톱 앱일까요, 확장 프로그램일까요?
 
-엔진도, 편집기도, 내보내기도 같아요. 다른 점은 녹화할 수 있는 대상이에요. Windows와 Mac 버전은 지금 받을 수 있고, 확장 프로그램은 곧 나와요.
+엔진도, 편집기도, 내보내기도 같아요. 다른 점은 녹화할 수 있는 대상이에요. Windows 버전은 지금 받을 수 있고, Mac 앱과 확장 프로그램은 곧 나와요.
 
-| | 데스크톱 앱<br><sub>Windows · Mac(Apple 실리콘)</sub> | Chrome 확장 프로그램(곧 출시)<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | 데스크톱 앱<br><sub>Windows · Mac(Apple 실리콘, 곧 출시)</sub> | Chrome 확장 프로그램(곧 출시)<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | 전체 화면 녹화 | ✅ | — |
 | 창 하나 또는 선택 영역 녹화 | ✅ | — |
@@ -241,7 +238,7 @@ English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Franç
 
 ## 로드맵
 
-단계별 계획은 [docs/plan.md](docs/plan.md)에, 모든 기능과 인수 기준은 [docs/features.md](docs/features.md)에 있어요. 다음 순서는 서명된 Windows 설치 프로그램, Chrome 웹 스토어 등록, npm의 `@kamo/mcp`예요. Microsoft Store 패키지도 준비하고 있어요. 링크로 공유하기 위한 선택형 클라우드도 계획 중이지만, 앱 자체는 앞으로도 무료이고 모든 기능을 갖출 거예요.
+단계별 계획은 [docs/plan.md](docs/plan.md)에, 모든 기능과 인수 기준은 [docs/features.md](docs/features.md)에 있어요. 다음 순서는 실제 기기에서 테스트한 Mac 버전, 서명된 설치 프로그램, Chrome 웹 스토어 등록, npm의 `@kamo/mcp`예요. Microsoft Store 패키지도 준비하고 있어요. 링크로 공유하기 위한 선택형 클라우드도 계획 중이지만, 앱 자체는 앞으로도 무료이고 모든 기능을 갖출 거예요.
 
 ## 기여하기
 

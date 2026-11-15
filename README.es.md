@@ -17,15 +17,15 @@
 <p align="center">
   <a href="LICENSE"><img alt="Licencia: MIT" src="https://img.shields.io/badge/licencia-MIT-3F7539?style=flat-square"></a>
   <a href="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dssiqueira/kamo/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Plataforma: Windows y Mac hoy, Chrome muy pronto" src="https://img.shields.io/badge/plataforma-Windows%20%C2%B7%20Mac%20%C2%B7%20Chrome%20pronto-2F6F68?style=flat-square">
+  <img alt="Plataforma: Windows hoy, Mac y Chrome muy pronto" src="https://img.shields.io/badge/plataforma-Windows%20%C2%B7%20Mac%20y%20Chrome%20pronto-2F6F68?style=flat-square">
   <img alt="Sin telemetría" src="https://img.shields.io/badge/telemetr%C3%ADa-ninguna-A8D5A2?style=flat-square">
 </p>
 
-<h3 align="center">Ya disponible para Windows y Mac</h3>
+<h3 align="center">Ya disponible para Windows</h3>
 
 <p align="center">
   <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Descargar para Windows" src="https://img.shields.io/badge/Descargar-Windows-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
-  <a href="https://github.com/dssiqueira/kamo/releases/latest"><img alt="Descargar para Mac" src="https://img.shields.io/badge/Descargar-Mac-A8D5A2?style=for-the-badge&labelColor=1F3A1C"></a>
+  <img alt="Mac: muy pronto" src="https://img.shields.io/badge/Mac-muy%20pronto-CDE8E4?style=for-the-badge&labelColor=2F6F68">
   <img alt="Extensión para Chrome: muy pronto" src="https://img.shields.io/badge/Chrome-muy%20pronto-CDE8E4?style=for-the-badge&labelColor=2F6F68">
 </p>
 
@@ -38,13 +38,10 @@
 </p>
 
 > [!NOTE]
-> **Kamo es joven.** Las versiones para Windows y Mac ya están aquí. Kamo se desarrolla y se prueba todos los días en Windows, y la app para Mac es nueva. La extensión para Chrome llega muy pronto. El instalador de Windows todavía no tiene firma de código; la app para Mac está firmada y notarizada por Apple. Las versiones se publican en [GitHub Releases](https://github.com/dssiqueira/kamo/releases); si te topas con algo que no va fino, [abre un issue](https://github.com/dssiqueira/kamo/issues).
+> **Kamo es joven.** La versión para Windows ya está aquí, y es en Windows donde Kamo se desarrolla y se prueba todos los días. La app para Mac y la extensión para Chrome llegan muy pronto. Los instaladores todavía no tienen firma de código. Las versiones se publican en [GitHub Releases](https://github.com/dssiqueira/kamo/releases); si te topas con algo que no va fino, [abre un issue](https://github.com/dssiqueira/kamo/issues).
 
 > [!TIP]
 > **Primer arranque en Windows.** Como el instalador todavía no tiene firma de código, SmartScreen puede mostrar "Windows protegió su PC". Haz clic en **Más información** y luego en **Ejecutar de todas formas**.
-
-> [!TIP]
-> **Primer arranque en Mac.** Kamo pide permiso de grabación de pantalla. Activa Kamo en Ajustes del Sistema → Privacidad y seguridad → Grabación de pantalla y audio del sistema y luego haz clic en **Reabrir Kamo**.
 
 ---
 
@@ -156,9 +153,9 @@ Empieza desde la pantalla de inicio, desde el menú de la bandeja o desde la lis
 
 ## ¿Escritorio o extensión?
 
-El mismo motor, el mismo editor, la misma exportación. La diferencia está en lo que cada una puede grabar. Windows y Mac ya están disponibles; la extensión llega muy pronto.
+El mismo motor, el mismo editor, la misma exportación. La diferencia está en lo que cada una puede grabar. Windows ya está disponible; la app para Mac y la extensión llegan muy pronto.
 
-| | App de escritorio<br><sub>Windows · Mac (Apple silicon)</sub> | Extensión para Chrome (pronto)<br><sub>Chrome · Edge · Brave · Arc</sub> |
+| | App de escritorio<br><sub>Windows · Mac (Apple silicon, pronto)</sub> | Extensión para Chrome (pronto)<br><sub>Chrome · Edge · Brave · Arc</sub> |
 |---|:---:|:---:|
 | Grabar la pantalla completa | ✅ | — |
 | Grabar una ventana o una selección | ✅ | — |
@@ -241,7 +238,7 @@ English, Português (Brasil), Español, 简体中文, 日本語, Deutsch, Franç
 
 ## Hoja de ruta
 
-El plan paso a paso está en [docs/plan.md](docs/plan.md), y cada función con sus criterios de aceptación en [docs/features.md](docs/features.md). Lo siguiente: un instalador de Windows firmado, la ficha en la Chrome Web Store y `@kamo/mcp` en npm. También se está preparando un paquete para la Microsoft Store. Hay planes para una nube opcional para compartir enlaces; la app en sí sigue siendo gratis y completa.
+El plan paso a paso está en [docs/plan.md](docs/plan.md), y cada función con sus criterios de aceptación en [docs/features.md](docs/features.md). Lo siguiente: una versión para Mac probada, instaladores firmados, la ficha en la Chrome Web Store y `@kamo/mcp` en npm. También se está preparando un paquete para la Microsoft Store. Hay planes para una nube opcional para compartir enlaces; la app en sí sigue siendo gratis y completa.
 
 ## Cómo contribuir
 

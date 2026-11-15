@@ -4,12 +4,20 @@ All notable changes to Kamo are listed here. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+Full notes: [docs/releases/v0.2.1.md](docs/releases/v0.2.1.md).
+
+### Added
+- The Mac app, for Apple silicon: whole screen, a window or a selection, with the microphone and the computer's sound, and *Start recording* in the Dock menu. It asks only for Screen Recording (and the microphone or camera when turned on): clicks are read without Input Monitoring, and its icon follows macOS's shape.
+
+### Changed
+- The selection frame shows clearer resize marks: squares on the corners and short bars in the middle of each side.
+- While a selection records, the recording bar sits just outside it (under it, or above when there is no room) instead of over its edge.
+
 ## [0.2.0] — 2026-11-10
 
 Full notes: [docs/releases/v0.2.0.md](docs/releases/v0.2.0.md).
 
 ### Added
-- The Mac app, for Apple silicon: whole screen, a window or a selection, with the microphone and the computer's sound. It asks only for Screen Recording (and the microphone or camera when turned on): clicks are read without Input Monitoring, and its icon follows macOS's shape.
 - German, French and Korean, in the app and the extension (Settings → Language and the first-run language screen) and as spoken languages for transcription.
 - Export MP4 and GIF in the same run: check both formats and every checked aspect comes out in each, with its own settings.
 - "Start recording" in the tray menu, the Windows taskbar jump list and the Mac Dock menu: it records what you chose last on Home, with the countdown.
@@ -25,7 +33,7 @@ Full notes: [docs/releases/v0.2.0.md](docs/releases/v0.2.0.md).
 - Settings: every section follows the same look (an illustrated header, cards with an icon, chips and status pills).
 - A recording opens in the editor as soon as it is saved. When something went missing (audio, camera, cut short), Home explains it and offers *Open in editor*.
 - Recording starts sooner after the countdown: the capture helper gets ready during the 3-2-1.
-- Choosing *Select* on Home opens the selection frame right away. The frame shows resize marks on its corners and the middle of each side, and while a selection records the recording bar sits just outside it.
+- Choosing *Select* on Home opens the selection frame right away.
 - Long labels in German and French, and Chinese, Japanese and Korean text, fit their screens (tooltips on cut-off names, caption styles on two lines).
 - Settings → Connect to an agent shows how to build the local MCP server from source while `@kamo/mcp` is not on npm, with your folders filled in.
 - On Windows the app no longer has a Window menu that only repeated the title bar buttons.
