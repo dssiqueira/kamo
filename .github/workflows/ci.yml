@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 # Read-only token for every job: CI builds and tests, it never writes to the repository.
 permissions:
